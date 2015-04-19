@@ -44,50 +44,17 @@
  * 0x79 - Get battery data length
  * 0x7d - Get battery data
  * Battery number port 0xb4 - Which battery? i.e. battery 1 or 2 etc.
- *
- * Also the following ports are used for debugging/logging:
- * 0xB040, 0xB044, 0xB046, 0xB048 
  */
 
 DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 {
     Scope (\_SB)
     {
-        OperationRegion (DBGA, SystemIO, 0xB040, 0x01)
-        Field (DBGA, ByteAcc, NoLock, Preserve)
-        {
-            DBG1,   8,
-        }
-
-        OperationRegion (DBGB, SystemIO, 0xB044, 0x01)
-        Field (DBGB, ByteAcc, NoLock, Preserve)
-        {
-            DBG2,   8,
-        }
-
-        OperationRegion (DBGC, SystemIO, 0xB046, 0x01)
-        Field (DBGC, ByteAcc, NoLock, Preserve)
-        {
-            DBG3,   8,
-        }
-
-        OperationRegion (DBGD, SystemIO, 0xB048, 0x01)
-        Field (DBGD, ByteAcc, NoLock, Preserve)
-        {
-            DBG4,   8,
-        }
-
         OperationRegion (PRT1, SystemIO, 0xB2, 0x02)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
             PB2,   8,
-            PB2A,   8
-        }
-
-        OperationRegion (PNUM, SystemIO, 0xB4, 0x01)
-        Field (PNUM, ByteAcc, NoLock, Preserve)
-        {
-            PB4,   8,
+            PB2A,  8
         }
 
         OperationRegion (PRT2, SystemIO, 0x86, 0x01)
@@ -102,18 +69,24 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             P88,  8
         }
 
+        OperationRegion (PRT4, SystemIO, 0x90, 0x01)
+        Field (PRT4, ByteAcc, NoLock, Preserve)
+        {
+            P90,  8
+        }
+
+        OperationRegion (PRT5, SystemIO, 0xB4, 0x01)
+        Field (PRT5, ByteAcc, NoLock, Preserve)
+        {
+            PB4,   8,
+        }
+
         /*OperationRegion for thermal zone */
-        OperationRegion (PRT4, SystemIO, 0x9C, 0x04)
-        Field (PRT4, WordAcc, NoLock, Preserve)
+        OperationRegion (PTZ1, SystemIO, 0x9C, 0x04)
+        Field (PTZ1, WordAcc, NoLock, Preserve)
         {
             P9C,  16,
             P9E,  16
-        }
-
-        OperationRegion (PRT5, SystemIO, 0x90, 0x01)
-        Field (PRT5, ByteAcc, NoLock, Preserve)
-        {
-            P90,  8
         }
 
         /* OperationRegion for Power Button */
@@ -161,8 +134,6 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         {
             Store (Arg1, \_SB.P86)
             Store (Arg0, \_SB.PB2)
-            Store (Arg0, \_SB.DBG2)
-            Store (Arg1, \_SB.DBG4)
             Store (\_SB.PB2, Local0)
             While (LNotEqual (Local0, 0x00))
             {
@@ -170,7 +141,6 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             }
 
             Store (\_SB.P86, Local1)
-            Store (Local1, \_SB.DBG3)
             Return (Local1)
         }
 
@@ -487,7 +457,6 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             If (LEqual(Local1, 0x80))
             {
                 /* Generate event for all batteries */
-                Store (0x81, \_SB.DBG1)
                 Notify (\_SB.BAT0, 0x81)
                 Notify (\_SB.BAT1, 0x81)
             }
@@ -518,9 +487,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             /* Battery generic info: design capacity, voltage, model # etc. */
             Method (_BIF, 0, NotSerialized)
             {
-                //Store (1, \_SB.DBG1)
                 Store(BIF ( 0x01 ), Local0)
-                //Store (2, \_SB.DBG1)
                 Return( Local0 )
             }
 
