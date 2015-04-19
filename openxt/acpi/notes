@@ -1,0 +1,18 @@
+Patches that touch hvmloader/acpi
+
+Related (in order):
+acpi-pm.patch - need the first part but we don't use xenpmd
+battery-units.patch - need the first part but not xenpmd - *should make sure xcpmd is doing watts/amps right*
+two-battery-support.patch - need first part, not xenpmd
+acpi-hvmloader-tm.patch - TZ, keep it but investigate
+acpi-hvmloader-pm-xt.patch - main one
+
+Unrelated:
+acpi-applesmc.patch - unrelated and can it go?
+acpi-no-hotplug.patch - unrelated and in the dsdt code
+bios-signature.patch - this looks like a rombios patch and can probably go?
+hvm-pm-hibernate-s-state.patch - in ssdt_s4 so unrelated but we want it
+prune-acpi-devices.patch - unrelated and not sure what it is for
+prune-vga-acpi-dev.patch - unrelated but it looks like it removes unsupported XP junk
+qemu-acpi-tables.patch - unrelated and not sure, needs investigation
+
