@@ -3753,7 +3753,7 @@ int main(int argc, char **argv, char **envp)
                            popt->name);
                     exit(1);
                 }
-                xen_battery_set_option(1);
+                xen_battery_set_enabled(true);
                 break;
             case QEMU_OPTION_trace:
             {

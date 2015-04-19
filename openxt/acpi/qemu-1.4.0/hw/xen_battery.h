@@ -30,18 +30,12 @@
  * Then, the device should be the same used to initialize the ACPI */
 int32_t xen_battery_init(PCIDevice *device);
 
-/* Let the user choose if he wants to use Xen Battery or not */
-enum xen_battery_options_type {
-    XEN_BATTERY_NONE = 0,
-    XEN_BATTERY_XENSTORE = 1,
-};
-
 /* XenClient: battery
- * Set the kind of way to emulate or not the Xen Battery device */
-void xen_battery_set_option(unsigned int const opt);
+ * Set whether to emulate or not the Xen Battery device */
+void xen_battery_set_enabled(bool enable);
 
 /* XenClient: battery
  * Get if the user ask for the battery emulation */
-bool xen_battery_get_option(void);
+bool xen_battery_get_enabled(void);
 
 #endif /* !XEN_BATTERY_H_ */

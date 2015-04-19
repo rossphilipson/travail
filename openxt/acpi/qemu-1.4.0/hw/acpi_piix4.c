@@ -403,7 +403,7 @@ static int piix4_pm_initfn(PCIDevice *dev)
     if (!xen_enabled()) {
         apm_init(dev, &s->apm, apm_ctrl_changed, s);
     } else {
-        if (xen_battery_get_option()) {
+        if (xen_battery_get_enabled()) {
             xen_battery_init(dev);
         }
     }

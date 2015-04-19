@@ -18,6 +18,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+/* TODO
+ * Change the name to xen_battery_ac_lid.c
+ * Fix the status register mess
+ */
+
 #ifdef CONFIG_SYSLOG_LOGGING
 # include "logging.h"
 #endif
@@ -51,7 +56,9 @@
 
 #define BATTERY_PORT_1             0xb2
 #define BATTERY_PORT_2             0x86
-#define BATTERY_PORT_3             0xb4
+#define BATTERY_PORT_3             0x88
+#define BATTERY_PORT_4             0x90
+#define BATTERY_PORT_5             0xb4
 
 #define BATTERY_OP_INIT            0x7b
 #define BATTERY_OP_SET_INFO_TYPE   0x7c
@@ -100,26 +107,17 @@ struct xen_battery_manager {
     MemoryRegion mr[3];         /* MemoryRegion to register IO ops */
 };
 
-/* --/ Options /------------------------------------------------------------ */
-static enum xen_battery_options_type xen_battery_option = XEN_BATTERY_NONE;
+/* --/ Enable /------------------------------------------------------------ */
+static bool xen_battery_enabled = false;
 
-void xen_battery_set_option(unsigned int const opt)
+void xen_battery_set_enabled(bool enable)
 {
-    switch (opt) {
-    case XEN_BATTERY_XENSTORE:
-        xen_battery_option = XEN_BATTERY_XENSTORE;
-        break;
-    case XEN_BATTERY_NONE:
-    /* No battery emulation is the default value
-     * Then... fallthrough */
-    default:
-        xen_battery_option = XEN_BATTERY_NONE;
-    }
+    xen_battery_enabled = enable;
 }
 
-bool xen_battery_get_option(void)
+bool xen_battery_get_enabled(void)
 {
-    return !!xen_battery_option;
+    return xen_battery_enabled;
 }
 
 /* Read a string from the /pm/'key'
@@ -547,13 +545,14 @@ struct MemoryRegionOps port_2_ops = {
     },
 };
 
-/* ------/ PORT 3: What's up ? function /----------------------------------- */
+/* ------/ PORT 5: What's up ? function /----------------------------------- */
 
-static uint64_t battery_port_3_read(void *opaque, hwaddr addr, uint32_t size)
+static uint64_t battery_port_5_read(void *opaque, hwaddr addr, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
+    /* TODO RJP this was a write only function???? */
     xen_battery_update_battery_present(xbm);
 
     xen_battery_update_bif(&(xbm->batteries[xbm->index]), xbm->index);
@@ -571,7 +570,7 @@ static uint64_t battery_port_3_read(void *opaque, hwaddr addr, uint32_t size)
     return system_state;
 }
 
-static void battery_port_3_write(void *opaque, hwaddr addr,
+static void battery_port_5_write(void *opaque, hwaddr addr,
                                  uint64_t val, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
@@ -585,9 +584,9 @@ static void battery_port_3_write(void *opaque, hwaddr addr,
     }
 }
 
-struct MemoryRegionOps port_3_ops = {
-    .read = battery_port_3_read,
-    .write = battery_port_3_write,
+struct MemoryRegionOps port_5_ops = {
+    .read = battery_port_5_read,
+    .write = battery_port_5_write,
     .endianness = DEVICE_LITTLE_ENDIAN,
     .impl = {
         .min_access_size = 1,
@@ -610,11 +609,11 @@ struct {
     { .ops = &port_2_ops,
       .base = BATTERY_PORT_2,
       .name = "acpi-xbm2",
-      .size = 2, },
-    { .ops = &port_3_ops,
-      .base = BATTERY_PORT_3,
-      .name = "acpi-xbm3",
-      .size = 2, },
+      .size = 1, },
+    { .ops = &port_5_ops,
+      .base = BATTERY_PORT_5,
+      .name = "acpi-xbm5",
+      .size = 1, },
     /* /!\ END OF ARRAY */
     { .ops = NULL, .base =  0, .name = NULL, },
 };
@@ -623,8 +622,8 @@ struct {
 
 /* TODO: check error code
  * TODO: release memory region when qemu is leaving */
-static int xen_battery_register_port(struct xen_battery_manager *xbm,
-                                     MemoryRegion *parent)
+static int xen_battery_register_ports(struct xen_battery_manager *xbm,
+                                      MemoryRegion *parent)
 {
     int index;
 
@@ -680,16 +679,16 @@ int32_t xen_battery_init(PCIDevice *device)
 
     switch (xbm->mode) {
     case XEN_BATTERY_MODE_HVM:
-        XBM_DPRINTF("non PT mode\n");
-        xen_battery_register_port(xbm, pci_address_space_io(device));
+        XBM_DPRINTF("Emulated mode\n");
+        xen_battery_register_ports(xbm, pci_address_space_io(device));
         break;
     case XEN_BATTERY_MODE_PT:
-        XBM_ERROR_MSG("TODO, mode Pass Through unsupported\n");
+        XBM_ERROR_MSG("Mode Pass Through no longer supported for security reasons\n");
         goto error_init;
         break;
     case XEN_BATTERY_MODE_NONE:
     default:
-        XBM_ERROR_MSG("mode (0x%02x) unsupported\n", xbm->mode);
+        XBM_ERROR_MSG("Mode (0x%02x) unsupported\n", xbm->mode);
         goto error_init;
     }
 
