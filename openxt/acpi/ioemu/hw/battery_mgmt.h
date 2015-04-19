@@ -29,7 +29,7 @@
 #define CONFIG_NO_BATTERY_MGMT
 #endif
 
-enum POWER_MGMT_MODE { PM_MODE_NONE = 0, PM_MODE_PT, PM_MODE_NON_PT };
+/*enum POWER_MGMT_MODE { PM_MODE_NONE = 0, PM_MODE_PT, PM_MODE_NON_PT };
 enum BATTERY_INFO_TYPE { BATT_NONE, BIF, BST };
 typedef struct battery_state_info {
     enum BATTERY_INFO_TYPE type;
@@ -38,16 +38,16 @@ typedef struct battery_state_info {
     uint8_t port_66_val;
     char *battery_data;
     uint8_t current_index;
-} battery_state_info;
+} battery_state_info;*/
 
 void battery_mgmt_init(PCIDevice *device);
 
-#ifndef CONFIG_NO_BATTERY_MGMT
+/*#ifndef CONFIG_NO_BATTERY_MGMT
 int is_battery_pt_feasible(void);
 void battery_mgmt_pt_mode_init(void);
 void get_battery_data_from_xenstore(void);
 void write_battery_data_to_port(void);
 void battery_mgmt_non_pt_mode_init(PCIDevice *device);
-#endif
+#endif*/
 
 #endif

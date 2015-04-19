@@ -52,13 +52,24 @@
 #define BATTERY_OP_GET_DATA_LENGTH 0x79
 #define BATTERY_OP_GET_DATA        0x7d
 
-#ifdef BATTERY_MGMT_DEBUG_EXT
+/*#ifdef BATTERY_MGMT_DEBUG_EXT
     #define BATTERY_DBG_PORT_1 0xB040
     #define BATTERY_DBG_PORT_2 0xB044
     #define BATTERY_DBG_PORT_3 0xB046
     #define BATTERY_DBG_PORT_4 0xB048
     static int monitor_battery_port = 0;
-#endif
+#endif*/
+
+enum POWER_MGMT_MODE { PM_MODE_NONE = 0, PM_MODE_PT, PM_MODE_NON_PT };
+enum BATTERY_INFO_TYPE { BATT_NONE, BIF, BST };
+typedef struct battery_state_info {
+    enum BATTERY_INFO_TYPE type;
+    uint8_t port_b2_val;
+    uint8_t port_86_val;
+    uint8_t port_66_val;
+    char *battery_data;
+    uint8_t current_index;
+} battery_state_info;
 
 static enum POWER_MGMT_MODE power_mgmt_mode = PM_MODE_NONE;
 /* Virtual firmware synchronizes the battery operations.  So, no need
@@ -109,7 +120,7 @@ void battery_mgmt_pt_mode_init(void)
     xc_interface_close(xc);
 }
 
-#ifdef BATTERY_MGMT_DEBUG_EXT
+/*#ifdef BATTERY_MGMT_DEBUG_EXT
 
 static void battery_dbg_monitor(void *opaque, uint32_t addr, uint32_t val)
 {   
@@ -134,6 +145,7 @@ static void battery_dbg_port_86_input(void *opaque, uint32_t addr, uint32_t val)
         fprintf(logfile, "%d.  ", val); 
 }
 #endif //BATTERY_MGMT_DEBUG_EXT
+*/
 
 void get_battery_data_from_xenstore(void)
 {
@@ -277,7 +289,7 @@ void battery_mgmt_non_pt_mode_init(PCIDevice *device)
     register_ioport_write(BATTERY_PORT_1, 2, 1, battery_port_1_writeb, device);
     register_ioport_read(BATTERY_PORT_2, 1, 1, battery_port_2_readb, device);
     register_ioport_write(BATTERY_PORT_2, 1, 1, battery_port_2_writeb, device);
-    register_ioport_write(BATTERY_PORT_5, 2, 1, battery_port_5_writeb, device);
+    register_ioport_write(BATTERY_PORT_5, 2, 1, battery_port_5_writeb, device); /* RJP this is not 2 bytes!!!! */
 
 #ifdef BATTERY_MGMT_DEBUG_EXT
     register_ioport_write(BATTERY_DBG_PORT_1, 1, 1, battery_dbg_monitor , device);
