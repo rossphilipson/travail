@@ -44,12 +44,39 @@
  * 0x79 - Get battery data length
  * 0x7d - Get battery data
  * Battery number port 0xb4 - Which battery? i.e. battery 1 or 2 etc.
+ *
+ * Also the following ports are used for debugging/logging:
+ * 0xB040, 0xB044, 0xB046, 0xB048
  */
 
 DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 {
     Scope (\_SB)
     {
+        OperationRegion (DBGA, SystemIO, 0xB040, 0x01)
+        Field (DBGA, ByteAcc, NoLock, Preserve)
+        {
+            DBG1,   8,
+        }
+
+        OperationRegion (DBGB, SystemIO, 0xB044, 0x01)
+        Field (DBGB, ByteAcc, NoLock, Preserve)
+        {
+            DBG2,   8,
+        }
+
+        OperationRegion (DBGC, SystemIO, 0xB046, 0x01)
+        Field (DBGC, ByteAcc, NoLock, Preserve)
+        {
+            DBG3,   8,
+        }
+
+        OperationRegion (DBGD, SystemIO, 0xB048, 0x01)
+        Field (DBGD, ByteAcc, NoLock, Preserve)
+        {
+            DBG4,   8,
+        }
+
         OperationRegion (PRT1, SystemIO, 0xB2, 0x02)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
@@ -134,6 +161,8 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         {
             Store (Arg1, \_SB.P86)
             Store (Arg0, \_SB.PB2)
+            Store (Arg0, \_SB.DBG2)
+            Store (Arg1, \_SB.DBG4)
             Store (\_SB.PB2, Local0)
             While (LNotEqual (Local0, 0x00))
             {
@@ -141,6 +170,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             }
 
             Store (\_SB.P86, Local1)
+            Store (Local1, \_SB.DBG3)
             Return (Local1)
         }
 
@@ -487,13 +517,16 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             /* Battery generic info: design capacity, voltage, model # etc. */
             Method (_BIF, 0, NotSerialized)
             {
+                //Store (1, \_SB.DBG1)
                 Store(BIF ( 0x01 ), Local0)
+                //Store (2, \_SB.DBG1)
                 Return( Local0 )
             }
 
             /* Battery status including battery charging/discharging rate. */
             Method (_BST, 0, NotSerialized)
             {
+                Store (1, \_SB.DBG1)
                 ACQR ()
                 INIT (0x02)
                 INIT (0x01)
@@ -505,6 +538,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
                 Store (HLP7 (), Index (BST0, 0x02))
                 Store (HLP7 (), Index (BST0, 0x03))
                 REL ()
+                Store (2, \_SB.DBG1)
                 Return (BST0)
             }
         }
