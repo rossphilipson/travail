@@ -37,24 +37,30 @@
  *
  * Following are the battery ports read/written to in order to implement
  * battery support:
- * Battery command port - 0xb2
+ * Battery command port - 0xB2
  * Battery data port    - 0x86
- * Battery commands (written to port 0xb2) -
+ * Battery commands (written to port 0xB2) -
  * 0x7b - Battery operation init
  * 0x7c - Type of battery operation
  * 0x79 - Get battery data length
  * 0x7d - Get battery data
  *
- * Battery number port 0xb4 - Which battery? i.e. battery 1 or 2 etc.
+ * Battery number port 0xB4 - Which battery? i.e. battery 1 or 2 etc.
  *
- * Status port 0x88 - status values for battery, AC and lid.
- * 0x01 - Battery 1 (BAT0)  present
- * 0x02 - Battery 2 (BAT1)  present
- * 0x04 - Lid open
- * 0x08 - AC power on
+ * Battery status port 0x88
+ * 0x01 - Battery 1 (BAT0) present
+ * 0x08 - Battery state changes, needs update
+ *
+ * Battery status port 0x90
+ * 0x01 - Battery 2 (BAT1) present
+ * 0x08 - Battery state changes, needs update
  *
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
+ *
+ * General ACPI status port 0xB6
+ * 0x01 - Lid open
+ * 0x02 - AC power on
  */
 
 DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
@@ -114,6 +120,12 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         Field (PRT5, ByteAcc, NoLock, Preserve)
         {
             PB4,   8,
+        }
+
+        OperationRegion (PRT6, SystemIO, 0xB6, 0x01)
+        Field (PRT6, ByteAcc, NoLock, Preserve)
+        {
+            PB6,   8,
         }
 
         /*OperationRegion for thermal zone */
@@ -384,8 +396,8 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Name (_HID, EisaId ("PNP0C0D"))
             Method (_LID, 0, NotSerialized)
             {
-                Store (\_SB.P88, Local0)
-                If (And (Local0, 0x4))
+                Store (\_SB.PB6, Local0)
+                If (And (Local0, 0x1))
                 {
                     Return (0x1)
                 }
@@ -401,8 +413,8 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 
             Method (_PSW, 1, NotSerialized)
             {
-                Store (\_SB.P88, Local0)
-                If (And (Local0, 0x4))
+                Store (\_SB.PB6, Local0)
+                If (And (Local0, 0x1))
                 {
                     Return (0x1)
                 }
@@ -443,8 +455,8 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             })
             Method (_PSR, 0, NotSerialized)
             {
-                Store (\_SB.P88, Local0)
-                If (And (Local0, 0x1))
+                Store (\_SB.PB6, Local0)
+                If (And (Local0, 0x2))
                 {
                     Return (0x1)
                 }
@@ -484,27 +496,29 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Return (BIFP)
         }
 
-        /* Helper routine to get status and notify on changes */
-        Method (STA, 1, NotSerialized)
+        /* Helper routines to get status and notify on changes */
+	/* TODO this was missing in ioemu code */
+        Method (STA1, 0, NotSerialized)
         {
             /* TODO stop writing the status port, removed it */
             Store (\_SB.P88, Local0)
             /* Check for battery changed indication */
-            And (Local0, 0x80, Local1) /* TODO this was missing in ioemu code */
-            And (Local0, 0x7f, Local0)
-            If (LEqual(Local1, 0x80))
+            If (And(Local0, 0x80))
             {
-                /* Generate event for the battery in question */
-                If (LEqual(Arg0, 0x1))
-                {
-                    Notify (\_SB.BAT0, 0x81)
-                }
-                Else
-                {
-                    Notify (\_SB.BAT1, 0x81)
-                }
+                /* Generate event for BAT0 */
+                Notify (\_SB.BAT0, 0x81)
             }
-            Return (Local0)
+        }
+
+        Method (STA2, 0, NotSerialized)
+        {
+            Store (\_SB.P90, Local0)
+            /* Check for battery changed indication */
+            If (And(Local0, 0x80))
+            {
+                /* Generate event for BAT1 */
+                Notify (\_SB.BAT1, 0x81)
+            }
         }
 
         /* Battery object 0 */
@@ -520,7 +534,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_STA, 0, NotSerialized)
             {
                 Store (\_SB.P88, Local0)
-                If (And (Local0, 0x2))
+                If (And (Local0, 0x1))
                 {
                     Return (0x1F)
                 }
@@ -541,7 +555,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_BST, 0, NotSerialized)
             {
                 Store (1, \_SB.DBG1)
-                STA (0x01)
+                STA1 ()
                 ACQR ()
                 INIT (0x02)
                 INIT (0x01)
@@ -587,7 +601,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_BST, 0, NotSerialized)
             {
 	        /* Check for BIF changes */
-                STA (0x02)
+                STA2 ()
                 ACQR ()
                 INIT (0x02)
                 INIT (0x02)
