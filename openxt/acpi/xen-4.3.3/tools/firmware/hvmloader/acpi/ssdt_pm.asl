@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2008  Kamala Narasimhan
  * Copyright (c) 2008  Citrix Systems, Inc.
+ * 2015 Ross Philipson <philipsonr@ainfosec.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +44,14 @@
  * 0x7c - Type of battery operation
  * 0x79 - Get battery data length
  * 0x7d - Get battery data
+ *
  * Battery number port 0xb4 - Which battery? i.e. battery 1 or 2 etc.
+ *
+ * Status port 0x88 - status values for battery, AC and lid.
+ * 0x01 - Battery 1 (BAT0)  present
+ * 0x02 - Battery 2 (BAT1)  present
+ * 0x04 - Lid open
+ * 0x08 - AC power on
  *
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
@@ -81,7 +89,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
             PB2,   8,
-            PB2A,  8
+            PB2A,   8
         }
 
         OperationRegion (PRT2, SystemIO, 0x86, 0x01)
@@ -479,18 +487,24 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         /* Helper routine to get status and notify on changes */
         Method (STA, 1, NotSerialized)
         {
-            Store (Arg0, \_SB.P88)
+            /* TODO stop writing the status port, removed it */
             Store (\_SB.P88, Local0)
             /* Check for battery changed indication */
-            And (Local0, 0x80, Local1)
+            And (Local0, 0x80, Local1) /* TODO this was missing in ioemu code */
             And (Local0, 0x7f, Local0)
             If (LEqual(Local1, 0x80))
             {
-                /* Generate event for all batteries */
-                Notify (\_SB.BAT0, 0x81)
-                Notify (\_SB.BAT1, 0x81)
+                /* Generate event for the battery in question */
+                If (LEqual(Arg0, 0x1))
+                {
+                    Notify (\_SB.BAT0, 0x81)
+                }
+                Else
+                {
+                    Notify (\_SB.BAT1, 0x81)
+                }
             }
-            Return ( Local0 )
+            Return (Local0)
         }
 
         /* Battery object 0 */
@@ -527,6 +541,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_BST, 0, NotSerialized)
             {
                 Store (1, \_SB.DBG1)
+                STA (0x01)
                 ACQR ()
                 INIT (0x02)
                 INIT (0x01)
