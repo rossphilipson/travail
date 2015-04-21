@@ -58,7 +58,7 @@
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
  *
- * General ACPI status port 0xB6
+ * General ACPI status port 0x9C
  * 0x01 - Lid open
  * 0x02 - AC power on
  */
@@ -122,18 +122,10 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             PB4,   8,
         }
 
-        OperationRegion (PRT6, SystemIO, 0xB6, 0x01)
-        Field (PRT6, ByteAcc, NoLock, Preserve)
+        OperationRegion (PSTS, SystemIO, 0x9C, 0x01)
+        Field (PSTS, ByteAcc, NoLock, Preserve)
         {
-            PB6,   8,
-        }
-
-        /*OperationRegion for thermal zone */
-        OperationRegion (PTZ1, SystemIO, 0x9C, 0x04)
-        Field (PTZ1, WordAcc, NoLock, Preserve)
-        {
-            P9C,  16,
-            P9E,  16
+            P9C,   8,
         }
 
         /* OperationRegion for Power Button */
@@ -396,7 +388,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Name (_HID, EisaId ("PNP0C0D"))
             Method (_LID, 0, NotSerialized)
             {
-                Store (\_SB.PB6, Local0)
+                Store (\_SB.P9C, Local0)
                 If (And (Local0, 0x1))
                 {
                     Return (0x1)
@@ -413,7 +405,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 
             Method (_PSW, 1, NotSerialized)
             {
-                Store (\_SB.PB6, Local0)
+                Store (\_SB.P9C, Local0)
                 If (And (Local0, 0x1))
                 {
                     Return (0x1)
@@ -455,7 +447,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             })
             Method (_PSR, 0, NotSerialized)
             {
-                Store (\_SB.PB6, Local0)
+                Store (\_SB.P9C, Local0)
                 If (And (Local0, 0x2))
                 {
                     Return (0x1)
@@ -614,24 +606,6 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
                 Store (HLP7 (), Index (BST1, 0x03))
                 REL ()
                 Return (BST1)
-            }
-        }
-    }
-
-    Scope (\_TZ)
-    {
-        ThermalZone (THM)
-        {
-            Method (_CRT, 0, NotSerialized)
-            {
-                Store(\_SB.P9E, Local0)
-                Return (Local0)
-            }
-
-            Method (_TMP, 0, NotSerialized)
-            {
-                Store(\_SB.P9C, Local0)
-                Return (Local0)
             }
         }
     }
