@@ -45,8 +45,6 @@
  * 0x79 - Get battery data length
  * 0x7d - Get battery data
  *
- * Battery number port 0xB4 - Which battery? i.e. battery 1 or 2 etc.
- *
  * Battery status port 0x88
  * 0x01 - Battery 1 (BAT0) present
  * 0x08 - Battery state changes, needs update
@@ -54,6 +52,8 @@
  * Battery status port 0x90
  * 0x01 - Battery 2 (BAT1) present
  * 0x08 - Battery state changes, needs update
+ *
+ * Battery number port 0xB4 - Which battery? i.e. battery 1 or 2 etc.
  *
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
@@ -489,10 +489,8 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         }
 
         /* Helper routines to get status and notify on changes */
-	/* TODO this was missing in ioemu code */
         Method (STA1, 0, NotSerialized)
         {
-            /* TODO stop writing the status port, removed it */
             Store (\_SB.P88, Local0)
             /* Check for battery changed indication */
             If (And(Local0, 0x80))

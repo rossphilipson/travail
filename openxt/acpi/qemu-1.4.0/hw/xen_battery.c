@@ -23,6 +23,7 @@
  * Fix the status register mess
  * Fix error logging and tracing
  * Move AC and lid state out of the battery overlord
+ * Use ACQR/REL to make a common status port - is it feasible?
  * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
  */
 
@@ -103,7 +104,7 @@ struct xen_battery_manager {
     uint8_t lid_state;          /* /pm/lid_state */
     struct battery_buffer batteries[MAX_BATTERIES]; /* Battery array */
     uint8_t index;              /* Battery selector */
-    MemoryRegion mr[3];         /* MemoryRegion to register IO ops */
+    MemoryRegion mr[5];         /* MemoryRegion to register IO ops */
 };
 
 /* --/ Enable /------------------------------------------------------------ */
@@ -498,7 +499,7 @@ static void battery_port_1_op_get_data(struct battery_buffer *bb,
 }
 
 /*
- * Battery command port IO write.
+ * Battery command IO port write.
  *
  * Writes to the command ports select the operations including
  * reads on the data port.
@@ -544,6 +545,9 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
     bb->port_b2_val = 0;
 }
 
+/*
+ * Battery command IO port read.
+ */
 static uint64_t battery_port_1_read(void *opaque, hwaddr addr, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
@@ -565,16 +569,22 @@ struct MemoryRegionOps port_1_ops = {
     },
 };
 
-static void battery_port_2_write(void *opaque,
-                                 hwaddr addr,
-                                 uint64_t val,
-                                 uint32_t size)
+/*
+ * Battery data IO port write.
+ */
+static void battery_port_2_write(void *opaque, hwaddr addr,
+                                 uint64_t val, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
     xbm->batteries[xbm->index].port_86_val = val;
     XBM_DPRINTF("port_86 := 0x%x\n", xbm->batteries[xbm->index].port_86_val);
 }
 
+/*
+ * Battery data IO port read.
+ *
+ * For get data command ops, each byte is read sequentially from this port.
+ */
 static uint64_t battery_port_2_read(void *opaque, hwaddr addr, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
@@ -592,29 +602,79 @@ struct MemoryRegionOps port_2_ops = {
     },
 };
 
-/* ------/ PORT 5: What's up ? function /----------------------------------- */
-
-static uint64_t battery_port_5_read(void *opaque, hwaddr addr, uint32_t size)
+/*
+ * Battery 1 (BAT0) status IO port write.
+ *
+ * Returns 0x01 if battery present.
+ *         0x80 if battery information is updated.
+ */
+static uint64_t battery_port_3_read(void *opaque, hwaddr addr, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
     xen_battery_update_battery_present(xbm);
 
-    xen_battery_update_bif(&(xbm->batteries[xbm->index]), xbm->index);
+    xen_battery_update_bif(&(xbm->batteries[0]), 0);
 
-    if (NULL != xbm->batteries[xbm->index]._bif) {
-        system_state |= 0x1F;
+    if (NULL != xbm->batteries[0]._bif) {
+        system_state |= 0x1;
     }
 
-    if (1 == xbm->batteries[xbm->index].bif_changed) {
-        xbm->batteries[xbm->index].bif_changed = 0;
-        system_state |= 0x80; /* TODO retain this */
+    if (1 == xbm->batteries[0].bif_changed) {
+        xbm->batteries[0].bif_changed = 0;
+        system_state |= 0x80;
     }
 
-    XBM_DPRINTF("system_state == 0x%02llx\n", system_state);
+    XBM_DPRINTF("BAT0 system_state == 0x%02llx\n", system_state);
     return system_state;
 }
+
+struct MemoryRegionOps port_3_ops = {
+    .read = battery_port_3_read,
+    .endianness = DEVICE_LITTLE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 1,
+    },
+};
+
+/*
+ * Battery 2 (BAT1) status IO port write.
+ *
+ * Returns 0x01 if battery present.
+ *         0x80 if battery information is updated.
+ */
+static uint64_t battery_port_4_read(void *opaque, hwaddr addr, uint32_t size)
+{
+    struct xen_battery_manager *xbm = opaque;
+    uint64_t system_state = 0x0000000000000000ULL;
+
+    xen_battery_update_battery_present(xbm);
+
+    xen_battery_update_bif(&(xbm->batteries[1]), 1);
+
+    if (NULL != xbm->batteries[1]._bif) {
+        system_state |= 0x1;
+    }
+
+    if (1 == xbm->batteries[1].bif_changed) {
+        xbm->batteries[1].bif_changed = 0;
+        system_state |= 0x80;
+    }
+
+    XBM_DPRINTF("BAT1 system_state == 0x%02llx\n", system_state);
+    return system_state;
+}
+
+struct MemoryRegionOps port_4_ops = {
+    .read = battery_port_4_read,
+    .endianness = DEVICE_LITTLE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 1,
+    },
+};
 
 static void battery_port_5_write(void *opaque, hwaddr addr,
                                  uint64_t val, uint32_t size)
@@ -631,7 +691,6 @@ static void battery_port_5_write(void *opaque, hwaddr addr,
 }
 
 struct MemoryRegionOps port_5_ops = {
-    .read = battery_port_5_read,
     .write = battery_port_5_write,
     .endianness = DEVICE_LITTLE_ENDIAN,
     .impl = {
@@ -655,6 +714,14 @@ struct {
     { .ops = &port_2_ops,
       .base = BATTERY_PORT_2,
       .name = "acpi-xbm2",
+      .size = 1, },
+    { .ops = &port_3_ops,
+      .base = BATTERY_PORT_3,
+      .name = "acpi-xbm3",
+      .size = 1, },
+    { .ops = &port_4_ops,
+      .base = BATTERY_PORT_4,
+      .name = "acpi-xbm4",
       .size = 1, },
     { .ops = &port_5_ops,
       .base = BATTERY_PORT_5,
