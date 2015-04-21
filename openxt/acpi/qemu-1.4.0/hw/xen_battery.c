@@ -19,8 +19,11 @@
  */
 
 /* TODO
- * Change the name to xen_battery_ac_lid.c
+ * Change the name to be more generic for battery/ac/lid
  * Fix the status register mess
+ * Fix error logging and tracing
+ * Move AC and lid state out of the battery overlord
+ * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
  */
 
 #ifdef CONFIG_SYSLOG_LOGGING
@@ -52,18 +55,18 @@
                 __func__, __LINE__, ## __VA_ARGS__);      \
     } while (0)
 
-#define MAX_BATTERIES              4
+#define MAX_BATTERIES              2
 
-#define BATTERY_PORT_1             0xb2
-#define BATTERY_PORT_2             0x86
-#define BATTERY_PORT_3             0x88
-#define BATTERY_PORT_4             0x90
-#define BATTERY_PORT_5             0xb4
+#define BATTERY_PORT_1             0xb2 /* Battery command port */
+#define BATTERY_PORT_2             0x86 /* Battery data port */
+#define BATTERY_PORT_3             0x88 /* Battery 1 (BAT0) status port */ 
+#define BATTERY_PORT_4             0x90 /* Battery 2 (BAT1) status port */ 
+#define BATTERY_PORT_5             0xb4 /* Battery selector port */
 
-#define BATTERY_OP_INIT            0x7b
-#define BATTERY_OP_SET_INFO_TYPE   0x7c
-#define BATTERY_OP_GET_DATA_LENGTH 0x79
-#define BATTERY_OP_GET_DATA        0x7d
+#define BATTERY_OP_INIT            0x7b /* Battery operation init */
+#define BATTERY_OP_SET_INFO_TYPE   0x7c /* Battery operation type */
+#define BATTERY_OP_GET_DATA_LENGTH 0x79 /* Battery operation data length */
+#define BATTERY_OP_GET_DATA        0x7d /* Battery operation data read */
 
 /* Describes the different type of MODE managed by this module */
 enum xen_battery_mode {
@@ -75,15 +78,13 @@ enum xen_battery_mode {
 enum xen_battery_selector {
     XEN_BATTERY_TYPE_NONE = 0,
     XEN_BATTERY_TYPE_BIF,
-    XEN_BATTERY_TYPE_BST,
-    XEN_BATTERY_TYPE_PSR
+    XEN_BATTERY_TYPE_BST
 };
 
 /* From each battery, xenstore provides the Battery Status (_bst) and the
  * battery informatiom (_bif).
  *
- * TODO: _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1)
- * Include the _BIX. */
+ */
 struct battery_buffer {
     char *_bst;           /* _BST */
     char *_bif;           /* _BIF */
@@ -91,7 +92,7 @@ struct battery_buffer {
     uint8_t port_86_val;  /* Variable to manage BATTERY_PORT_2 */
     uint8_t index;        /* Index inside the _BST or _BIF string */
     uint8_t bif_changed;
-    /* selector to mark which buffer we should use */
+    /* Selector to mark which buffer we should use */
     enum xen_battery_selector _selector;
 };
 
@@ -101,9 +102,7 @@ struct xen_battery_manager {
     uint8_t ac_adapter_present; /* /pm/ac_adapter */
     uint8_t lid_state;          /* /pm/lid_state */
     struct battery_buffer batteries[MAX_BATTERIES]; /* Battery array */
-    uint8_t index;              /* battery selector */
-
-    /* TODO: find a better way than putting a static size */
+    uint8_t index;              /* Battery selector */
     MemoryRegion mr[3];         /* MemoryRegion to register IO ops */
 };
 
@@ -184,8 +183,7 @@ static int32_t xen_battery_pm_read_int(char const *key,
     return 0;
 }
 
-static int32_t
-xen_battery_update_battery_present(struct xen_battery_manager *xbm)
+static int32_t xen_battery_update_battery_present(struct xen_battery_manager *xbm)
 {
     int32_t value;
 
@@ -243,9 +241,10 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
 
     old_value = battery->_bst;
 
-    if (battery_num <= 0) {
+    if (battery_num == 0) {
         rc = xen_battery_pm_read_str("bst", &value);
-    } else {
+    }
+    else {
         memset(key, 0, sizeof(key));
 
         if (0 > snprintf(key, sizeof(key) - 1, "bst%d", battery_num)) {
@@ -286,9 +285,10 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
 
     old_value = battery->_bif;
 
-    if (battery_num <= 0) {
+    if (battery_num == 0) {
         rc = xen_battery_pm_read_str("bif", &value);
-    } else {
+    }
+    else {
         memset(key, 0, sizeof(key));
 
         if (0 > snprintf(key, sizeof(key) - 1, "bif%d", battery_num)) {
@@ -396,11 +396,9 @@ static void battery_port_1_write_op_init(struct battery_buffer *bb)
     bb->index = 0;
 }
 
-static int battery_port_1_write_op_set_type(struct battery_buffer *bb,
-                                            struct xen_battery_manager *xbm)
+static void battery_port_1_write_op_set_type(struct battery_buffer *bb,
+                                             struct xen_battery_manager *xbm)
 {
-    int ret = 0;
-
     if (XEN_BATTERY_TYPE_NONE == bb->_selector) {
         switch (bb->port_86_val) {
         case XEN_BATTERY_TYPE_BIF:
@@ -413,31 +411,103 @@ static int battery_port_1_write_op_set_type(struct battery_buffer *bb,
             xen_battery_update_bst(bb, xbm->index);
             XBM_DPRINTF("BATTERY_OP_SET_INFO_TYPE (BST)\n");
             break;
-        case XEN_BATTERY_TYPE_PSR:
-            bb->_selector = XEN_BATTERY_TYPE_PSR;
-            xen_battery_update_ac_adapter(xbm);
-            /* TODO: this operation shouldn't be here: 'GET_DATA' */
-            bb->port_86_val = !!xbm->ac_adapter_present;
-            XBM_DPRINTF("BATTERY_OP_SET_INFO_TYPE (PSR)\n");
-            break;
         case XEN_BATTERY_TYPE_NONE:
             /* NO BREAK HERE: fallthrough */
         default:
-            XBM_DPRINTF("ERROR, unknown type :%d\n", bb->port_86_val);
-            ret = -1;
+            XBM_DPRINTF("ERROR, unknown type: %d\n", bb->port_86_val);
         }
     }
-
-    return ret;
 }
 
+/*
+ * Command option helper to get the next data byte.
+ *
+ * To understand this function, the format of the data passed in the xenstore
+ * nodes for BIF and BST must be understood. Both the BIF and BST are defined
+ * in the ACPI specification (see 10.2.2.1 and 10.2.2.6 in the version 5.0
+ * spec).
+ *
+ * The BIF starts with 9 fixed DWORD fields followed by 4 variable length
+ * ASCII fields. All of this is flattened out in into a string in xenstore by
+ * xcpmd. Length specifiers and DWORD bytes are represented by 2 hex chars.
+ * The first byte pair is the length of the entire block (see below). The next
+ * 36 bytes pairs are the DWORD fields. At the end are the four ASCII strings
+ * each starting with a length byte pair then the string then a trailing \n.
+ *
+ * This is an example of a BIF:
+ *
+ * 4a010000009222000092220000010000005c2b0000000000000000000001000000010000000dDELL GCJ4839\n04500\n05LION\n0cSamsung SDI\n
+ * ^ |           9 DWORDS * 4 bytes each * 2 chars each = 72 bytes          |^ |  string 1  | ....
+ * |                                                                         |
+ * +--- D-LENGTH of DWORD block                   S-LENGTH of first sting ---+
+ *
+ * This layout is where the magic number BIF_DATA_BOUNDARY (74) comes from. It
+ * it the switch over point from reading the D-LENGTH + DWORD block to
+ * reading the ASCII strings. Each read of the byte pair data is a read of 2
+ * where the reading of the ASCII chars is a 1 byte read. S-LENGTH is pretty
+ * simple, it is the string length and \n counts as 1 char. D-LENGTH is more
+ * complicated. For byte pairs, it counts each as one byte but chars are each
+ * 1 byte (with \n as one char). So 0x4a == 74 is the entire length.
+ *
+ * Now compared to that, the BST is simple. It is a structure of 4 DWORDs.
+ * This is flattened out the same way as the BIF and it is clear why the
+ * reading algorithm below works on it the same way.
+ *
+ * This is an example BST:
+ *
+ * 1000000000010000009222000045320000
+ * ^ | 4 DWORDS ... = 32 bytes      |
+ * |
+ * +--- D-LENGTH of DWORD block
+ * 
+ */
+static void battery_port_1_op_get_data(struct battery_buffer *bb,
+                                       struct xen_battery_manager *xbm)
+{
+#define BIF_DATA_BOUNDARY 74
+    char *data = NULL;
+    char buf[3];
+
+    if (XEN_BATTERY_TYPE_BST == bb->_selector) {
+       data = bb->_bst;
+    }
+    else if (XEN_BATTERY_TYPE_BIF == bb->_selector) {
+       data = bb->_bif;
+    }
+    else {
+       XBM_DPRINTF("ERROR, unknown _selector: %d\n", bb->_selector);
+       return;
+    }
+
+    data += bb->index;
+    if ((bb->index <= BIF_DATA_BOUNDARY) ||
+        ((bb->index > BIF_DATA_BOUNDARY) && ((*(data - 1)) == '\n'))) {
+        snprintf(buf, sizeof(buf), "%s", data);
+        bb->port_86_val = (uint8_t)strtoull(buf, NULL, 0x10);
+        bb->index += 2;
+    }
+    else {
+       if (*data == '\n') {
+           bb->port_86_val = 0;
+       }
+       else {
+           bb->port_86_val = *data;
+       }
+       bb->index++;
+    }
+}
+
+/*
+ * Battery command port IO write.
+ *
+ * Writes to the command ports select the operations including
+ * reads on the data port.
+ */
 static void battery_port_1_write(void *opaque, hwaddr addr,
                                  uint64_t val, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
     struct battery_buffer *bb;
-    char *data = NULL;
-    char buf[3];
 
     bb = &(xbm->batteries[xbm->index]);
 
@@ -455,38 +525,15 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
     }
     case BATTERY_OP_GET_DATA_LENGTH:
     {
-        if (XEN_BATTERY_TYPE_PSR == bb->_selector) {
-            /* TODO: return the length 1 ? and implment the GET_DATA
-             *       --> Need to update Hvmloader */
-            XBM_DPRINTF("BATTERY_OP_GET_DATA_LENGTH (PSR)\n");
-            break;
-        }
-    /* NO BREAK HERE: fallthrough */
+        /*
+         * Length read comes first and the length is the first byte of the
+	 * data so fallthrough.
+         */
     }
     case BATTERY_OP_GET_DATA:
     {
         XBM_DPRINTF("BATTERY_OP_GET_DATA\n");
-        if (XEN_BATTERY_TYPE_BST == bb->_selector) {
-            data = bb->_bst;
-        } else if (XEN_BATTERY_TYPE_BIF == bb->_selector) {
-            data = bb->_bif;
-        } else {
-            break;
-        }
-        data += bb->index;
-        if ((bb->index <= 74) ||
-            ((bb->index > 74) && ((*(data - 1)) == '\n'))) {
-            snprintf(buf, sizeof(buf), "%s", data);
-            bb->port_86_val = (uint8_t)strtoull(buf, NULL, 0x10);
-            bb->index += 2;
-        } else {
-            if (*data == '\n') {
-                bb->port_86_val = 0;
-            } else {
-                bb->port_86_val = *data;
-            }
-            bb->index++;
-        }
+        battery_port_1_op_get_data(bb, xbm);
         break;
     }
     default:
@@ -552,7 +599,6 @@ static uint64_t battery_port_5_read(void *opaque, hwaddr addr, uint32_t size)
     struct xen_battery_manager *xbm = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
-    /* TODO RJP this was a write only function???? */
     xen_battery_update_battery_present(xbm);
 
     xen_battery_update_bif(&(xbm->batteries[xbm->index]), xbm->index);
@@ -563,7 +609,7 @@ static uint64_t battery_port_5_read(void *opaque, hwaddr addr, uint32_t size)
 
     if (1 == xbm->batteries[xbm->index].bif_changed) {
         xbm->batteries[xbm->index].bif_changed = 0;
-        system_state |= 0x80;
+        system_state |= 0x80; /* TODO retain this */
     }
 
     XBM_DPRINTF("system_state == 0x%02llx\n", system_state);
@@ -640,7 +686,7 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
 /* Main battery management function
  *
  * TODO: free this allocation
- * TODO: manage PVM */
+ */
 int32_t xen_battery_init(PCIDevice *device)
 {
     uint32_t i;
