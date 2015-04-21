@@ -123,7 +123,7 @@ bool xen_battery_get_enabled(void)
 /* Read a string from the /pm/'key'
  * set the result in 'return_value'
  * retun 0 in success */
-static int32_t xen_battery_pm_read_str(char const *key,
+static int32_t xen_pm_read_str(char const *key,
                                        char **return_value)
 {
     char path[XEN_BUFSIZE];
@@ -154,16 +154,12 @@ static int32_t xen_battery_pm_read_str(char const *key,
 /* Read a signed integer from the /pm/'key'
  * set the result in 'return_value'
  * retun 0 in success */
-static int32_t xen_battery_pm_read_int(char const *key,
+static int32_t xen_pm_read_int(char const *key,
+                                       int32_t default_value,
                                        int32_t *return_value)
 {
     char path[XEN_BUFSIZE];
     char *value = NULL;
-
-    if ((NULL == key) || (NULL == return_value)) {
-        XBM_DPRINTF("ERROR, argument couldn't be null\n");
-        return -1;
-    }
 
     if (0 > snprintf(path, sizeof(path), "/pm/%s", key)) {
         XBM_DPRINTF("ERROR, snprintf failed\n");
@@ -171,10 +167,10 @@ static int32_t xen_battery_pm_read_int(char const *key,
     }
 
     value = xs_read(xenstore, XBT_NULL, path, NULL);
-
     if (NULL == value) {
-        XBM_DPRINTF("ERROR, unable to read the content of \"%s\"\n", path);
-        return -1;
+        XBM_DPRINTF("Unable to read the content of \"%s\"\n", path);
+        *return_value = default_value;
+        return 0;
     }
 
     *return_value = strtoull(value, NULL, 10);
@@ -184,11 +180,51 @@ static int32_t xen_battery_pm_read_int(char const *key,
     return 0;
 }
 
+/*
+ * Update the AC adapter state.
+ *
+ * Note the default is 1 since the ac_adapter values is not written on
+ * non-portable systems like desktops. But they have an AC adapter or they
+ * could not start.
+ */
+static void xen_pm_update_ac_adapter(struct xen_battery_manager *xbm)
+{
+    int32_t value;
+
+    if (0 != xen_pm_read_int("ac_adapter", 1, &value)) {
+        XBM_DPRINTF("ERROR, unable to update the ac_adapter present status\n");
+        xbm->ac_adapter_present = 1;
+        return;
+    }
+
+    xbm->ac_adapter_present = value;
+}
+
+/*
+ * Update the AC lid state.
+ *
+ * Note the default is 1 since the lid_state is not written on systems that
+ * do not have an attached panel. We don't want the lid device to say it is
+ * closed in guests on these systems.
+ */
+static void xen_pm_update_lid_state(struct xen_battery_manager *xbm)
+{
+    int32_t value;
+
+    if (0 != xen_pm_read_int("lid_state", 1, &value)) {
+        XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
+        xbm->lid_state = 1;
+        return;
+    }
+
+    xbm->lid_state = value;
+}
+
 static int32_t xen_battery_update_battery_present(struct xen_battery_manager *xbm)
 {
     int32_t value;
 
-    if (0 != xen_battery_pm_read_int("battery_present", &value)) {
+    if (0 != xen_pm_read_int("battery_present", 0, &value)) {
         XBM_DPRINTF("ERROR, unable to update the battery present status\"\n");
         /* in error case, it's preferable to show the worst situation */
         xbm->battery_present = 0;
@@ -196,38 +232,6 @@ static int32_t xen_battery_update_battery_present(struct xen_battery_manager *xb
     }
 
     xbm->battery_present = value;
-
-    return 0;
-}
-
-static int32_t xen_battery_update_ac_adapter(struct xen_battery_manager *xbm)
-{
-    int32_t value;
-
-    if (0 != xen_battery_pm_read_int("ac_adapter", &value)) {
-        XBM_DPRINTF("ERROR, unable to update the ac_adapter present status\n");
-        /* in error case, it's preferable to show the worst situation */
-        xbm->ac_adapter_present = 0;
-        return -1;
-    }
-
-    xbm->ac_adapter_present = value;
-
-    return 0;
-}
-
-static int32_t xen_battery_update_lid_state(struct xen_battery_manager *xbm)
-{
-    int32_t value;
-
-    if (0 != xen_battery_pm_read_int("lid_state", &value)) {
-        XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
-        /* in error case, it's preferable to show the worst situation */
-        xbm->lid_state = 0;
-        return -1;
-    }
-
-    xbm->lid_state = value;
 
     return 0;
 }
@@ -243,7 +247,7 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
     old_value = battery->_bst;
 
     if (battery_num == 0) {
-        rc = xen_battery_pm_read_str("bst", &value);
+        rc = xen_pm_read_str("bst", &value);
     }
     else {
         memset(key, 0, sizeof(key));
@@ -253,7 +257,7 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
             return -1;
         }
 
-        rc = xen_battery_pm_read_str(key, &value);
+        rc = xen_pm_read_str(key, &value);
     }
 
     if (0 != rc) {
@@ -275,7 +279,6 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
     return 0;
 }
 
-
 static int32_t xen_battery_update_bif(struct battery_buffer *battery,
                                       int32_t battery_num)
 {
@@ -287,7 +290,7 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
     old_value = battery->_bif;
 
     if (battery_num == 0) {
-        rc = xen_battery_pm_read_str("bif", &value);
+        rc = xen_pm_read_str("bif", &value);
     }
     else {
         memset(key, 0, sizeof(key));
@@ -297,7 +300,7 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
             return -1;
         }
 
-        rc = xen_battery_pm_read_str(key, &value);
+        rc = xen_pm_read_str(key, &value);
     }
 
     if (0 != rc) {
@@ -774,17 +777,9 @@ int32_t xen_battery_init(PCIDevice *device)
         goto error_init;
     }
 
-    if (0 != xen_battery_update_ac_adapter(xbm)) {
-        goto error_init;
-    }
-
     if (0 != xen_battery_update_battery_present(xbm)) {
         goto error_init;
     }
-
-    /* TODO: Is it necessary to failed the battery initalization on LID
-     *       error ? */
-    xen_battery_update_lid_state(xbm);
 
     if (0 != xen_battery_update_status_info(xbm)) {
         goto error_init;
@@ -804,6 +799,9 @@ int32_t xen_battery_init(PCIDevice *device)
         XBM_ERROR_MSG("Mode (0x%02x) unsupported\n", xbm->mode);
         goto error_init;
     }
+
+    xen_pm_update_ac_adapter(xbm);
+    xen_pm_update_lid_state(xbm);
 
     fprintf(stdout, "Battery initialized\n");
 
