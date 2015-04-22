@@ -171,9 +171,7 @@ int main(int argc, char **argv)
 #include "qapi/string-input-visitor.h"
 #include "ui/xen-input.h"
 
-/* XenClient: battery
- * Use to set the battery emulation device */
-#include "hw/xen_battery.h"
+#include "hw/xen_acpi_pm.h"
 
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
@@ -3745,15 +3743,14 @@ int main(int argc, char **argv, char **envp)
                 }
                 xen_mode = XEN_ATTACH;
                 break;
-            case QEMU_OPTION_xenbattery:
-                /* XenClient: battery
-                 * Use the XenClient emulated battery */
+            case QEMU_OPTION_xen_acpi_pm:
+                /* Use the XenClient emulated battery/AC/lid devices */
                 if (!(xen_available())) {
                     printf("Option %s not supported for this target\n",
                            popt->name);
                     exit(1);
                 }
-                xen_battery_set_enabled(true);
+                xen_acpi_pm_set_enabled(true);
                 break;
             case QEMU_OPTION_trace:
             {

@@ -19,7 +19,6 @@
  */
 
 /* TODO
- * Change the name to be more generic for battery/ac/lid
  * Fix the status register mess
  * Fix error logging and tracing
  * Move AC and lid state out of the battery overlord
@@ -27,13 +26,15 @@
  * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
  */
 
+#include <stdint.h>
 #ifdef CONFIG_SYSLOG_LOGGING
 # include "logging.h"
 #endif
-#include "hw/xen_battery.h"
 #include "xen_backend.h"
 #include "xen.h"
 #include "pci/pci.h"
+#include "hw/pc.h"
+#include "hw/xen_acpi_pm.h"
 
 /* Uncomment the following line to have debug messages about
  * Battery Management */
@@ -108,23 +109,22 @@ struct xen_battery_manager {
 };
 
 /* --/ Enable /------------------------------------------------------------ */
-static bool xen_battery_enabled = false;
+static bool xen_acpi_pm_enabled = false;
 
-void xen_battery_set_enabled(bool enable)
+void xen_acpi_pm_set_enabled(bool enable)
 {
-    xen_battery_enabled = enable;
+    xen_acpi_pm_enabled = enable;
 }
 
-bool xen_battery_get_enabled(void)
+bool xen_acpi_pm_get_enabled(void)
 {
-    return xen_battery_enabled;
+    return xen_acpi_pm_enabled;
 }
 
 /* Read a string from the /pm/'key'
  * set the result in 'return_value'
  * retun 0 in success */
-static int32_t xen_pm_read_str(char const *key,
-                                       char **return_value)
+static int32_t xen_pm_read_str(char const *key, char **return_value)
 {
     char path[XEN_BUFSIZE];
     char *value = NULL;
@@ -154,9 +154,8 @@ static int32_t xen_pm_read_str(char const *key,
 /* Read a signed integer from the /pm/'key'
  * set the result in 'return_value'
  * retun 0 in success */
-static int32_t xen_pm_read_int(char const *key,
-                                       int32_t default_value,
-                                       int32_t *return_value)
+static int32_t xen_pm_read_int(char const *key, int32_t default_value,
+                               int32_t *return_value)
 {
     char path[XEN_BUFSIZE];
     char *value = NULL;
@@ -757,7 +756,7 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
  *
  * TODO: free this allocation
  */
-int32_t xen_battery_init(PCIDevice *device)
+int32_t xen_acpi_pm_init(PCIDevice *device)
 {
     uint32_t i;
     struct xen_battery_manager *xbm = NULL;

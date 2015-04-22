@@ -1,5 +1,5 @@
 /*
- * Battery management for OpenXT guests.
+ * Battery/AC/lid management for OpenXT guests.
  *
  * Copyright (C) 2014 Citrix Systems Ltd
  *
@@ -18,24 +18,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef XEN_BATTERY_H_
-# define XEN_BATTERY_H_
+#ifndef XEN_ACPI_PM_H_
+#define XEN_ACPI_PM_H_
 
-# include "hw/pc.h"
-# include <stdint.h>
+/*
+ * This function is use for the initialization of the battery/AC/lid devices.
+ * These device are linked to the ACPI devices in the ssdt_pm.ask module.
+ */
+int32_t xen_acpi_pm_init(PCIDevice *device);
 
-/* XenClient: battery
- * This function is use for the initialization of the device.
- * This device is dedicated to be linked to the ACPI device.
- * Then, the device should be the same used to initialize the ACPI */
-int32_t xen_battery_init(PCIDevice *device);
+/* Set to enable the Xen ACPI PM device support */
+void xen_acpi_pm_set_enabled(bool enable);
 
-/* XenClient: battery
- * Set whether to emulate or not the Xen Battery device */
-void xen_battery_set_enabled(bool enable);
+/* Get enabled/disable state of the ACPI PM device support */
+bool xen_acpi_pm_get_enabled(void);
 
-/* XenClient: battery
- * Get if the user ask for the battery emulation */
-bool xen_battery_get_enabled(void);
-
-#endif /* !XEN_BATTERY_H_ */
+#endif /* !XEN_ACPI_PM_H_ */
