@@ -398,13 +398,13 @@ static int piix4_pm_initfn(PCIDevice *dev)
     pci_conf[0x09] = 0x00;
     pci_conf[0x3d] = 0x01; // interrupt pin 1
 
-    /* XenClient: battery
+    /* XenClient: battery/AC/lid devices
      * APM or the battery if needed */
     if (!xen_enabled()) {
         apm_init(dev, &s->apm, apm_ctrl_changed, s);
     } else {
         if (xen_acpi_pm_get_enabled()) {
-            xen_acpi_pm_init(dev);
+            xen_acpi_pm_create(dev);
         }
     }
 

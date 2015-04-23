@@ -115,6 +115,8 @@ struct xen_battery_manager {
 typedef struct XenACPIPMState {
     DeviceState qdev;
 
+    PCIDevice *pci_dev;
+
     struct xen_battery_manager bmgr;
 
     uint8_t ac_adapter_present;      /* /pm/ac_adapter */
@@ -775,6 +777,7 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
     return 0;
 }
 
+int32_t xen_acpi_pm_init(PCIDevice *device);
 /* 
  * 
  */
@@ -843,12 +846,23 @@ static int xen_acpi_pm_initfn(DeviceState *qdev)
     return 0;
 }
 
+void xen_acpi_pm_create(PCIDevice *device)
+{
+    DeviceState *dev;
+    XenACPIPMState *s;
+
+    dev = qdev_create(NULL, "xen-acpi-pm");
+    s = XEN_ACPI_PM_DEVICE(dev);
+    s->pci_dev = device;
+    qdev_init_nofail(&s->qdev);
+}
+
 static void xen_acpi_pm_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *k = DEVICE_CLASS(klass);
 
     k->init = xen_acpi_pm_initfn;
-    k->desc = "XEN ACPI PM device";
+    k->desc = "Xen ACPI PM device";
 }
 
 static const TypeInfo xen_acpi_pm_info = {
