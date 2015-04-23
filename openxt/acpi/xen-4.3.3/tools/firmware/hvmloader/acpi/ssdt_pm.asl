@@ -59,8 +59,9 @@
  * 0xB040, 0xB044, 0xB046, 0xB048
  *
  * General ACPI status port 0x9C
- * 0x01 - Lid open
- * 0x02 - AC power on
+ * 0x01 - ACPI PM device model support enabled
+ * 0x02 - Lid open
+ * 0x04 - AC power on
  */
 
 DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)

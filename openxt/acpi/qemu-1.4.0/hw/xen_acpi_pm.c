@@ -20,6 +20,7 @@
 
 /* TODO
  * Fix the status register mess
+ * Remove references to XenClient
  * Fix error logging and tracing
  * Move AC and lid state out of the battery overlord
  * Use ACQR/REL to make a common status port - is it feasible?
@@ -27,9 +28,7 @@
  */
 
 #include <stdint.h>
-#ifdef CONFIG_SYSLOG_LOGGING
-# include "logging.h"
-#endif
+#include "include/qemu-common.h"
 #include "xen_backend.h"
 #include "xen.h"
 #include "pci/pci.h"
@@ -70,6 +69,8 @@
 #define BATTERY_OP_GET_DATA_LENGTH 0x79 /* Battery operation data length */
 #define BATTERY_OP_GET_DATA        0x7d /* Battery operation data read */
 
+#define ACPI_PM_STATUS_PORT        0x9c /* General ACPI PM status port */
+
 /* Describes the different type of MODE managed by this module */
 enum xen_battery_mode {
     XEN_BATTERY_MODE_NONE = 0,
@@ -101,8 +102,6 @@ struct battery_buffer {
 struct xen_battery_manager {
     enum xen_battery_mode mode; /* /[...]/xen_extended_power_mgmt */
     uint8_t battery_present;    /* /pm/battery_present */
-    uint8_t ac_adapter_present; /* /pm/ac_adapter */
-    uint8_t lid_state;          /* /pm/lid_state */
     struct battery_buffer batteries[MAX_BATTERIES]; /* Battery array */
     uint8_t index;              /* Battery selector */
     MemoryRegion mr[5];         /* MemoryRegion to register IO ops */
@@ -117,7 +116,7 @@ typedef struct XenACPIPMState {
 
     PCIDevice *pci_dev;
 
-    struct xen_battery_manager bmgr;
+    struct xen_battery_manager xbm;
 
     uint8_t ac_adapter_present;      /* /pm/ac_adapter */
     uint8_t lid_state;               /* /pm/lid_state */
@@ -133,7 +132,8 @@ typedef struct XenACPIPMClass {
     DeviceClass parent_class;
 } XenACPIPMClass;
 
-/* --/ Enable /------------------------------------------------------------ */
+/* -------/ Enable /-------------------------------------------------------- */
+
 static bool xen_acpi_pm_enabled = false;
 
 void xen_acpi_pm_set_enabled(bool enable)
@@ -145,6 +145,8 @@ bool xen_acpi_pm_get_enabled(void)
 {
     return xen_acpi_pm_enabled;
 }
+
+/* -------/ Xenstore /------------------------------------------------------ */
 
 /* Read a string from the /pm/'key'
  * set the result in 'return_value'
@@ -204,45 +206,7 @@ static int32_t xen_pm_read_int(char const *key, int32_t default_value,
     return 0;
 }
 
-/*
- * Update the AC adapter state.
- *
- * Note the default is 1 since the ac_adapter values is not written on
- * non-portable systems like desktops. But they have an AC adapter or they
- * could not start.
- */
-static void xen_pm_update_ac_adapter(struct xen_battery_manager *xbm)
-{
-    int32_t value;
-
-    if (0 != xen_pm_read_int("ac_adapter", 1, &value)) {
-        XBM_DPRINTF("ERROR, unable to update the ac_adapter present status\n");
-        xbm->ac_adapter_present = 1;
-        return;
-    }
-
-    xbm->ac_adapter_present = value;
-}
-
-/*
- * Update the AC lid state.
- *
- * Note the default is 1 since the lid_state is not written on systems that
- * do not have an attached panel. We don't want the lid device to say it is
- * closed in guests on these systems.
- */
-static void xen_pm_update_lid_state(struct xen_battery_manager *xbm)
-{
-    int32_t value;
-
-    if (0 != xen_pm_read_int("lid_state", 1, &value)) {
-        XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
-        xbm->lid_state = 1;
-        return;
-    }
-
-    xbm->lid_state = value;
-}
+/* -------/ Battery /------------------------------------------------------- */
 
 static int32_t xen_battery_update_battery_present(struct xen_battery_manager *xbm)
 {
@@ -406,8 +370,7 @@ static int32_t xen_battery_init_mode(struct xen_battery_manager *xbm)
     return 0;
 }
 
-/* -------/ IO /------------------------------------------------------------
- * IO handlers */
+/* -------/ Battery IO /---------------------------------------------------- */
 
 static void battery_port_1_write_op_init(struct battery_buffer *bb)
 {
@@ -758,7 +721,6 @@ struct {
     { .ops = NULL, .base =  0, .name = NULL, },
 };
 
-/* -------/ Initialization /------------------------------------------------ */
 
 /* TODO: check error code
  * TODO: release memory region when qemu is leaving */
@@ -777,42 +739,76 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
     return 0;
 }
 
-int32_t xen_acpi_pm_init(PCIDevice *device);
-/* 
- * 
+/* -------/ Support/AC/lid /------------------------------------------------ */
+
+/*
+ * Update the AC adapter state.
+ *
+ * Note the default is 1 since the ac_adapter values is not written on
+ * non-portable systems like desktops. But they have an AC adapter or they
+ * could not start.
  */
-int32_t xen_acpi_pm_init(PCIDevice *device)
+static void xen_pm_update_ac_adapter(XenACPIPMState *s)
 {
-    uint32_t i;
-    struct xen_battery_manager *xbm = NULL;
+    int32_t value;
 
-    xbm = g_malloc0(sizeof(struct xen_battery_manager));
-    memset(xbm, 0, sizeof(struct xen_battery_manager));
+    if (0 != xen_pm_read_int("ac_adapter", 1, &value)) {
+        XBM_DPRINTF("ERROR, unable to update the ac_adapter present status\n");
+        s->ac_adapter_present = 1;
+        return;
+    }
+
+    s->ac_adapter_present = value;
+}
+
+/*
+ * Update the AC lid state.
+ *
+ * Note the default is 1 since the lid_state is not written on systems that
+ * do not have an attached panel. We don't want the lid device to say it is
+ * closed in guests on these systems.
+ */
+static void xen_pm_update_lid_state(XenACPIPMState *s)
+{
+    int32_t value;
+
+    if (0 != xen_pm_read_int("lid_state", 1, &value)) {
+        XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
+        s->lid_state = 1;
+        return;
+    }
+
+    s->lid_state = value;
+}
+
+/* -------/ Initialization /------------------------------------------------ */
+
+static int xen_acpi_pm_initfn(DeviceState *qdev)
+{
+    XenACPIPMState *s = XEN_ACPI_PM_DEVICE(qdev);
+    int i;
+
+    memset(&s->xbm, 0, sizeof(struct xen_battery_manager));
     for (i = 0; i < MAX_BATTERIES; i++) {
-        xbm->batteries[i].bif_changed = 1;
+        s->xbm.batteries[i].bif_changed = 1;
     }
 
-    if (NULL == xbm) {
-        XBM_DPRINTF("Unable to initialize a battery_manager\n");
-        return -1;
-    }
-
-    if (0 != xen_battery_init_mode(xbm)) {
+    if (0 != xen_battery_init_mode(&s->xbm)) {
         goto error_init;
     }
 
-    if (0 != xen_battery_update_battery_present(xbm)) {
+    if (0 != xen_battery_update_battery_present(&s->xbm)) {
         goto error_init;
     }
 
-    if (0 != xen_battery_update_status_info(xbm)) {
+    if (0 != xen_battery_update_status_info(&s->xbm)) {
         goto error_init;
     }
 
-    switch (xbm->mode) {
+    switch (s->xbm.mode) {
     case XEN_BATTERY_MODE_HVM:
         XBM_DPRINTF("Emulated mode\n");
-        xen_battery_register_ports(xbm, pci_address_space_io(device));
+        xen_battery_register_ports(&s->xbm, pci_address_space_io(s->pci_dev));
         break;
     case XEN_BATTERY_MODE_PT:
         XBM_ERROR_MSG("Mode Pass Through no longer supported for security reasons\n");
@@ -820,30 +816,20 @@ int32_t xen_acpi_pm_init(PCIDevice *device)
         break;
     case XEN_BATTERY_MODE_NONE:
     default:
-        XBM_ERROR_MSG("Mode (0x%02x) unsupported\n", xbm->mode);
+        XBM_ERROR_MSG("Mode (0x%02x) unsupported\n", s->xbm.mode);
         goto error_init;
     }
 
-    xen_pm_update_ac_adapter(xbm);
-    xen_pm_update_lid_state(xbm);
+    xen_pm_update_ac_adapter(s);
+    xen_pm_update_lid_state(s);
 
     fprintf(stdout, "Battery initialized\n");
 
     return 0;
+
 error_init:
-    free(xbm);
     XBM_ERROR_MSG("unable to initialize the battery emulation\n");
     return -1;
-}
-
-static int xen_acpi_pm_initfn(DeviceState *qdev)
-{
-    XenACPIPMState *s = XEN_ACPI_PM_DEVICE(qdev);
-
-    /* TODO do the device init here */
-    s = s;
-
-    return 0;
 }
 
 void xen_acpi_pm_create(PCIDevice *device)
