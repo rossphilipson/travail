@@ -108,6 +108,29 @@ struct xen_battery_manager {
     MemoryRegion mr[5];         /* MemoryRegion to register IO ops */
 };
 
+#define TYPE_XEN_ACPI_PM_DEVICE "xen-acpi-pm-device"
+#define XEN_ACPI_PM_DEVICE(obj) \
+    OBJECT_CHECK(XenACPIPMState, (obj), TYPE_XEN_ACPI_PM_DEVICE)
+
+typedef struct XenACPIPMState {
+    DeviceState qdev;
+
+    struct xen_battery_manager bmgr;
+
+    uint8_t ac_adapter_present;      /* /pm/ac_adapter */
+    uint8_t lid_state;               /* /pm/lid_state */
+    MemoryRegion mr;                 /* General ACPI MemoryRegion to register IO ops */
+} XenACPIPMState;
+
+#define XEN_ACPI_PM_DEVICE_CLASS(cls) \
+    OBJECT_CLASS_CHECK(XenACPIPMClass, (cls), TYPE_XEN_ACPI_PM_DEVICE)
+#define XEN_ACPI_PM_DEVICE_GET_CLASS(obj) \
+    OBJECT_GET_CLASS(XenACPIPMClass, (obj), TYPE_XEN_ACPI_PM_DEVICE)
+
+typedef struct XenACPIPMClass {
+    DeviceClass parent_class;
+} XenACPIPMClass;
+
 /* --/ Enable /------------------------------------------------------------ */
 static bool xen_acpi_pm_enabled = false;
 
@@ -752,9 +775,8 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
     return 0;
 }
 
-/* Main battery management function
- *
- * TODO: free this allocation
+/* 
+ * 
  */
 int32_t xen_acpi_pm_init(PCIDevice *device)
 {
@@ -810,3 +832,36 @@ error_init:
     XBM_ERROR_MSG("unable to initialize the battery emulation\n");
     return -1;
 }
+
+static int xen_acpi_pm_initfn(DeviceState *qdev)
+{
+    XenACPIPMState *s = XEN_ACPI_PM_DEVICE(qdev);
+
+    /* TODO do the device init here */
+    s = s;
+
+    return 0;
+}
+
+static void xen_acpi_pm_class_init(ObjectClass *klass, void *data)
+{
+    DeviceClass *k = DEVICE_CLASS(klass);
+
+    k->init = xen_acpi_pm_initfn;
+    k->desc = "XEN ACPI PM device";
+}
+
+static const TypeInfo xen_acpi_pm_info = {
+    .name = "xen-acpi-pm",
+    .parent = TYPE_DEVICE,
+    .instance_size = sizeof(XenACPIPMState),
+    .class_init = xen_acpi_pm_class_init,
+};
+
+static void xen_acpi_pm_register_types(void)
+{
+    type_register_static(&xen_acpi_pm_info);
+}
+
+type_init(xen_acpi_pm_register_types)
+

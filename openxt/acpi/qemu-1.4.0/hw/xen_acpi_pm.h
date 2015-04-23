@@ -25,7 +25,7 @@
  * This function is use for the initialization of the battery/AC/lid devices.
  * These device are linked to the ACPI devices in the ssdt_pm.ask module.
  */
-int32_t xen_acpi_pm_init(PCIDevice *device);
+int32_t xen_acpi_pm_init(PCIDevice *device); /* TODO this goes away */
 
 /* Set to enable the Xen ACPI PM device support */
 void xen_acpi_pm_set_enabled(bool enable);
