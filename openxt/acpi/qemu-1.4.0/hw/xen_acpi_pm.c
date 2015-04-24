@@ -22,7 +22,7 @@
  * Fix the status register mess
  * Remove references to XenClient
  * Fix error logging and tracing
- * Move AC and lid state out of the battery overlord
+ * Maybe register an exit handler and cleaup IO and XS resources
  * Use ACQR/REL to make a common status port - is it feasible?
  * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
  */
@@ -119,7 +119,7 @@ typedef struct XenACPIPMState {
     struct xen_battery_manager xbm;
 
     uint8_t ac_adapter_present;      /* /pm/ac_adapter */
-    uint8_t lid_state;               /* /pm/lid_state */
+    uint8_t lid_state_open;          /* /pm/lid_state */
     MemoryRegion mr;                 /* General ACPI MemoryRegion to register IO ops */
 } XenACPIPMState;
 
@@ -689,8 +689,6 @@ struct MemoryRegionOps port_5_ops = {
     },
 };
 
-/* TODO: The MemoryRegion field isn't dynamically allocated find a way to do
- * the same by keeping it sexy */
 struct {
     struct MemoryRegionOps const *ops;
     hwaddr base;
@@ -721,11 +719,8 @@ struct {
     { .ops = NULL, .base =  0, .name = NULL, },
 };
 
-
-/* TODO: check error code
- * TODO: release memory region when qemu is leaving */
-static int xen_battery_register_ports(struct xen_battery_manager *xbm,
-                                      MemoryRegion *parent)
+static void xen_battery_register_ports(struct xen_battery_manager *xbm,
+                                       MemoryRegion *parent)
 {
     int index;
 
@@ -735,8 +730,6 @@ static int xen_battery_register_ports(struct xen_battery_manager *xbm,
         memory_region_add_subregion(parent, opsTab[index].base,
                                     &xbm->mr[index]);
     }
-
-    return 0;
 }
 
 /* -------/ Support/AC/lid /------------------------------------------------ */
@@ -764,9 +757,9 @@ static void xen_pm_update_ac_adapter(XenACPIPMState *s)
 /*
  * Update the AC lid state.
  *
- * Note the default is 1 since the lid_state is not written on systems that
- * do not have an attached panel. We don't want the lid device to say it is
- * closed in guests on these systems.
+ * Note the default is 1 since the lid_state_open is not written on systems
+ * that do not have an attached panel. We don't want the lid device to say it
+ * is closed in guests on these systems.
  */
 static void xen_pm_update_lid_state(XenACPIPMState *s)
 {
@@ -774,11 +767,52 @@ static void xen_pm_update_lid_state(XenACPIPMState *s)
 
     if (0 != xen_pm_read_int("lid_state", 1, &value)) {
         XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
-        s->lid_state = 1;
+        s->lid_state_open = 1;
         return;
     }
 
-    s->lid_state = value;
+    s->lid_state_open = value;
+}
+
+/*
+ * General ACPI PM status register.
+ *
+ * Reports whether the Xen APCI PM device model is operational; if we are even
+ * here then that it true so it always returnst that bit. The current AC
+ * (plugged in or not) and lid (open or closed) states are also reported.
+ *
+ * Returns 0x01 - Xen ACPI PM device model present and enabled.
+ *         0x02 - Lid open
+ *         0x04 - AC power on
+ */
+static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
+{
+    XenACPIPMState *s = opaque;
+    uint64_t system_state = 0x0000000000000000ULL;
+
+    xen_pm_update_ac_adapter(s);
+    xen_pm_update_lid_state(s);
+
+    system_state |= 0x01;
+    system_state |= (s->ac_adapter_present ? 0x02 : 0);
+    system_state |= (s->lid_state_open ? 0x04 : 0);
+
+    return system_state;
+}
+
+struct MemoryRegionOps port_sts_ops = {
+    .read = acpi_pm_port_sts_read,
+    .endianness = DEVICE_LITTLE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 1,
+    },
+};
+
+static void xen_acpi_pm_register_port(XenACPIPMState *s, MemoryRegion *parent)
+{
+    memory_region_init_io(&s->mr, &port_sts_ops, s, "acpi-pm-sts", 1);
+    memory_region_add_subregion(parent, ACPI_PM_STATUS_PORT, &s->mr);
 }
 
 /* -------/ Initialization /------------------------------------------------ */
@@ -822,6 +856,7 @@ static int xen_acpi_pm_initfn(DeviceState *qdev)
 
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
+    xen_acpi_pm_register_port(s, pci_address_space_io(s->pci_dev));
 
     fprintf(stdout, "Battery initialized\n");
 

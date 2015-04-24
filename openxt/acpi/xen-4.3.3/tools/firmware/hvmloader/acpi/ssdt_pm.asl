@@ -390,7 +390,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_LID, 0, NotSerialized)
             {
                 Store (\_SB.P9C, Local0)
-                If (And (Local0, 0x1))
+                If (And (Local0, 0x2))
                 {
                     Return (0x1)
                 }
@@ -407,7 +407,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_PSW, 1, NotSerialized)
             {
                 Store (\_SB.P9C, Local0)
-                If (And (Local0, 0x1))
+                If (And (Local0, 0x2))
                 {
                     Return (0x1)
                 }
@@ -449,7 +449,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             Method (_PSR, 0, NotSerialized)
             {
                 Store (\_SB.P9C, Local0)
-                If (And (Local0, 0x2))
+                If (And (Local0, 0x4))
                 {
                     Return (0x1)
                 }
