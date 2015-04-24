@@ -123,6 +123,7 @@ typedef struct XenACPIPMState {
     DeviceState qdev;
 
     PCIDevice *pci_dev;
+    void *piix4_dev;
 
     struct xen_battery_manager xbm;
 
@@ -828,43 +829,37 @@ static void xen_acpi_pm_register_port(XenACPIPMState *s, MemoryRegion *parent)
 static void sleep_button_pressed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_SLEEP_BUTTON);
 }
 
 static void power_button_pressed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_POWER_BUTTON);
 }
 
 static void lid_status_changed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_LID_STATUS);
 }
 
 static void ac_power_status_changed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_AC_POWER_STATUS);
 }
 
 static void battery_status_changed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_BATTERY_STATUS);
 }
 
 static void battery_info_changed_cb(void *opaque)
 {
     XenACPIPMState *s = opaque;
-
-    s = s;
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_BATTERY_INFO);
 }
 
 struct {
@@ -904,8 +899,6 @@ struct {
 static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
 {
     int i, err;
-
-    /* TODO init GPE bits in acpi_piix4 - define interface */
 
     for (i = 0; (NULL != watchTab[i].base); i++) {
         err = xenstore_add_watch(watchTab[i].base, watchTab[i].node,
@@ -977,7 +970,7 @@ error_init:
     return -1;
 }
 
-void xen_acpi_pm_create(PCIDevice *device)
+void xen_acpi_pm_create(PCIDevice *device, void *opaque)
 {
     DeviceState *dev;
     XenACPIPMState *s;
@@ -985,6 +978,7 @@ void xen_acpi_pm_create(PCIDevice *device)
     dev = qdev_create(NULL, "xen-acpi-pm");
     s = XEN_ACPI_PM_DEVICE(dev);
     s->pci_dev = device;
+    s->piix4_dev = opaque;
     qdev_init_nofail(&s->qdev);
 }
 

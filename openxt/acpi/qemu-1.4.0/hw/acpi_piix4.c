@@ -404,7 +404,7 @@ static int piix4_pm_initfn(PCIDevice *dev)
         apm_init(dev, &s->apm, apm_ctrl_changed, s);
     } else {
         if (xen_acpi_pm_get_enabled()) {
-            xen_acpi_pm_create(dev);
+            xen_acpi_pm_create(dev, s);
         }
     }
 
@@ -548,6 +548,11 @@ static const MemoryRegionOps piix4_gpe_ops = {
     .impl.max_access_size = 1,
     .endianness = DEVICE_LITTLE_ENDIAN,
 };
+
+void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint16_t bits)
+{
+    /* TODO implemente */
+}
 
 static uint64_t pci_read(void *opaque, hwaddr addr, unsigned int size)
 {
