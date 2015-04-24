@@ -362,14 +362,14 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             }
         }
 
-        Method (E0C, 0, NotSerialized)
-        {
-            Notify (\_SB.AC, 0x80)
-        }
-
         Method (E07, 0, NotSerialized)
         {
             Notify (\_SB.LID, 0x80)
+        }
+
+        Method (E0C, 0, NotSerialized)
+        {
+            Notify (\_SB.AC, 0x80)
         }
 
         Method (E0D, 0, NotSerialized)
@@ -629,14 +629,14 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             \_SB.E06()
         }
 
-        Method (_L0C, 0, NotSerialized)
-        {
-            \_SB.E0C()
-        }
-
         Method (_L07, 0, NotSerialized)
         {
             \_SB.E07()
+        }
+
+        Method (_L0C, 0, NotSerialized)
+        {
+            \_SB.E0C()
         }
 
         Method (_L0D, 0, NotSerialized)

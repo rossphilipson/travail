@@ -19,9 +19,9 @@
  */
 
 /* TODO
- * Fix the status register mess
  * Remove references to XenClient
  * Fix error logging and tracing
+ * Cleanup ports/watches on init failure?
  * Maybe register an exit handler and cleaup IO and XS resources
  * Use ACQR/REL to make a common status port - is it feasible?
  * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
@@ -70,6 +70,14 @@
 #define BATTERY_OP_GET_DATA        0x7d /* Battery operation data read */
 
 #define ACPI_PM_STATUS_PORT        0x9c /* General ACPI PM status port */
+
+/* GPE EN/STS bits for Xen ACPI PM */
+#define ACPI_PM_SLEEP_BUTTON       0x0020 /* _LO5 1 << 5 */
+#define ACPI_PM_POWER_BUTTON       0x0040 /* _LO6 1 << 6 */
+#define ACPI_PM_LID_STATUS         0x0080 /* _LO7 1 << 7 */
+#define ACPI_PM_AC_POWER_STATUS    0x1000 /* _LOC 1 << 12 */
+#define ACPI_PM_BATTERY_STATUS     0x2000 /* _LOD 1 << 13 */
+#define ACPI_PM_BATTERY_INFO       0x4000 /* _LOE 1 << 14 */
 
 /* Describes the different type of MODE managed by this module */
 enum xen_battery_mode {
@@ -722,13 +730,13 @@ struct {
 static void xen_battery_register_ports(struct xen_battery_manager *xbm,
                                        MemoryRegion *parent)
 {
-    int index;
+    int i;
 
-    for (index = 0; (NULL != opsTab[index].name); index++) {
-        memory_region_init_io(&xbm->mr[index], opsTab[index].ops,
-                              xbm, opsTab[index].name, opsTab[index].size);
-        memory_region_add_subregion(parent, opsTab[index].base,
-                                    &xbm->mr[index]);
+    for (i = 0; (NULL != opsTab[i].name); i++) {
+        memory_region_init_io(&xbm->mr[i], opsTab[i].ops,
+                              xbm, opsTab[i].name, opsTab[i].size);
+        memory_region_add_subregion(parent, opsTab[i].base,
+                                    &xbm->mr[i]);
     }
 }
 
@@ -815,6 +823,104 @@ static void xen_acpi_pm_register_port(XenACPIPMState *s, MemoryRegion *parent)
     memory_region_add_subregion(parent, ACPI_PM_STATUS_PORT, &s->mr);
 }
 
+/* -------/ Xenstore watches /---------------------------------------------- */
+
+static void sleep_button_pressed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+static void power_button_pressed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+static void lid_status_changed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+static void ac_power_status_changed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+static void battery_status_changed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+static void battery_info_changed_cb(void *opaque)
+{
+    XenACPIPMState *s = opaque;
+
+    s = s;
+}
+
+struct {
+    char const *base;
+    char const *node;
+    xenstore_watch_cb_t cb;
+    int set;
+} watchTab[] = {
+    { .base = "/pm/events",
+      .node = "sleepbuttonpressed",
+      .cb = sleep_button_pressed_cb,
+      .set = 0, },
+    { .base = "/pm/events",
+      .node = "pwrbuttonpressedevt",
+      .cb = power_button_pressed_cb,
+      .set = 0, },
+    { .base = "/pm",
+      .node = "lid_state",
+      .cb = lid_status_changed_cb,
+      .set = 0, },
+    { .base = "/pm",
+      .node = "ac_adapter",
+      .cb = ac_power_status_changed_cb,
+      .set = 0, },
+    { .base = "/pm/events",
+      .node = "batterystatuschanged",
+      .cb = battery_status_changed_cb,
+      .set = 0, },
+    { .base = "/pm",
+      .node = "battery_present",
+      .cb = battery_info_changed_cb,
+      .set = 0, },
+    /* /!\ END OF ARRAY */
+    { .base =  NULL, .node = NULL, .cb = NULL, .set = 0},
+};
+
+static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
+{
+    int i, err;
+
+    /* TODO init GPE bits in acpi_piix4 - define interface */
+
+    for (i = 0; (NULL != watchTab[i].base); i++) {
+        err = xenstore_add_watch(watchTab[i].base, watchTab[i].node,
+                                 watchTab[i].cb, s);
+        if (err) {
+             XBM_DPRINTF("ERROR, failed to register watch for %s/%s err: %d\n",
+                        watchTab[i].base, watchTab[i].node, err);
+             return -1;
+        }
+        watchTab[i].set = 1;
+    }
+
+    return 0;
+}
+
 /* -------/ Initialization /------------------------------------------------ */
 
 static int xen_acpi_pm_initfn(DeviceState *qdev)
@@ -857,6 +963,10 @@ static int xen_acpi_pm_initfn(DeviceState *qdev)
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
     xen_acpi_pm_register_port(s, pci_address_space_io(s->pci_dev));
+
+    if (0 != xen_acpi_pm_init_gpe_watches(s)) {
+        goto error_init;
+    }
 
     fprintf(stdout, "Battery initialized\n");
 
