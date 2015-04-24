@@ -72,12 +72,12 @@
 #define ACPI_PM_STATUS_PORT        0x9c /* General ACPI PM status port */
 
 /* GPE EN/STS bits for Xen ACPI PM */
-#define ACPI_PM_SLEEP_BUTTON       0x0020 /* _LO5 1 << 5 */
-#define ACPI_PM_POWER_BUTTON       0x0040 /* _LO6 1 << 6 */
-#define ACPI_PM_LID_STATUS         0x0080 /* _LO7 1 << 7 */
-#define ACPI_PM_AC_POWER_STATUS    0x1000 /* _LOC 1 << 12 */
-#define ACPI_PM_BATTERY_STATUS     0x2000 /* _LOD 1 << 13 */
-#define ACPI_PM_BATTERY_INFO       0x4000 /* _LOE 1 << 14 */
+#define ACPI_PM_SLEEP_BUTTON       0x05 /* _LO5 0x0020 is (1 << 5) */
+#define ACPI_PM_POWER_BUTTON       0x06 /* _LO6 0x0040 is (1 << 6) */
+#define ACPI_PM_LID_STATUS         0x07 /* _LO7 0x0080 is (1 << 7) */
+#define ACPI_PM_AC_POWER_STATUS    0x0C /* _LOC 0x1000 is (1 << 12) */
+#define ACPI_PM_BATTERY_STATUS     0x0D /* _LOD 0x2000 is (1 << 13) */
+#define ACPI_PM_BATTERY_INFO       0x0E /* _LOE 0x4000 is (1 << 14) */
 
 /* Describes the different type of MODE managed by this module */
 enum xen_battery_mode {

@@ -121,7 +121,7 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
                        qemu_irq sci_irq, qemu_irq smi_irq,
                        int kvm_enabled, void *fw_cfg);
 void piix4_smbus_register_device(SMBusDevice *dev, uint8_t addr);
-void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint16_t bits);
+void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint8_t bit);
 
 /* hpet.c */
 extern int no_hpet;

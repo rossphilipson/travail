@@ -100,6 +100,7 @@ static void pm_update_sci(PIIX4PMState *s)
 {
     int sci_level, pmsts;
 
+    /* TODO RJP this is next... */
     pmsts = acpi_pm1_evt_get_sts(&s->ar);
     sci_level = (((pmsts & s->ar.pm1.evt.en) &
                   (ACPI_BITMASK_RT_CLOCK_ENABLE |
@@ -549,9 +550,31 @@ static const MemoryRegionOps piix4_gpe_ops = {
     .endianness = DEVICE_LITTLE_ENDIAN,
 };
 
-void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint16_t bits)
+void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint8_t bit)
 {
-    /* TODO implemente */
+    PIIX4PMState *s = opaque;
+    bool update = false;
+
+    /*
+     * N. B. concerning the mechanism for asserting and de-asserting the SCI.
+     * When GPE or PM1 STS bits are set, pm_update_sci() will raise an SCI (in
+     * our cases level) interrupt. The OSPM will then clear the particular STS
+     * bits which is effectively EOI. Subsequent calls to pm_update_sci() with
+     * no STS bits set will lower the SCI.
+     */
+    if ((bit < 8)&&(s->ar.gpe.en[0] & (1 << bit))) {
+        s->ar.gpe.sts[0] |= (1 << bit);
+        update = true;
+    }
+    else if ((bit < 16)&&(s->ar.gpe.en[1] & (1 << bit))) {
+        s->ar.gpe.sts[1] |= (1 << bit);
+        update = true;
+    }
+
+    if (update)
+        pm_update_sci(s);
+
+    PIIX4_DPRINTF("sts raise sci %x\n", bits);
 }
 
 static uint64_t pci_read(void *opaque, hwaddr addr, unsigned int size)
