@@ -114,8 +114,6 @@ static void pm_update_sci(PIIX4PMState *s)
     gpe_level = (((s->ar.gpe.sts[0] & s->ar.gpe.en[0]) != 0) ||
                  ((s->ar.gpe.sts[1] & s->ar.gpe.en[1]) != 0));
 
-    qemu_set_irq(s->irq, (pm1_level || gpe_level));
-
     if (pm1_level || gpe_level)
         qemu_irq_raise(s->irq);
     else
