@@ -402,11 +402,14 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
                 Return (0x0)
             }
 
-            Name (_PRW, Package (0x02)
+            Method (_PRW, 0, NotSerialized)
             {
-                0x17,
-                0x03
-            })
+                Return (Package (0x02)
+                {
+                    0x07,
+                    0x03
+                })
+            }
 
             Method (_PSW, 1, NotSerialized)
             {
