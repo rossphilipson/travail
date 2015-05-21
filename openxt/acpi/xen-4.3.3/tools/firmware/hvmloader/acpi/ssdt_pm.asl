@@ -53,7 +53,7 @@
  * 0x01 - Battery 2 (BAT1) present
  * 0x08 - Battery state changes, needs update
  *
- * Battery number port 0xB6 - Which battery? i.e. battery 1 or 2 etc.
+ * Battery number port 0xB5 - Which battery? i.e. battery 1 or 2 etc.
  *
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
@@ -100,8 +100,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         OperationRegion (PRT1, SystemIO, 0xB4, 0x02)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
-            PB2,   8,
-            PB2A,   8
+            PB4,   8,
         }
 
         OperationRegion (PRT2, SystemIO, 0x86, 0x01)
@@ -122,10 +121,10 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             P90,  8
         }
 
-        OperationRegion (PRT5, SystemIO, 0xB6, 0x01)
+        OperationRegion (PRT5, SystemIO, 0xB5, 0x01)
         Field (PRT5, ByteAcc, NoLock, Preserve)
         {
-            PB4,   8,
+            PB5,   8,
         }
 
         OperationRegion (PSTS, SystemIO, 0x9C, 0x01)
@@ -178,13 +177,13 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         Method (WPRT, 2, NotSerialized)
         {
             Store (Arg1, \_SB.P86)
-            Store (Arg0, \_SB.PB2)
+            Store (Arg0, \_SB.PB4)
             Store (Arg0, \_SB.DBG2)
             Store (Arg1, \_SB.DBG4)
-            Store (\_SB.PB2, Local0)
+            Store (\_SB.PB4, Local0)
             While (LNotEqual (Local0, 0x00))
             {
-                Store (\_SB.PB2, Local0)
+                Store (\_SB.PB4, Local0)
             }
 
             Store (\_SB.P86, Local1)
@@ -475,7 +474,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             ACQR ()
             INIT (0x01)
             INIT (Arg0)
-            Store (Arg0, PB4)
+            Store (Arg0, PB5)
             HLP5 ()
             Store (HLP7 (), Index (BIFP, 0x00))
             Store (HLP7 (), Index (BIFP, 0x01))
@@ -555,7 +554,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
                 ACQR ()
                 INIT (0x02)
                 INIT (0x01)
-                Store (0x01, PB4)
+                Store (0x01, PB5)
                 HLP5 ()
                 Name (BST0, Package (0x04) {})
                 Store (HLP7 (), Index (BST0, 0x00))
@@ -601,7 +600,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
                 ACQR ()
                 INIT (0x02)
                 INIT (0x02)
-                Store (0x02, PB4)
+                Store (0x02, PB5)
                 HLP5 ()
                 Name (BST1, Package (0x04) {})
                 Store (HLP7 (), Index (BST1, 0x00))
