@@ -97,7 +97,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             DBG4,   8,
         }
 
-        OperationRegion (PRT1, SystemIO, 0xB4, 0x02)
+        OperationRegion (PRT1, SystemIO, 0xB4, 0x01)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
             PB4,   8,
