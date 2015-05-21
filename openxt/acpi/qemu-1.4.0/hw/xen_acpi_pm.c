@@ -61,7 +61,7 @@
 #define BATTERY_PORT_2             0x86 /* Battery data port */
 #define BATTERY_PORT_3             0x88 /* Battery 1 (BAT0) status port */ 
 #define BATTERY_PORT_4             0x90 /* Battery 2 (BAT1) status port */ 
-#define BATTERY_PORT_5             0xb6 /* Battery selector port */
+#define BATTERY_PORT_5             0xb5 /* Battery selector port */
 
 #define BATTERY_OP_INIT            0x7b /* Battery operation init */
 #define BATTERY_OP_SET_INFO_TYPE   0x7c /* Battery operation type */
@@ -706,7 +706,7 @@ struct {
     { .ops = &port_1_ops,
       .base = BATTERY_PORT_1,
       .name = "acpi-xbm1",
-      .size = 2, },
+      .size = 1, },
     { .ops = &port_2_ops,
       .base = BATTERY_PORT_2,
       .name = "acpi-xbm2",
