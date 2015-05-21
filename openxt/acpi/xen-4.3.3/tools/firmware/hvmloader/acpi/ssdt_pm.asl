@@ -37,7 +37,7 @@
  *
  * Following are the battery ports read/written to in order to implement
  * battery support:
- * Battery command port - 0xB2
+ * Battery command port - 0xB4
  * Battery data port    - 0x86
  * Battery commands (written to port 0xB2) -
  * 0x7b - Battery operation init
@@ -53,7 +53,7 @@
  * 0x01 - Battery 2 (BAT1) present
  * 0x08 - Battery state changes, needs update
  *
- * Battery number port 0xB4 - Which battery? i.e. battery 1 or 2 etc.
+ * Battery number port 0xB6 - Which battery? i.e. battery 1 or 2 etc.
  *
  * Also the following ports are used for debugging/logging:
  * 0xB040, 0xB044, 0xB046, 0xB048
@@ -62,6 +62,11 @@
  * 0x01 - ACPI PM device model support enabled
  * 0x02 - Lid open
  * 0x04 - AC power on
+ *
+ * N.B. An undesired divergence from upstream was to move the battery command
+ * port off of 0xB2/0xB3. These are the legacy Intel APM ports (see R. Brown
+ * D/PORT.A). It is unclear how the IO port selection was done originally for
+ * this. Perhaps all the ports should be moved our of the low IO port range.
  */
 
 DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
@@ -92,7 +97,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             DBG4,   8,
         }
 
-        OperationRegion (PRT1, SystemIO, 0xB2, 0x02)
+        OperationRegion (PRT1, SystemIO, 0xB4, 0x02)
         Field (PRT1, ByteAcc, NoLock, Preserve)
         {
             PB2,   8,
@@ -117,7 +122,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             P90,  8
         }
 
-        OperationRegion (PRT5, SystemIO, 0xB4, 0x01)
+        OperationRegion (PRT5, SystemIO, 0xB6, 0x01)
         Field (PRT5, ByteAcc, NoLock, Preserve)
         {
             PB4,   8,
