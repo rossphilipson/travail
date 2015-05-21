@@ -19,7 +19,6 @@
  */
 
 /* TODO
- * Remove references to XenClient
  * Fix error logging and tracing
  * Cleanup ports/watches on init failure?
  * Maybe register an exit handler and cleaup IO and XS resources

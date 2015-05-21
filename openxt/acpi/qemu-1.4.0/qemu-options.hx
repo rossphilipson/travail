@@ -35,7 +35,8 @@ DEF("machine", HAS_ARG, QEMU_OPTION_machine, \
     "                kernel_irqchip=on|off controls accelerated irqchip support\n"
     "                kvm_shadow_mem=size of KVM shadow MMU\n"
     "                dump-guest-core=on|off include guest memory in a core dump (default=on)\n"
-    "                mem-merge=on|off controls memory merge support (default: on)\n",
+    "                mem-merge=on|off controls memory merge support (default: on)\n"
+    "		     max-ram-below-4g sets the limit of RAM accessible below the 4G limit (used to determine PCI hole size)\n",
     QEMU_ARCH_ALL)
 STEXI
 @item -machine [type=]@var{name}[,prop=@var{value}[,...]]
@@ -344,8 +345,8 @@ Set default value of @var{driver}'s property @var{prop} to @var{value}, e.g.:
 qemu-system-i386 -global ide-drive.physical_block_size=4096 -drive file=file,if=ide,index=0,media=disk
 @end example
 
-In particular, you can use this to set driver properties for devices which are
-created automatically by the machine model. To create a device which is not
+In particular, you can use this to set driver properties for devices which are 
+created automatically by the machine model. To create a device which is not 
 created automatically and set properties on it, use -@option{device}.
 ETEXI
 
@@ -518,6 +519,14 @@ require manually specifying clocking.
 @example
 modprobe i810_audio clocking=48000
 @end example
+ETEXI
+
+DEF("disable-audio-rec", 0, QEMU_OPTION_disable_audio_rec,
+    "-disable-audio-rec Disable audio recording\n", QEMU_ARCH_ALL)
+STEXI
+@item -disable-audio-rec
+@findex -disable-audio-rec
+Disable audio recording in the guest.
 ETEXI
 
 DEF("balloon", HAS_ARG, QEMU_OPTION_balloon,
