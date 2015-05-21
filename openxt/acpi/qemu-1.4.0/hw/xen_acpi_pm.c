@@ -57,11 +57,11 @@
 
 #define MAX_BATTERIES              2
 
-#define BATTERY_PORT_1             0xb2 /* Battery command port */
+#define BATTERY_PORT_1             0xb4 /* Battery command port */
 #define BATTERY_PORT_2             0x86 /* Battery data port */
 #define BATTERY_PORT_3             0x88 /* Battery 1 (BAT0) status port */ 
 #define BATTERY_PORT_4             0x90 /* Battery 2 (BAT1) status port */ 
-#define BATTERY_PORT_5             0xb4 /* Battery selector port */
+#define BATTERY_PORT_5             0xb6 /* Battery selector port */
 
 #define BATTERY_OP_INIT            0x7b /* Battery operation init */
 #define BATTERY_OP_SET_INFO_TYPE   0x7c /* Battery operation type */
