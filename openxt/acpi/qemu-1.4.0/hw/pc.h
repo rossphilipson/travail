@@ -130,6 +130,7 @@ extern int no_hpet;
 struct PCII440FXState;
 typedef struct PCII440FXState PCII440FXState;
 
+#define I440FX_TOLUM  0xe0000000
 PCIBus *i440fx_init(PCII440FXState **pi440fx_state, int *piix_devfn,
                     ISABus **isa_bus, qemu_irq *pic,
                     MemoryRegion *address_space_mem,

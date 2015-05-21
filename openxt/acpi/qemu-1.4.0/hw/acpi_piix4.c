@@ -407,14 +407,12 @@ static int piix4_pm_initfn(PCIDevice *dev)
     pci_conf[0x09] = 0x00;
     pci_conf[0x3d] = 0x01; // interrupt pin 1
 
-    /* XenClient: battery/AC/lid devices
-     * APM or the battery if needed */
-    if (!xen_enabled()) {
-        apm_init(dev, &s->apm, apm_ctrl_changed, s);
-    } else {
-        if (xen_acpi_pm_get_enabled()) {
-            xen_acpi_pm_create(dev, s);
-        }
+    /* APM */
+    apm_init(dev, &s->apm, apm_ctrl_changed, s);
+
+    /* XenClient: battery/AC/lid devices */
+    if (xen_enabled() && xen_acpi_pm_get_enabled()) {
+        xen_acpi_pm_create(dev, s);
     }
 
     /* XenClient: acpi
@@ -455,7 +453,6 @@ static int piix4_pm_initfn(PCIDevice *dev)
     qemu_register_reset(piix4_reset, s);
 
     piix4_acpi_system_hot_add_init(pci_address_space_io(dev), dev->bus, s);
-
 
     return 0;
 }
