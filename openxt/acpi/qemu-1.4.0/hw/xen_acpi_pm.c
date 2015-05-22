@@ -150,19 +150,19 @@ static int32_t xen_pm_read_str(char const *key, char **return_value)
     char *value = NULL;
 
     if (NULL == key || NULL == return_value) {
-        XBM_DPRINTF("ERROR, argument couldn't be null\n");
+        XBM_ERROR_MSG("argument couldn't be null\n");
         return -1;
     }
 
     if (0 > snprintf(path, sizeof(path), "/pm/%s", key)) {
-        XBM_DPRINTF("ERROR, snprintf failed\n");
+        XBM_ERROR_MSG("snprintf failed\n");
         return -1;
     }
 
     value = xs_read(xenstore, XBT_NULL, path, NULL);
 
     if (NULL == value) {
-        XBM_DPRINTF("ERROR, unable to read the content of \"%s\"\n", path);
+        XBM_ERROR_MSG("unable to read the content of \"%s\"\n", path);
         return -1;
     }
 
@@ -181,13 +181,13 @@ static int32_t xen_pm_read_int(char const *key, int32_t default_value,
     char *value = NULL;
 
     if (0 > snprintf(path, sizeof(path), "/pm/%s", key)) {
-        XBM_DPRINTF("ERROR, snprintf failed\n");
+        XBM_ERROR_MSG("snprintf failed\n");
         return -1;
     }
 
     value = xs_read(xenstore, XBT_NULL, path, NULL);
     if (NULL == value) {
-        XBM_DPRINTF("Unable to read the content of \"%s\"\n", path);
+        XBM_ERROR_MSG("unable to read the content of \"%s\"\n", path);
         *return_value = default_value;
         return 0;
     }
@@ -206,7 +206,7 @@ static int32_t xen_battery_update_battery_present(struct xen_battery_manager *xb
     int32_t value;
 
     if (0 != xen_pm_read_int("battery_present", 0, &value)) {
-        XBM_DPRINTF("ERROR, unable to update the battery present status\"\n");
+        XBM_ERROR_MSG("unable to update the battery present status\"\n");
         /* in error case, it's preferable to show the worst situation */
         xbm->battery_present = 0;
         return -1;
@@ -234,7 +234,7 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
         memset(key, 0, sizeof(key));
 
         if (0 > snprintf(key, sizeof(key) - 1, "bst%d", battery_num)) {
-            XBM_DPRINTF("ERROR, snprintf failed\n");
+            XBM_ERROR_MSG("snprintf failed\n");
             return -1;
         }
 
@@ -242,9 +242,8 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
     }
 
     if (0 != rc) {
-        XBM_DPRINTF("ERROR, unable to read the content of \"/pm/bst%d\"\n",
-                    battery_num);
-        /* TODO: determine what could be the best way to do that */
+        XBM_ERROR_MSG("unable to read the content of \"/pm/bst%d\"\n",
+                      battery_num);
         battery->_bst = old_value;
         if (NULL != value) {
             free(value);
@@ -277,7 +276,7 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
         memset(key, 0, sizeof(key));
 
         if (0 > snprintf(key, sizeof(key) - 1, "bif%d", battery_num)) {
-            XBM_DPRINTF("ERROR, snprintf failed\n");
+            XBM_ERROR_MSG("snprintf failed\n");
             return -1;
         }
 
@@ -285,9 +284,8 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
     }
 
     if (0 != rc) {
-        XBM_DPRINTF("ERROR, unable to read the content of \"/pm/bif%d\"\n",
-                    battery_num);
-        /* TODO: determine what could be the best way to do that */
+        XBM_ERROR_MSG("unable to read the content of \"/pm/bif%d\"\n",
+                      battery_num);
         battery->_bif = old_value;
         if (NULL != value) {
             free(value);
@@ -311,11 +309,6 @@ static int32_t xen_battery_update_status_info(struct xen_battery_manager *xbm)
 {
     int32_t index;
 
-    if (NULL == xbm) {
-        XBM_DPRINTF("ERROR, argument couldn't be null\n");
-        return -1;
-    }
-
     for (index = 0; index < MAX_BATTERIES; index++) {
         xen_battery_update_bif(&(xbm->batteries[index]), index);
         xen_battery_update_bst(&(xbm->batteries[index]), index);
@@ -330,11 +323,6 @@ static int32_t xen_battery_init_mode(struct xen_battery_manager *xbm)
     char dompath[XEN_BUFSIZE];
     char *value = NULL;
 
-    if (NULL == xbm) {
-        XBM_DPRINTF("ERROR, argument couldn't be null\n");
-        return -1;
-    }
-
     /* xen_extended_power_mgmt xenstore entry indicates whether or not extended
      * power management support is requested for the hvm guest.  Extended power
      * management support includes power management support beyond S3, S4, S5.
@@ -345,14 +333,14 @@ static int32_t xen_battery_init_mode(struct xen_battery_manager *xbm)
     if (0 > snprintf(dompath, sizeof(dompath),
                      "/local/domain/0/device-model/%d/xen_extended_power_mgmt",
                      xen_domid)) {
-        XBM_DPRINTF("ERROR, snprintf failed\n");
+        XBM_ERROR_MSG("snprintf failed\n");
         return -1;
     }
 
     value = xs_read(xenstore, XBT_NULL, dompath, NULL);
 
     if (NULL == value) {
-        XBM_DPRINTF("ERROR, unable to read the content of \"%s\"\n", dompath);
+        XBM_ERROR_MSG("unable to read the content of \"%s\"\n", dompath);
         return -1;
     }
 
@@ -398,7 +386,7 @@ static void battery_port_1_write_op_set_type(struct battery_buffer *bb,
         case XEN_BATTERY_TYPE_NONE:
             /* NO BREAK HERE: fallthrough */
         default:
-            XBM_DPRINTF("ERROR, unknown type: %d\n", bb->port_86_val);
+            XBM_ERROR_MSG("unknown type: %d\n", bb->port_86_val);
         }
     }
 }
@@ -459,7 +447,7 @@ static void battery_port_1_op_get_data(struct battery_buffer *bb,
        data = bb->_bif;
     }
     else {
-       XBM_DPRINTF("ERROR, unknown _selector: %d\n", bb->_selector);
+       XBM_ERROR_MSG("unknown _selector: %d\n", bb->_selector);
        return;
     }
 
@@ -521,7 +509,7 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
         break;
     }
     default:
-        XBM_DPRINTF("Unknown cmd: %llu", val);
+        XBM_ERROR_MSG("unknown cmd: %llu", val);
         break;
     }
 
@@ -734,7 +722,7 @@ static void xen_pm_update_ac_adapter(XenACPIPMState *s)
     int32_t value;
 
     if (0 != xen_pm_read_int("ac_adapter", 1, &value)) {
-        XBM_DPRINTF("ERROR, unable to update the ac_adapter present status\n");
+        XBM_DPRINTF("[note] unable to update the ac_adapter present status\n");
         s->ac_adapter_present = 1;
         return;
     }
@@ -754,7 +742,7 @@ static void xen_pm_update_lid_state(XenACPIPMState *s)
     int32_t value;
 
     if (0 != xen_pm_read_int("lid_state", 1, &value)) {
-        XBM_DPRINTF("ERROR, unable to update the lid_state status\"\n");
+        XBM_DPRINTF("[note] unable to update the lid_state status\"\n");
         s->lid_state_open = 1;
         return;
     }
@@ -883,8 +871,8 @@ static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
         err = xenstore_add_watch(watchTab[i].base, watchTab[i].node,
                                  watchTab[i].cb, s);
         if (err) {
-             XBM_DPRINTF("ERROR, failed to register watch for %s/%s err: %d\n",
-                        watchTab[i].base, watchTab[i].node, err);
+             XBM_ERROR_MSG("failed to register watch for %s/%s err: %d\n",
+                           watchTab[i].base, watchTab[i].node, err);
              return -1;
         }
         watchTab[i].set = 1;
@@ -983,4 +971,3 @@ static void xen_acpi_pm_register_types(void)
 }
 
 type_init(xen_acpi_pm_register_types)
-
