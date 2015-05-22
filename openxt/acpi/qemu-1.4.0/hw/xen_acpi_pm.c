@@ -98,7 +98,7 @@ enum xen_battery_selector {
 struct battery_buffer {
     char *_bst;           /* _BST */
     char *_bif;           /* _BIF */
-    uint8_t port_b2_val;  /* Variable to manage BATTERY_PORT_1 */
+    uint8_t port_b4_val;  /* Variable to manage BATTERY_PORT_1 */
     uint8_t port_86_val;  /* Variable to manage BATTERY_PORT_2 */
     uint8_t index;        /* Index inside the _BST or _BIF string */
     uint8_t bif_changed;
@@ -540,7 +540,7 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
         break;
     }
 
-    bb->port_b2_val = 0;
+    bb->port_b4_val = 0;
 }
 
 /*
@@ -549,8 +549,8 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
 static uint64_t battery_port_1_read(void *opaque, hwaddr addr, uint32_t size)
 {
     struct xen_battery_manager *xbm = opaque;
-    XBM_DPRINTF("port_b2 == 0x%02x\n", xbm->batteries[xbm->index].port_b2_val);
-    return xbm->batteries[xbm->index].port_b2_val;
+    XBM_DPRINTF("port_b4 == 0x%02x\n", xbm->batteries[xbm->index].port_b4_val);
+    return xbm->batteries[xbm->index].port_b4_val;
 }
 
 struct MemoryRegionOps port_1_ops = {
