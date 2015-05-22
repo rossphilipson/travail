@@ -19,9 +19,6 @@
  */
 
 /* TODO
- * Fix error logging and tracing
- * Cleanup ports/watches on init failure?
- * Maybe register an exit handler and cleaup IO and XS resources
  * Use ACQR/REL to make a common status port - is it feasible?
  * _BIF is deprecated in ACPI 4.0: See ACPI spec (chap 10.2.2.1), add the _BIX.
  */
@@ -30,6 +27,7 @@
 #include "include/qemu-common.h"
 #include "xen_backend.h"
 #include "xen.h"
+#include "sysbus.h"
 #include "pci/pci.h"
 #include "hw/pc.h"
 #include "hw/xen_acpi_pm.h"
@@ -114,12 +112,8 @@ struct xen_battery_manager {
     MemoryRegion mr[5];         /* MemoryRegion to register IO ops */
 };
 
-#define TYPE_XEN_ACPI_PM_DEVICE "xen-acpi-pm-device"
-#define XEN_ACPI_PM_DEVICE(obj) \
-    OBJECT_CHECK(XenACPIPMState, (obj), TYPE_XEN_ACPI_PM_DEVICE)
-
 typedef struct XenACPIPMState {
-    DeviceState qdev;
+    SysBusDevice busdev;
 
     PCIDevice *pci_dev;
     void *piix4_dev;
@@ -130,15 +124,6 @@ typedef struct XenACPIPMState {
     uint8_t lid_state_open;          /* /pm/lid_state */
     MemoryRegion mr;                 /* General ACPI MemoryRegion to register IO ops */
 } XenACPIPMState;
-
-#define XEN_ACPI_PM_DEVICE_CLASS(cls) \
-    OBJECT_CLASS_CHECK(XenACPIPMClass, (cls), TYPE_XEN_ACPI_PM_DEVICE)
-#define XEN_ACPI_PM_DEVICE_GET_CLASS(obj) \
-    OBJECT_GET_CLASS(XenACPIPMClass, (obj), TYPE_XEN_ACPI_PM_DEVICE)
-
-typedef struct XenACPIPMClass {
-    DeviceClass parent_class;
-} XenACPIPMClass;
 
 /* -------/ Enable /-------------------------------------------------------- */
 
@@ -915,9 +900,9 @@ static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
 
 /* -------/ Initialization /------------------------------------------------ */
 
-static int xen_acpi_pm_initfn(DeviceState *qdev)
+static int xen_acpi_pm_initfn(SysBusDevice *dev)
 {
-    XenACPIPMState *s = XEN_ACPI_PM_DEVICE(qdev);
+    XenACPIPMState *s = FROM_SYSBUS(XenACPIPMState, dev);
     int i;
 
     memset(&s->xbm, 0, sizeof(struct xen_battery_manager));
@@ -975,23 +960,24 @@ void xen_acpi_pm_create(PCIDevice *device, void *opaque)
     XenACPIPMState *s;
 
     dev = qdev_create(NULL, "xen-acpi-pm");
-    s = XEN_ACPI_PM_DEVICE(dev);
+    qdev_init_nofail(dev);
+    s = DO_UPCAST(XenACPIPMState, busdev.qdev, dev);
     s->pci_dev = device;
     s->piix4_dev = opaque;
-    qdev_init_nofail(&s->qdev);
 }
 
 static void xen_acpi_pm_class_init(ObjectClass *klass, void *data)
 {
-    DeviceClass *k = DEVICE_CLASS(klass);
+    DeviceClass *dc = DEVICE_CLASS(klass);
+    SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = xen_acpi_pm_initfn;
-    k->desc = "Xen ACPI PM device";
+    dc->desc = "Xen ACPI PM device";
 }
 
 static const TypeInfo xen_acpi_pm_info = {
     .name = "xen-acpi-pm",
-    .parent = TYPE_DEVICE,
+    .parent = TYPE_SYS_BUS_DEVICE,
     .instance_size = sizeof(XenACPIPMState),
     .class_init = xen_acpi_pm_class_init,
 };
