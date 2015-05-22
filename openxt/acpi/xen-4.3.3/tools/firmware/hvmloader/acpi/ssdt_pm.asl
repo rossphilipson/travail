@@ -39,7 +39,7 @@
  * battery support:
  * Battery command port - 0xB4
  * Battery data port    - 0x86
- * Battery commands (written to port 0xB2) -
+ * Battery commands (written to port 0xB4) -
  * 0x7b - Battery operation init
  * 0x7c - Type of battery operation
  * 0x79 - Get battery data length
@@ -170,7 +170,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         }
 
         /*
-         * Write to battery port 0xb2 indicating the type of information
+         * Write to battery port 0xB4 indicating the type of information
          * to request, initialize battery data port 0x86 and then return 
          * value provided through data port 0x86.
          */
@@ -193,7 +193,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 
         /*
          * Helper method 1 to write to battery command and data port. 
-         * 0x7c written to port 0xb2 indicating battery info type command.
+         * 0x7c written to port 0xB4 indicating battery info type command.
          * Value 1 or 2 written to port 0x86.  1 for BIF (batterry info) and 2 
          * for BST (battery status).
          */
@@ -207,7 +207,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         }
 
         /*
-         * Helper method 2.  Value 0x7b written to battery command port 0xb2
+         * Helper method 2.  Value 0x7b written to battery command port 0xB4
          * indicating battery info initialization request.  First thing written
          * to battery port before querying for further information pertaining
          * to the battery.
@@ -224,7 +224,7 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
         }
 
         /*
-         * Helper method 3. 0x7d written to battery command port 0xb2
+         * Helper method 3. 0x7d written to battery command port 0xB2
          * indicating request of battery data returned through battery data
          * port 0x86.
          */
