@@ -115,7 +115,7 @@ struct xen_battery_manager {
 typedef struct XenACPIPMState {
     SysBusDevice busdev;
 
-    PCIDevice *pci_dev;
+    MemoryRegion *space_io;
     void *piix4_dev;
 
     struct xen_battery_manager xbm;
@@ -544,11 +544,7 @@ struct MemoryRegionOps port_1_ops = {
     .endianness = DEVICE_LITTLE_ENDIAN,
     .impl = {
         .min_access_size = 1,
-        .max_access_size = 2,
-    },
-    .valid = {
-        .min_access_size = 1,
-        .max_access_size = 2,
+        .max_access_size = 1,
     },
 };
 
@@ -712,16 +708,15 @@ struct {
     { .ops = NULL, .base =  0, .name = NULL, },
 };
 
-static void xen_battery_register_ports(struct xen_battery_manager *xbm,
-                                       MemoryRegion *parent)
+static void xen_battery_register_ports(XenACPIPMState *s)
 {
     int i;
 
     for (i = 0; (NULL != opsTab[i].name); i++) {
-        memory_region_init_io(&xbm->mr[i], opsTab[i].ops,
-                              xbm, opsTab[i].name, opsTab[i].size);
-        memory_region_add_subregion(parent, opsTab[i].base,
-                                    &xbm->mr[i]);
+        memory_region_init_io(&s->xbm.mr[i], opsTab[i].ops,
+                              &s->xbm, opsTab[i].name, opsTab[i].size);
+        memory_region_add_subregion(s->space_io, opsTab[i].base,
+                                    &s->xbm.mr[i]);
     }
 }
 
@@ -802,10 +797,10 @@ struct MemoryRegionOps port_sts_ops = {
     },
 };
 
-static void xen_acpi_pm_register_port(XenACPIPMState *s, MemoryRegion *parent)
+static void xen_acpi_pm_register_port(XenACPIPMState *s)
 {
     memory_region_init_io(&s->mr, &port_sts_ops, s, "acpi-pm-sts", 1);
-    memory_region_add_subregion(parent, ACPI_PM_STATUS_PORT, &s->mr);
+    memory_region_add_subregion(s->space_io, ACPI_PM_STATUS_PORT, &s->mr);
 }
 
 /* -------/ Xenstore watches /---------------------------------------------- */
@@ -925,7 +920,7 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
     switch (s->xbm.mode) {
     case XEN_BATTERY_MODE_HVM:
         XBM_DPRINTF("Emulated mode\n");
-        xen_battery_register_ports(&s->xbm, pci_address_space_io(s->pci_dev));
+        xen_battery_register_ports(s);
         break;
     case XEN_BATTERY_MODE_PT:
         XBM_ERROR_MSG("Mode Pass Through no longer supported for security reasons\n");
@@ -939,7 +934,7 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
 
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
-    xen_acpi_pm_register_port(s, pci_address_space_io(s->pci_dev));
+    xen_acpi_pm_register_port(s);
 
     if (0 != xen_acpi_pm_init_gpe_watches(s)) {
         goto error_init;
@@ -954,16 +949,16 @@ error_init:
     return -1;
 }
 
-void xen_acpi_pm_create(PCIDevice *device, void *opaque)
+void xen_acpi_pm_create(MemoryRegion *space_io, void *opaque)
 {
     DeviceState *dev;
     XenACPIPMState *s;
 
     dev = qdev_create(NULL, "xen-acpi-pm");
-    qdev_init_nofail(dev);
     s = DO_UPCAST(XenACPIPMState, busdev.qdev, dev);
-    s->pci_dev = device;
+    s->space_io = space_io;
     s->piix4_dev = opaque;
+    qdev_init_nofail(dev);
 }
 
 static void xen_acpi_pm_class_init(ObjectClass *klass, void *data)

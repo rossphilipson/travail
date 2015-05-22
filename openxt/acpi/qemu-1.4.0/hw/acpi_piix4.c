@@ -412,7 +412,7 @@ static int piix4_pm_initfn(PCIDevice *dev)
 
     /* XenClient: battery/AC/lid devices */
     if (xen_enabled() && xen_acpi_pm_get_enabled()) {
-        xen_acpi_pm_create(dev, s);
+        xen_acpi_pm_create(pci_address_space_io(dev), s);
     }
 
     /* XenClient: acpi
