@@ -793,41 +793,28 @@ static void xen_acpi_pm_register_port(XenACPIPMState *s)
 
 /* -------/ Xenstore watches /---------------------------------------------- */
 
-static void sleep_button_pressed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_SLEEP_BUTTON);
+/* Callback maker. Note that the "first" variable is used to block the
+ * first firing of the event when the watch is registered. This leads to
+ * spurios SCI's where the STS bits get set but there is no OSPM to clear them.
+ */
+#define MAKE_ACPI_PM_CALLBACK(pfx, bit)                \
+static void pfx##_changed_cb(void *opaque)             \
+{                                                      \
+    static bool first = true;                          \
+    XenACPIPMState *s = opaque;                        \
+    if (unlikely(first)) {                             \
+        first = false;                                 \
+        return;                                        \
+    }                                                  \
+    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, bit); \
 }
 
-static void power_button_pressed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_POWER_BUTTON);
-}
-
-static void lid_status_changed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_LID_STATUS);
-}
-
-static void ac_power_status_changed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_AC_POWER_STATUS);
-}
-
-static void battery_status_changed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_BATTERY_STATUS);
-}
-
-static void battery_info_changed_cb(void *opaque)
-{
-    XenACPIPMState *s = opaque;
-    piix4_pm_set_gpe_sts_raise_sci(s->piix4_dev, ACPI_PM_BATTERY_INFO);
-}
+MAKE_ACPI_PM_CALLBACK(sleep_button, ACPI_PM_SLEEP_BUTTON)
+MAKE_ACPI_PM_CALLBACK(power_button, ACPI_PM_POWER_BUTTON)
+MAKE_ACPI_PM_CALLBACK(lid_status, ACPI_PM_LID_STATUS)
+MAKE_ACPI_PM_CALLBACK(ac_power_status, ACPI_PM_AC_POWER_STATUS)
+MAKE_ACPI_PM_CALLBACK(battery_status, ACPI_PM_BATTERY_STATUS)
+MAKE_ACPI_PM_CALLBACK(battery_info, ACPI_PM_BATTERY_INFO)
 
 struct {
     char const *base;
@@ -837,11 +824,11 @@ struct {
 } watchTab[] = {
     { .base = "/pm/events",
       .node = "sleepbuttonpressed",
-      .cb = sleep_button_pressed_cb,
+      .cb = sleep_button_changed_cb,
       .set = 0, },
     { .base = "/pm/events",
       .node = "pwrbuttonpressedevt",
-      .cb = power_button_pressed_cb,
+      .cb = power_button_changed_cb,
       .set = 0, },
     { .base = "/pm",
       .node = "lid_state",
