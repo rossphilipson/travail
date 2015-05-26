@@ -166,7 +166,7 @@ static int32_t xen_pm_read_str(char const *key, char **return_value)
     value = xs_read(xenstore, XBT_NULL, path, NULL);
 
     if (NULL == value) {
-        XBM_ERROR_MSG("unable to read the content of \"%s\"\n", path);
+        XBM_DPRINTF("unable to read the content of \"%s\"\n", path);
         return -1;
     }
 
@@ -191,7 +191,7 @@ static int32_t xen_pm_read_int(char const *key, int32_t default_value,
 
     value = xs_read(xenstore, XBT_NULL, path, NULL);
     if (NULL == value) {
-        XBM_ERROR_MSG("unable to read the content of \"%s\"\n", path);
+        XBM_DPRINTF("unable to read the content of \"%s\"\n", path);
         *return_value = default_value;
         return 0;
     }
@@ -246,8 +246,8 @@ static int32_t xen_battery_update_bst(struct battery_buffer *battery,
     }
 
     if (0 != rc) {
-        XBM_ERROR_MSG("unable to read the content of \"/pm/bst%d\"\n",
-                      battery_num);
+        XBM_DPRINTF("unable to read the content of \"/pm/bst%d\"\n",
+                    battery_num);
         battery->_bst = old_value;
         if (NULL != value) {
             free(value);
@@ -288,8 +288,8 @@ static int32_t xen_battery_update_bif(struct battery_buffer *battery,
     }
 
     if (0 != rc) {
-        XBM_ERROR_MSG("unable to read the content of \"/pm/bif%d\"\n",
-                      battery_num);
+        XBM_DPRINTF("unable to read the content of \"/pm/bif%d\"\n",
+                    battery_num);
         battery->_bif = old_value;
         if (NULL != value) {
             free(value);
