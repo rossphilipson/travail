@@ -68,6 +68,10 @@
 
 #define ACPI_PM_STATUS_PORT        0x9c /* General ACPI PM status port */
 
+#define ACPI_PM_STATUS_ENABLED     0x01 /* Bit indicates Xen ACPI PM enbled */
+#define ACPI_PM_STATUS_LID_OPEN    0x02 /* Bit indicates lid current open */
+#define ACPI_PM_STATUS_AC_ON       0x04 /* Bit indicates AC power plugged */
+
 /* GPE EN/STS bits for Xen ACPI PM */
 #define ACPI_PM_SLEEP_BUTTON       0x05 /* _LO5 0x0020 is (1 << 5) */
 #define ACPI_PM_POWER_BUTTON       0x06 /* _LO6 0x0040 is (1 << 6) */
@@ -769,9 +773,9 @@ static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
 
-    system_state |= 0x01;
-    system_state |= (s->ac_adapter_present ? 0x02 : 0);
-    system_state |= (s->lid_state_open ? 0x04 : 0);
+    system_state |= ACPI_PM_STATUS_ENABLED;
+    system_state |= (s->lid_state_open ? ACPI_PM_STATUS_LID_OPEN : 0);
+    system_state |= (s->ac_adapter_present ? ACPI_PM_STATUS_AC_ON : 0);
 
     return system_state;
 }
