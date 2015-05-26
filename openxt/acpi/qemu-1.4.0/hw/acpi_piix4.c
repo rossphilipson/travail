@@ -572,8 +572,8 @@ void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint8_t bit)
         s->ar.gpe.sts[0] |= (1 << bit);
         update = true;
     }
-    else if ((bit < 16)&&(s->ar.gpe.en[1] & (1 << (bit >> 8)))) {
-        s->ar.gpe.sts[1] |= (1 << (bit >> 8));
+    else if ((bit < 16)&&(s->ar.gpe.en[1] & (1 << (bit - 8)))) {
+        s->ar.gpe.sts[1] |= (1 << (bit - 8));
         update = true;
     }
 
