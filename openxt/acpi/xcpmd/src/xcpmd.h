@@ -65,13 +65,13 @@ enum BATTERY_INFO_TYPE {
 };
 
 enum BATTERY_PRESENT {
-    NO,
-    YES
+    NO = 0,
+    YES = 1
 };
 
-enum BATTERY_UNITS {
-    mW,
-    mA
+enum BATTERY_UNIT {
+    mW = 0,
+    mA = 1
 };
 
 enum BATTERY_TECHNOLOGY {
@@ -100,7 +100,7 @@ struct battery_info {
     unsigned long energy_full;        /* mW */
 
     /* _BIF */
-    unsigned long           power_unit;
+    enum BATTERY_UNIT       power_unit;
     unsigned long           design_capacity;
     unsigned long           last_full_capacity;
     enum BATTERY_TECHNOLOGY battery_technology;

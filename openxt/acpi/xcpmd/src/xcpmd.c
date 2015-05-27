@@ -133,7 +133,7 @@ static void fix_battery_info(struct battery_info *info)
     }
     else
     {
-        power_unit = mW;
+        info->power_unit = mW;
         info->design_capacity = info->energy_full_design;
         info->last_full_capacity = info->energy_full;
     }
