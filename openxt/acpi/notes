@@ -16,3 +16,6 @@ prune-acpi-devices.patch - unrelated and not sure what it is for
 prune-vga-acpi-dev.patch - unrelated but it looks like it removes unsupported XP junk
 qemu-acpi-tables.patch - unrelated and not sure, needs investigation
 
+
+$ xec -s org.freedesktop.UPower -o /org/freedesktop/UPower/devices/battery_BAT0 get Capacity
+$ xec -s org.freedesktop.UPower -o /org/freedesktop/UPower EnumerateDevices
