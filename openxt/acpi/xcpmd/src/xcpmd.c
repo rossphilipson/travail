@@ -241,36 +241,37 @@ static int get_next_battery_info_or_status(DIR *battery_dir,
         return 0;
     }
     if (type == BIF)
-      memset(info_or_status, 0, sizeof(struct battery_info));
+        memset(info_or_status, 0, sizeof(struct battery_info));
     else
-      memset(info_or_status, 0, sizeof(struct battery_status));
+        memset(info_or_status, 0, sizeof(struct battery_status));
 
     while ((dir = readdir(d)) != NULL)
-      {
+    {
 	if (dir->d_type == DT_REG)
-	  {
+	{
 	    memset(filename, 0, sizeof(filename));
 	    sprintf(filename, "%s/%s", folder, dir->d_name);
 	    file = fopen(filename, "r");
 	    if (!file)
-	      continue;
+	        continue;
 	    memset(line_info, 0, sizeof (line_info));
 	    fgets(line_info, sizeof(line_info), file);
 	    fclose(file);
 	    start = line_info;
 	    while (*start == ' ')
-	      start++;
+	        start++;
+
 	    if (type == BIF)
-	      set_attribute_battery_info(dir->d_name, start, info_or_status);
+	        set_attribute_battery_info(dir->d_name, start, info_or_status);
 	    else
-	      set_attribute_battery_status(dir->d_name, start, info_or_status);
-	  }
-      }
+	        set_attribute_battery_status(dir->d_name, start, info_or_status);
+	}
+    }
 
     if (type == BIF)
-      fix_battery_info(info_or_status);
+        fix_battery_info(info_or_status);
     else
-      fix_battery_status(info_or_status);
+        fix_battery_status(info_or_status);
 
     if (d != NULL) {
         closedir(d);
@@ -292,7 +293,7 @@ static void write_battery_info_to_xenstore(struct battery_info *info, unsigned s
                             strlen(info->serial_number) +
                             strlen(info->battery_type) +
                             strlen(info->oem_info) + 4));
-    write_ulong_lsb_first(val+2, info->present);
+    write_ulong_lsb_first(val+2, info->power_unit);
     write_ulong_lsb_first(val+10, info->design_capacity);
     write_ulong_lsb_first(val+18, info->last_full_capacity);
     write_ulong_lsb_first(val+26, info->battery_technology);
@@ -318,9 +319,9 @@ static void write_battery_info_to_xenstore(struct battery_info *info, unsigned s
 int write_battery_info(int *total_count)
 {
     DIR *dir;
-    int present = 0, total = 0;
+    int present = 0, total = 0, batn = 0;
     struct battery_info info[MAX_BATTERY_SUPPORTED];
-    int i;
+    int i, rc;
 
     last_full_capacity = 0;
     xenstore_rm(XS_BIF);
@@ -334,29 +335,23 @@ int write_battery_info(int *total_count)
         return 0;
     }
 
-    for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i)
+    for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
     {
-        if (get_next_battery_info_or_status(dir, BIF, (void *)&info[present], i))
-	  {
-	    print_battery_info(&info[present]);
-	    total++;
+        rc = get_next_battery_info_or_status(dir, BIF, (void *)&info[present], i);
+        if (!rc)
+            continue;
 
-	    if ( info[present].present == YES )
-	      {
-		write_battery_info_to_xenstore(&info[present], i);
-		present++;
-		xcpmd_log(LOG_INFO, "One time battery information written to xenstore\n");
-		if ( present >= MAX_BATTERY_SUPPORTED )
-		  break;
-	      }
-	  }
-	else
-	  {
-	    if (i == 0)
-	      xenstore_rm(XS_BIF);
-	    else
-	      xenstore_rm(XS_BIF1);
-	  }
+        print_battery_info(&info[present]);
+	total++;
+
+	if ( info[present].present == NO )
+            continue;
+
+        write_battery_info_to_xenstore(&info[present], batn);
+        batn++;
+        xcpmd_log(LOG_INFO, "One time battery information written to xenstore\n");
+        if ( batn >= MAX_BATTERY_SUPPORTED )
+            break;
     }
 
     closedir(dir);
@@ -366,7 +361,7 @@ int write_battery_info(int *total_count)
         *total_count = total;
 
     /* returns count of slots with batteries present */
-    return present;
+    return batn;
 }
 
 void
