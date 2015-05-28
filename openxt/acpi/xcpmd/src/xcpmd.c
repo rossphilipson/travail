@@ -337,17 +337,20 @@ int write_battery_info(int *total_count)
 
     for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
     {
-        rc = get_next_battery_info_or_status(dir, BIF, (void *)&info[present], i);
+        rc = get_next_battery_info_or_status(dir, BIF, (void *)&info[batn], i);
         if (!rc)
             continue;
 
-        print_battery_info(&info[present]);
+        print_battery_info(&info[batn]);
 	total++;
 
-	if ( info[present].present == NO )
+        /* If there is a battery slob but no battery present, go on and reuse
+         * the current info struct slot.
+         */
+	if ( info[batn].present == NO )
             continue;
 
-        write_battery_info_to_xenstore(&info[present], batn);
+        write_battery_info_to_xenstore(&info[batn], batn);
         batn++;
         xcpmd_log(LOG_INFO, "One time battery information written to xenstore\n");
         if ( batn >= MAX_BATTERY_SUPPORTED )
@@ -472,9 +475,9 @@ static void write_battery_status_to_xenstore(struct battery_status *status)
 static int get_battery_status(struct battery_status *status)
 {
     DIR *dir;
-    int present = 0;
+    int batn = 0;
     struct battery_status *current = status;
-    int i;
+    int i, rc;
 
     dir = opendir(BATTERY_DIR_PATH);
     if ( !dir )
@@ -484,26 +487,27 @@ static int get_battery_status(struct battery_status *status)
         return 0;
     }
 
-    for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i)
+    for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
     {
-        if (get_next_battery_info_or_status(dir, BST, (void *)current, i))
-	  {
-	    print_battery_status(current);
+        rc = get_next_battery_info_or_status(dir, BST, (void *)current, i);
+        if (!rc)
+            continue;
 
-	    if ( current->present == YES )
-	      {
-		present++;
-		if ( present >= MAX_BATTERY_SUPPORTED )
-		  break;
-	      }
-	  }
+	print_battery_status(current);
+
+	if ( current->present == NO )
+            continue;
+
+        batn++;
+        if ( batn >= MAX_BATTERY_SUPPORTED )
+            break;
 	current++;
     }
 
     closedir(dir);
 
     /* returns count of slots with batteries present */
-    return present;
+    return batn;
 }
 
 static void update_battery_status(void)
