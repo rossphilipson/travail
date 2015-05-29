@@ -122,7 +122,7 @@ static void set_attribute_battery_info(char *attrib_name,
 
 static void fix_battery_info(struct battery_info *info)
 {
-    /* In sysfs, the capacity nodes are for batteries reporting in mA and
+    /* In sysfs, the charge nodes are for batteries reporting in mA and
      * the energy nodes are for mW (even though Watts are not a measurement
      * of energy but power rather...sigh).
      */
@@ -144,8 +144,10 @@ static void fix_battery_info(struct battery_info *info)
      * various OS's decide what to do at different depletion levels through
      * their own policies. These are just some approximate values to pass.
      */
-    info->design_capacity_warning = info->last_full_capacity/20;
-    info->design_capacity_low = info->last_full_capacity/50;
+    info->design_capacity_warning = info->last_full_capacity *
+        (BATTERY_WARNING_PERCENT / 100);
+    info->design_capacity_low = info->last_full_capacity *
+        (BATTERY_LOW_PERCENT / 100);
     info->capacity_granularity_1 = 1;
     info->capacity_granularity_2 = 1;
 
@@ -343,7 +345,7 @@ int write_battery_info(int *total_count)
             continue;
 
         print_battery_info(&info[batn]);
-	total++;
+        total++;
 
         /* If there is a battery slob but no battery present, go on and reuse
          * the current info struct slot.
