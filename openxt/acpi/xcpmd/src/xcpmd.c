@@ -348,7 +348,7 @@ int write_battery_info(int *total_count)
         /* If there is a battery slob but no battery present, go on and reuse
          * the current info struct slot.
          */
-	if ( info[batn].present == NO )
+        if ( info[batn].present == NO )
             continue;
 
         write_battery_info_to_xenstore(&info[batn], batn);
