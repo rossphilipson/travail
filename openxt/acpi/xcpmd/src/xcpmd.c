@@ -123,7 +123,8 @@ static void set_attribute_battery_info(char *attrib_name,
 static void fix_battery_info(struct battery_info *info)
 {
     /* In sysfs, the capacity nodes are for batteries reporting in mA and
-     * the energy nodes are for mW.
+     * the energy nodes are for mW (even though Watts are not a measurement
+     * of energy but power rather...sigh).
      */
     if (info->charge_full_design != 0)
     {
