@@ -494,15 +494,15 @@ static int get_battery_status(struct battery_status *status)
         if (!rc)
             continue;
 
-	print_battery_status(current);
+        print_battery_status(current);
 
-	if ( current->present == NO )
+        if ( current->present == NO )
             continue;
 
         batn++;
         if ( batn >= MAX_BATTERY_SUPPORTED )
             break;
-	current++;
+        current++;
     }
 
     closedir(dir);
