@@ -2583,7 +2583,7 @@ Attach to existing xen domain.
 xend will use this when starting QEMU (XEN only).
 @item -xen-acpi-pm
 @findex -xen-acpi-pm
-Use the XenClient emulated battery/AC/lid
+Use the Xen ACPI PM emulated battery/AC/lid feature.
 ETEXI
 
 DEF("no-reboot", 0, QEMU_OPTION_no_reboot, \
