@@ -3664,7 +3664,7 @@ int main(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_name:
                 qemu_name = g_strdup(optarg);
-                /* XenClient: logging-syslog */
+                /* OpenXT: logging-syslog */
 #ifdef CONFIG_SYSLOG_LOGGING
                 logging_set_prefix(qemu_name);
 #endif
@@ -3752,7 +3752,7 @@ int main(int argc, char **argv, char **envp)
                 xen_mode = XEN_ATTACH;
                 break;
             case QEMU_OPTION_xen_acpi_pm:
-                /* Use the XenClient emulated battery/AC/lid devices */
+                /* Use the OpenXT emulated battery/AC/lid devices */
                 if (!(xen_available())) {
                     printf("Option %s not supported for this target\n",
                            popt->name);

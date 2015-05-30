@@ -30,10 +30,10 @@
 #include "fw_cfg.h"
 #include "exec/address-spaces.h"
 
-/* XenClient: acpi */
+/* OpenXT: acpi */
 #include "xen.h" /* xen_enabled */
 
-/* XenClient: battery/AC/lid devices */
+/* OpenXT: battery/AC/lid devices */
 #include "xen_acpi_pm.h"
 
 //#define DEBUG
@@ -408,12 +408,12 @@ static int piix4_pm_initfn(PCIDevice *dev)
     /* APM */
     apm_init(dev, &s->apm, apm_ctrl_changed, s);
 
-    /* XenClient: battery/AC/lid devices */
+    /* OpenXT: battery/AC/lid devices */
     if (xen_enabled() && xen_acpi_pm_get_enabled()) {
         xen_acpi_pm_create(pci_address_space_io(dev), s);
     }
 
-    /* XenClient: acpi
+    /* OpenXT: acpi
      * Enable ACPI, QEMU doesn't enable it by default */
     apm_ctrl_changed(ACPI_ENABLE, s);
 
