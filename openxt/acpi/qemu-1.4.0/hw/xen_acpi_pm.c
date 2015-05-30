@@ -153,11 +153,6 @@ static int32_t xen_pm_read_str(char const *key, char **return_value)
     char path[XEN_BUFSIZE];
     char *value = NULL;
 
-    if (NULL == key || NULL == return_value) {
-        XBM_ERROR_MSG("argument couldn't be null\n");
-        return -1;
-    }
-
     if (0 > snprintf(path, sizeof(path), "/pm/%s", key)) {
         XBM_ERROR_MSG("snprintf failed\n");
         return -1;
@@ -170,7 +165,10 @@ static int32_t xen_pm_read_str(char const *key, char **return_value)
         return -1;
     }
 
-    *return_value = value;
+    if (NULL != return_value)
+        *return_value = value;
+    else
+        free(value);
 
     return 0;
 }
@@ -870,6 +868,17 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
     XenACPIPMState *s = FROM_SYSBUS(XenACPIPMState, dev);
     int i;
 
+    /*
+     * First check if there are any /pm nodes to even work with. If not then
+     * just exit. This will effectively disable the ACPI PM feature causing
+     * the guest FW to not load the PM SSDT.
+     */
+    if ( (0 != xen_pm_read_str("battery_present", NULL)) && 
+         (0 != xen_pm_read_str("ac_adapter", NULL)) ) {
+        fprintf(stdout, "Xen ACPI PM disabled, no /pm nodes to process\n");
+        return 0;
+    }
+
     memset(&s->xbm, 0, sizeof(struct xen_battery_manager));
     for (i = 0; i < MAX_BATTERIES; i++) {
         s->xbm.batteries[i].bif_changed = 1;
@@ -910,12 +919,12 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
         goto error_init;
     }
 
-    fprintf(stdout, "Battery initialized\n");
+    fprintf(stdout, "Xen ACPI PM initialized\n");
 
     return 0;
 
 error_init:
-    XBM_ERROR_MSG("unable to initialize the battery emulation\n");
+    XBM_ERROR_MSG("Unable to initialize the Xen ACPI PM feature\n");
     return -1;
 }
 

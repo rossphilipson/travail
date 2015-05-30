@@ -48,7 +48,6 @@ struct acpi_info {
     uint8_t  com2_present:1;    /* 0[1] - System has COM2? */
     uint8_t  lpt1_present:1;    /* 0[2] - System has LPT1? */
     uint8_t  hpet_present:1;    /* 0[3] - System has HPET? */
-    uint8_t  applesmc_present:1; /* 0[4] - System has APPLESMC? */
     uint32_t pci_min, pci_len;  /* 4, 8 - PCI I/O hole boundaries */
     uint32_t madt_csum_addr;    /* 12   - Address of MADT checksum */
     uint32_t madt_lapic0_addr;  /* 16   - Address of first MADT LAPIC struct */
@@ -78,7 +77,7 @@ static uint8_t xen_acpi_pm_enabled(void)
     uint8_t val;
 
     val = inb(0x9C);
-    if ( !(val & 0x01) )
+    if ( !(val & 0x01) || (val == 0xff) )
         return 0;
 
     return 1;
@@ -648,7 +647,6 @@ void acpi_build_tables(struct acpi_config *config, unsigned int physical)
     acpi_info->com2_present = uart_exists(0x2f8);
     acpi_info->lpt1_present = lpt_exists(0x378);
     acpi_info->hpet_present = hpet_exists(ACPI_HPET_ADDRESS);
-    acpi_info->applesmc_present = applesmc_exists();
     acpi_info->pci_min = pci_mem_start;
     acpi_info->pci_len = pci_mem_end - pci_mem_start;
 
