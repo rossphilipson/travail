@@ -57,8 +57,8 @@
 
 #define BATTERY_PORT_1             0xb4 /* Battery command port */
 #define BATTERY_PORT_2             0x86 /* Battery data port */
-#define BATTERY_PORT_3             0x88 /* Battery 1 (BAT0) status port */ 
-#define BATTERY_PORT_4             0x90 /* Battery 2 (BAT1) status port */ 
+#define BATTERY_PORT_3             0x88 /* Battery 1 (BAT0) status port */
+#define BATTERY_PORT_4             0x90 /* Battery 2 (BAT1) status port */
 #define BATTERY_PORT_5             0xb5 /* Battery selector port */
 
 #define BATTERY_OP_INIT            0x7b /* Battery operation init */
@@ -433,7 +433,7 @@ static void battery_port_1_write_op_set_type(struct battery_buffer *bb,
  * ^ | 4 DWORDS ... = 32 bytes      |
  * |
  * +--- D-LENGTH of DWORD block
- * 
+ *
  */
 static void battery_port_1_op_get_data(struct battery_buffer *bb,
                                        struct xen_battery_manager *xbm)
@@ -873,7 +873,7 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
      * just exit. This will effectively disable the ACPI PM feature causing
      * the guest FW to not load the PM SSDT.
      */
-    if ( (0 != xen_pm_read_str("battery_present", NULL)) && 
+    if ( (0 != xen_pm_read_str("battery_present", NULL)) &&
          (0 != xen_pm_read_str("ac_adapter", NULL)) ) {
         fprintf(stdout, "Xen ACPI PM disabled, no /pm nodes to process\n");
         return 0;
