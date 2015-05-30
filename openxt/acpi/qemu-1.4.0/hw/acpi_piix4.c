@@ -560,14 +560,12 @@ void piix4_pm_set_gpe_sts_raise_sci(void *opaque, uint8_t bit)
     PIIX4PMState *s = opaque;
     bool update = false;
 
-    /*
-     * N. B. concerning the mechanism for asserting and de-asserting the SCI.
+    /* N. B. concerning the mechanism for asserting and de-asserting the SCI.
      * When GPE or PM1 STS bits are set, pm_update_sci() will raise an SCI (in
      * these cases level interrupt). The OSPM will then clear the particular
      * STS bits which is effectively EOI. Subsequent calls to pm_update_sci()
      * with no STS bits set, e.g. after the bits are written in gpe_writeb(),
-     *  will lower the SCI.
-     */
+     * will lower the SCI. */
     if ((bit < 8)&&(s->ar.gpe.en[0] & (1 << bit))) {
         s->ar.gpe.sts[0] |= (1 << bit);
         update = true;
