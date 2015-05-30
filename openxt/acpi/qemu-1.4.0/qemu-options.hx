@@ -2567,7 +2567,7 @@ DEF("xen-attach", 0, QEMU_OPTION_xen_attach,
     "                xend will use this when starting QEMU\n",
     QEMU_ARCH_ALL)
 DEF("xen-acpi-pm", 0, QEMU_OPTION_xen_acpi_pm,
-    "-xen-acpi-pm     use the XenClient emulated battery/AC/lid\n",
+    "-xen-acpi-pm     use the Xen ACPI PM emulated battery/AC/lid feature\n",
     QEMU_ARCH_ALL)
 STEXI
 @item -xen-domid @var{id}

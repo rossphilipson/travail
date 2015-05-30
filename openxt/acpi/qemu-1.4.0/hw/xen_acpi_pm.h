@@ -1,7 +1,8 @@
 /*
- * Battery/AC/lid management for OpenXT guests.
+ * APCI PM feature for battery/AC/lid management for OpenXT guests.
  *
  * Copyright (C) 2014 Citrix Systems Ltd
+ * Copyright (c) 2015, Assured Information Security, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

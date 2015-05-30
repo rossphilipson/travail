@@ -107,10 +107,8 @@ static void pm_update_sci(PIIX4PMState *s)
                    ACPI_BITMASK_GLOBAL_LOCK_ENABLE |
                    ACPI_BITMASK_TIMER_ENABLE)) != 0);
 
-    /*
-     * The OSPM sets the EN bits depending on the _Lxx and _Exx
-     * methods it finds in the GPE scope.
-     */
+    /* The OSPM sets the EN bits depending on the _Lxx and _Exx
+     * methods it finds in the GPE scope. */
     gpe_level = (((s->ar.gpe.sts[0] & s->ar.gpe.en[0]) != 0) ||
                  ((s->ar.gpe.sts[1] & s->ar.gpe.en[1]) != 0));
 
