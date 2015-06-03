@@ -411,18 +411,22 @@ static void battery_port_1_write_op_set_type(struct battery_buffer *bb,
  *
  * This is an example of a BIF:
  *
- * 4a010000009222000092220000010000005c2b0000000000000000000001000000010000000dDELL GCJ4839\n04500\n05LION\n0cSamsung SDI\n
- * ^ |           9 DWORDS * 4 bytes each * 2 chars each = 72 bytes          |^ |  string 1  | ....
- * |                                                                         |
- * +--- D-LENGTH of DWORD block                   S-LENGTH of first sting ---+
+ * 440100000050140000d7110000010000005c2b0000000000000000000001000000010000000dDELL NH6K927\n04189\n05LION\n06Sanyo\n
+ * ^ |           9 DWORDS * 4 bytes each * 2 chars each = 72 bytes          |^ |  string 1  | ...                   |
+ * |                                                                         |                                      |
+ * +--- D-LENGTH of entire data                   S-LENGTH of first sting ---+                                      |
+ *   |                                                                       |                                      |
+ *   |      Hex digit pairs counted as 1 byte in the D-LENGTH = 36 bytes     |  Hex digit pairs + char + \n = 32    |
+ *   |                       D-LENGTH is total length 36 + 32 = 68 or 0x44                                          |
  *
  * This layout is where the magic number BIF_DATA_BOUNDARY (74) comes from. It
  * it the switch over point from reading the D-LENGTH + DWORD block to
  * reading the ASCII strings. Each read of the byte pair data is a read of 2
  * where the reading of the ASCII chars is a 1 byte read. S-LENGTH is pretty
- * simple, it is the string length and \n counts as 1 char. D-LENGTH is more
+ * simple, it is the string length (and \n is 1 char). D-LENGTH is more
  * complicated. For byte pairs, it counts each as one byte but chars are each
- * 1 byte (with \n as one char). So 0x4a == 74 is the entire length.
+ * 1 byte (with \n as one char). So 0x44 (68) is the entire length of data as
+ * shown above.
  *
  * Now compared to that, the BST is simple. It is a structure of 4 DWORDs.
  * This is flattened out the same way as the BIF and it is clear why the
@@ -502,7 +506,7 @@ static void battery_port_1_write(void *opaque, hwaddr addr,
     {
         /*
          * Length read comes first and the length is the first byte of the
-	 * data so fallthrough.
+         * data so fallthrough.
          */
     }
     case BATTERY_OP_GET_DATA:
