@@ -67,11 +67,16 @@
 #define BATTERY_OP_GET_DATA_LENGTH 0x79 /* Battery operation data length */
 #define BATTERY_OP_GET_DATA        0x7d /* Battery operation data read */
 
+#define BATTERY_PRESENT            0x01 /* Battery in slot is present */
+#define BATTERY_INFO_UPDATE        0x80 /* Battery information updated */
+
 #define ACPI_PM_STATUS_PORT        0x9c /* General ACPI PM status port */
 
 #define ACPI_PM_STATUS_ENABLED     0x01 /* Bit indicates Xen ACPI PM enbled */
 #define ACPI_PM_STATUS_LID_OPEN    0x02 /* Bit indicates lid current open */
 #define ACPI_PM_STATUS_AC_ON       0x04 /* Bit indicates AC power plugged */
+#define ACPI_PM_STATUS_NOT_PRESENT 0x80 /* Bit indicates AC/battery devices
+                                           not present */
 
 /* GPE EN/STS bits for Xen ACPI PM */
 #define ACPI_PM_SLEEP_BUTTON       0x05 /* _LO5 0x0020 is (1 << 5) */
@@ -127,6 +132,7 @@ typedef struct XenACPIPMState {
 
     uint8_t ac_adapter_present;      /* /pm/ac_adapter */
     uint8_t lid_state_open;          /* /pm/lid_state */
+    uint8_t not_present_mode;        /* AC/battery not present mode */
     MemoryRegion mr;                 /* General ACPI MemoryRegion to register IO ops */
 } XenACPIPMState;
 
@@ -579,8 +585,8 @@ struct MemoryRegionOps port_2_ops = {
 /*
  * Battery 1 (BAT0) status IO port write.
  *
- * Returns 0x01 if battery present.
- *         0x80 if battery information is updated.
+ * Returns BATTERY_PRESENT (0x01) if battery present.
+ *         BATTERY_INFO_UPDATE (0x80) if battery information is updated.
  */
 static uint64_t battery_port_3_read(void *opaque, hwaddr addr, uint32_t size)
 {
@@ -592,12 +598,12 @@ static uint64_t battery_port_3_read(void *opaque, hwaddr addr, uint32_t size)
     xen_battery_update_bif(&(xbm->batteries[0]), 0);
 
     if (NULL != xbm->batteries[0]._bif) {
-        system_state |= 0x1;
+        system_state |= BATTERY_PRESENT;
     }
 
     if (1 == xbm->batteries[0].bif_changed) {
         xbm->batteries[0].bif_changed = 0;
-        system_state |= 0x80;
+        system_state |= BATTERY_INFO_UPDATE;
     }
 
     XBM_DPRINTF("BAT0 system_state == 0x%02llx\n", system_state);
@@ -616,8 +622,8 @@ struct MemoryRegionOps port_3_ops = {
 /*
  * Battery 2 (BAT1) status IO port write.
  *
- * Returns 0x01 if battery present.
- *         0x80 if battery information is updated.
+ * Returns BATTERY_PRESENT (0x01) if battery present.
+ *         BATTERY_INFO_UPDATE (0x80) if battery information is updated.
  */
 static uint64_t battery_port_4_read(void *opaque, hwaddr addr, uint32_t size)
 {
@@ -629,12 +635,12 @@ static uint64_t battery_port_4_read(void *opaque, hwaddr addr, uint32_t size)
     xen_battery_update_bif(&(xbm->batteries[1]), 1);
 
     if (NULL != xbm->batteries[1]._bif) {
-        system_state |= 0x1;
+        system_state |= BATTERY_PRESENT;
     }
 
     if (1 == xbm->batteries[1].bif_changed) {
         xbm->batteries[1].bif_changed = 0;
-        system_state |= 0x80;
+        system_state |= BATTERY_INFO_UPDATE;
     }
 
     XBM_DPRINTF("BAT1 system_state == 0x%02llx\n", system_state);
@@ -767,12 +773,17 @@ static void xen_pm_update_lid_state(XenACPIPMState *s)
  * Returns 0x01 - Xen ACPI PM device model present and enabled.
  *         0x02 - Lid open
  *         0x04 - AC power on
+ *         0x80 - Not present mode (no other bits set)
  */
 static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
 {
     XenACPIPMState *s = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
+    if (!s->not_present_mode) {
+        return (system_state | ACPI_PM_STATUS_NOT_PRESENT);
+    }
+    
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
 
@@ -818,34 +829,41 @@ struct {
     char const *base;
     char const *node;
     xenstore_watch_cb_t cb;
-    int set;
+    uint8_t not_present_mode;
+    uint8_t set;
 } watchTab[] = {
     { .base = "/pm/events",
       .node = "sleepbuttonpressed",
       .cb = sleep_button_changed_cb,
+      .not_present_mode = 1,
       .set = 0, },
     { .base = "/pm/events",
       .node = "pwrbuttonpressedevt",
       .cb = power_button_changed_cb,
+      .not_present_mode = 1,
       .set = 0, },
     { .base = "/pm",
       .node = "lid_state",
       .cb = lid_status_changed_cb,
+      .not_present_mode = 0,
       .set = 0, },
     { .base = "/pm",
       .node = "ac_adapter",
       .cb = ac_power_status_changed_cb,
+      .not_present_mode = 0,
       .set = 0, },
     { .base = "/pm/events",
       .node = "batterystatuschanged",
       .cb = battery_status_changed_cb,
+      .not_present_mode = 0,
       .set = 0, },
     { .base = "/pm",
       .node = "battery_present",
       .cb = battery_info_changed_cb,
+      .not_present_mode = 0,
       .set = 0, },
     /* /!\ END OF ARRAY */
-    { .base =  NULL, .node = NULL, .cb = NULL, .set = 0},
+    { .base =  NULL, .node = NULL, .cb = NULL, .not_present_mode = 0, .set = 0},
 };
 
 static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
@@ -853,6 +871,10 @@ static int xen_acpi_pm_init_gpe_watches(XenACPIPMState *s)
     int i, err;
 
     for (i = 0; (NULL != watchTab[i].base); i++) {
+        if (s->not_present_mode && !watchTab[i].not_present_mode) {
+            continue;
+        }
+
         err = xenstore_add_watch(watchTab[i].base, watchTab[i].node,
                                  watchTab[i].cb, s);
         if (err) {
@@ -875,13 +897,15 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
 
     /*
      * First check if there are any /pm nodes to even work with. If not then
-     * just exit. This will effectively disable the ACPI PM feature causing
-     * the guest FW to not load the PM SSDT.
+     * use not present mode. This allows the sleep and power buttons to still
+     * fucntion without batteries or AC present. This is done by having the
+     * _STA methods for battery and AC device report not present.
      */
+    s->not_present_mode = 0;
     if ( (0 != xen_pm_read_str("battery_present", NULL)) &&
          (0 != xen_pm_read_str("ac_adapter", NULL)) ) {
-        fprintf(stdout, "Xen ACPI PM disabled, no /pm nodes to process\n");
-        return 0;
+        fprintf(stdout, "Xen ACPI PM AC/battery not present mode\n");
+        s->not_present_mode = 1;
     }
 
     memset(&s->xbm, 0, sizeof(struct xen_battery_manager));
@@ -893,12 +917,14 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
         goto error_init;
     }
 
-    if (0 != xen_battery_update_battery_present(&s->xbm)) {
-        goto error_init;
-    }
+    if (!s->not_present_mode) {
+        if (0 != xen_battery_update_battery_present(&s->xbm)) {
+            goto error_init;
+        }
 
-    if (0 != xen_battery_update_status_info(&s->xbm)) {
-        goto error_init;
+        if (0 != xen_battery_update_status_info(&s->xbm)) {
+            goto error_init;
+        }
     }
 
     switch (s->xbm.mode) {
@@ -916,8 +942,11 @@ static int xen_acpi_pm_initfn(SysBusDevice *dev)
         goto error_init;
     }
 
-    xen_pm_update_ac_adapter(s);
-    xen_pm_update_lid_state(s);
+    if (!s->not_present_mode) {
+        xen_pm_update_ac_adapter(s);
+        xen_pm_update_lid_state(s);
+    }
+
     xen_acpi_pm_register_port(s);
 
     if (0 != xen_acpi_pm_init_gpe_watches(s)) {
