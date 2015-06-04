@@ -780,6 +780,8 @@ static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
     XenACPIPMState *s = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
+    system_state |= ACPI_PM_STATUS_ENABLED;
+
     if (s->not_present_mode) {
         return (system_state | ACPI_PM_STATUS_NOT_PRESENT);
     }
@@ -787,7 +789,6 @@ static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
 
-    system_state |= ACPI_PM_STATUS_ENABLED;
     system_state |= (s->lid_state_open ? ACPI_PM_STATUS_LID_OPEN : 0);
     system_state |= (s->ac_adapter_present ? ACPI_PM_STATUS_AC_ON : 0);
 
