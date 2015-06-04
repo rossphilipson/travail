@@ -780,7 +780,7 @@ static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
     XenACPIPMState *s = opaque;
     uint64_t system_state = 0x0000000000000000ULL;
 
-    if (!s->not_present_mode) {
+    if (s->not_present_mode) {
         return (system_state | ACPI_PM_STATUS_NOT_PRESENT);
     }
     
