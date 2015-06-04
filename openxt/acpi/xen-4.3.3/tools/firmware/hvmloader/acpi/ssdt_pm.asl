@@ -62,6 +62,7 @@
  * 0x01 - ACPI PM device model support enabled
  * 0x02 - Lid open
  * 0x04 - AC power on
+ * 0x80 - Battery and AC devices not present.
  *
  * N.B. An undesired divergence from upstream was to move the battery command
  * port off of 0xB2/0xB3. These are the legacy Intel APM ports (see R. Brown
@@ -466,6 +467,12 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 
             Method (_STA, 0, NotSerialized)
             {
+                Store (\_SB.P9C, Local0)
+                If (And (Local0, 0x80))
+                {
+                    Return (0x08)
+                }
+
                 Return (0x0F)
             }
         }
@@ -531,6 +538,12 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
 
             Method (_STA, 0, NotSerialized)
             {
+                Store (\_SB.P9C, Local0)
+                If (And (Local0, 0x80))
+                {
+                    Return (0x08)
+                }
+
                 Store (\_SB.P88, Local0)
                 If (And (Local0, 0x1))
                 {
@@ -581,6 +594,12 @@ DefinitionBlock ("SSDT_PM.aml", "SSDT", 2, "Xen", "HVM", 0)
             })
             Method (_STA, 0, NotSerialized)
             {
+                Store (\_SB.P9C, Local0)
+                If (And (Local0, 0x80))
+                {
+                    Return (0x08)
+                }
+
                 Store (\_SB.P90, Local0)
                 If (And (Local0, 0x1))
                 {
