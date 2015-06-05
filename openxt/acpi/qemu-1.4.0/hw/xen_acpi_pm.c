@@ -785,7 +785,7 @@ static uint64_t acpi_pm_port_sts_read(void *opaque, hwaddr addr, uint32_t size)
     if (s->not_present_mode) {
         return (system_state | ACPI_PM_STATUS_NOT_PRESENT);
     }
-    
+
     xen_pm_update_ac_adapter(s);
     xen_pm_update_lid_state(s);
 
