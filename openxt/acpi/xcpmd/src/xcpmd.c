@@ -200,7 +200,12 @@ static void set_attribute_battery_status(char *attrib_name,
 
 static void fix_battery_status(struct battery_status *status)
 {
-    if (status->current_now != 0)
+    /* This check handles both cases for mA batteries: if are not charging
+     * (current_now == 0) but have capacity or they battery is totally dead
+     * (charge_now == 0) but it is charging. If both are zero, they will
+     * both be zero in the end.
+     */
+    if (status->charge_now != 0 || status->current_now != 0)
     {
         /* Rate in mAh, remaining in mA */
         status->present_rate = status->current_now;
@@ -319,21 +324,16 @@ static void write_battery_info_to_xenstore(struct battery_info *info, unsigned s
         xenstore_write(val, XS_BIF1);
 }
 
-int write_battery_info(int *total_count)
+int get_battery_info(int *total_count)
 {
     DIR *dir;
-    int present = 0, total = 0, batn = 0;
+    int total = 0, batn = 0;
     struct battery_info info[MAX_BATTERY_SUPPORTED];
     int i, rc;
-
-    last_full_capacity = 0;
-    xenstore_rm(XS_BIF);
-    xenstore_rm(XS_BIF1);
 
     dir = opendir(BATTERY_DIR_PATH);
     if ( !dir )
     {
-        /* This is an error, the procfs always has the battery directory though it may be empty */
         xcpmd_log(LOG_ERR, "Failed to open dir %s with error - %d\n", BATTERY_DIR_PATH, errno);
         return 0;
     }
@@ -344,8 +344,67 @@ int write_battery_info(int *total_count)
         if (!rc)
             continue;
 
-        print_battery_info(&info[batn]);
         total++;
+
+        if ( info[batn].present == NO )
+            continue;
+
+        batn++;
+        if ( batn >= MAX_BATTERY_SUPPORTED )
+            break;
+    }
+
+    closedir(dir);
+
+    /* Returns total battery slot count, not just ones with batteries present */
+    *total_count = total;
+
+    /* Returns count of slots with batteries present */
+    return batn;
+}
+
+int write_battery_info(void)
+{
+    DIR *dir;
+    int batn;
+    struct battery_info info[MAX_BATTERY_SUPPORTED];
+    int i, rc;
+
+    last_full_capacity = 0;
+
+    dir = opendir(BATTERY_DIR_PATH);
+    if ( !dir )
+    {
+        /* This is an error, the procfs always has the battery directory though it may be empty */
+        xcpmd_log(LOG_ERR, "Failed to open dir %s with error - %d\n", BATTERY_DIR_PATH, errno);
+        return 0;
+    }
+
+    if (!xenstore_transaction_start())
+    {
+        xcpmd_log(LOG_ERR, "%s Failed to start xs transaction, error - %d\n", __FUNCTION__, errno);
+        closedir(dir);
+        return 0;
+    }
+
+again:
+    batn = 0;
+
+    /* This may look confusing but it is too keep the transaction from failing
+     * if the nodes don't exist. If they exist, the value will just be updated.
+     */
+    xenstore_write("-", XS_BIF);
+    xenstore_write("-", XS_BIF1);
+    xenstore_rm(XS_BIF);
+    xenstore_rm(XS_BIF1);
+
+    for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
+    {
+        rc = get_next_battery_info_or_status(dir, BIF, (void *)&info[batn], i);
+        if (!rc)
+            continue;
+
+        print_battery_info(&info[batn]);
 
         /* If there is a battery slob but no battery present, go on and reuse
          * the current info struct slot.
@@ -360,11 +419,15 @@ int write_battery_info(int *total_count)
             break;
     }
 
-    closedir(dir);
+    if (!xenstore_transaction_end(false))
+    {
+        if (errno == EAGAIN)
+            goto again;
+        xcpmd_log(LOG_ERR, "%s Failed to end xs transaction, error - %d\n", __FUNCTION__, errno);
+        batn = 0;
+    }
 
-    /* optionally returns total battery slot count, not just ones with batteries present */
-    if ( total_count )
-        *total_count = total;
+    closedir(dir);
 
     /* returns count of slots with batteries present */
     return batn;
@@ -452,6 +515,18 @@ static void write_battery_status_to_xenstore(struct battery_status *status)
     char val[35];
     unsigned short count;
 
+    if (!xenstore_transaction_start())
+    {
+        xcpmd_log(LOG_ERR, "%s Failed to start xs transaction, error - %d\n", __FUNCTION__, errno);
+        return;
+    }
+
+again:
+    xenstore_write("-", XS_BST);
+    xenstore_write("-", XS_BST1);
+    xenstore_rm(XS_BST);
+    xenstore_rm(XS_BST1);
+
     for ( count = 0; count < MAX_BATTERY_SUPPORTED; ++count, ++status )
     {
         if ( status->present == YES )
@@ -465,11 +540,17 @@ static void write_battery_status_to_xenstore(struct battery_status *status)
 
             xenstore_write(val, count ? XS_BST1 : XS_BST);
         }
-	else
-            xenstore_rm(count ? XS_BST1 : XS_BST);
     }
 
     write_current_battery_level_to_xenstore();
+
+    if (!xenstore_transaction_end(false))
+    {
+        if (errno == EAGAIN)
+            goto again;
+        xcpmd_log(LOG_ERR, "%s Failed to end xs transaction, error - %d\n", __FUNCTION__, errno);
+    }
+
 #ifdef XCPMD_DEBUG
     xcpmd_log(LOG_DEBUG, "~Updated battery information in xenstore\n");
 #endif
@@ -525,7 +606,7 @@ static void update_battery_status(void)
 
     adjust_guest_battery_level(status);
     write_battery_status_to_xenstore(status);
-    write_battery_info(NULL);
+    write_battery_info();
 }
 
 static int open_thermal_files(char *subdir, FILE **trip_points_file, FILE **temp_file)
