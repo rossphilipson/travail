@@ -839,7 +839,7 @@ struct {
       .not_present_mode = 1,
       .set = 0, },
     { .base = "/pm/events",
-      .node = "pwrbuttonpressedevt",
+      .node = "powerbuttonpressed",
       .cb = power_button_changed_cb,
       .not_present_mode = 1,
       .set = 0, },
