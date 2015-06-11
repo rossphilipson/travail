@@ -110,8 +110,7 @@ static inline int usbif_request_get_speed(usbif_request_t *req)
 
 static inline int usbif_request_cancel(usbif_request_t *req)
 {
-	return ((req->flags & USBIF_F_DIRECT_DATA) ||
-		(req->type == USBIF_T_CANCEL));
+	return (req->type == USBIF_T_CANCEL);
 }
 
 static inline int usbif_request_type_valid(usbif_request_t *req)
