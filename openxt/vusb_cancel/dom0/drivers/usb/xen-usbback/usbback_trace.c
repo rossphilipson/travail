@@ -392,9 +392,12 @@ static void cancel_urb(struct usb_anchor *anchor, u64 cancel_id)
 	struct urb *victim;
 	bool found = false;
 
+	printk("***RJP*** %s v3 looking for shit to kill!\n", __FUNCTION__);
+
 	spin_lock_irq(&anchor->lock);
 	list_for_each_entry(victim, &anchor->urb_list, anchor_list) {
 		if (((pending_req_t*)victim->context)->id == cancel_id) {
+			printk("***RJP*** %s v3 found shit to kill!\n", __FUNCTION__);
 			usb_get_urb(victim);
 			found = true;
 			break;
@@ -413,6 +416,8 @@ static void cancel_urb(struct usb_anchor *anchor, u64 cancel_id)
          */
 	usb_kill_urb(victim);
 	usb_put_urb(victim);
+
+	printk("***RJP*** %s v3 killed shit!\n", __FUNCTION__);
 }
 
 /******************************************************************

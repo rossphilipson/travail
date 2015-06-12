@@ -242,7 +242,6 @@ typedef struct {
 	uint16_t                 offset;
 	int                      nr_pages;
 	int                      nr_packets;
-	struct list_head         submitted_list;
 	struct list_head         free_list;
 	struct list_head         to_free_list;
 	struct urb               *urb;
