@@ -248,7 +248,6 @@ struct vusb_vhcd {
 };
 
 static struct platform_device *vusb_platform_device = NULL;
-static bool module_ref_counted = false;
 
 static bool
 vusb_start_processing_caller(struct vusb_rh_port *vport,
@@ -2824,10 +2823,8 @@ err_add:
 static int
 vusb_platform_remove(struct platform_device *pdev)
 {
-	struct usb_hcd *hcd;
-	struct vusb_vhcd *vhcd;
-
-	hcd = platform_get_drvdata(pdev);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct vusb_vhcd *vhcd = hcd_to_vhcd(hcd);
 
 	/* Sanity check the state of the platform. Unloading this module
 	 * should only be done for debugging and development purposes. */
@@ -2842,8 +2839,6 @@ vusb_platform_remove(struct platform_device *pdev)
 	hcd->irq = -1;
 
 	usb_remove_hcd(hcd);
-
-	vhcd = hcd_to_vhcd(hcd);
 
 	usb_put_hcd(hcd);
 
@@ -2924,11 +2919,33 @@ static struct platform_driver vusb_platform_driver = {
 /****************************************************************************/
 /* Module Init & Cleanup                                                    */
 
+static bool module_ref_counted = false;
+
+static ssize_t vusb_enable_unload(struct device_driver *drv, const char *buf,
+				size_t count)
+{
+	/* In general we don't want this module to ever be unloaded since
+	 * it is highly unsafe when there are active xenbus devices running
+	 * in this module. This sysfs attribute allows this module to be
+	 * unloaded for development and debugging work */
+	if (module_ref_counted) {
+		module_put(THIS_MODULE);
+		module_ref_counted = false;
+        	return count;
+	} 
+
+        return 0;
+}
+
+static DRIVER_ATTR(enable_unload, S_IWUSR, NULL, vusb_enable_unload);
+
 static void
 vusb_cleanup(void)
 {
 	iprintk("clean up\n");
 	if (vusb_platform_device) {
+		driver_remove_file(&vusb_platform_driver.driver,
+				&driver_attr_enable_unload);
 		platform_device_unregister(vusb_platform_device);
 		platform_driver_unregister(&vusb_platform_driver);
 	}
@@ -2966,18 +2983,25 @@ vusb_init(void)
 		goto fail_platform_device2;
 	}
 
-	/* In general we don't want this module to ever be unloaded since
-	 * it is highly unsafe when there are active xenbus devices running
-	 * in this module. The sysfs attribute above allows this TODO*/
+	ret = driver_create_file(&vusb_platform_driver.driver,
+				&driver_attr_enable_unload);
+	if (ret < 0) {
+		eprintk("Unable to add driver attr\n");
+		goto fail_platform_device3;
+	}
+
 	if (!try_module_get(THIS_MODULE)) {
 		eprintk("Failed to get module ref count\n");
 		ret = -ENODEV;
-		goto fail_platform_device3;
+		goto fail_driver_create_file;
 	}
 	module_ref_counted = true;
 
 	return 0;
 
+fail_driver_create_file:
+	driver_remove_file(&vusb_platform_driver.driver,
+			&driver_attr_enable_unload);
 fail_platform_device3:
         platform_device_del(vusb_platform_device);
 fail_platform_device2:
