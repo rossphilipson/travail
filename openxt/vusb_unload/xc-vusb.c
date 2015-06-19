@@ -2931,10 +2931,9 @@ static ssize_t vusb_enable_unload(struct device_driver *drv, const char *buf,
 	if (module_ref_counted) {
 		module_put(THIS_MODULE);
 		module_ref_counted = false;
-        	return count;
 	} 
 
-        return 0;
+        return count;
 }
 
 static DRIVER_ATTR(enable_unload, S_IWUSR, NULL, vusb_enable_unload);
