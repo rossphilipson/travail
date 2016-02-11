@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if echo $@ | grep "create" > /dev/null 2>/dev/null; then
+   tmp="`echo $@ | sed 's/-R//'`"
+   /usr/sbin/tap-ctl.bak $tmp
+elif echo $@ | grep "destroy" > /dev/null 2>/dev/null; then
+     MINOR=`echo $@ | sed -e 's/\(^.*\)\(.$\)/\2/'`
+     PID=$(/usr/sbin/tap-ctl.bak list -m ${MINOR} | grep "pid=" | awk '{print $1
+}' | sed -r 's/^.{4}//')
+     /usr/sbin/tap-ctl.bak destroy -p $PID -m $MINOR
+else
+        /usr/sbin/tap-ctl.bak $@
+fi

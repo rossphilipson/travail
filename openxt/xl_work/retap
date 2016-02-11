@@ -1,0 +1,4 @@
+#!/bin/bash
+
+tap-ctl create -a "vhd:/storage/work/Win7ProSP1x64_Clean.vhd"
+tap-ctl list

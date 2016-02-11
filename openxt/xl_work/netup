@@ -1,0 +1,8 @@
+#!/bin/bash
+
+brctl addbr xenbr0
+brctl addif xenbr0 eth0
+ifconfig xenbr0 up
+ifconfig xenbr0 192.168.2.210
+ifconfig eth0 up
+

@@ -1,0 +1,90 @@
+--------------------------------------------
+Notes: 2/1/2016
+--------------------------------------------
+
+The problem on bare metal Jessie was that it was xl was defaulting to 32b qemu
+when the host was 64b. This was hack fixed by making 32b a link to 64b but a
+better fix is to use the conf file and qemu override param.
+
+OpenXT qemu does not support vhds directly. We had to setup a tabdev using
+tap-ctl: tap-ctl create -a "vhd:<path to vhd>" which created a
+/dev/xen/blktap-2/tapdev0
+
+The uivm and ndvm must be killed to use xl.
+
+
+--------------------------------------------
+Notes: over allocation issue:
+--------------------------------------------
+
+libxl__build_hvm
+  xc_hvm_build
+    setup_guest
+      xc_domain_populate_physmap[_exact]
+
+xen-all:xen_ram_init
+  memory:memory_region_init_ram
+    exec:qemu_ram_alloc[_from_ptr]
+      xen-all:xen_ram_alloc
+        xc_domain_populate_physmap_exact
+
+patches/0030-xenfv-i440fx-max-ram-below-4g.patch
+
+
+--------------------------------------------
+Notes: Dom0 USB NICs
+--------------------------------------------
+
+kernel-module-libphy_3.18.24-r2_xenclient_dom0.ipk
+kernel-module-usbnet_3.18.24-r2_xenclient_dom0.ipk
+kernel-module-asix_3.18.24-r2_xenclient_dom0.ipk
+kernel-module-mii_3.18.24-r2_xenclient_dom0.ipk
+udhcpc
+
+
+--------------------------------------------
+Notes: Install libxl
+--------------------------------------------
+
+Move ndvm and uivm vhds so they can't start.
+
+Backup anything that will be changed.
+
+Disable SELinux and XSM.
+
+In recipes-extended/xen/xen-tools.bb add at the bottom of compile and install:
+        oe_runmake -C tools subdir-all-libaio
+        oe_runmake -C tools subdir-all-blktap2
+        oe_runmake -C tools subdir-all-libxl
+
+        oe_runmake -C tools subdir-install-libaio
+        oe_runmake -C tools subdir-install-blktap2
+        oe_runmake -C tools subdir-install-libxl
+
+Rebuild xen-tools.
+
+When I did a makeclean I had to use devshell and a ./configure to make it work.
+Better to use cleansstate
+
+Tarred up image dir and overwrote all the relevant binaries and created symlinks
+
+Make a /usr/lib/xen/bin/qemu-system-i386 wrapper or link
+
+Create a log dir /var/log/xen
+Create a lib dir /var/lib/xen
+
+Stub out the code in logging.h that undefs and redefs fprintf
+
+Had to add videoram=16 in the config
+
+For now we have to be rw
+
+--------------------------------------------
+QEMU network
+--------------------------------------------
+
+Had to setup bridging in dom0 using a static IP. Removed all entries from
+/etc/network/interfaces except lo.
+
+Used this to get the rest working: http://toast.djw.org.uk/qemu.html
+

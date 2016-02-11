@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "Executing /etc/qemu-ifup" >> /tmp/shit
+echo "Bringing up $1 for bridged mode..." >> /tmp/shit
+ifconfig $1 0.0.0.0 promisc up
+echo "Adding $1 to xenbr0..." >> /tmp/shit
+brctl addif xenbr0 $1
+echo "Done" >> /tmp/shit
+sleep 2
