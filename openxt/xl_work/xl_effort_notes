@@ -30,27 +30,49 @@ xen-all:xen_ram_init
 
 patches/0030-xenfv-i440fx-max-ram-below-4g.patch
 
+BIG NOTE: Had to add videoram=16 in the config
+
+See the memory layout page:
+https://openxt.atlassian.net/wiki/display/~rphilipson/VM+Memory+Layout
 
 --------------------------------------------
 Notes: Dom0 USB NICs
 --------------------------------------------
 
+opkg install ...
 kernel-module-libphy_3.18.24-r2_xenclient_dom0.ipk
+kernel-module-mii_3.18.24-r2_xenclient_dom0.ipk
 kernel-module-usbnet_3.18.24-r2_xenclient_dom0.ipk
 kernel-module-asix_3.18.24-r2_xenclient_dom0.ipk
-kernel-module-mii_3.18.24-r2_xenclient_dom0.ipk
 udhcpc
 
 
 --------------------------------------------
-Notes: Install libxl
+Notes: Installing and using libxl
 --------------------------------------------
+
+General note, backup anything that will be changed as you go.
+
+Need to have serial terminal to get things done.
+
+Disable SELinux and XSM.
+
+Re-enable grub editing:
+set edit_and_shell=1
+set timeout=5
+
+Reboot
+
+Get asix packages before losing network.
 
 Move ndvm and uivm vhds so they can't start.
 
-Backup anything that will be changed.
+Reboot, move wire
 
-Disable SELinux and XSM.
+Install asix stuff and get network in dom0, see above.
+
+Need to rebuild QEMU without fprintf redirect rubbish in logging.h
+Copy over.
 
 In recipes-extended/xen/xen-tools.bb add at the bottom of compile and install:
         oe_runmake -C tools subdir-all-libaio
@@ -66,18 +88,24 @@ Rebuild xen-tools.
 When I did a makeclean I had to use devshell and a ./configure to make it work.
 Better to use cleansstate
 
-Tarred up image dir and overwrote all the relevant binaries and created symlinks
+Tarred up image dir and overwrote all the relevant binaries and created symlinks.
+Note new ver: ln -fs libblktapctl.so.1.0.0 libblktapctl.so.1.0
+Reboot
 
-Make a /usr/lib/xen/bin/qemu-system-i386 wrapper or link
+Get all the goodies from lmo:/media/Goodies/xlwork in a work dir.
+
+Use the /usr/lib/xen/bin/qemu-system-i386 wrapper that gets the args right.
+chmod a+x on wrapper.
+Use the xl configs we have made.
 
 Create a log dir /var/log/xen
 Create a lib dir /var/lib/xen
 
-Stub out the code in logging.h that undefs and redefs fprintf
-
-Had to add videoram=16 in the config
-
 For now we have to be rw
+Need to retap a tapdev0
+Create a /tmp/domid file with 1 in it to start
+
+gdb and lsof
 
 --------------------------------------------
 QEMU network
@@ -85,6 +113,8 @@ QEMU network
 
 Had to setup bridging in dom0 using a static IP. Removed all entries from
 /etc/network/interfaces except lo.
+
+Bridge script here...
 
 Used this to get the rest working: http://toast.djw.org.uk/qemu.html
 
