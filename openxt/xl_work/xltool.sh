@@ -43,6 +43,16 @@ function xl_hack_retap()
     local count=0
     local pid=0
 
+    if [ ! -e $1 ]; then
+        echo "Cannot retap missing file: $1 fix that shit!"
+        exit
+    fi
+
+    if [ "${1:0:1}" != "/" ]; then
+        echo "Cannot retap file: $1 without full path, are you crazy!"
+        exit
+    fi
+
     for i in ${taps[@]}; do
         k=$(echo $i | cut -d\= -f1)
         v=$(echo $i | cut -d\= -f2)
@@ -62,6 +72,10 @@ function xl_hack_retap()
             count=0
         fi
     done
+
+    echo "Retapping tapdev0 to $1"
+    tap-ctl create -a "vhd:$1"
+    tap-ctl list
 }
 
 function xl_hack_netup()
@@ -84,7 +98,7 @@ function usage()
 cat <<EOF
 Usage:
   -i        Init stuff to make xl happy.
-  -r <file> Retap a vhd.
+  -r <file> Retap a vhd, use a full path to vhd file.
   -n <ip>   Hack up the xen bridge with an IP.
   -d <id>   Hack a new domid in.
   -t <path> Reinstall Xen tools hack.
