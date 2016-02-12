@@ -1,0 +1,8 @@
+builder = "hvm"
+name = "Centos"
+uuid = "8d85049a-9bdd-11e2-9e91-18037322eba8"
+memory = 1024
+vcpus = 1
+disk = ['/dev/xen/blktap-2/tapdev0,raw,xvda,rw']
+vnc = 1
+videoram = 16
