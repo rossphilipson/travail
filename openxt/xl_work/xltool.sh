@@ -3,6 +3,36 @@
 function xl_hack_init()
 {
     echo "Init xl hacks..."
+    if [ "`getenforce`" != "Permissive" ]; then
+        echo "SELinux is not in permissive mode, you should fix this first!"
+        echo "Edit /etc/selinux/config and set SELINUX=permissive then reboot"
+        exit
+    fi
+
+    if [ -z "`grep "flask_enforcing=0" /boot/system/grub/grub.cfg`" ]; then
+        echo "Xen flask is in enforcing mode, you should fix this first!"
+        echo "Edit /boot/system/grub/grub.cfg and set flask_enforcing=0 then reboot"
+        exit
+    fi
+
+    rw
+    echo "1" > /tmp/domid
+
+    if [ ! -e /var/lib/xen ]; then
+        mkdir /var/lib/xen
+    fi
+
+    if [ ! -e /var/log/xen ]; then
+        mkdir /var/log/xen
+    fi
+
+    if [ -e /usr/lib/xen/bin/qemu-system-i386 ]; then
+        chmod a+x /usr/lib/xen/bin/qemu-system-i386
+    else
+        echo "Missing a /usr/lib/xen/bin/qemu-system-i386 wrapper, copy one there!"
+    fi
+
+    echo "Init xl hacks complete"
 }
 
 function xl_hack_retap()
