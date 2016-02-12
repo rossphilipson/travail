@@ -39,15 +39,25 @@ function xl_hack_retap()
 {
     echo "Retapping shit for $1"
 
-    taps=(`tap-ctl list`)
-    count=0
+    local taps=(`tap-ctl list`)
+    local count=0
+    local pid=0
 
     for i in ${taps[@]}; do
         k=$(echo $i | cut -d\= -f1)
         v=$(echo $i | cut -d\= -f2)
         echo "TAP: $i K: $k V: $v C: $count"
-        ((count+=1))
 
+        if [ $count -eq 0 ]; then
+            pid=$v
+        fi
+
+        if [ $count -eq 1 ]; then
+            echo "Untapping PID: $pid MINOR: $v"
+            tap-ctl destroy -p $pid -m $v
+        fi
+
+        ((count+=1))
         if [ $(( $count % 4 )) -eq 0 ]; then
             count=0
         fi
