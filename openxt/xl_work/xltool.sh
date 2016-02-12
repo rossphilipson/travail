@@ -97,6 +97,69 @@ function xl_hack_domid()
 function xl_hack_tools()
 {
     echo "Setup xl tools hack..."
+
+    if [ ! -e $1 ]; then
+        echo "No tools dir $1 WTF!"
+        exit
+    fi
+
+    if [ ! -d $1 ]; then
+        echo "Yo $1 is not a dir!"
+        exit
+    fi
+
+    if [ "${1:0:1}" != "/" ]; then
+        echo "Cannot reinstall from: $1 without full path, pay attention!"
+        exit
+    fi
+
+    if [ ! -e $1/usr/lib/libxenlight.so.4.3.0 ]; then
+        echo "Not finding my files in $1!"
+        exit
+    fi
+
+    mount -o remount,rw /
+
+    if [ ! -e /storage/xen-tools-orig ]; then
+        mkdir /storage/xen-tools-orig
+        cp /usr/lib/libblktapctl.so.0.1.0 /storage/xen-tools-orig
+        cp /usr/lib/libvhd.so.1.0.0 /storage/xen-tools-orig
+        cp /usr/lib/libxenctrl.so.4.3.0 /storage/xen-tools-orig
+        cp /usr/lib/libxenguest.so.4.3.0 /storage/xen-tools-orig
+        cp /usr/lib/libxenhvm.so.1.0.0 /storage/xen-tools-orig
+        cp /usr/sbin/tap-ctl /storage/xen-tools-orig
+        cp /usr/sbin/tapdisk-diff /storage/xen-tools-orig
+        cp /usr/sbin/tapdisk-stream /storage/xen-tools-orig
+        cp /usr/sbin/tapdisk2 /storage/xen-tools-orig
+        cp /usr/sbin/td-util /storage/xen-tools-orig
+        cp /usr/sbin/vhd-update /storage/xen-tools-orig
+        cp /usr/sbin/vhd-util /storage/xen-tools-orig
+    fi
+
+    rm /usr/lib/libblktapctl.so.0.1.0
+
+    cp $1/usr/lib/libblktapctl.so.1.0.0 /usr/lib
+    cp $1/usr/lib/libvhd.so.1.0.0 /usr/lib
+    cp $1/usr/lib/libxenctrl.so.4.3.0 /usr/lib
+    cp $1/usr/lib/libxenguest.so.4.3.0 /usr/lib
+    cp $1/usr/lib/libxenhvm.so.1.0.0 /usr/lib
+    cp $1/usr/lib/libxenlight.so.4.3.0 /usr/lib
+    cp $1/usr/lib/libxlutil.so.4.3.0 /usr/lib
+    cp $1/usr/sbin/tap-ctl /usr/sbin
+    cp $1/usr/sbin/tapdisk-client /usr/sbin
+    cp $1/usr/sbin/tapdisk-diff /usr/sbin
+    cp $1/usr/sbin/tapdisk-stream /usr/sbin
+    cp $1/usr/sbin/tapdisk2 /usr/sbin
+    cp $1/usr/sbin/td-util /usr/sbin
+    cp $1/usr/sbin/vhd-update /usr/sbin
+    cp $1/usr/sbin/vhd-util /usr/sbin
+    cp $1/usr/sbin/xl /usr/sbin
+
+    pushd /usr/lib
+    ln -fs libblktapctl.so.1.0.0 libblktapctl.so.1.0
+    ln -fs libxenlight.so.4.3.0 libxenlight.so.4.3
+    ln -fs libxlutil.so.4.3.0 libxlutil.so.4.3
+    popd
 }
 
 function usage()
@@ -107,7 +170,7 @@ Usage:
   -r <file> Retap a vhd, use a full path to vhd file.
   -n <ip>   Hack up the xen bridge with an IP.
   -d <id>   Hack a new domid in.
-  -t <path> Reinstall Xen tools hack.
+  -t <path> Reinstall Xen tools hack, use full path to image base dir.
 EOF
 }
 
