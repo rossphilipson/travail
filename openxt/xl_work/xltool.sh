@@ -81,11 +81,17 @@ function xl_hack_retap()
 function xl_hack_netup()
 {
     echo "Nethack xl IP: $1"
+    brctl addbr xenbr0
+    brctl addif xenbr0 eth0
+    ifconfig xenbr0 up
+    ifconfig xenbr0 $1
+    ifconfig eth0 up
 }
 
 function xl_hack_domid()
 {
     echo "Hack xl domid $1"
+    echo $1 > /tmp/domid
 }
 
 function xl_hack_tools()
