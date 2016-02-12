@@ -15,7 +15,7 @@ function xl_hack_init()
         exit
     fi
 
-    rw
+    mount -o remount,rw /
     echo "1" > /tmp/domid
 
     if [ ! -e /var/lib/xen ]; then
@@ -38,6 +38,20 @@ function xl_hack_init()
 function xl_hack_retap()
 {
     echo "Retapping shit for $1"
+
+    taps=(`tap-ctl list`)
+    count=0
+
+    for i in ${taps[@]}; do
+        k=$(echo $i | cut -d\= -f1)
+        v=$(echo $i | cut -d\= -f2)
+        echo "TAP: $i K: $k V: $v C: $count"
+        ((count+=1))
+
+        if [ $(( $count % 4 )) -eq 0 ]; then
+            count=0
+        fi
+    done
 }
 
 function xl_hack_netup()
