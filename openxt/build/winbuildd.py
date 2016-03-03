@@ -107,7 +107,7 @@ class RPCInterface(object):
               ',certname='+repr(certname)+'developer='+repr(developer)+')')
 
         # Nuke existing build
-        shutil.rmtree(BUILDDIR + "\\openxt")
+        shutil.rmtree(BUILDDIR + "\\openxt", False, None)
 
         # Clone the main OpenXT repo and checkout branch
         subprocess.Popen('git clone '+ GITURL + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
