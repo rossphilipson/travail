@@ -99,7 +99,7 @@ class RPCInterface(object):
             subprocess = PopenWrapper(log)
             write = subprocess.write
         except:
-            raise Exception, "ERROR: Unable to chdir directory " + BUILDDIR + "or open log"
+            raise Exception, "ERROR: Unable to chdir directory " + BUILDDIR + " or open log"
 
         write('make(build='+repr(build)+',branch='+repr(branch)+\
               ',certname='+repr(certname)+'developer='+repr(developer)+')')

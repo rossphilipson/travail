@@ -2,5 +2,17 @@
 <methodCall> 
   <methodName>make</methodName>
   <params>
+    <param>
+      <value><string>667766</string></value>
+    </param>
+    <param>
+      <value><string>master</string></value>
+    </param>
+    <param>
+      <value><string>devcert</string></value>
+    </param>
+    <param>
+      <value><string>true</string></value>
+    </param>
   </params>
 </methodCall>
