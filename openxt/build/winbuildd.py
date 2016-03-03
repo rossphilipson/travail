@@ -138,7 +138,7 @@ class RPCInterface(object):
         return build
 
     def hello(self):
-        return "hello"
+        return "hello back"
 
     def status(self):
         pass
