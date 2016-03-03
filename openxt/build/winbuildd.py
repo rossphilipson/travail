@@ -31,6 +31,25 @@ def write_(*args):
     print
 write = write_
 
+def onerror(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        # Is the error an access error ?
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise
+
 class PopenWrapper(object):
   """Like popen but actually writes stuff out to a log file too."""
   class WaitWrapper(object):
@@ -105,10 +124,11 @@ class RPCInterface(object):
         write("Start build, RPC input:")
         write('make(build='+repr(build)+',branch='+repr(branch)+\
               ',certname='+repr(certname)+'developer='+repr(developer)+')')
+        write('Running in dir: ' + os.getcwd())
 
         # Nuke existing build
         if os.path.exists(BUILDDIR + '\\openxt'):
-            shutil.rmtree(BUILDDIR + '\\openxt')
+            shutil.rmtree(BUILDDIR + '\\openxt', onerror=onerror)
 
         # Clone the main OpenXT repo and checkout branch
         subprocess.Popen('git clone '+ GITURL + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
