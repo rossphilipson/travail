@@ -137,12 +137,15 @@ class RPCInterface(object):
         log.close()
         return build
 
+    def helo(self):
+        return "hello"
+
     def status(self):
         pass
-        
+
     def retrieve_file(self, filename):
         pass
-	
+
 def main(argv):
 	
 	config = ""
