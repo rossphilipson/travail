@@ -134,9 +134,12 @@ class RPCInterface(object):
         subprocess.Popen('git clone '+ GITURL + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         write("Completed cloning " + GITURL + "/openxt.git")
         os.chdir(BUILDDIR + "\\openxt")
-        subprocess.Popen('git checkout -b '+ branch + ' ' + branch, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        subprocess.Popen('git checkout -b '+ branch, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         write('Checked out '+ branch +' in openxt.git')
         os.chdir(BUILDDIR + "\\openxt\\windows")
+
+        command = 'sed -i "s/Put Your Company Name Here/OpenXT/g" config\\sample-config.xml'
+        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         # TODO example using sed
         #command = 'sed -e "s/!define CurrentMajorVersion.*$/!define CurrentMajorVersion '+str(major)+'/g" xensetup.nsi > temp.nsi && move /Y temp.nsi xensetup.nsi'
