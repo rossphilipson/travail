@@ -135,7 +135,7 @@ class RPCInterface(object):
             #raise Exception, "ERROR: XenClientTools failed to build. See \\\\" + socket.gethostname() + "\\" + uid + "\\output.log for details."
 
         log.close()
-        return build
+        return 'SUCCESS'
 
     def hello(self):
         return "hello back"
