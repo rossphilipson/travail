@@ -107,7 +107,7 @@ class RPCInterface(object):
               ',certname='+repr(certname)+'developer='+repr(developer)+')')
 
         # Nuke existing build
-        if os.path.exists(BUILDDIR + '\\openxt')
+        if os.path.exists(BUILDDIR + '\\openxt'):
             shutil.rmtree(BUILDDIR + '\\openxt')
 
         # Clone the main OpenXT repo and checkout branch
