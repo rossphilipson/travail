@@ -137,7 +137,7 @@ class RPCInterface(object):
         log.close()
         return build
 
-    def helo(self):
+    def hello(self):
         return "hello"
 
     def status(self):
