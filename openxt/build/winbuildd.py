@@ -16,6 +16,7 @@ import socket
 import time
 import sys
 import getopt
+import shutil
 import ConfigParser
 
 subprocess = subprocess_
@@ -101,15 +102,16 @@ class RPCInterface(object):
         except:
             raise Exception, "ERROR: Unable to chdir directory " + BUILDDIR + " or open log"
 
+        write("Start build, RPC input:")
         write('make(build='+repr(build)+',branch='+repr(branch)+\
               ',certname='+repr(certname)+'developer='+repr(developer)+')')
 
-        # TODO Example logging
-        #write("Building NSIS installer...")
+        # Nuke existing build
+        shutil.rmtree(BUILDDIR + "\\openxt")
 
-        # TODO Example git
-        #subprocess.Popen('git clone '+ GITURL + '/xc-windows.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        #write("Completed cloning " + GITURL + "/xc-windows.git")
+        # Clone the main OpenXT repo and checkout branch
+        subprocess.Popen('git clone '+ GITURL + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        write("Completed cloning " + GITURL + "/openxt.git")
 
         # TODO example using sed
         #command = 'sed -e "s/!define CurrentMajorVersion.*$/!define CurrentMajorVersion '+str(major)+'/g" xensetup.nsi > temp.nsi && move /Y temp.nsi xensetup.nsi'
@@ -193,10 +195,11 @@ def loadConfig(cfg,site):
 		sys.exit()
 	else:
 		try:
-			global PORT, BUILDDIR, CONFIG
+			global PORT, BUILDDIR, CONFIG, GITURL
 			PORT = config.getint(site,'port')
 			BUILDDIR = config.get(site,'builddir')
 			CONFIG = config.get(site,'config')
+			GITURL = config.get(site,'giturl')
 		except:
 			print "Exception getting configuration option. Corrupt .cfg file? Missing option?"
 			sys.exit()				

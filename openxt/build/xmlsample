@@ -9,7 +9,7 @@
       <value><string>master</string></value>
     </param>
     <param>
-      <value><string>devcert</string></value>
+      <value><string>developer</string></value>
     </param>
     <param>
       <value><string>true</string></value>
