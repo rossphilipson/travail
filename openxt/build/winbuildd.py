@@ -107,8 +107,11 @@ class FakeLog(object):
         pass
 
 class RPCInterface(object):
-    def make(self,build='',branch='master',certname='',developer='false'):
-        """make(build,branch,certname,developer) - Call powershell scripts to do the real work - Ex: make("123456","master","developer","false")"""
+    def make(self,build='',branch='master',certname='',developer='false',rsyncdest=''):
+        """make(build,branch,certname,developer,rsyncdest)
+           Ex: make("123456","master","developer","false","builds@192.168.0.10:/home/builds/win/")
+           Call powershell scripts to do the real work """
+
         log = FakeLog()
 
         # Create log directory/file
@@ -123,7 +126,8 @@ class RPCInterface(object):
 
         write("Start build, RPC input:")
         write('make(build='+repr(build)+',branch='+repr(branch)+\
-              ',certname='+repr(certname)+'developer='+repr(developer)+')')
+              ',certname='+repr(certname)+'developer='+repr(developer)+\
+              'rsyncdest='+repr(rsyncdest)+')')
         write('Running in dir: ' + os.getcwd())
 
         # Nuke existing build
@@ -141,21 +145,17 @@ class RPCInterface(object):
         command = 'sed -i "s/Put Your Company Name Here/OpenXT/g" config\\sample-config.xml'
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
-        # TODO example using sed
-        #command = 'sed -e "s/!define CurrentMajorVersion.*$/!define CurrentMajorVersion '+str(major)+'/g" xensetup.nsi > temp.nsi && move /Y temp.nsi xensetup.nsi'
-        #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        write("Building Windows bits...")
+        command = '.\winbuild-prepare.ps1 config=' + CONFIG + ' build=' + build + ' branch=' + branch + ' certname=' + certname + ' developer=' + developer
+        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        command = '.\winbuild-all.ps1'
+        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         # TODO example using some app and change dir 
         #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         #command = 'makensis /DINSTALL_XENVESA /DINSTALL_XENVESA8 xensetup.nsi'
         #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         #os.chdir(BUILDDIR + uid)
-
-        # TODO example using powershell 
-        #Build win-tools
-        #write("Building win-tools...")
-        #command = 'powershell win-tools\\do_build.ps1 -c ' + config 
-        #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         # TODO example test path if else exception
         #if os.path.exists('msi-installer\\iso\\Packages\\XenClientTools.msi') and os.path.exists('msi-installer\\iso\\Packages\\XenClientTools64.msi'):

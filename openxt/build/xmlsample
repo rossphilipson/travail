@@ -14,5 +14,8 @@
     <param>
       <value><string>true</string></value>
     </param>
+    <param>
+      <value><string>builds@192.168.0.10:/home/builds/win</string></value>
+    </param>
   </params>
 </methodCall>
