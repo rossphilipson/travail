@@ -87,8 +87,8 @@ class FakeLog(object):
         pass
 
 class RPCInterface(object):
-    def make(self,tag,major='6',minor='0',micro='0',build='1',config='Debug',uid='',signcert=True,whql='',ozbuild=''):
-        """make(tag,major,minor,micro,build,config,uid,certs,whql,ozbuild) - Builds win-tools and msi-installer. Creates XenClientTools.iso. - Ex: make("build-118045-master","6","0","0","1234","Release","777",True)"""
+    def make(self,build='',branch='master',certname='',developer=False):
+        """make(build,branch,certname,developer) - Call powershell scripts to do the real work - Ex: make("123456","master","developer",False)"""
         log = FakeLog()
         start = time.time()
               
@@ -162,42 +162,6 @@ class RPCInterface(object):
               ',micro='+repr(micro)+',build='+repr(build)+',config='+\
               repr(config)+',uid='+repr(uid)+',signcert='+repr(signcert)+\
               ',whql='+repr(whql)+',ozbuild='+repr(ozbuild)+')')
-
-        #Clone repos
-        subprocess.Popen('git clone '+ GITURL + '/xc-windows.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/xc-windows.git")
-        subprocess.Popen('git clone '+ GITURL + '/win-changelog.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/win-changelog.git")
-        subprocess.Popen('git clone '+ GITURL + '/msi-installer.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/msi-installer.git")
-        subprocess.Popen('git clone '+ GITURL + '/win-tools.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/win-tools.git")
-        subprocess.Popen('git clone '+ GITURL + '/gfx-drivers.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/gfx-drivers.git")
-        subprocess.Popen('git clone '+ GITURL + '/xenclient-oe-extra.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/xenclient-oe-extra.git")
-
-        #Checkout tags
-        if tag != '0':
-            os.chdir('win-changelog')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on win-changelog.git')
-            os.chdir('..\\msi-installer')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on msi-installer.git')
-            os.chdir('..\\win-tools')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on win-tools.git')
-            os.chdir('..\\gfx-drivers')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on gfx-drivers.git')
-            os.chdir('..\\xc-windows')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on xc-windows.git')
-            os.chdir('..\\xenclient-oe-extra')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on xenclient-oe-extra.git')
-            os.chdir('..')
 
         #Find latest ozbuild   
         if ozbuild == 0:    
@@ -332,237 +296,13 @@ class RPCInterface(object):
         log.close()
         return uid
 
-    def makeadcomp(self,tag,build,config='Debug',uid=''):
-        """make(tag,build,config,uid) - Builds adomp utility. - Ex: makeadcomp("build-118045-master","1234","Release","777")"""
-        log = FakeLog()
-        try:
-            build = int(build)
-        except ValueError:
-            raise Exception, "build must be an integer between 1 and 65535"
-        if (build < 1) or (build > 65536):
-            raise Exception, "build must be an integer between 1 and 65535"
-
-        if config != 'Debug' and config != 'Release':
-            raise Exception, "config must be either Debug or Release"
-
-        uid = str(uid)
-         #Initialize UID to timestamp if null
-        if (uid == ''):
-            uid = time.strftime("%Y%d%m-%H%M%S")
-        
-        #Create log directory/file
-        try:
-            os.chdir(BUILDDIR)
-            os.makedirs(uid)
-            if not os.path.exists(LOGDIR + uid):
-                os.chdir(LOGDIR)
-                os.makedirs(uid)
-            os.chdir(LOGDIR + uid)
-            log = open('adcomp.log',"w")
-            subprocess = PopenWrapper(log)
-            write = subprocess.write
-            os.chdir(BUILDDIR + uid)
-        except:
-            raise Exception, "ERROR: Unable to create UID directory/log"
-
-        #Clone win-registry-tools repo
-        subprocess.Popen('git clone '+ GITURL + '/win-registry-tools.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        if tag != '0':
-            os.chdir('win-registry-tools')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on win-registry-tools.git')
-            os.chdir('..')
-        
-        #Build adcomp.msi
-        os.chdir('win-registry-tools')
-        command = 'C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\msbuild.exe vhdtools.sln /P:Configuration='+config
-        subprocess.Popen(command, shell = True, stdout = log, universal_newlines=True).wait()
-        os.chdir('..')
-	    
-        #Check if target was successfully built and transfered
-        if os.path.exists('win-registry-tools\\'+config+'\\ADComp.msi'):
-            write('Build completed successfully')
-            #Copy .iso to share
-            if not os.path.exists(BUILDDIR + 'iso\\' + uid):
-                os.chdir(BUILDDIR + 'iso')
-                os.makedirs(uid)
-            os.chdir(BUILDDIR)
-            command = 'copy '+ uid +'\\win-registry-tools\\'+config+'\\ADComp.msi iso\\'+ uid +'\\ /y' 
-            subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('.msi Copied to share')
-        else:
-            log.close()
-            raise Exception, "ERROR: ADComp.msi failed to build. See \\\\" + socket.gethostname() + "\\" + uid + "\\adcomp.log for details."
-
-        log.close()
-        return uid
-
     def clean(self, uid):
         """clean(uid) - Blows away projects."""
         #Create log directory/file
-        log = FakeLog()
-        try:
-            logdir = os.path.join(LOGDIR, uid)
-            if not os.path.exists(logdir):
-                try:
-                    os.makedirs(logdir)
-                except WindowsError as winex:
-                    if winex.winerror != 183: #If not directory already exists
-                        raise
-            log = open(os.path.join(logdir, 'output.log'), 'a')
-            subprocess = PopenWrapper(log)
-            write = subprocess.write
-            del logdir
-        except:
-            raise Exception("ERROR: Unable to create log for clean command")
-        cleanpath = os.path.join(SCRIPTDIR, 'clean.ps1')
-        subprocess.Popen('powershell '+ cleanpath +' -uid '+ uid, stdout = log, stderr = log, universal_newlines=True).wait()
+        # SNIP it did some munging of logs, see original
+        #cleanpath = os.path.join(SCRIPTDIR, 'clean.ps1')
+        #subprocess.Popen('powershell '+ cleanpath +' -uid '+ uid, stdout = log, stderr = log, universal_newlines=True).wait()
         write('Finished cleaning ' + uid)
-        return 0
-
-    def makelocal(self,srcpath,tag,major='6',minor='0',micro='0',build='1',config='Debug',uid='',ozpath='',ozbuild=''):
-        """make(srcpath,tag,major,minor,micro,build,config,uid,ozpath) - Builds win-tools and msi-installer. Creates XenClientTools.iso. - Ex: make("c:\fish","build-118045-master","6","0","0","1234","Release","777","c:\fish\oz\","1102")"""
-        log = FakeLog()
-        try:
-            major = int(major)
-        except ValueError:
-            raise Exception, "major must be an integer between 1 and 65535"
-        if (major < 1) or (major > 65536):
-            raise Exception, "major must be an integer between 1 and 65535"
-        try:
-            minor = int(minor)
-        except ValueError:
-            raise Exception, "minor must be an integer between 0 and 65535"
-        if (minor < 0) or (minor > 65536):
-            raise Exception, "minor must be an integer between 0 and 65535"
-        try:
-            micro = int(micro)
-        except ValueError:
-            raise Exception, "micro must be an integer between 0 and 65535"
-        if (micro < 0) or (micro > 65536):
-            raise Exception, "micro must be an integer between 0 and 65535"
-        try:
-            build = int(build)
-        except ValueError:
-            raise Exception, "build must be an integer between 1 and 65535"
-        if (build < 1) or (build > 65536):
-            raise Exception, "build must be an integer between 1 and 65535"
-
-        if config != 'Debug' and config != 'Release':
-            raise Exception, "config must be either Debug or Release"
-
-        uid = str(uid)
-        #Initialize UID to timestamp if null
-        if (uid == ''):
-            uid = time.strftime("%Y%d%m-%H%M%S")
-
-        if not os.path.exists(srcpath +'\\msi-installer'):
-            raise Exception, "msi-installer could not be found in "+ srcpath
-        if not os.path.exists(srcpath +'\\win-tools'):
-            raise Exception, "win-tools could not be found in "+ srcpath
-        if not os.path.exists(srcpath +'\\xc-windows'):
-            raise Exception, "xc-windows could not be found in "+ srcpath
-        if not os.path.exists(srcpath +'\\gfx-drivers'):
-            raise Exception, "gfx-drivers could not be found in "+ srcpath
-        if (ozpath != ''):
-            if not os.path.exists(ozpath):
-                raise Exception, "Oz stuffs could not be found in "+ str(ozpath)
-        else:
-            raise Exception, "ozpath must be defined"
-        if (ozbuild != ''):
-            if not os.path.exists(ozpath + ozbuild):
-                raise Exception, "Oz stuffs could not be found in "+ str(ozpath)+str(ozbuild)
-        else:
-            raise Exception, "ozbuild must be defined"
-        
-        #Create log directory/file
-        try:
-            if not os.path.exists('c:\\build\\logs\\'+ uid):
-                os.chdir('c:\\build\\logs')
-                os.makedirs(uid)
-            os.chdir('c:\\build\\logs\\'+ uid)
-            log = open('output.log',"w")
-            subprocess = PopenWrapper(log)
-            write = subprocess.write
-            os.chdir(srcpath)
-        except:
-            raise Exception, "ERROR: Unable to create UID directory/log"
-
-        #Checkout tags
-        if tag != '0':
-            os.chdir('msi-installer')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on msi-installer.git')
-            os.chdir('..\\win-tools')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on win-tools.git')
-            os.chdir('..\\gfx-drivers')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on gfx-drivers.git')
-            os.chdir('..\\xc-windows')
-            subprocess.Popen('git checkout -b '+ tag + ' ' + tag, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('Checked out '+ tag +' on xc-windows.git')
-            os.chdir('..')
-        
-        #Build PV drivers/xensetup.exe
-        os.chdir('xc-windows')
-        command = 'dostampinf.bat C:\\WinDDK\\6001.18002 '+ srcpath +'\\xc-windows '+ str(major)+'.'+str(minor)+'.'+str(micro)+'.'+str(build)
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        command = 'dothebuild.bat C:\\WinDDK\\6001.18002 '+ srcpath +'\\xc-windows x86'
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        command = 'dothebuild.bat C:\\WinDDK\\6001.18002 '+ srcpath +'\\xc-windows x64'
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        command = 'dotestsign.bat '+ srcpath +'\\xc-windows'
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        os.chdir('install')
-        if not os.path.exists('License.txt'):
-            subprocess.Popen('echo "License" > License.txt', shell = True)
-        command = 'makensis /DINSTALL_XENVESA xensetup.nsi'
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        os.chdir(srcpath)
-        
-        #Build win-tools
-        command = 'powershell win-tools\\do_build.ps1 -c ' + config 
-        subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-
-        #Build XenClientTools.msi
-        command = 'powershell msi-installer\\XenClientTools\\do_build.ps1 -b ' + str(major)+'.'+str(minor)+'.'+str(micro)+'.'+str(build) + ' -c ' + config + ' -ozpath '+ str(ozpath) + ' -oz ' + str(ozbuild)
-        subprocess.Popen(command, shell = True, stdout = log, universal_newlines=True).wait()
-	    
-        #Check if target was successfully built
-        if os.path.exists('msi-installer\\iso\\Packages\\XenClientTools.msi') and os.path.exists('msi-installer\\iso\\Packages\\XenClientTools64.msi'):
-            #Create .iso
-            command= 'ImgBurn.exe /mode build /outputmode imagefile /src msi-installer\\iso  /dest msi-installer\\iso\\XenClientTools.iso /filesystem "ISO9660 + UDF" /udfrevision "1.02" /verify yes /overwrite yes /VolumeLabel "xc-tools" /rootfolder yes /noimagedetails /start /close /includehiddenfiles yes'
-            subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-            write('.iso Completed')
-        else:
-            log.close()
-            raise Exception, "ERROR: XenClientTools failed to build. See \\\\" + socket.gethostname() + "\\" + uid + "\\output.log for details."
-
-        log.close()
-        return uid
-
-    def cleanlocal(self,srcpath,uid):
-        """cleanlocal(srcpath,uid) - Cleans win-tools msi-installer, removes .iso for that UID, etc."""
-        #Create log directory/file
-        log = FakeLog()
-        try:
-            if not os.path.exists('c:\\build\\logs\\'+ uid):
-                os.chdir('c:\\build\\logs')
-                os.makedirs(uid)
-            os.chdir('c:\\build\\logs\\'+ uid)
-            log = open('output.log', "a")
-            subprocess = PopenWrapper(log)
-            write = subprocess.write
-            os.chdir(srcpath)
-        except:
-            raise Exception, "ERROR: Unable to create UID directory/log"
-        os.chdir(srcpath)
-        subprocess.Popen('powershell win-tools\\XenClientPlugin\\makeclean.ps1', shell = True).wait()
-        subprocess.Popen('powershell msi-installer\\XenClientTools\\makeclean.ps1', shell = True).wait()
-        subprocess.Popen('powershell v2v\\common\\libipv2v\\makeclean.ps1', shell = True).wait()
-        subprocess.Popen('powershell c:\\build\\server\\cleaniso.ps1 -uid '+ uid, shell = True).wait()
-        log.close()
         return 0
 
     def status(self):
@@ -618,10 +358,11 @@ def loadConfig(cfg,site):
 		sys.exit()
 	else:
 		try:
-			global PORT, BUILDDIR, LOGDIR, GITURL, DDKDIR, OZPUBLIC
+			global PORT, BUILDDIR, LOGDIR, CONFIG, GITURL, DDKDIR, OZPUBLIC
 			PORT = config.getint(site,'port')
 			BUILDDIR = config.get(site,'builddir')
 			LOGDIR = config.get(site,'logdir')
+			CONFIG = config.get(site,'config')
 			GITURL = config.get(site,'giturl')
 			DDKDIR = config.get(site,'ddkdir')
 			OZPUBLIC = config.get(site,'ozpublic')
