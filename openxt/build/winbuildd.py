@@ -87,8 +87,8 @@ class FakeLog(object):
         pass
 
 class RPCInterface(object):
-    def make(self,build='',branch='master',certname='',developer=False):
-        """make(build,branch,certname,developer) - Call powershell scripts to do the real work - Ex: make("123456","master","developer",False)"""
+    def make(self,build='',branch='master',certname='',developer='false'):
+        """make(build,branch,certname,developer) - Call powershell scripts to do the real work - Ex: make("123456","master","developer","false")"""
         log = FakeLog()
 
         # Create log directory/file
