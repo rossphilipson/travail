@@ -113,6 +113,7 @@ class RPCInterface(object):
            Call powershell scripts to do the real work """
 
         log = FakeLog()
+        result = 'SUCCESS'
 
         # Create log directory/file
         try:
@@ -151,21 +152,21 @@ class RPCInterface(object):
         command = 'powershell .\winbuild-all.ps1'
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
-        # TODO example using some app and change dir 
-        #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        #command = 'makensis /DINSTALL_XENVESA /DINSTALL_XENVESA8 xensetup.nsi'
-        #subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        #os.chdir(BUILDDIR + uid)
-
-        # TODO example test path if else exception
-        #if os.path.exists('msi-installer\\iso\\Packages\\XenClientTools.msi') and os.path.exists('msi-installer\\iso\\Packages\\XenClientTools64.msi'):
+        # rsync the output unless something went wrong
+        os.chdir(BUILDDIR + "\\openxt\\windows\\output")
+        if os.path.exists('xctools-iso.zip') and os.path.exists('xc-wintools.iso'):
             # Do stuffs
-        #else:
-            # Do other stuffs
-            #raise Exception, "ERROR: XenClientTools failed to build. See \\\\" + socket.gethostname() + "\\" + uid + "\\output.log for details."
+            command = 'echo build > BUILD_ID'
+            subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+            command = 'rsync --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r -a BUILD_ID sdk.zip win-tools.zip xctools-iso.zip xc-windows.zip xc-wintools.iso ' + RSYNCDEST + '\\' + branch
+            subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        else:
+            # Misery
+            write("ERROR: OpenXT Tools failed to build!")
+            result = 'FAILURE'
 
         log.close()
-        return 'SUCCESS'
+        return result
 
     def hello(self):
         return "hello back"
