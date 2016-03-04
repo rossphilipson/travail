@@ -146,9 +146,9 @@ class RPCInterface(object):
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         write("Building Windows bits...")
-        command = '.\winbuild-prepare.ps1 config=' + CONFIG + ' build=' + build + ' branch=' + branch + ' certname=' + certname + ' developer=' + developer
+        command = 'powershell .\winbuild-prepare.ps1 config=' + CONFIG + ' build=' + build + ' branch=' + branch + ' certname=' + certname + ' developer=' + developer
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        command = '.\winbuild-all.ps1'
+        command = 'powershell .\winbuild-all.ps1'
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         # TODO example using some app and change dir 
