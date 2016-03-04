@@ -17,5 +17,11 @@
     <param>
       <value><string>builds@192.168.0.10:/home/builds/win</string></value>
     </param>
+    <param>
+      <value><string>git://github.com/OpenXT</string></value>
+    </param>
+    <param>
+      <value><string>sample-config.xml</string></value>
+    </param>
   </params>
 </methodCall>

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-
-# Copyright (c) 2015 Assured Information Security, Inc.
+# Copyright (c) 2016 Assured Information Security, Inc.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -129,10 +128,11 @@ class FakeLog(object):
         pass
 
 class RPCInterface(object):
-    def make(self,build='',branch='master',certname='',developer='false',rsyncdest=''):
-        """make(build,branch,certname,developer,rsyncdest)
-           Ex: make("123456","master","developer","false","builds@192.168.0.10:/home/builds/win/")
-           Call powershell scripts to do the real work """
+    def make(self,build='',branch='master',certname='',developer='false',rsyncdest='',giturl='',config='sample-config.xml'):
+        """make(build,branch,certname,developer,rsyncdest,giturl,config)
+           Ex: make("123456","master","developer","false","builds@192.168.0.10:/home/builds/win/","git://github.com/OpenXT","sample-config.xml")
+           Call powershell scripts to do the real work
+        """
 
         log = FakeLog()
         result = 'SUCCESS'
@@ -150,7 +150,7 @@ class RPCInterface(object):
         write("Start build, RPC input:")
         write('make(build='+repr(build)+',branch='+repr(branch)+\
               ',certname='+repr(certname)+'developer='+repr(developer)+\
-              'rsyncdest='+repr(rsyncdest)+')')
+              'rsyncdest='+repr(rsyncdest)+'giturl='+repr(giturl)+'config='+repr(config)+')')
         write('Running in dir: ' + os.getcwd())
 
         # Nuke existing build
@@ -158,8 +158,8 @@ class RPCInterface(object):
             shutil.rmtree(BUILDDIR + '\\openxt', onerror=onerror)
 
         # Clone the main OpenXT repo and checkout branch
-        subprocess.Popen('git clone '+ GITURL + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
-        write("Completed cloning " + GITURL + "/openxt.git")
+        subprocess.Popen('git clone '+ giturl + '/openxt.git', shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
+        write("Completed cloning " + giturl + "/openxt.git")
         os.chdir(BUILDDIR + "\\openxt")
         subprocess.Popen('git checkout -b '+ branch, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         write('Checked out '+ branch +' in openxt.git')
@@ -169,7 +169,7 @@ class RPCInterface(object):
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
 
         write("Building Windows bits...")
-        command = 'powershell .\winbuild-prepare.ps1 config=' + CONFIG + ' build=' + build + ' branch=' + branch + ' certname=' + certname + ' developer=' + developer
+        command = 'powershell .\winbuild-prepare.ps1 config=' + config + ' build=' + build + ' branch=' + branch + ' certname=' + certname + ' developer=' + developer
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
         command = 'powershell .\winbuild-all.ps1'
         subprocess.Popen(command, shell = True, stdout = log, stderr = log, universal_newlines=True).wait()
@@ -246,11 +246,9 @@ def loadConfig(cfg,site):
 		sys.exit()
 	else:
 		try:
-			global PORT, BUILDDIR, CONFIG, GITURL
+			global PORT, BUILDDIR
 			PORT = config.getint(site,'port')
 			BUILDDIR = config.get(site,'builddir')
-			CONFIG = config.get(site,'config')
-			GITURL = config.get(site,'giturl')
 		except:
 			print "Exception getting configuration option. Corrupt .cfg file? Missing option?"
 			sys.exit()				
