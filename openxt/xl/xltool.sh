@@ -3,19 +3,27 @@
 function xl_hack_init()
 {
     echo "Init xl hacks..."
-    if [ "`getenforce`" != "Permissive" ]; then
-        echo "SELinux is not in permissive mode, you should fix this first!"
-        echo "Edit /etc/selinux/config and set SELINUX=permissive then reboot"
-        exit
-    fi
-
     if [ -z "`grep "flask_enforcing=0" /boot/system/grub/grub.cfg`" ]; then
-        echo "Xen flask is in enforcing mode, you should fix this first!"
-        echo "Edit /boot/system/grub/grub.cfg and set flask_enforcing=0 then reboot"
+        echo "Xen flask is in enforcing mode, we should fix this bugger first and reboot!"
+        cat /boot/system/grub/grub.cfg | sed 's/flask_enforcing=[[:digit:]]\+ \?//g' > /boot/system/grub/tmp.cfg
+        cat /boot/system/grub/tmp.cfg | sed "s/XEN_COMMON_CMD=\"/XEN_COMMON_CMD=\"flask_enforcing=0 /" > /boot/system/grub/grub.cfg
+        reboot
         exit
     fi
 
+    if [ "`getenforce`" != "Permissive" ]; then
+        echo "SELinux is not in permissive mode, you need to fix this first!"
+        echo "do this:"
+        echo "$ nr"
+        echo "$ setenforce 0"
+        exit
+    fi
+
+    # Always update the SELinux config so we don't end up with it on again.
     mount -o remount,rw /
+    cat /etc/selinux/config | sed 's/SELINUX=.*//g' > /tmp/config
+    cat /tmp/config | sed "1s/^/SELINUX=permissive/" > /etc/selinux/config
+
     echo "1" > /tmp/domid
 
     if [ ! -e /var/lib/xen ]; then
@@ -30,12 +38,14 @@ function xl_hack_init()
         mkdir /var/log/xen
     fi
 
-    if [ -e /usr/lib/xen/bin/qemu-system-i386 ]; then
-        chmod a+x /usr/lib/xen/bin/qemu-system-i386
-    else
-        echo "Missing a /usr/lib/xen/bin/qemu-system-i386 wrapper, copy one there!"
-    fi
+    cp qemu-system-i386 /usr/lib/xen/bin/
+    chmod a+x /usr/lib/xen/bin/qemu-system-i386
+    cp qemu-ifup /usr/lib/xen/bin/
 
+    cp _vimrc /root/.vimrc
+
+    sync
+    mount -o remount,ro /
     echo "Init xl hacks complete"
 }
 
