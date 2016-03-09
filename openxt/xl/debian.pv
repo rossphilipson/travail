@@ -1,0 +1,11 @@
+name = "DebianPV"
+uuid = "7c85049a-9bdd-11e2-9e91-18037322eb44"
+memory = 1024
+vcpus = 1
+disk = ['/storage/uivm/uivm.vhd.old,vhd,xvda1,rw',
+        '/storage/uivm/uivm-swap.vhd,vhd,xvda2,rw',
+        '/storage/uivm/uivm-gconf.vhd,vhd,xvda3,rw']
+videoram = 16
+kernel = '/root/kernel-00000000-0000-0000-0000-000000000001'
+#vif = [ "bridge=xenbr0,script=vif-bridge" ]
+extra = 'root=/dev/xvda1'
