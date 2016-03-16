@@ -1,0 +1,169 @@
+--- foxt	2016-03-14 15:22:43.119988896 -0400
++++ fxen	2016-03-14 15:22:36.207988960 -0400
+@@ -2,24 +2,21 @@
+ ./include
+ ./include/blktaplib.h
+ ./include/blktap2.h
+-./include/blktap-int.h
+ ./include/vhd-util.h
+ ./include/lvm-util.h
+ ./include/list.h
+ ./include/atomicio.h
+ ./include/Makefile
+ ./include/libvhd-journal.h
+-./include/partition.h
+ ./include/libvhd.h
+ ./include/tapdisk-message.h
+ ./include/vhd.h
+ ./include/relative-path.h
+-./include/libvhd-index.h
++./include/vhd-uuid.h
+ ./Makefile
+ ./control
+ ./control/tap-ctl-spawn.c
+ ./control/tap-ctl-open.c
+-./control/tap-ctl-stats.c
+ ./control/tap-ctl-unpause.c
+ ./control/tap-ctl-destroy.c
+ ./control/tap-ctl-pause.c
+@@ -31,7 +28,6 @@
+ ./control/tap-ctl.c
+ ./control/tap-ctl-ipc.c
+ ./control/tap-ctl-check.c
+-./control/blktap.rules
+ ./control/tap-ctl-free.c
+ ./control/tap-ctl-close.c
+ ./control/tap-ctl-list.c
+@@ -43,108 +39,95 @@
+ ./README
+ ./drivers
+ ./drivers/log.h
+-./drivers/tapdisk-syslog.c
++./drivers/blk_linux.c
++./drivers/xmsnap
+ ./drivers/tapdisk-disktype.c
+-./drivers/block-lcache.c
++./drivers/qcow-create.c
+ ./drivers/tapdisk-ring.c
+-./drivers/tapdisk-stats.h
++./drivers/hashtable_itr.c
++./drivers/hashtable_utility.h
+ ./drivers/lock.h
+ ./drivers/tapdisk-log.c
+ ./drivers/tapdisk-log.h
+ ./drivers/tapdisk-queue.h
+ ./drivers/tapdisk-server.h
++./drivers/bswap.h
++./drivers/qcow.h
+ ./drivers/tapdisk-queue.c
+ ./drivers/tapdisk-filter.c
+ ./drivers/tapdisk-server.c
+ ./drivers/tapdisk-driver.c
+ ./drivers/tapdisk-utils.h
++./drivers/aes.c
+ ./drivers/block-ram.c
+ ./drivers/tapdisk-control.h
+ ./drivers/io-optimize.c
+ ./drivers/libaio-compat.h
+-./drivers/tapdisk-stats.c
+ ./drivers/lock.c
+-./drivers/tapdisk-syslog.h
+ ./drivers/tapdisk-utils.c
+ ./drivers/tapdisk-client.c
+ ./drivers/tapdisk-ring.h
+ ./drivers/tapdisk.h
+ ./drivers/tapdisk-interface.c
++./drivers/img2qcow.c
+ ./drivers/tapdisk-diff.c
++./drivers/hashtable.c
+ ./drivers/io-optimize.h
+ ./drivers/block-vhd.c
+ ./drivers/block-cache.c
++./drivers/md5.h
+ ./drivers/tapdisk-stream.c
+-./drivers/tapdisk-logfile.h
+ ./drivers/block-aio.c
+ ./drivers/Makefile
+ ./drivers/tapdisk-vbd.c
+-./drivers/block-vindex.c
+-./drivers/tapdisk-logfile.c
++./drivers/md5.c
+ ./drivers/tapdisk-image.c
+ ./drivers/td.c
+-./drivers/tapdisk2.h
+-./drivers/crypto
+-./drivers/crypto/compat-crypto-openssl.h
+-./drivers/crypto/Makefile
+-./drivers/crypto/xts_aes.h
+-./drivers/crypto/test_decrypt.c
+-./drivers/crypto/xts_aes.c
++./drivers/hashtable_utility.c
++./drivers/hashtable_itr.h
++./drivers/hashtable.h
++./drivers/blk.h
++./drivers/blk_netbsd.c
+ ./drivers/tapdisk-driver.h
+-./drivers/block-crypto.c
+-./drivers/tapdisk-storage.c
++./drivers/block-qcow.c
++./drivers/check_gcrypt
+ ./drivers/block-log.c
+ ./drivers/tapdisk2.c
+ ./drivers/tapdisk-control.c
+ ./drivers/tapdisk-vbd.h
+ ./drivers/tapdisk-image.h
+ ./drivers/profile.h
++./drivers/qcow2raw.c
+ ./drivers/tapdisk-interface.h
+ ./drivers/tapdisk-filter.h
++./drivers/aes.h
+ ./drivers/scheduler.c
+-./drivers/tapdisk-storage.h
+ ./drivers/scheduler.h
+ ./drivers/tapdisk-disktype.h
+ ./drivers/atomicio.c
+-./drivers/block-crypto.h
++./drivers/block-remus.c
++./drivers/hashtable_private.h
+ ./vhd
+ ./vhd/vhd-util.c
+ ./vhd/Makefile
+-./vhd/vhd-index.c
+ ./vhd/lib
+-./vhd/lib/vhd-util-dm-encrypt.c
+-./vhd/lib/vhd-util-clone-metadata.c
+ ./vhd/lib/vhd-util-check.c
+-./vhd/lib/icbinn.c
+-./vhd/lib/xattr.h
+ ./vhd/lib/vhd-util-create.c
+-./vhd/lib/vhd-util-stream-coalesce.c
+ ./vhd/lib/Makefile
+ ./vhd/lib/relative-path.c
+ ./vhd/lib/libvhd.c
+ ./vhd/lib/vhd-util-snapshot.c
+-./vhd/lib/vhd-util-dm-decrypt.c
+ ./vhd/lib/vhd-util-coalesce.c
+-./vhd/lib/README.libvhdio
+ ./vhd/lib/vhd-util-modify.c
+-./vhd/lib/libvhd-stream.c
+ ./vhd/lib/vhd-util-read.c
+ ./vhd/lib/vhd-util-scan.c
+ ./vhd/lib/vhd-util-fill.c
+ ./vhd/lib/vhd-util-set-field.c
+-./vhd/lib/test
+-./vhd/lib/test/random-copy.c
+-./vhd/lib/test/test-snapshot.c
+-./vhd/lib/test/Makefile
+-./vhd/lib/test/aio-test.c
+ ./vhd/lib/vhd-util-repair.c
+-./vhd/lib/libvhd-index.c
+-./vhd/lib/vhd-util-key.c
+ ./vhd/lib/vhd-util-revert.c
+ ./vhd/lib/vhd-util-resize.c
+ ./vhd/lib/vhd-util-query.c
++./vhd/lib/vhd-util-uuid.c
+ ./vhd/lib/atomicio.c
+-./vhd/lib/xattr.c
+ ./vhd/lib/libvhd-journal.c
+-./vhd/lib/libvhdio.c
+ ./vhd/vhd-update.c
