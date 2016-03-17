@@ -829,36 +829,48 @@ Date:   Mon Jul 19 20:12:21 2010 +0000
 ** IGNORE
 ** [snip]
 
+** Not sure - looks like a bug fix or enhancement
+** SANITY
 commit 6ef3597c82a5b8a8c2fdc4fbadaae3fde06d9ed8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 14:07:03 2010 -0700
 
     fix handling early failures
 
+** Not sure - looks like a bug fix or enhancement
+** SANITY
 commit df2e16c7c6af2cebdef72d541ae192cbf6a5b55f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:33:47 2010 -0700
 
     don't retry when there's no point
 
+** Not sure - looks like a bug fix
+** SANITY
 commit 7816683193ce3d0a7ec2dde57675a0050174d6e0
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:32:31 2010 -0700
 
     ensure progress when retries are required
 
+** Not sure - looks like a bug fix
+** SANITY
 commit 310be18b3e74cbe7beb32623a2d4ad095deffe95
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:31:39 2010 -0700
 
     don't wedge if reopening vdi fails
 
+** Who cares, it is fine upstream
+** IGNORE
 commit 88ad43ec0ba44599175f3883b7b444be9f18ae34
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:30:29 2010 -0700
 
     move debug printf to make logs more intelligble
 
+** I guess this goes with the rest of the dm stuff - to the grave
+** IGNORE
 commit 9c7925069ae679f702a6f66374111210b7706efa
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:29:45 2010 -0700
