@@ -1,0 +1,1235 @@
+commit d9f0f4b6805670d7c9bc15b97ef5f0b60c8cca50
+Merge: 474ff34 8f8cb52
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Fri May 30 10:50:43 2014 +0200
+
+    Merge branch 'bombardier'
+
+commit 8f8cb520563f412911a6b73b6f5067229ab11af0
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Fri May 30 10:48:58 2014 +0200
+
+    XC-11076 memory corruption in blktap2 fix
+
+commit 474ff340b55325489817df683ce4e0b3a80b0e65
+Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
+Date:   Wed May 14 15:32:57 2014 -0400
+
+    auto-recopyright
+
+commit d3a4613f22e6aa16a8b1b1af3393118033edda83
+Author: Philip Tricca <philip.tricca@citrix.com>
+Date:   Mon Feb 17 21:09:26 2014 -0500
+
+    NXT-15443: Remove kernel AES-XTS implementation.
+    
+    This commit removes all of the code that's protected by the KERN guards
+    as well as all of the code it would activate.
+
+commit 604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
+Author: Philip Tricca <philip.tricca@citrix.com>
+Date:   Mon Feb 17 20:09:01 2014 -0500
+
+    NXT-15443: Replace OPENSSL crypto guards with a KERN crypto guards.
+    
+    This effectively makes the OpenSSL implementation the default. The
+    kernel crypto implementation can be substituted by setting
+    USE_KERN_CRYPTO to 'y' when invoking make.
+
+commit ccfebd4af2a87793d8b94a60e855d0f814c88850
+Author: Philip Tricca <philip.tricca@citrix.com>
+Date:   Tue Dec 17 17:00:19 2013 -0500
+
+    STFU git.
+
+commit 3bad380be4954839a4d3d87e7c7f6ca16ea5abe8
+Author: Rick Leeming <rick.leeming@citrix.com>
+Date:   Tue Oct 8 04:56:04 2013 +0100
+
+    XC-10055: Fix destruction of tapdisk device in vhd-dm-remove
+    
+    Without this fix, the following commands leak a tapdisk device:
+    
+        vhd-dm-create /storage/disks/foo.vhd
+        vhd-dm-remove foo
+    
+    Also fix an error in the usage text.
+
+commit 6290f973182adfc3618c6a6b5c7aaeae1f0804fe
+Author: Vincent Hanquez <vincent.hanquez@citrix.com>
+Date:   Fri Sep 6 14:41:58 2013 +0100
+
+    AFRL-227: change the way we decide if a VHD is encrypted or not.
+    
+    Instead of just looking in the VHD file to see if the file contains a
+    set hash cookie, we now check if a key file with the same basename
+    as the vhd file exists.
+    
+    If it exists, we consider the VHD encrypted, and a VHD that says otherwise
+    is now suspicious (could have been tempered).
+    
+    Otherwise, we're still defaulting to parents encryption keys
+    (provided they exist) when encryption is not set in a specific node.
+
+commit af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
+Author: Vincent Hanquez <vincent.hanquez@citrix.com>
+Date:   Fri Sep 6 14:40:29 2013 +0100
+
+    Add an explicit logging before we exit with a crypto failure.
+    
+    Make the error more obvious when looking at the log, otherwise
+    there's only cryptic timeout in blktap
+
+commit def872845a0756fbb44c2fff2c98a2fc56e2f839
+Author: Vincent Hanquez <vincent.hanquez@citrix.com>
+Date:   Fri Sep 6 14:14:14 2013 +0100
+
+    Fixes to the openssl crypto backend.
+    
+    Support two different size of keys, correct 1 context typo
+    and also commit the Makefile changes needed to support the new backend.
+    
+    still disabled by default.
+
+commit 7d4b850a749017f6c429756f5e62769e9451ad43
+Author: Vincent Hanquez <vincent.hanquez@eu.citrix.com>
+Date:   Sat Aug 10 10:25:47 2013 +0100
+
+    Add ability to use openssl in blktap for XTS-AES encryption.
+    
+    Disabled for now and behind an OPENSSL_XTS_AES define, pending full system checks.
+
+commit 9eea97e4dbfdf82888ecf8a11c226783f6c716ab
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Thu May 9 13:40:13 2013 +0200
+
+    blktap: add code to resolve same dir parents created by XCE synchroniser ( for ex. ./system-1.vhd )
+
+commit fed74157ab9af3e1e4d0e07817e3c0d7351ccb8a
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Fri Apr 19 11:54:25 2013 +0200
+
+    blktap, install vhd-util.h header (required by mepd)
+
+commit c1690373ab646392e22349e2808ed8cb8ed715a2
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Wed Oct 24 13:37:46 2012 +0200
+
+    XC-9475 tapdisk: for differencing disks, inherit encryption parameters from the parent disk (if not overriden in child)
+
+commit d5797db89b7d9a951723887b68f48936f6354c81
+Author: Rick Leeming <rick.leeming@citrix.com>
+Date:   Thu Oct 4 19:34:56 2012 +0100
+
+    Fix bug in libvhd when closing a vhd accessed over icbinn
+    
+    When libvhd closes a vhd being accessed over icbinn, it calls both close()
+    and icbinn_close() on the fd returned by icbinn_open(). The close() call
+    can cause problems if the icbinn fd happens to have the same number as a
+    real fd.
+    
+    I discovered this when running sync-client in syncvm. A call to vhd-util
+    failed with status 5 after libvhd closed the fd for /dev/v4v_stream. (The
+    same command worked fine when run in a shell due to the different number
+    of open fds.)
+
+commit 70e886c7cba966902723617ea435d13e4a115120
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Sun Sep 23 19:29:11 2012 +0100
+
+    More libvhd misery, 1) fix error in linking makefile, 2) catch some more calls to stat, 3) fix my muppet bug in seek
+
+commit 1d6a6c3ce279448e654019d1950f225f0f05a49b
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Fri Sep 21 15:27:15 2012 +0100
+
+    move vhd key stuff to icbinn
+
+commit 2111c6d171dd6e89d7ac574003ed7ef3d66954b3
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Fri Sep 21 12:16:40 2012 +0100
+
+    don't check for a block device with stat when using icbinn
+
+commit 1c9f24920ba7995b37d1ce019958d39ff6f88c7e
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Fri Sep 21 11:54:31 2012 +0100
+
+    james is a muppet - the last component of a path needn't be a direcrtory
+
+commit 17d54e14de930ddd0d7e54ea8f58bd8d81ab314b
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Fri Sep 21 10:42:04 2012 +0100
+
+    swap in vhd_realpath (which is icbinn aware) into libvhd inplace of libc's
+
+commit 116f2edd62095ec74ff24781567b40c22d0c62ce
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Thu Sep 20 01:43:05 2012 +0100
+
+    and a bit more of the same
+
+commit 72513d318353fe6be330a3e983c0976837a9e62c
+Author: James McKenzie <James.McKenzie@citrix.com>
+Date:   Thu Sep 20 01:38:34 2012 +0100
+
+    icbinn support for blktap/libvhd
+
+commit 3c5efe118186cb2713764c24362d3681d3664f31
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Tue Sep 18 15:47:40 2012 -0500
+
+    XC-8713 check if vhd is empty before setting keyhash
+
+commit 8aff25641de383b9af2b5eff015c0effca5469ea
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Thu Aug 30 12:46:19 2012 +0200
+
+    XC-8994 support 512 keysize
+
+commit 90f1c2badcb8fbf77c41d7c1c2438dbdbac87ced
+Author: Zbigniew Halas <zbigniew.halas@citrix.com>
+Date:   Mon Jun 18 21:35:53 2012 +0100
+
+    Do not overwrite CC and LD
+
+commit cd688ea20a2c5c16e715bea100d21919610abe52
+Author: Zbigniew Halas <zbigniew.halas@citrix.com>
+Date:   Fri Jun 1 22:28:56 2012 +0100
+
+    Make blktap compile with gcc 4.6
+
+commit fb7d6f5f7337793b877a729d3d05786bbb1f3f15
+Author: Kamran Karimi <kamran.karimi@citrix.com>
+Date:   Wed Apr 18 13:41:58 2012 -0700
+
+    Changed vhd/lib/vhd-util-check.c to make it compiler under gcc-4.4
+
+commit e1e79fc8650fcacee43845417127ede8fc1d0e01
+Author: Rahul Golwalkar <rahul.golwalkar@citrix.com>
+Date:   Fri Jan 27 14:52:23 2012 +0000
+
+    XC-5102 : Remember encryption keys across pause/unpause of blktap
+    Patch by Jake Wires
+
+commit fb899d41a34f728c38f0a869fd2755ebf1b51d93
+Merge: bcb9656 4a6d657
+Author: Eric Chanudet <eric.chanudet@citrix.com>
+Date:   Wed Dec 21 17:56:22 2011 +0000
+
+    Merge branch '4.1'
+
+commit bcb96566fe5e5cb0fa58fbe82189ad2625860adc
+Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
+Date:   Thu Nov 10 11:55:01 2011 +0000
+
+    Revert "removing some code portion which is believed to break non-dynamic vhds support... could possibly break stuffs"
+    
+    This reverts commit 494ec0c831603bdd5acc75cf34522c600cd88d48.
+
+commit 4a6d65734be937dcc9ab9c6e657151c3d3316fc6
+Merge: a2979ce 78fb2d8
+Author: Eric Chanudet <eric.chanudet@citrix.com>
+Date:   Tue Oct 11 17:14:22 2011 +0100
+
+    Merge branch 'master' into 4.1
+
+commit 78fb2d8eceb6d1a7b1fdc2f4aad0cb7bf4eb29a2
+Author: Philip Tricca <philip.tricca@citrix.com>
+Date:   Wed Sep 28 13:17:52 2011 -0400
+
+    [blktap] XC-7114 Add -fPIC compiler flag to build system.
+
+commit 6df041294c5220a77fbd8d8520cdc432f62a509f
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Wed Sep 28 11:50:34 2011 +0100
+
+    [blktap] XC-7114 Update cpuid function so gcc can't use ebx for -pie code.
+    
+    cpuid function taken from xen-oss (tools/libxc/xc_cpuid_x86.c).
+
+commit a2979ce014bd0854f253003bc6e031580a55c6a9
+Merge: 2a2de91 494ec0c
+Author: Eric Chanudet <eric.chanudet@citrix.com>
+Date:   Wed Sep 21 12:32:33 2011 +0100
+
+    Merge branch 'master' into 4.1
+
+commit 494ec0c831603bdd5acc75cf34522c600cd88d48
+Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
+Date:   Wed Sep 7 14:48:29 2011 +0100
+
+    removing some code portion which is believed to break non-dynamic vhds support... could possibly break stuffs
+
+commit cc5bb58070528d03e8abf7d6af5d56ecfef7692d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Aug 16 17:05:22 2011 -0700
+
+    some documentation on libvhdio.
+
+commit 27a14348e957e790262a2363d03744bb259b5389
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Jul 19 14:08:57 2011 -0700
+
+    Revert "Revert "use fallocate when possible for allocating vhd blocks""
+    
+    This reverts commit 93ed3b83f0faa3da8d89b718c87d9841bd8060d7.
+    
+    ext4 aio+dio fix backported from 2.6.38 to 2.6.32 should now make this
+    patch viable.
+
+commit 190b858225af960ff8104c626643129cf71b5774
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Jul 19 14:08:33 2011 -0700
+
+    [test] simple test which exposes ext4 aio+dio bug
+
+commit b9d3c028e59647efb89316559603de921b923f73
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Jul 19 14:07:16 2011 -0700
+
+    [test] fix return type
+
+commit 28d01d93c6325c357d7ffe205df7b1c33bb7b0e2
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Jun 21 11:24:41 2011 -0700
+
+    XC-5423: add utility to query number of allocated vhd blocks
+
+commit 93ed3b83f0faa3da8d89b718c87d9841bd8060d7
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Wed Jun 1 11:03:23 2011 +0100
+
+    Revert "use fallocate when possible for allocating vhd blocks"
+    
+    This reverts commit abb20c86563ef81f72ae68b177cdd0ef344eb3ed.
+
+commit abb20c86563ef81f72ae68b177cdd0ef344eb3ed
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue May 31 16:07:03 2011 -0700
+
+    use fallocate when possible for allocating vhd blocks
+
+** Remove backport
+
+commit c15e25c231fc4eec14b6be636833b089366d7926
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon May 2 16:56:26 2011 -0700
+
+    allow coalescing partial chains from streamed vhds
+
+commit ab2b66d6f598515307505c4abd2ffa039f33f4d7
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon May 2 16:55:18 2011 -0700
+
+    interpose on fclose
+
+commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon May 2 16:54:46 2011 -0700
+
+    move prototypes to header file
+
+commit cb7392bbbbd2d5d5f1bdac5a5de6875346eac144
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Apr 20 18:53:20 2011 -0700
+
+    XC-5102: add option to set vhd keyhash directly
+
+commit 5b05287e9f90a0ec298a64ba9f5130d8235ce39f
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Apr 6 14:18:55 2011 -0700
+
+    fix parsing of empty parent locators
+
+commit 29113b54207787faeacbd6b896a0e2944cce9836
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Apr 6 14:18:01 2011 -0700
+
+    memleak
+
+commit 79ca4075d0cbdbb40c54c707a215c901d56e2348
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Apr 6 13:56:29 2011 -0700
+
+    fix vhd-util-read for pre-allocated vhds
+
+commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 29 11:47:01 2011 -0700
+
+    XC-5214: ignore keys when keyhash is not set
+
+commit 969300731a957de6e211b58e89ce390e7a3f1023
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Mar 21 18:54:35 2011 -0700
+
+    XC-5214 - fix keyhash check
+
+commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 15 11:06:59 2011 -0700
+
+    typo
+
+commit 2a2de91055ebdccb5d700f1854962b11fc52103f
+Author: Eric Chanudet <eric.chanudet@citrix.com>
+Date:   Mon Mar 14 15:17:43 2011 +0000
+
+    [blktap] Fix compilation with xen-4.1 new sring struct.
+
+commit 032e4ff8173ae0310649e2ab9dcaf1def65d86f1
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Feb 2 19:27:49 2011 -0800
+
+    XC-4963: logging failures should not be fatal
+
+commit a344491cab88fc6326e9a16493923b8e8200b4db
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Jan 31 13:00:32 2011 -0800
+
+    tapdisk-syslog support for STREAM-based sysloggers
+
+commit 1489e7132c0883ae315dbd8233e3906b983973d7
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Jan 26 11:37:27 2011 -0800
+
+    always open with STRICT since we dropped the preliminary open/close before IO
+
+** Remove series of backports
+
+commit 8f6acba75214adb528b31161aa7e966ba5bfc14e
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 15 12:01:31 2010 -0800
+
+    XC-4678: add VHD locking to tapdisk
+
+commit 1e9cf410bcd1e2f91273a9fb061439b74fcb4d0d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Dec 9 18:57:13 2010 -0800
+
+    libvhdio: only vhd_write_footer() when new blocks are allocated
+    
+    dramatically improves performance after the recent addition of fdatasyncs()
+
+commit a0dbd69b0201f47597e43bf3329ab9c4de306399
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 8 17:43:33 2010 -0800
+
+    XC-4672: shutdown cleanly when SIGTERM is received
+    
+    ...but don't remove the pid file, as we've not been shutdown via the
+    proper interface
+
+commit a2480dcde324d856e2017350d8b3322577f0e678
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 8 17:42:05 2010 -0800
+
+    fix tapdisk2 usage message
+
+commit 5a0d0636ff39fe6a5f18d2e870ee0e34ed844a51
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 8 15:57:17 2010 -0800
+
+    XC-4323: tapdisk pidfiles for debugging
+    
+    if /var/log/tapdisk-pids exists, tapdisk processes will create empty pid
+    files there on startup and remove them on shutdown. this will make it
+    obvious when tapdisks are not shutdown cleanly.
+
+commit fd08e3d7968dd08f752c54ad3c54b9099cea3c00
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 8 14:35:15 2010 -0800
+
+    XC-4323: extra logging to make this extra obvious
+
+commit 3db9b949bee5551895db713dc63a7377f7a92ac7
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Dec 7 21:07:17 2010 -0800
+
+    XC-4636: special-case tapdev minors no longer
+
+commit 8191a4f116541dc3e5b25f670139da70c213e37b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 1 17:23:36 2010 -0800
+
+    XC-4323: temporarily disable automatic batmap fixup
+    
+    keep the failure explicit for now in case any new SRs turn up
+
+commit 3444fcfdcff2af17d1792fa2beb252c1ff5b0c44
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 1 17:20:50 2010 -0800
+
+    XC-4323: robustify tapdisk to batmap errors
+    
+    * for read-only vhds, retry failed reads a few times, and if that fails,
+      ignore the batmap completely
+    * if we have exclusive access to writeable vhds, try to re-initialize the
+      batmap, or ignore it if that fails
+    
+    either way, inconsistent batmap checksums will not prevent tapdisk from
+    mounting a vhd.
+
+commit a052005f8a231f6ef64c659a146f7e4e840b446a
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 1 17:11:12 2010 -0800
+
+    XC-4323: add option to vhd-util check to compare batmap to bitmaps
+    
+    also display more meaningful error message when batmap cksm is inconsistent
+
+commit b45439e18b5f634cb43029d97b056bec6bb58a2b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 1 17:07:55 2010 -0800
+
+    XC-4323: ignore cksum mismatch when calculating end of vhd metadata
+    
+    also export a few batmap helper functions
+
+commit 4267f574ff27a8a25afe5c8a05457b67f6f88fa9
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Dec 1 17:04:10 2010 -0800
+
+    XC-4323: fdatasync when extending files
+
+commit 6d5f862479be3b652ecfabca2728f85a1663bb22
+Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Date:   Wed Nov 3 13:42:35 2010 +0000
+
+    XC-4399 change TAPDISK2_CRYPTO_KEYDIR to be interpreted as comma separated list of key directories
+    
+    before only single directory was supported
+
+commit 9555a9bcd4ce8b3d1a6d93389e66f8ae3c5c3755
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Oct 11 16:53:48 2010 +0530
+
+    XC-4215: use xattrs for proprietary xc headers on third-party vhds
+
+commit f062843e0c7d82072a7619d3939a6fee293c7911
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Oct 11 16:53:11 2010 +0530
+
+    typo
+
+commit 1989e2d168f9aa9fdfa52ea107aa65c8a8e545cc
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Sep 24 20:08:13 2010 -0700
+
+    XC-4120: force allocation of empty blocks to ensure sizes match
+
+commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:25:26 2010 -0700
+
+    check for errors when initializing crypto
+
+commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:25:12 2010 -0700
+
+    refuse to open vhds for IO if keyhashes don't look right
+
+commit ece4b70dc7a96df938cbb0f2e7aed26d28f6ce02
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:24:31 2010 -0700
+
+    add utility for setting, checking, and displaying keyhashes
+
+commit 68374cffa633f49a226f95c92ecce2671f421ee8
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:23:34 2010 -0700
+
+    include keyhash in vhd metadata displays
+
+commit 9072bfc23ce8776f0953c3fa7e92917c0ae4e789
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:22:12 2010 -0700
+
+    add keyhash field to batmap header
+
+commit 1cc3f95f5a03e88c7646dbecccdd5af88533d79b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:20:16 2010 -0700
+
+    vhd-dm-{create,remove}: screen-scraping fix
+
+commit be310fe80f68468053f612052c2cf83b509ecf90
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:19:53 2010 -0700
+
+    vhd-dm-remove: support new sysfs layout
+
+commit 50f320d5e6e02dd354436a6e5aaf5f6d17630dc1
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:18:58 2010 -0700
+
+    vhd-dm-create: add keydir option
+
+commit c98defd3234510b8bf7eb84b921dff7b0b9f1d5a
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:18:35 2010 -0700
+
+    vhd-dm-create: move to tap-ctl
+
+commit 14f5281c3d63f7ddb12af180645e6c01ea7e0ce2
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:16:05 2010 -0700
+
+    libvhd: fix batmap header size calculation
+
+commit 9e24ba4e78022a337229ebc6c788e987ec4abea4
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:15:30 2010 -0700
+
+    libvhd: extra logging
+
+commit 4bc6769fbe5325e4d01c30feb36dd23b4b3c67ad
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:15:06 2010 -0700
+
+    libvhd: fix io on block devices
+
+commit d8fd64a421e065c951818a793b6f3c048453502d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:13:40 2010 -0700
+
+    typo
+
+commit 2088c34151c4a45ed02e2a0e245f54f4b9d80b1f
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:13:01 2010 -0700
+
+    vhd-stream: open as binary
+
+commit 46c575f81c08e11cf7c8c3fe5fe51b533c35ec24
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:12:45 2010 -0700
+
+    vhd-stream: flush after write
+
+commit b9fdabf033581032d95e4054eb4c798cb557803a
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:12:30 2010 -0700
+
+    vhd-stream: always try standard seek before emulated seek
+
+commit 6d70db143d569c9b11e59efae3c054dc7abe9748
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:11:35 2010 -0700
+
+    vhd-stream: use vhd_bytes_padded convenience api
+
+commit cc89107c06675e85e8a2e0ebb30578eabdc8870f
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:10:08 2010 -0700
+
+    dm-decrypt: always write allocated blocks, even if they're empty
+    
+    otherwise the bat will be inconsistent
+
+commit 6ee06eff2f182097579a486f74899dc77a1955a9
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:08:33 2010 -0700
+
+    add option to mount tapdisks read-only
+
+commit c24d74b31278d9e9ca1f903ba50329bde982f3f1
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Sep 1 14:08:02 2010 -0700
+
+    missing break
+
+commit 22f57a80ae2f4016255a0d5eeb730559fb14db40
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Aug 17 12:49:58 2010 -0700
+
+    set PRIO_SPECIAL_IO for tapdisk process to avoid write-back deadlock.
+
+commit 3292321524cc5797bd0e01b9d36e71ed4a54cbbf
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Aug 10 16:41:38 2010 -0700
+
+    XC-3264: a few fixes after merge
+    
+    * don't issue requests while paused
+    * don't timeout requests while paused
+    * ensure progress on resume
+
+commit 59c4d4f0d47f7e9ebd90d82b30d8b27ddeb1c667
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Aug 10 16:39:19 2010 -0700
+
+    don't install dodgy udev rules
+
+commit 387962f1645a12db976b82c2a972737e95c286d5
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Aug 9 19:32:04 2010 -0700
+
+    XC-3264: simplify pause/unpause interface
+
+commit f920bc1f141398e772f2e642ffd6f4907ce2f786
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Aug 9 18:44:08 2010 -0700
+
+    catch spawn error
+
+commit 7cef6457c38cc51c46d6eaf32343796b5d7704be
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Aug 9 16:12:18 2010 -0700
+
+    XC-3264: simplify device destruction interface
+
+commit 398bc9e89277c4c6a474329d43b400da4fbeee40
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Aug 9 16:11:48 2010 -0700
+
+    typo
+
+commit 2c3523d905723e76a760ce31d7dd99068373ca3d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Aug 9 15:16:58 2010 -0700
+
+    XC-3264: xc/xs blktap merge
+
+commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Fri Jul 30 23:05:39 2010 +0000
+
+    Use loop unrolled optimized aesni-ecb to get better performance through
+    improved scheduling/pipelining of the aesni instructions.
+    
+    Also add simple throughput measurement mode to test_decrypt.
+
+commit b88b7199dcbac1492ea7c265a4ca5484b964aed9
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Wed Jul 28 16:24:22 2010 +0100
+
+    blktap: Only compile lib in the daemon directory
+
+commit e102fd9348f164b72a834bf94f44ea6345772ec6
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Wed Jul 28 16:24:15 2010 +0100
+
+    Revert "Don't compile tapdisk daemon."
+    
+    This reverts commit 0a2ef6506b75617e11cdddceb86a341eed1bc239.
+
+commit 0a2ef6506b75617e11cdddceb86a341eed1bc239
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Wed Jul 28 14:47:36 2010 +0100
+
+    Don't compile tapdisk daemon.
+
+commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Tue Jul 27 20:10:37 2010 +0000
+
+    Add aesni support using the 32-bit openssl aesni code.
+
+commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Mon Jul 26 18:52:11 2010 +0000
+
+    Sync aes code with version from linux 2.6.32.
+
+commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Mon Jul 26 17:49:20 2010 +0000
+
+    Check for ENOENT instead of EACCESS, when keyfile is not present.
+
+commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Mon Jul 19 20:12:21 2010 +0000
+
+    Add per-vhd encryption.
+    
+    Add the Linux kernel's aes and aes-xts crypto code to tapdisk and
+    allow using a different key for each vhd in a vhd chain.
+    
+    The key directory is specified by setting the TAPDISK2_CRYPTO_KEYDIR
+    environment variable.
+
+**
+** I think everything that came before this was to support the dead Transmitter
+** project. Ignoring for now.
+**
+
+** Remove part-util and vhdpartx since they are no longer used
+
+commit 6ef3597c82a5b8a8c2fdc4fbadaae3fde06d9ed8
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 14:07:03 2010 -0700
+
+    fix handling early failures
+
+commit df2e16c7c6af2cebdef72d541ae192cbf6a5b55f
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:33:47 2010 -0700
+
+    don't retry when there's no point
+
+commit 7816683193ce3d0a7ec2dde57675a0050174d6e0
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:32:31 2010 -0700
+
+    ensure progress when retries are required
+
+commit 310be18b3e74cbe7beb32623a2d4ad095deffe95
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:31:39 2010 -0700
+
+    don't wedge if reopening vdi fails
+
+commit 88ad43ec0ba44599175f3883b7b444be9f18ae34
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:30:29 2010 -0700
+
+    move debug printf to make logs more intelligble
+
+commit 9c7925069ae679f702a6f66374111210b7706efa
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:29:45 2010 -0700
+
+    vhd-dm-{create,remove}
+    
+    a couple shell scripts for creating/removing device node targets backed
+    by vhds.
+
+commit b88008b1d1370070e33b537e7d482f60b020255a
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:28:40 2010 -0700
+
+    allow instantiating read-only tapdisks.
+    
+    current semantics aren't perfect, since the device can still be opened
+    read/write, but all write requests will fail.
+
+commit 83467855403613eef3f09e8ba19ee3180d03ff4f
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:25:26 2010 -0700
+
+    vhd-util dm-decrypt
+    
+    takes a vhd and a raw image as input, writes a new vhd to stdout containing
+    the metadata from the original vhd and the data from the raw image
+
+commit bfb45c2f107577fff4a2a1e5de4f882272ae7146
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:23:47 2010 -0700
+
+    vhd-dm-encrypt
+    
+    accepts a vhd stream as input; writes the present bits of the vhd to a raw
+    image.
+
+commit b1968966a577ab4deb096067ad0cbece3552669e
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:21:20 2010 -0700
+
+    vhd-util clone-metadata
+    
+    creates an empty vhd with identical footer/header/parent locators as input
+    vhd.
+
+commit 396fd20ad9643d3bf6715fe2754942990d757752
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:19:55 2010 -0700
+
+    add vhd-util stream-coalesce
+    
+    accepts vhd streams as input and produces a single coalesced vhd as output
+
+commit 5f6b95ed0bd5e7888798c2191fee0a508794390d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:18:11 2010 -0700
+
+    use aforementioned helper functions
+
+commit f3f92f4400737e4e2cd922d090b292e093860b15
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:17:47 2010 -0700
+
+    helper functions for determining vhd current and maximum capacity
+
+commit 0387a7a61ab9cf55803a544163a7dd966901ead5
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:13:44 2010 -0700
+
+    fixes to libvhdio when various flavors of open are not present
+
+commit b7ed98286514defe466d2ff85bd118ef84cf18c8
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:12:40 2010 -0700
+
+    add insane option to make differencing vhds dynamic and vice versa
+
+commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:10:06 2010 -0700
+
+    fix alignment check in vhd_write_block
+
+commit cb4dfce02deb4878e7104b59994fac1c7bbe9076
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:08:56 2010 -0700
+
+    fake geometry if it isn't there
+
+commit e65f65f97193d03d87c71f6b0f6da5b47d555a9b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 11:08:01 2010 -0700
+
+    add libvhd-stream
+
+commit ac0af61afa8d7263e967f68cd0590f4f07edf0fc
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jul 1 10:59:12 2010 -0700
+
+    remove vhd-util stream
+
+commit 4bb9b9f7bf082ca0467659f7070f21a981f89162
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 15:06:34 2010 -0700
+
+    add progress indicator to vhd-util stream
+
+commit 959c34c8e9df8dc4cf0405c0b31831d0806f952b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 14:09:46 2010 -0700
+
+    remove debug messages
+
+commit e67f1420203d1a2794a157a20529e55f8c5b2365
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 13:41:50 2010 -0700
+
+    vhd-util stream
+    
+    accepts multiple input vhds via fifos and coalesces a single output vhd.
+
+commit 0ddd517da3a21bef70fc0df4297a2d1339b47fa8
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 13:37:07 2010 -0700
+
+    add optional devops vector to libvhd
+
+commit 84cb0deff7dc8b4db169ec3a2a45c8effe0743e3
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 13:35:56 2010 -0700
+
+    preserve resize padding during vhd export
+
+commit ab53d68dbb3e3ccd4220d7ad268946da8aa6014b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Jun 11 13:35:03 2010 -0700
+
+    export vhd_print_headers
+
+commit c2a98ec345cf14c0a72b3606cc99d5a8b8418ae9
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Jun 8 14:30:49 2010 -0700
+
+    XC-2731: disable file-based logging in tapdisk
+
+commit ccd424d8b77f0a8a186fb453ea0ef7f90c522a72
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Wed Jun 2 11:37:35 2010 +0100
+
+    Add blktap-int.h
+
+commit 9cc5cd2309a81e989bad2a9084d71ec651603f7b
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Tue Jun 1 17:59:19 2010 +0100
+
+    Move DPRINTF into an internal private header.
+
+commit b4bb412d82fa736355483d3810e6ce7bf0d12794
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Fri May 28 12:36:41 2010 +0100
+
+    Turn off debug.
+
+commit 8c226af58236eb32d86b28749ba41c9b64efa4dc
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed May 26 14:08:26 2010 -0700
+
+    XC-2541: sync xc and xs blktap
+
+commit 7fa8381d01f1036c3c5d0b86ed8aea97563fb961
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Apr 20 18:14:02 2010 -0700
+
+    XC-2194: ignore missing primary footer during vhd-util check
+
+commit 8332572cf1e8848e49bbe032b75ed030471dc71e
+Author: Christian Limpach <Christian.Limpach@citrix.com>
+Date:   Fri Apr 9 17:18:28 2010 +0000
+
+    vhd-util read:  add option to output extent list of allocated virtual blocks.
+
+commit e02b81fea44d5851f74ee9e1b891c3200dc070db
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Apr 5 10:36:46 2010 -0700
+
+    XC-1936: add option to ignore timestamps in vhds
+
+commit f4b712a8db32497e8602159de8dc7d6fa98ad735
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Mar 19 21:01:07 2010 -0700
+
+    XC-1747: avoid spurious failures when checking vhd integrity
+
+commit 1cfdb2d6ed16a7c830883d97fb6779002a6de4c8
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Mar 18 11:53:11 2010 -0700
+
+    XC-1715: fix calculation of volume signatures
+
+commit 9d594fef4683d1ca17c1325f7f041fc9a7d5b679
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon Mar 8 18:43:13 2010 -0800
+
+    setsid after fork
+
+commit 52ba3d3168cf60013d10972bc25bc40a410cfe41
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 2 16:25:26 2010 -0800
+
+    XC-1031: add option to print vhd 'marker' during scans
+
+commit 3a7667686936d46bb1f681f14141411b57a3b594
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 2 16:24:57 2010 -0800
+
+    XC-1031: optimized vhd coalesce operation for long chains
+
+commit 42051a8349e5d97849472d6c07b079ac76ae5cac
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 2 16:24:08 2010 -0800
+
+    fix libvhdio fread_unlock when it is defined as a macro
+
+commit 55bfef1567005cb1d0217fa48060a41c843afe6d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Mar 2 16:23:28 2010 -0800
+
+    XC-1031: add support for sparse writes during coalesce
+
+commit 51b4bd5e32f1276c5805f0801ed067d1c8175dfe
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Feb 26 14:16:34 2010 -0800
+
+    xc-1031: add extra flag to vhd metadata
+
+commit 77a119e68b18989c01c2fee56e368a63801a6821
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Fri Feb 26 14:13:16 2010 -0800
+
+    change path to libvhdio
+
+commit eabbf613041f25998659a251320437a3b7201572
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jan 28 11:51:54 2010 -0800
+
+    add utility to collect some basic stats about vhd disk consumption
+
+commit f18a900f2d0f9940d3273be3c843c892a6073ba9
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Jan 28 11:51:15 2010 -0800
+
+    updates for compiler
+
+commit 3926d459377f9f54b7f381c3edf567f14eceb3e7
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Sun Nov 22 16:45:39 2009 -0800
+
+    [libvhdio] avoid creating multiple instances of a singe vhd
+    
+    ensure multiple open()'s of a single vhd map to a single vhd instance
+    so that all updates to the vhd go through the same cache manager.
+
+commit 6ebeb05362f147bc422aba35bcc782b0ad8af01e
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Nov 19 19:23:07 2009 -0800
+
+    install libvhd headers
+
+commit 6ca1737017c4fb9677444492b0d04eaabc258530
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Nov 19 19:22:36 2009 -0800
+
+    list.h fix for g++
+
+commit b98c09a49318f42ab175ef354cff7cf9c9c92de4
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Nov 17 12:11:49 2009 -0800
+
+    XC-545: add -p switch to display progress when exporting a vhd chain
+
+commit dc1e26fd708d3685af1af2484ac3e5cfb5a51098
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Nov 4 20:34:55 2009 -0800
+
+    expose vhd byte io interface via vhd-util read
+
+commit 95a8db365109eb22c40dbf2f849bea2c97ce4d51
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Nov 4 20:34:03 2009 -0800
+
+    XC-565, XC-568: minor change to libvhdio logging and better support for partitions
+
+commit aeb8dd883f61736f538a3728da04ac04144525dd
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Nov 4 20:30:52 2009 -0800
+
+    XC-565, XC-568: bug fix to vhd byte io interface
+
+commit 9459f28c6243907a5b015871f33b612401867175
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Nov 4 16:31:12 2009 -0800
+
+    XC-545: add support for streaming vhd chain to single output vhd
+
+** Fixes random test
+** HANDLE (tests patch - 3)
+commit 393a35a78b33afb93a6789287390d92abb0034fb
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:23:45 2009 -0700
+
+    off-by-one error in random-copy test
+
+** Adds a test
+** HANDLE (tests patch - 3)
+commit 84970596018a778752908fd5a05cc26aa3908935
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:23:02 2009 -0700
+
+    add simple test harness which repeatedly pauses and continues an app
+
+** More the libvhdio
+** HANDLE (libvhdio patch - 2)
+** NOTE libvhdio now depends on libvhd changes to be patched first
+commit dfc4598ad467cc06f830b98a518eefb20a52152c
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:21:14 2009 -0700
+
+    update libvhdio to use new vhd byte io interface
+
+** Byte read support used by libvhdio
+** HANDLE (libvhd patch - 1)
+commit 6a4c58fbada13bfd8037d850ec3215ed3d0ff20d
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:20:09 2009 -0700
+
+    add interface for byte-granularity read/write of vhds
+
+** More the libvhdio
+** HANDLE (libvhdio patch - 2)
+commit 580c29b45bd2bcc98d44116e9b4ae9feb9a59bd6
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:18:29 2009 -0700
+
+    add simple test hook to libvhdio
+    
+        * on SIGCONT, libvhdio will snapshot any open vhds
+
+** Atomic helpers - I guess we should keep these
+** HANDLE (libvhd patch - 1)
+commit 1b33fc794ba5a7f0139b8f1882987008388414a1
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:17:19 2009 -0700
+
+    use atomic io functions to make libvhd more robust in the face of interrupts
+
+** Atomic helpers - I guess we should keep these
+** HANDLE (libvhd patch - 1)
+commit dfc4904151febe35b833cea040b7d4ded24f0c29
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:16:13 2009 -0700
+
+    atomic positioned io suitable for O_DIRECT
+
+** Already fixed upstream
+** IGNORE
+commit d2b22e84e21f4a0804035b6e4f26273a1c6e120e
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Thu Oct 29 16:15:04 2009 -0700
+
+    fix printf format
+
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
+** [snip]
+
+** More the libvhdio
+** HANDLE (libvhdio patch - 2)
+commit 7d4ad4b059d786683bb5ba003959da9ece111b08
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Oct 21 00:40:39 2009 -0700
+
+    add libvhdio to install and clean targets
+
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
+** [snip]
+
+** Adds the libvhdio - not sure exactly what it is but probabl used in all this mess.
+** HANDLE (libvhdio patch - 2)
+** Adds the random test
+** HANDLE (tests patch - 3)
+commit 79525afaf6f973af1dfe7217b933f20141c8a4a7
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Oct 21 00:23:09 2009 -0700
+
+    add libvhdio.so, an LD_PRELOAD lib for accessing vhd files
+    
+    as with other LD_PRELOAD hacks, ymmv
+
+** Adds vhd chain caching. Not sure if it is used - probably.
+** HANDLE (libvhd patch - 1)
+commit 729d55876a90ad9b77b7c5f2487a11fffd90ff77
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Oct 21 00:05:51 2009 -0700
+
+    add -C switch to vhd-util read to enable caching
+
+** Adds vhd chain caching. Not sure if it is used - probably.
+** HANDLE (libvhd patch - 1)
+commit 5a52dc288beaabba364022fe7a005074adc4f272
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Wed Oct 21 00:01:07 2009 -0700
+
+    add simple cache option for vhd-util operations
+    
+    * when caching is enabled, entire chains are loaded during
+      vhd_open and kept open until vhd_close, and O_DIRECT is not
+      used.
+    * caching is disabled by default and should only be used by
+      non-datapath utilities.
+
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
+** [snip]
+
+** This change makes no sense. The test is for whether a block is used but the fix changes the bit fetched to sector.
+** SANITY
+commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Tue Oct 20 23:13:05 2009 -0700
+
+    two small fixes to the vhd-util read utility
+
+** This is mostly makefile junk. The removed rmb is fixed in both current locations.
+** IGNORE
+commit 68b11541961107e58e5cdc5a0f06490df8347ad2
+Author: Jean Guyader <jean.guyader@eu.citrix.com>
+Date:   Fri Dec 19 12:42:34 2008 +0000
+
+    Compilation: Make it compile agains uClibc and fix header path.
+
+** Remove initial commit: import blktap, changeset 369 0b5eea92b271
+** IGNORE
+** [snip]
