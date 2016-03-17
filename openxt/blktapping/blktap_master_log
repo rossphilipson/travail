@@ -942,36 +942,50 @@ Date:   Thu Jul 1 11:10:06 2010 -0700
 
     fix alignment check in vhd_write_block
 
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
 commit cb4dfce02deb4878e7104b59994fac1c7bbe9076
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:08:56 2010 -0700
 
     fake geometry if it isn't there
 
+** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** ... and merged into the lib
+** SANITY
 commit e65f65f97193d03d87c71f6b0f6da5b47d555a9b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:08:01 2010 -0700
 
     add libvhd-stream
 
+** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** looks like it gets removed and ....^
+** SANITY
 commit ac0af61afa8d7263e967f68cd0590f4f07edf0fc
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 10:59:12 2010 -0700
 
     remove vhd-util stream
 
+** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** SANITY
 commit 4bb9b9f7bf082ca0467659f7070f21a981f89162
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 15:06:34 2010 -0700
 
     add progress indicator to vhd-util stream
 
+** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** SANITY
 commit 959c34c8e9df8dc4cf0405c0b31831d0806f952b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 14:09:46 2010 -0700
 
     remove debug messages
 
+** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** SANITY
 commit e67f1420203d1a2794a157a20529e55f8c5b2365
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 13:41:50 2010 -0700
@@ -980,96 +994,131 @@ Date:   Fri Jun 11 13:41:50 2010 -0700
     
     accepts multiple input vhds via fifos and coalesces a single output vhd.
 
+** Not sure - icbinn seems to use these too
+** SANITY
 commit 0ddd517da3a21bef70fc0df4297a2d1339b47fa8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 13:37:07 2010 -0700
 
     add optional devops vector to libvhd
 
+** More coalesce out stuff
+** IGNORE
 commit 84cb0deff7dc8b4db169ec3a2a45c8effe0743e3
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 13:35:56 2010 -0700
 
     preserve resize padding during vhd export
 
+** This is for stream-coalesce which is not used and will die
+** IGNORE
 commit ab53d68dbb3e3ccd4220d7ad268946da8aa6014b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 13:35:03 2010 -0700
 
     export vhd_print_headers
 
+** May have to deal with getting logging directed only to syslog but this is obsolete
+** HANDLE deal with upstream...
 commit c2a98ec345cf14c0a72b3606cc99d5a8b8418ae9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jun 8 14:30:49 2010 -0700
 
     XC-2731: disable file-based logging in tapdisk
 
+** Don't need to mess with this logging stuff in upstream
+** IGNORE
 commit ccd424d8b77f0a8a186fb453ea0ef7f90c522a72
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Jun 2 11:37:35 2010 +0100
 
     Add blktap-int.h
 
+** Don't need to mess with this logging stuff in upstream
+** IGNORE
 commit 9cc5cd2309a81e989bad2a9084d71ec651603f7b
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Tue Jun 1 17:59:19 2010 +0100
 
     Move DPRINTF into an internal private header.
 
+** Don't need to mess with this logging stuff in upstream
+** IGNORE
 commit b4bb412d82fa736355483d3810e6ce7bf0d12794
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Fri May 28 12:36:41 2010 +0100
 
     Turn off debug.
 
+*******************************************************************************
+** Another major backport from XS, control introduced
+** IGNORE
 commit 8c226af58236eb32d86b28749ba41c9b64efa4dc
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed May 26 14:08:26 2010 -0700
 
     XC-2541: sync xc and xs blktap
+*******************************************************************************
 
+** vhd-util check - another change
+** HANDLE - update status tool 
 commit 7fa8381d01f1036c3c5d0b86ed8aea97563fb961
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Apr 20 18:14:02 2010 -0700
 
     XC-2194: ignore missing primary footer during vhd-util check
 
+** Used in vhd-copy script, think we need it.
+** HANDLE vhd-util - P2
 commit 8332572cf1e8848e49bbe032b75ed030471dc71e
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Fri Apr 9 17:18:28 2010 +0000
 
     vhd-util read:  add option to output extent list of allocated virtual blocks.
 
+** vhd-util check - another param used in status tool - -t
+** HANDLE - update status tool 
 commit e02b81fea44d5851f74ee9e1b891c3200dc070db
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Apr 5 10:36:46 2010 -0700
 
     XC-1936: add option to ignore timestamps in vhds
 
+** vhd-util check - Used in status tool - this add -I
+** HANDLE - update status tool 
 commit f4b712a8db32497e8602159de8dc7d6fa98ad735
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Mar 19 21:01:07 2010 -0700
 
     XC-1747: avoid spurious failures when checking vhd integrity
 
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
 commit 1cfdb2d6ed16a7c830883d97fb6779002a6de4c8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Mar 18 11:53:11 2010 -0700
 
     XC-1715: fix calculation of volume signatures
 
+** Looks like tapdisk2_create_device disappears - kill tapdisk2.h
+** IGNORE
 commit 9d594fef4683d1ca17c1325f7f041fc9a7d5b679
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Mar 8 18:43:13 2010 -0800
 
     setsid after fork
 
+** Please, please can we get rid of this one!!!!!
+** IGNORE
 commit 52ba3d3168cf60013d10972bc25bc40a410cfe41
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 2 16:25:26 2010 -0800
 
     XC-1031: add option to print vhd 'marker' during scans
 
+** Please, please can we get rid of this one!!!!!
+** Transmitter stream stuff - try to drop  - third coalesce out change
+** IGNORE
 commit 3a7667686936d46bb1f681f14141411b57a3b594
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 2 16:24:57 2010 -0800
@@ -1108,7 +1157,7 @@ Date:   Fri Feb 26 14:13:16 2010 -0800
 
     change path to libvhdio
 
-** Used in status tool w/ -I too
+** vhd-util check - Used in status tool w/ -I too
 ** HANDLE - update status tool 
 commit eabbf613041f25998659a251320437a3b7201572
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1151,7 +1200,7 @@ Date:   Thu Nov 19 19:22:36 2009 -0800
 
     list.h fix for g++
 
-** Transmitter stream stuff - try to drop
+** Transmitter stream stuff - try to drop  - second coalesce out change
 ** IGNORE
 commit b98c09a49318f42ab175ef354cff7cf9c9c92de4
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1183,7 +1232,7 @@ Date:   Wed Nov 4 20:30:52 2009 -0800
 
     XC-565, XC-568: bug fix to vhd byte io interface
 
-** Transmitter stream stuff - try to drop
+** Transmitter stream stuff - try to drop - first coalesce out change
 ** IGNORE
 commit 9459f28c6243907a5b015871f33b612401867175
 Author: Jake Wires <Jake.Wires@citrix.com>
