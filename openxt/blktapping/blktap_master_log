@@ -1076,42 +1076,56 @@ Date:   Tue Mar 2 16:24:57 2010 -0800
 
     XC-1031: optimized vhd coalesce operation for long chains
 
+** libvhdio - not using
+** IGNORE
 commit 42051a8349e5d97849472d6c07b079ac76ae5cac
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 2 16:24:08 2010 -0800
 
     fix libvhdio fread_unlock when it is defined as a macro
 
+** Please, please can we get rid of this one!!!!!
+** IGNORE
 commit 55bfef1567005cb1d0217fa48060a41c843afe6d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 2 16:23:28 2010 -0800
 
     XC-1031: add support for sparse writes during coalesce
 
+** Please, please can we get rid of this one!!!!!
+** IGNORE
 commit 51b4bd5e32f1276c5805f0801ed067d1c8175dfe
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Feb 26 14:16:34 2010 -0800
 
     xc-1031: add extra flag to vhd metadata
 
+** libvhdio - not using
+** IGNORE
 commit 77a119e68b18989c01c2fee56e368a63801a6821
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Feb 26 14:13:16 2010 -0800
 
     change path to libvhdio
 
+** Used in status tool w/ -I too
+** HANDLE - update status tool 
 commit eabbf613041f25998659a251320437a3b7201572
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jan 28 11:51:54 2010 -0800
 
     add utility to collect some basic stats about vhd disk consumption
 
+** libvhdio - not using
+** IGNORE
 commit f18a900f2d0f9940d3273be3c843c892a6073ba9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jan 28 11:51:15 2010 -0800
 
     updates for compiler
 
+** libvhdio - not using
+** IGNORE
 commit 3926d459377f9f54b7f381c3edf567f14eceb3e7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Sun Nov 22 16:45:39 2009 -0800
@@ -1121,66 +1135,88 @@ Date:   Sun Nov 22 16:45:39 2009 -0800
     ensure multiple open()'s of a single vhd map to a single vhd instance
     so that all updates to the vhd go through the same cache manager.
 
+** Should be handled upstream
+** IGNORE
 commit 6ebeb05362f147bc422aba35bcc782b0ad8af01e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Nov 19 19:23:07 2009 -0800
 
     install libvhd headers
 
+** Not using g++
+** IGNORE
 commit 6ca1737017c4fb9677444492b0d04eaabc258530
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Nov 19 19:22:36 2009 -0800
 
     list.h fix for g++
 
+** Transmitter stream stuff - try to drop
+** IGNORE
 commit b98c09a49318f42ab175ef354cff7cf9c9c92de4
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Nov 17 12:11:49 2009 -0800
 
     XC-545: add -p switch to display progress when exporting a vhd chain
 
+** Byte read support used by libvhdio - not using - -R not used
+** IGNORE
 commit dc1e26fd708d3685af1af2484ac3e5cfb5a51098
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Nov 4 20:34:55 2009 -0800
 
     expose vhd byte io interface via vhd-util read
 
+** libvhdio - not using
+** IGNORE
 commit 95a8db365109eb22c40dbf2f849bea2c97ce4d51
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Nov 4 20:34:03 2009 -0800
 
     XC-565, XC-568: minor change to libvhdio logging and better support for partitions
 
+** Byte read support used by libvhdio - not using
+** IGNORE
 commit aeb8dd883f61736f538a3728da04ac04144525dd
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Nov 4 20:30:52 2009 -0800
 
     XC-565, XC-568: bug fix to vhd byte io interface
 
+** Transmitter stream stuff - try to drop
+** IGNORE
 commit 9459f28c6243907a5b015871f33b612401867175
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Nov 4 16:31:12 2009 -0800
 
     XC-545: add support for streaming vhd chain to single output vhd
 
+** Nuke tests
+** IGNORE
 commit 393a35a78b33afb93a6789287390d92abb0034fb
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:23:45 2009 -0700
 
     off-by-one error in random-copy test
 
+** Nuke tests
+** IGNORE
 commit 84970596018a778752908fd5a05cc26aa3908935
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:23:02 2009 -0700
 
     add simple test harness which repeatedly pauses and continues an app
 
+** Get rid of libvhdio
+** IGNORE
 commit dfc4598ad467cc06f830b98a518eefb20a52152c
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:21:14 2009 -0700
 
     update libvhdio to use new vhd byte io interface
 
+** Byte read support used by libvhdio - not using
+** IGNORE
 commit 6a4c58fbada13bfd8037d850ec3215ed3d0ff20d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:20:09 2009 -0700
@@ -1238,6 +1274,7 @@ Date:   Wed Oct 21 00:40:39 2009 -0700
 ** [snip]
 
 ** Get rid of libvhdio
+** Adds the random test
 ** IGNORE
 commit 79525afaf6f973af1dfe7217b933f20141c8a4a7
 Author: Jake Wires <Jake.Wires@citrix.com>
