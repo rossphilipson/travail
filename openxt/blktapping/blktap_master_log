@@ -649,24 +649,35 @@ Date:   Wed Sep 1 14:10:08 2010 -0700
     
     otherwise the bat will be inconsistent
 
+** Mount RO seems to be used in xenmgr etc.
+** tap-ctl - P2
+** HANDLE
 commit 6ee06eff2f182097579a486f74899dc77a1955a9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:08:33 2010 -0700
 
     add option to mount tapdisks read-only
 
+** Not using the -S options that was added earlier anywhere
+** IGNORE
 commit c24d74b31278d9e9ca1f903ba50329bde982f3f1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:08:02 2010 -0700
 
     missing break
 
+** Also maybe legit, consider
+** driver/tapdisk - P3
+** HANDLE
 commit 22f57a80ae2f4016255a0d5eeb730559fb14db40
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 17 12:49:58 2010 -0700
 
     set PRIO_SPECIAL_IO for tapdisk process to avoid write-back deadlock.
 
+** It is not clear exactly what this fixes - it seems sorta legit - consider for now
+** driver/tapdisk - P3
+** HANDLE
 commit 3292321524cc5797bd0e01b9d36e71ed4a54cbbf
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 10 16:41:38 2010 -0700
@@ -677,30 +688,42 @@ Date:   Tue Aug 10 16:41:38 2010 -0700
     * don't timeout requests while paused
     * ensure progress on resume
 
+** Gone in upstream
+** IGNORE
 commit 59c4d4f0d47f7e9ebd90d82b30d8b27ddeb1c667
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 10 16:39:19 2010 -0700
 
     don't install dodgy udev rules
 
+** More tap_ctl_find_pid
+** tap-ctl - P2
+** HANDLE
 commit 387962f1645a12db976b82c2a972737e95c286d5
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 19:32:04 2010 -0700
 
     XC-3264: simplify pause/unpause interface
 
+** Already upstream
+** IGNORE
 commit f920bc1f141398e772f2e642ffd6f4907ce2f786
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 18:44:08 2010 -0700
 
     catch spawn error
 
+** Introduced +tap_ctl_find_pid which is used in installer etc.
+** tap-ctl - P2
+** HANDLE
 commit 7cef6457c38cc51c46d6eaf32343796b5d7704be
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 16:12:18 2010 -0700
 
     XC-3264: simplify device destruction interface
 
+** This is a fix to building libbltapctl.so which already works
+** IGNORE
 commit 398bc9e89277c4c6a474329d43b400da4fbeee40
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 16:11:48 2010 -0700
@@ -718,6 +741,7 @@ Date:   Mon Aug 9 15:16:58 2010 -0700
 *******************************************************************************
 
 ** VHD encryption
+** Encryption - P1
 ** HANDLE
 commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -755,6 +779,7 @@ Date:   Wed Jul 28 14:47:36 2010 +0100
     Don't compile tapdisk daemon.
 
 ** VHD encryption
+** Encryption - P1
 ** HANDLE
 commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -763,6 +788,7 @@ Date:   Tue Jul 27 20:10:37 2010 +0000
     Add aesni support using the 32-bit openssl aesni code.
 
 ** VHD encryption
+** Encryption - P1
 ** HANDLE
 commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -771,6 +797,7 @@ Date:   Mon Jul 26 18:52:11 2010 +0000
     Sync aes code with version from linux 2.6.32.
 
 ** VHD encryption
+** Encryption - P1
 ** HANDLE
 commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -779,6 +806,7 @@ Date:   Mon Jul 26 17:49:20 2010 +0000
     Check for ENOENT instead of EACCESS, when keyfile is not present.
 
 ** VHD encryption
+** Encryption - P1
 ** HANDLE
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -1159,6 +1187,9 @@ Date:   Thu Oct 29 16:20:09 2009 -0700
 
     add interface for byte-granularity read/write of vhds
 
+** Atomic helpers - I guess we should keep these - uurrg
+** libvhd - P1
+** HANDLE
 commit 580c29b45bd2bcc98d44116e9b4ae9feb9a59bd6
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:18:29 2009 -0700
@@ -1167,6 +1198,9 @@ Date:   Thu Oct 29 16:18:29 2009 -0700
     
         * on SIGCONT, libvhdio will snapshot any open vhds
 
+** Atomic helpers - I guess we should keep these - uurrg
+** libvhd - P1
+** HANDLE
 commit 1b33fc794ba5a7f0139b8f1882987008388414a1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:17:19 2009 -0700
@@ -1179,6 +1213,8 @@ Date:   Thu Oct 29 16:16:13 2009 -0700
 
     atomic positioned io suitable for O_DIRECT
 
+** Already fixed upstream
+** IGNORE
 commit d2b22e84e21f4a0804035b6e4f26273a1c6e120e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:15:04 2009 -0700
@@ -1189,6 +1225,8 @@ Date:   Thu Oct 29 16:15:04 2009 -0700
 ** IGNORE
 ** [snip]
 
+** Get rid of libvhdio
+** IGNORE
 commit 7d4ad4b059d786683bb5ba003959da9ece111b08
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:40:39 2009 -0700
@@ -1199,6 +1237,8 @@ Date:   Wed Oct 21 00:40:39 2009 -0700
 ** IGNORE
 ** [snip]
 
+** Get rid of libvhdio
+** IGNORE
 commit 79525afaf6f973af1dfe7217b933f20141c8a4a7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:23:09 2009 -0700
@@ -1207,12 +1247,16 @@ Date:   Wed Oct 21 00:23:09 2009 -0700
     
     as with other LD_PRELOAD hacks, ymmv
 
+** Try to not use this cache optimization - -C is not used
+** SANITY
 commit 729d55876a90ad9b77b7c5f2487a11fffd90ff77
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:05:51 2009 -0700
 
     add -C switch to vhd-util read to enable caching
 
+** Try to not use this optimization
+** SANITY
 commit 5a52dc288beaabba364022fe7a005074adc4f272
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:01:07 2009 -0700
@@ -1225,12 +1269,20 @@ Date:   Wed Oct 21 00:01:07 2009 -0700
     * caching is disabled by default and should only be used by
       non-datapath utilities.
 
+** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
+** [snip]
+
+** This change makes no sense. The test is for whether a block is used but the fix changes the bit fetched to sector.
+** SANITY
 commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Oct 20 23:13:05 2009 -0700
 
     two small fixes to the vhd-util read utility
 
+** Rubbish
+** IGNORE
 commit 68b11541961107e58e5cdc5a0f06490df8347ad2
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Fri Dec 19 12:42:34 2008 +0000
