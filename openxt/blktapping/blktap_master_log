@@ -650,7 +650,7 @@ Date:   Wed Sep 1 14:10:08 2010 -0700
     otherwise the bat will be inconsistent
 
 ** Mount RO seems to be used in xenmgr etc. See b88008b1d1370070e33b537e7d482f60b020255a
-** tap-ctl - P2
+** tap-ctl - P5
 ** HANDLE
 commit 6ee06eff2f182097579a486f74899dc77a1955a9
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -667,7 +667,7 @@ Date:   Wed Sep 1 14:08:02 2010 -0700
     missing break
 
 ** Also maybe legit, consider
-** driver/tapdisk - P3
+** driver/tapdisk - P6
 ** HANDLE
 commit 22f57a80ae2f4016255a0d5eeb730559fb14db40
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -676,7 +676,7 @@ Date:   Tue Aug 17 12:49:58 2010 -0700
     set PRIO_SPECIAL_IO for tapdisk process to avoid write-back deadlock.
 
 ** It is not clear exactly what this fixes - it seems sorta legit - consider for now
-** driver/tapdisk - P3
+** driver/tapdisk - P6
 ** HANDLE
 commit 3292321524cc5797bd0e01b9d36e71ed4a54cbbf
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -697,7 +697,7 @@ Date:   Tue Aug 10 16:39:19 2010 -0700
     don't install dodgy udev rules
 
 ** More tap_ctl_find_pid
-** tap-ctl - P2
+** tap-ctl - P5
 ** HANDLE
 commit 387962f1645a12db976b82c2a972737e95c286d5
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -714,7 +714,7 @@ Date:   Mon Aug 9 18:44:08 2010 -0700
     catch spawn error
 
 ** Introduced +tap_ctl_find_pid which is used in installer etc.
-** tap-ctl - P2
+** tap-ctl - P5
 ** HANDLE
 commit 7cef6457c38cc51c46d6eaf32343796b5d7704be
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -741,7 +741,7 @@ Date:   Mon Aug 9 15:16:58 2010 -0700
 *******************************************************************************
 
 ** VHD encryption
-** Encryption - P1
+** Encryption - P4
 ** HANDLE
 commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -779,7 +779,7 @@ Date:   Wed Jul 28 14:47:36 2010 +0100
     Don't compile tapdisk daemon.
 
 ** VHD encryption
-** Encryption - P1
+** Encryption - P4
 ** HANDLE
 commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -788,7 +788,7 @@ Date:   Tue Jul 27 20:10:37 2010 +0000
     Add aesni support using the 32-bit openssl aesni code.
 
 ** VHD encryption
-** Encryption - P1
+** Encryption - P4
 ** HANDLE
 commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -797,7 +797,7 @@ Date:   Mon Jul 26 18:52:11 2010 +0000
     Sync aes code with version from linux 2.6.32.
 
 ** VHD encryption
-** Encryption - P1
+** Encryption - P4
 ** HANDLE
 commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
 Author: Christian Limpach <Christian.Limpach@citrix.com>
@@ -806,7 +806,7 @@ Date:   Mon Jul 26 17:49:20 2010 +0000
     Check for ENOENT instead of EACCESS, when keyfile is not present.
 
 ** VHD encryption
-** Encryption - P1
+** Encryption - P4
 ** HANDLE
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
