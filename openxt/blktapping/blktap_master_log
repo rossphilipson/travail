@@ -310,7 +310,22 @@ Date:   Tue May 31 16:07:03 2011 -0700
 
     use fallocate when possible for allocating vhd blocks
 
+*******************************************************************************
 ** Remove backport
+** IGNORE
+commit 73a35f869859651b0d011c6af94a6e3486fa5dc9
+Author: Jake Wires <Jake.Wires@citrix.com>
+Date:   Mon May 9 15:11:25 2011 -0700
+
+    # HG changeset patch
+    # User Daniel Stodden <daniel.stodden@citrix.com>
+    # Date 1304544306 25200
+    # Node ID c4ce66a5e1a9522c1caebf3ce39e1fc39342c2c4
+    # Parent  3a38b227067161a1d816ec98353e476c653dd3ad
+    CA-57842: Fix deMorgan-esque glitch in the retry logic.
+    
+    Signed-off-by: Daniel Stodden <daniel.stodden@citrix.com>
+*******************************************************************************
 
 commit c15e25c231fc4eec14b6be636833b089366d7926
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -396,7 +411,12 @@ Date:   Wed Jan 26 11:37:27 2011 -0800
 
     always open with STRICT since we dropped the preliminary open/close before IO
 
-** Remove series of backports
+*******************************************************************************
+** Remove large series of backports
+** Major layout change, daemon goes away, control appears.
+** IGNORE
+** [snip]
+*******************************************************************************
 
 commit 8f6acba75214adb528b31161aa7e966ba5bfc14e
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -687,12 +707,18 @@ Date:   Mon Aug 9 16:11:48 2010 -0700
 
     typo
 
+*******************************************************************************
+** Another major backport from XS, control introduced
+** IGNORE
 commit 2c3523d905723e76a760ce31d7dd99068373ca3d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 15:16:58 2010 -0700
 
     XC-3264: xc/xs blktap merge
+*******************************************************************************
 
+** VHD encryption
+** HANDLE
 commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Fri Jul 30 23:05:39 2010 +0000
@@ -702,12 +728,16 @@ Date:   Fri Jul 30 23:05:39 2010 +0000
     
     Also add simple throughput measurement mode to test_decrypt.
 
+** The daemon goes away at some point
+** IGNORE
 commit b88b7199dcbac1492ea7c265a4ca5484b964aed9
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Jul 28 16:24:22 2010 +0100
 
     blktap: Only compile lib in the daemon directory
 
+** The daemon goes away at some point
+** IGNORE
 commit e102fd9348f164b72a834bf94f44ea6345772ec6
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Jul 28 16:24:15 2010 +0100
@@ -716,30 +746,40 @@ Date:   Wed Jul 28 16:24:15 2010 +0100
     
     This reverts commit 0a2ef6506b75617e11cdddceb86a341eed1bc239.
 
+** The daemon goes away at some point
+** IGNORE
 commit 0a2ef6506b75617e11cdddceb86a341eed1bc239
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Jul 28 14:47:36 2010 +0100
 
     Don't compile tapdisk daemon.
 
+** VHD encryption
+** HANDLE
 commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Tue Jul 27 20:10:37 2010 +0000
 
     Add aesni support using the 32-bit openssl aesni code.
 
+** VHD encryption
+** HANDLE
 commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 18:52:11 2010 +0000
 
     Sync aes code with version from linux 2.6.32.
 
+** VHD encryption
+** HANDLE
 commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 17:49:20 2010 +0000
 
     Check for ENOENT instead of EACCESS, when keyfile is not present.
 
+** VHD encryption
+** HANDLE
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 19 20:12:21 2010 +0000
@@ -752,12 +792,14 @@ Date:   Mon Jul 19 20:12:21 2010 +0000
     The key directory is specified by setting the TAPDISK2_CRYPTO_KEYDIR
     environment variable.
 
-**
+*******************************************************************************
 ** I think everything that came before this was to support the dead Transmitter
 ** project. Ignoring for now.
-**
+*******************************************************************************
 
 ** Remove part-util and vhdpartx since they are no longer used
+** IGNORE
+** [snip]
 
 commit 6ef3597c82a5b8a8c2fdc4fbadaae3fde06d9ed8
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1093,41 +1135,30 @@ Date:   Wed Nov 4 16:31:12 2009 -0800
 
     XC-545: add support for streaming vhd chain to single output vhd
 
-** Fixes random test
-** HANDLE (tests patch - 3)
 commit 393a35a78b33afb93a6789287390d92abb0034fb
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:23:45 2009 -0700
 
     off-by-one error in random-copy test
 
-** Adds a test
-** HANDLE (tests patch - 3)
 commit 84970596018a778752908fd5a05cc26aa3908935
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:23:02 2009 -0700
 
     add simple test harness which repeatedly pauses and continues an app
 
-** More the libvhdio
-** HANDLE (libvhdio patch - 2)
-** NOTE libvhdio now depends on libvhd changes to be patched first
 commit dfc4598ad467cc06f830b98a518eefb20a52152c
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:21:14 2009 -0700
 
     update libvhdio to use new vhd byte io interface
 
-** Byte read support used by libvhdio
-** HANDLE (libvhd patch - 1)
 commit 6a4c58fbada13bfd8037d850ec3215ed3d0ff20d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:20:09 2009 -0700
 
     add interface for byte-granularity read/write of vhds
 
-** More the libvhdio
-** HANDLE (libvhdio patch - 2)
 commit 580c29b45bd2bcc98d44116e9b4ae9feb9a59bd6
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:18:29 2009 -0700
@@ -1136,24 +1167,18 @@ Date:   Thu Oct 29 16:18:29 2009 -0700
     
         * on SIGCONT, libvhdio will snapshot any open vhds
 
-** Atomic helpers - I guess we should keep these
-** HANDLE (libvhd patch - 1)
 commit 1b33fc794ba5a7f0139b8f1882987008388414a1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:17:19 2009 -0700
 
     use atomic io functions to make libvhd more robust in the face of interrupts
 
-** Atomic helpers - I guess we should keep these
-** HANDLE (libvhd patch - 1)
 commit dfc4904151febe35b833cea040b7d4ded24f0c29
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:16:13 2009 -0700
 
     atomic positioned io suitable for O_DIRECT
 
-** Already fixed upstream
-** IGNORE
 commit d2b22e84e21f4a0804035b6e4f26273a1c6e120e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:15:04 2009 -0700
@@ -1164,8 +1189,6 @@ Date:   Thu Oct 29 16:15:04 2009 -0700
 ** IGNORE
 ** [snip]
 
-** More the libvhdio
-** HANDLE (libvhdio patch - 2)
 commit 7d4ad4b059d786683bb5ba003959da9ece111b08
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:40:39 2009 -0700
@@ -1176,10 +1199,6 @@ Date:   Wed Oct 21 00:40:39 2009 -0700
 ** IGNORE
 ** [snip]
 
-** Adds the libvhdio - not sure exactly what it is but probabl used in all this mess.
-** HANDLE (libvhdio patch - 2)
-** Adds the random test
-** HANDLE (tests patch - 3)
 commit 79525afaf6f973af1dfe7217b933f20141c8a4a7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:23:09 2009 -0700
@@ -1188,16 +1207,12 @@ Date:   Wed Oct 21 00:23:09 2009 -0700
     
     as with other LD_PRELOAD hacks, ymmv
 
-** Adds vhd chain caching. Not sure if it is used - probably.
-** HANDLE (libvhd patch - 1)
 commit 729d55876a90ad9b77b7c5f2487a11fffd90ff77
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:05:51 2009 -0700
 
     add -C switch to vhd-util read to enable caching
 
-** Adds vhd chain caching. Not sure if it is used - probably.
-** HANDLE (libvhd patch - 1)
 commit 5a52dc288beaabba364022fe7a005074adc4f272
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:01:07 2009 -0700
@@ -1210,20 +1225,12 @@ Date:   Wed Oct 21 00:01:07 2009 -0700
     * caching is disabled by default and should only be used by
       non-datapath utilities.
 
-** Remove part-util and vhdpartx since they are no longer used
-** IGNORE
-** [snip]
-
-** This change makes no sense. The test is for whether a block is used but the fix changes the bit fetched to sector.
-** SANITY
 commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Oct 20 23:13:05 2009 -0700
 
     two small fixes to the vhd-util read utility
 
-** This is mostly makefile junk. The removed rmb is fixed in both current locations.
-** IGNORE
 commit 68b11541961107e58e5cdc5a0f06490df8347ad2
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Fri Dec 19 12:42:34 2008 +0000
