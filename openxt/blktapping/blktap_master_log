@@ -563,84 +563,113 @@ Date:   Wed Sep 1 14:23:34 2010 -0700
 
     include keyhash in vhd metadata displays
 
+** Come on you can't fuck with the batmap struct like this???!?!?!?!!?!
+** IGNORE
 commit 9072bfc23ce8776f0953c3fa7e92917c0ae4e789
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:22:12 2010 -0700
 
     add keyhash field to batmap header
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 1cc3f95f5a03e88c7646dbecccdd5af88533d79b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:20:16 2010 -0700
 
     vhd-dm-{create,remove}: screen-scraping fix
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit be310fe80f68468053f612052c2cf83b509ecf90
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:19:53 2010 -0700
 
     vhd-dm-remove: support new sysfs layout
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 50f320d5e6e02dd354436a6e5aaf5f6d17630dc1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:18:58 2010 -0700
 
     vhd-dm-create: add keydir option
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit c98defd3234510b8bf7eb84b921dff7b0b9f1d5a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:18:35 2010 -0700
 
     vhd-dm-create: move to tap-ctl
 
+** Function is gone so fix is gone, bye
+** IGNORE
 commit 14f5281c3d63f7ddb12af180645e6c01ea7e0ce2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:16:05 2010 -0700
 
     libvhd: fix batmap header size calculation
 
+** Don't care
+** IGNORE
 commit 9e24ba4e78022a337229ebc6c788e987ec4abea4
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:15:30 2010 -0700
 
     libvhd: extra logging
 
+** Atomic helpers - fix
+** libvhd - PATCH_LIBVHD
+** HANDLE
 commit 4bc6769fbe5325e4d01c30feb36dd23b4b3c67ad
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:15:06 2010 -0700
 
     libvhd: fix io on block devices
 
+** Legit bug, fix upstream
+** HANDLE in PATCH_UPSTREAM_FIXED
 commit d8fd64a421e065c951818a793b6f3c048453502d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:13:40 2010 -0700
 
     typo
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 2088c34151c4a45ed02e2a0e245f54f4b9d80b1f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:13:01 2010 -0700
 
     vhd-stream: open as binary
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 46c575f81c08e11cf7c8c3fe5fe51b533c35ec24
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:12:45 2010 -0700
 
     vhd-stream: flush after write
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit b9fdabf033581032d95e4054eb4c798cb557803a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:12:30 2010 -0700
 
     vhd-stream: always try standard seek before emulated seek
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 6d70db143d569c9b11e59efae3c054dc7abe9748
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:11:35 2010 -0700
 
     vhd-stream: use vhd_bytes_padded convenience api
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit cc89107c06675e85e8a2e0ebb30578eabdc8870f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:10:08 2010 -0700
@@ -968,7 +997,7 @@ Date:   Thu Jul 1 11:12:40 2010 -0700
     add insane option to make differencing vhds dynamic and vice versa
 
 ** This is indeed a bug. I upstreamed a patch for it. Need one for now...
-** HANDLE temp patch - PATCH_WRITE_BLOCK
+** HANDLE temp patch - PATCH_UPSTREAM_FIXED
 commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:10:06 2010 -0700
@@ -1018,7 +1047,7 @@ Date:   Fri Jun 11 14:09:46 2010 -0700
     remove debug messages
 
 ** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
-** SANITY
+** IGNORE
 commit e67f1420203d1a2794a157a20529e55f8c5b2365
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 13:41:50 2010 -0700
