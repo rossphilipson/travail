@@ -649,7 +649,7 @@ Date:   Wed Sep 1 14:10:08 2010 -0700
     
     otherwise the bat will be inconsistent
 
-** Mount RO seems to be used in xenmgr etc.
+** Mount RO seems to be used in xenmgr etc. See b88008b1d1370070e33b537e7d482f60b020255a
 ** tap-ctl - P2
 ** HANDLE
 commit 6ee06eff2f182097579a486f74899dc77a1955a9
@@ -868,6 +868,9 @@ Date:   Thu Jul 1 11:29:45 2010 -0700
     a couple shell scripts for creating/removing device node targets backed
     by vhds.
 
+** This looks different than TAPDISK_MESSAGE_FLAG_RDONLY that we use. Keep an eye on it.
+** See 6ee06eff2f182097579a486f74899dc77a1955a9 for -R flag to tap-ctl
+** SANITY
 commit b88008b1d1370070e33b537e7d482f60b020255a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:28:40 2010 -0700
@@ -877,6 +880,8 @@ Date:   Thu Jul 1 11:28:40 2010 -0700
     current semantics aren't perfect, since the device can still be opened
     read/write, but all write requests will fail.
 
+** dm-decrypt - not used - no idea - looks sketchy
+** IGNORE
 commit 83467855403613eef3f09e8ba19ee3180d03ff4f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:25:26 2010 -0700
@@ -886,6 +891,8 @@ Date:   Thu Jul 1 11:25:26 2010 -0700
     takes a vhd and a raw image as input, writes a new vhd to stdout containing
     the metadata from the original vhd and the data from the raw image
 
+** dm-encrypt - not used - no idea - looks sketchy
+** IGNORE
 commit bfb45c2f107577fff4a2a1e5de4f882272ae7146
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:23:47 2010 -0700
@@ -895,6 +902,8 @@ Date:   Thu Jul 1 11:23:47 2010 -0700
     accepts a vhd stream as input; writes the present bits of the vhd to a raw
     image.
 
+** clone-metadata is not used either, it will die too
+** IGNORE
 commit b1968966a577ab4deb096067ad0cbece3552669e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:21:20 2010 -0700
@@ -904,6 +913,8 @@ Date:   Thu Jul 1 11:21:20 2010 -0700
     creates an empty vhd with identical footer/header/parent locators as input
     vhd.
 
+** As noted, stream-coalesce will die
+** IGNORE
 commit 396fd20ad9643d3bf6715fe2754942990d757752
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:19:55 2010 -0700
@@ -912,30 +923,40 @@ Date:   Thu Jul 1 11:19:55 2010 -0700
     
     accepts vhd streams as input and produces a single coalesced vhd as output
 
+** More coalesce out stuff
+** IGNORE
 commit 5f6b95ed0bd5e7888798c2191fee0a508794390d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:18:11 2010 -0700
 
     use aforementioned helper functions
 
+** More coalesce out stuff
+** IGNORE
 commit f3f92f4400737e4e2cd922d090b292e093860b15
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:17:47 2010 -0700
 
     helper functions for determining vhd current and maximum capacity
 
+** Getting rid of libvhdio 
+** IGNORE
 commit 0387a7a61ab9cf55803a544163a7dd966901ead5
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:13:44 2010 -0700
 
     fixes to libvhdio when various flavors of open are not present
 
+** Modify only used by vhd-dm-create/vhd-dm-remove scripts which aren't used.
+** IGNORE
 commit b7ed98286514defe466d2ff85bd118ef84cf18c8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:12:40 2010 -0700
 
     add insane option to make differencing vhds dynamic and vice versa
 
+** This is indeed a bug. I upstreamed a patch for it. Need one for now...
+** HANDLE temp patch - P3
 commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:10:06 2010 -0700
@@ -950,18 +971,18 @@ Date:   Thu Jul 1 11:08:56 2010 -0700
 
     fake geometry if it isn't there
 
-** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
-** ... and merged into the lib
-** SANITY
+** vhd-util stream: not sure, dm-en/decrypt uses this - may be part of the crypto
+** ... and merged into the lib - see 83467855403613eef3f09e8ba19ee3180d03ff4f for these
+** IGNORE
 commit e65f65f97193d03d87c71f6b0f6da5b47d555a9b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:08:01 2010 -0700
 
     add libvhd-stream
 
-** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
+** vhd-util stream: not sure, dm-en/decrypt uses this - may be part of the crypto
 ** looks like it gets removed and ....^
-** SANITY
+** IGNORE
 commit ac0af61afa8d7263e967f68cd0590f4f07edf0fc
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 10:59:12 2010 -0700
@@ -969,7 +990,7 @@ Date:   Thu Jul 1 10:59:12 2010 -0700
     remove vhd-util stream
 
 ** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
-** SANITY
+** IGNORE
 commit 4bb9b9f7bf082ca0467659f7070f21a981f89162
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 15:06:34 2010 -0700
@@ -977,7 +998,7 @@ Date:   Fri Jun 11 15:06:34 2010 -0700
     add progress indicator to vhd-util stream
 
 ** vhd-util stream: not sure, dm-encrypt uses this - may be part of the crypto
-** SANITY
+** IGNORE
 commit 959c34c8e9df8dc4cf0405c0b31831d0806f952b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Jun 11 14:09:46 2010 -0700
