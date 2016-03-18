@@ -169,42 +169,56 @@ Date:   Thu Sep 20 01:43:05 2012 +0100
 
     and a bit more of the same
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 72513d318353fe6be330a3e983c0976837a9e62c
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Thu Sep 20 01:38:34 2012 +0100
 
     icbinn support for blktap/libvhd
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 3c5efe118186cb2713764c24362d3681d3664f31
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Tue Sep 18 15:47:40 2012 -0500
 
     XC-8713 check if vhd is empty before setting keyhash
 
+** Part of the block crypto module
+** HANDLE PATCH_ENCRYPTION
 commit 8aff25641de383b9af2b5eff015c0effca5469ea
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Thu Aug 30 12:46:19 2012 +0200
 
     XC-8994 support 512 keysize
 
+** Not sure what all this /config mess is but it is not upstream so..
+** IGNORE
 commit 90f1c2badcb8fbf77c41d7c1c2438dbdbac87ced
 Author: Zbigniew Halas <zbigniew.halas@citrix.com>
 Date:   Mon Jun 18 21:35:53 2012 +0100
 
     Do not overwrite CC and LD
 
+** Deal with compile shit later
+** IGNORE
 commit cd688ea20a2c5c16e715bea100d21919610abe52
 Author: Zbigniew Halas <zbigniew.halas@citrix.com>
 Date:   Fri Jun 1 22:28:56 2012 +0100
 
     Make blktap compile with gcc 4.6
 
+** Deal with compile shit later
+** IGNORE
 commit fb7d6f5f7337793b877a729d3d05786bbb1f3f15
 Author: Kamran Karimi <kamran.karimi@citrix.com>
 Date:   Wed Apr 18 13:41:58 2012 -0700
 
     Changed vhd/lib/vhd-util-check.c to make it compiler under gcc-4.4
 
+** Part of the block crypto module
+** HANDLE PATCH_ENCRYPTION
 commit e1e79fc8650fcacee43845417127ede8fc1d0e01
 Author: Rahul Golwalkar <rahul.golwalkar@citrix.com>
 Date:   Fri Jan 27 14:52:23 2012 +0000
@@ -212,6 +226,8 @@ Date:   Fri Jan 27 14:52:23 2012 +0000
     XC-5102 : Remember encryption keys across pause/unpause of blktap
     Patch by Jake Wires
 
+** Whatever
+** IGNORE
 commit fb899d41a34f728c38f0a869fd2755ebf1b51d93
 Merge: bcb9656 4a6d657
 Author: Eric Chanudet <eric.chanudet@citrix.com>
@@ -219,6 +235,8 @@ Date:   Wed Dec 21 17:56:22 2011 +0000
 
     Merge branch '4.1'
 
+** Revert
+** IGNORE
 commit bcb96566fe5e5cb0fa58fbe82189ad2625860adc
 Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
 Date:   Thu Nov 10 11:55:01 2011 +0000
@@ -227,6 +245,8 @@ Date:   Thu Nov 10 11:55:01 2011 +0000
     
     This reverts commit 494ec0c831603bdd5acc75cf34522c600cd88d48.
 
+** Whatever
+** IGNORE
 commit 4a6d65734be937dcc9ab9c6e657151c3d3316fc6
 Merge: a2979ce 78fb2d8
 Author: Eric Chanudet <eric.chanudet@citrix.com>
@@ -234,12 +254,16 @@ Date:   Tue Oct 11 17:14:22 2011 +0100
 
     Merge branch 'master' into 4.1
 
+** Take it
+** HANDLE PATCH_PIC
 commit 78fb2d8eceb6d1a7b1fdc2f4aad0cb7bf4eb29a2
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Wed Sep 28 13:17:52 2011 -0400
 
     [blktap] XC-7114 Add -fPIC compiler flag to build system.
 
+** Take it
+** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION)
 commit 6df041294c5220a77fbd8d8520cdc432f62a509f
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Sep 28 11:50:34 2011 +0100
@@ -248,6 +272,8 @@ Date:   Wed Sep 28 11:50:34 2011 +0100
     
     cpuid function taken from xen-oss (tools/libxc/xc_cpuid_x86.c).
 
+** Whatever
+** IGNORE
 commit a2979ce014bd0854f253003bc6e031580a55c6a9
 Merge: 2a2de91 494ec0c
 Author: Eric Chanudet <eric.chanudet@citrix.com>
@@ -255,12 +281,16 @@ Date:   Wed Sep 21 12:32:33 2011 +0100
 
     Merge branch 'master' into 4.1
 
+** This gets reverted above
+** IGNORE
 commit 494ec0c831603bdd5acc75cf34522c600cd88d48
 Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
 Date:   Wed Sep 7 14:48:29 2011 +0100
 
     removing some code portion which is believed to break non-dynamic vhds support... could possibly break stuffs
 
+** Getting rid of libvhdio 
+** IGNORE
 commit cc5bb58070528d03e8abf7d6af5d56ecfef7692d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 16 17:05:22 2011 -0700
@@ -280,18 +310,24 @@ Date:   Tue Jul 19 14:08:57 2011 -0700
     ext4 aio+dio fix backported from 2.6.38 to 2.6.32 should now make this
     patch viable.
 
+** The tests are dead to me
+** IGNORE
 commit 190b858225af960ff8104c626643129cf71b5774
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jul 19 14:08:33 2011 -0700
 
     [test] simple test which exposes ext4 aio+dio bug
 
+** The tests are dead to me
+** IGNORE
 commit b9d3c028e59647efb89316559603de921b923f73
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jul 19 14:07:16 2011 -0700
 
     [test] fix return type
 
+** Used by toolstack. Not sure if it is crypto related but what the hell
+** HANDLE PATCH_VHD_CRYPTO
 commit 28d01d93c6325c357d7ffe205df7b1c33bb7b0e2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jun 21 11:24:41 2011 -0700
