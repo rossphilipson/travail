@@ -1,3 +1,5 @@
+** Whatever
+** IGNORE
 commit d9f0f4b6805670d7c9bc15b97ef5f0b60c8cca50
 Merge: 474ff34 8f8cb52
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
@@ -5,18 +7,24 @@ Date:   Fri May 30 10:50:43 2014 +0200
 
     Merge branch 'bombardier'
 
+** Not sure, there from the beginning, gone in upstream. Ignore for now.
+** IGNORE
 commit 8f8cb520563f412911a6b73b6f5067229ab11af0
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Fri May 30 10:48:58 2014 +0200
 
     XC-11076 memory corruption in blktap2 fix
 
+** Super
+** IGNORE
 commit 474ff340b55325489817df683ce4e0b3a80b0e65
 Author: Jean-Edouard Lejosne <jean-edouard.lejosne@citrix.com>
 Date:   Wed May 14 15:32:57 2014 -0400
 
     auto-recopyright
 
+** New crypto stuff again, put it in another patch
+** HANDLED PATCH_ENCRYPTION3
 commit d3a4613f22e6aa16a8b1b1af3393118033edda83
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 21:09:26 2014 -0500
@@ -26,6 +34,8 @@ Date:   Mon Feb 17 21:09:26 2014 -0500
     This commit removes all of the code that's protected by the KERN guards
     as well as all of the code it would activate.
 
+** New crypto stuff again, put it in another patch
+** HANDLED PATCH_ENCRYPTION3
 commit 604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 20:09:01 2014 -0500
@@ -36,12 +46,16 @@ Date:   Mon Feb 17 20:09:01 2014 -0500
     kernel crypto implementation can be substituted by setting
     USE_KERN_CRYPTO to 'y' when invoking make.
 
+** Not needed where we are going.
+** IGNORE
 commit ccfebd4af2a87793d8b94a60e855d0f814c88850
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Tue Dec 17 17:00:19 2013 -0500
 
     STFU git.
 
+** Well since I cannot figure out what these scripts are for and nothing uses them...
+** IGNORE
 commit 3bad380be4954839a4d3d87e7c7f6ca16ea5abe8
 Author: Rick Leeming <rick.leeming@citrix.com>
 Date:   Tue Oct 8 04:56:04 2013 +0100
@@ -55,6 +69,8 @@ Date:   Tue Oct 8 04:56:04 2013 +0100
     
     Also fix an error in the usage text.
 
+** New crypto stuff, put it in another patch
+** HANDLED PATCH_ENCRYPTION2
 commit 6290f973182adfc3618c6a6b5c7aaeae1f0804fe
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:41:58 2013 +0100
@@ -71,15 +87,17 @@ Date:   Fri Sep 6 14:41:58 2013 +0100
     Otherwise, we're still defaulting to parents encryption keys
     (provided they exist) when encryption is not set in a specific node.
 
+** New crypto stuff, put it in another patch
+** HANDLED PATCH_ENCRYPTION2
 commit af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:40:29 2013 +0100
 
     Add an explicit logging before we exit with a crypto failure.
-    
-    Make the error more obvious when looking at the log, otherwise
     there's only cryptic timeout in blktap
 
+** New crypto stuff, put it in another patch
+** HANDLED PATCH_ENCRYPTION2
 commit def872845a0756fbb44c2fff2c98a2fc56e2f839
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:14:14 2013 +0100
@@ -91,6 +109,8 @@ Date:   Fri Sep 6 14:14:14 2013 +0100
     
     still disabled by default.
 
+** New crypto stuff, put it in another patch
+** HANDLED PATCH_ENCRYPTION2
 commit 7d4b850a749017f6c429756f5e62769e9451ad43
 Author: Vincent Hanquez <vincent.hanquez@eu.citrix.com>
 Date:   Sat Aug 10 10:25:47 2013 +0100
@@ -99,24 +119,32 @@ Date:   Sat Aug 10 10:25:47 2013 +0100
     
     Disabled for now and behind an OPENSSL_XTS_AES define, pending full system checks.
 
+** I don't fucking think so
+** IGNORE
 commit 9eea97e4dbfdf82888ecf8a11c226783f6c716ab
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Thu May 9 13:40:13 2013 +0200
 
     blktap: add code to resolve same dir parents created by XCE synchroniser ( for ex. ./system-1.vhd )
 
+** Oh fucking no we won't
+** IGNORE
 commit fed74157ab9af3e1e4d0e07817e3c0d7351ccb8a
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Fri Apr 19 11:54:25 2013 +0200
 
     blktap, install vhd-util.h header (required by mepd)
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit c1690373ab646392e22349e2808ed8cb8ed715a2
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Oct 24 13:37:46 2012 +0200
 
     XC-9475 tapdisk: for differencing disks, inherit encryption parameters from the parent disk (if not overriden in child)
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit d5797db89b7d9a951723887b68f48936f6354c81
 Author: Rick Leeming <rick.leeming@citrix.com>
 Date:   Thu Oct 4 19:34:56 2012 +0100
@@ -133,36 +161,48 @@ Date:   Thu Oct 4 19:34:56 2012 +0100
     same command worked fine when run in a shell due to the different number
     of open fds.)
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 70e886c7cba966902723617ea435d13e4a115120
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Sun Sep 23 19:29:11 2012 +0100
 
     More libvhd misery, 1) fix error in linking makefile, 2) catch some more calls to stat, 3) fix my muppet bug in seek
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 1d6a6c3ce279448e654019d1950f225f0f05a49b
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 15:27:15 2012 +0100
 
     move vhd key stuff to icbinn
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 2111c6d171dd6e89d7ac574003ed7ef3d66954b3
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 12:16:40 2012 +0100
 
     don't check for a block device with stat when using icbinn
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 1c9f24920ba7995b37d1ce019958d39ff6f88c7e
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 11:54:31 2012 +0100
 
     james is a muppet - the last component of a path needn't be a direcrtory
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 17d54e14de930ddd0d7e54ea8f58bd8d81ab314b
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 10:42:04 2012 +0100
 
     swap in vhd_realpath (which is icbinn aware) into libvhd inplace of libc's
 
+** SyncXT icbinn stuffs
+** HANDLE PATCH_ICBINN
 commit 116f2edd62095ec74ff24781567b40c22d0c62ce
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Thu Sep 20 01:43:05 2012 +0100
