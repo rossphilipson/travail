@@ -333,84 +333,112 @@ Date:   Mon May 9 15:11:25 2011 -0700
     Signed-off-by: Daniel Stodden <daniel.stodden@citrix.com>
 *******************************************************************************
 
+** Nuked stream-coalesce stuffs
+** IGNORE
 commit c15e25c231fc4eec14b6be636833b089366d7926
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:56:26 2011 -0700
 
     allow coalescing partial chains from streamed vhds
 
+** Getting rid of libvhdio 
+** IGNORE
 commit ab2b66d6f598515307505c4abd2ffa039f33f4d7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:55:18 2011 -0700
 
     interpose on fclose
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:54:46 2011 -0700
 
     move prototypes to header file
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit cb7392bbbbd2d5d5f1bdac5a5de6875346eac144
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 20 18:53:20 2011 -0700
 
     XC-5102: add option to set vhd keyhash directly
 
+** Legit still in upstream.
+** HANDLE temp patch - PATCH_UPSTREAM_FIXED
 commit 5b05287e9f90a0ec298a64ba9f5130d8235ce39f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:55 2011 -0700
 
     fix parsing of empty parent locators
 
+** Legit leak still in upstream.
+** HANDLE temp patch - PATCH_UPSTREAM_FIXED
 commit 29113b54207787faeacbd6b896a0e2944cce9836
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:01 2011 -0700
 
     memleak
 
+** I don't know wtf a pre-allocted vhd is and the vhd_cur_capacity got cut out below - unless we need it this is gone.
+** IGNORE
 commit 79ca4075d0cbdbb40c54c707a215c901d56e2348
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 13:56:29 2011 -0700
 
     fix vhd-util-read for pre-allocated vhds
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 29 11:47:01 2011 -0700
 
     XC-5214: ignore keys when keyhash is not set
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 969300731a957de6e211b58e89ce390e7a3f1023
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Mar 21 18:54:35 2011 -0700
 
     XC-5214 - fix keyhash check
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 15 11:06:59 2011 -0700
 
     typo
 
+** Deal with compilation issues later
+** IGNORE
 commit 2a2de91055ebdccb5d700f1854962b11fc52103f
 Author: Eric Chanudet <eric.chanudet@citrix.com>
 Date:   Mon Mar 14 15:17:43 2011 +0000
 
     [blktap] Fix compilation with xen-4.1 new sring struct.
 
+** The logging has changed in upstream and this seems obsolete.
+** IGNORE
 commit 032e4ff8173ae0310649e2ab9dcaf1def65d86f1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Feb 2 19:27:49 2011 -0800
 
     XC-4963: logging failures should not be fatal
 
+** I don't think we care about this or syslog-ng
+** IGNORE
 commit a344491cab88fc6326e9a16493923b8e8200b4db
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Jan 31 13:00:32 2011 -0800
 
     tapdisk-syslog support for STREAM-based sysloggers
 
+** Bollox it - no clear idea why this was done and has worked fine in upstream forever.
+** IGNORE
 commit 1489e7132c0883ae315dbd8233e3906b983973d7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Jan 26 11:37:27 2011 -0800
@@ -424,12 +452,16 @@ Date:   Wed Jan 26 11:37:27 2011 -0800
 ** [snip]
 *******************************************************************************
 
+** Probably want to keep this
+** HANDLE PATCH_XC4678
 commit 8f6acba75214adb528b31161aa7e966ba5bfc14e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 15 12:01:31 2010 -0800
 
     XC-4678: add VHD locking to tapdisk
 
+** Getting rid of libvhdio 
+** IGNORE
 commit 1e9cf410bcd1e2f91273a9fb061439b74fcb4d0d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Dec 9 18:57:13 2010 -0800
@@ -438,6 +470,8 @@ Date:   Thu Dec 9 18:57:13 2010 -0800
     
     dramatically improves performance after the recent addition of fdatasyncs()
 
+** Valid enhancement - would like to upstream.
+** HANDLE in PATCH_UPSTREAM_FIXED
 commit a0dbd69b0201f47597e43bf3329ab9c4de306399
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:43:33 2010 -0800
@@ -447,12 +481,16 @@ Date:   Wed Dec 8 17:43:33 2010 -0800
     ...but don't remove the pid file, as we've not been shutdown via the
     proper interface
 
+** Valid fix that needs to go upstream
+** HANDLE in PATCH_UPSTREAM_FIXED
 commit a2480dcde324d856e2017350d8b3322577f0e678
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:42:05 2010 -0800
 
     fix tapdisk2 usage message
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit 5a0d0636ff39fe6a5f18d2e870ee0e34ed844a51
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 15:57:17 2010 -0800
@@ -463,18 +501,24 @@ Date:   Wed Dec 8 15:57:17 2010 -0800
     files there on startup and remove them on shutdown. this will make it
     obvious when tapdisks are not shutdown cleanly.
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit fd08e3d7968dd08f752c54ad3c54b9099cea3c00
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 14:35:15 2010 -0800
 
     XC-4323: extra logging to make this extra obvious
 
+** These seem to already be gone upstream and it looked like a bp so...
+** IGNORE
 commit 3db9b949bee5551895db713dc63a7377f7a92ac7
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Dec 7 21:07:17 2010 -0800
 
     XC-4636: special-case tapdev minors no longer
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit 8191a4f116541dc3e5b25f670139da70c213e37b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:23:36 2010 -0800
@@ -483,6 +527,8 @@ Date:   Wed Dec 1 17:23:36 2010 -0800
     
     keep the failure explicit for now in case any new SRs turn up
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit 3444fcfdcff2af17d1792fa2beb252c1ff5b0c44
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:20:50 2010 -0800
@@ -497,6 +543,8 @@ Date:   Wed Dec 1 17:20:50 2010 -0800
     either way, inconsistent batmap checksums will not prevent tapdisk from
     mounting a vhd.
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit a052005f8a231f6ef64c659a146f7e4e840b446a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:11:12 2010 -0800
@@ -505,6 +553,8 @@ Date:   Wed Dec 1 17:11:12 2010 -0800
     
     also display more meaningful error message when batmap cksm is inconsistent
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit b45439e18b5f634cb43029d97b056bec6bb58a2b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:07:55 2010 -0800
@@ -513,12 +563,17 @@ Date:   Wed Dec 1 17:07:55 2010 -0800
     
     also export a few batmap helper functions
 
+** Seems like a legit bug and fix - see ticket
+** HANDLE PATCH_XC4323
 commit 4267f574ff27a8a25afe5c8a05457b67f6f88fa9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:04:10 2010 -0800
 
     XC-4323: fdatasync when extending files
 
+** VHD encryption
+** Encryption - PATCH_ENCRYPTION
+** HANDLE
 commit 6d5f862479be3b652ecfabca2728f85a1663bb22
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Nov 3 13:42:35 2010 +0000
@@ -527,50 +582,64 @@ Date:   Wed Nov 3 13:42:35 2010 +0000
     
     before only single directory was supported
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 9555a9bcd4ce8b3d1a6d93389e66f8ae3c5c3755
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Oct 11 16:53:48 2010 +0530
 
     XC-4215: use xattrs for proprietary xc headers on third-party vhds
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit f062843e0c7d82072a7619d3939a6fee293c7911
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Oct 11 16:53:11 2010 +0530
 
     typo
 
+** The dm-en/decrypt and vhd-stream stuff is out. See below...
+** IGNORE
 commit 1989e2d168f9aa9fdfa52ea107aa65c8a8e545cc
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Sep 24 20:08:13 2010 -0700
 
     XC-4120: force allocation of empty blocks to ensure sizes match
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:26 2010 -0700
 
     check for errors when initializing crypto
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:12 2010 -0700
 
     refuse to open vhds for IO if keyhashes don't look right
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit ece4b70dc7a96df938cbb0f2e7aed26d28f6ce02
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:24:31 2010 -0700
 
     add utility for setting, checking, and displaying keyhashes
 
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 68374cffa633f49a226f95c92ecce2671f421ee8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:23:34 2010 -0700
 
     include keyhash in vhd metadata displays
 
-** Come on you can't fuck with the batmap struct like this???!?!?!?!!?!
-** IGNORE
+** Sadly we need this stuff - it is part of our vhd disk crypto
+** HANDLE PATCH_VHD_CRYPTO
 commit 9072bfc23ce8776f0953c3fa7e92917c0ae4e789
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:22:12 2010 -0700
@@ -865,15 +934,16 @@ Date:   Mon Jul 19 20:12:21 2010 +0000
 ** [snip]
 
 ** Not sure - looks like a bug fix or enhancement
-** SANITY
+** Looked at. This one scares me - the break condition looks sketchy.
+** IGNORE
 commit 6ef3597c82a5b8a8c2fdc4fbadaae3fde06d9ed8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 14:07:03 2010 -0700
 
     fix handling early failures
 
-** Not sure - looks like a bug fix or enhancement
-** SANITY
+** Looked it over, looks legit. EPERM is better and preventing the retry makes sense.
+** HANDLE temp patch - PATCH_UPSTREAM_FIXED
 commit df2e16c7c6af2cebdef72d541ae192cbf6a5b55f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:33:47 2010 -0700
@@ -881,7 +951,8 @@ Date:   Thu Jul 1 11:33:47 2010 -0700
     don't retry when there's no point
 
 ** Not sure - looks like a bug fix
-** SANITY
+** We looked at it. It looks like it just simplified the code. Have no idea what the original failure was. Nuke it.
+** IGNORE
 commit 7816683193ce3d0a7ec2dde57675a0050174d6e0
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:32:31 2010 -0700
@@ -889,7 +960,8 @@ Date:   Thu Jul 1 11:32:31 2010 -0700
     ensure progress when retries are required
 
 ** Not sure - looks like a bug fix
-** SANITY
+** We looked at it - can't see how it would wedge and it just looks wrong.
+** IGNORE
 commit 310be18b3e74cbe7beb32623a2d4ad095deffe95
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:31:39 2010 -0700
@@ -1003,6 +1075,7 @@ Date:   Thu Jul 1 11:12:40 2010 -0700
     add insane option to make differencing vhds dynamic and vice versa
 
 ** This is indeed a bug. I upstreamed a patch for it. Need one for now...
+** UPSTREAMED
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
 commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1087,7 +1160,7 @@ Date:   Fri Jun 11 13:35:03 2010 -0700
     export vhd_print_headers
 
 ** May have to deal with getting logging directed only to syslog but this is obsolete
-** HANDLE deal with upstream...
+** HANDLE deal with it upstream...
 commit c2a98ec345cf14c0a72b3606cc99d5a8b8418ae9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jun 8 14:30:49 2010 -0700
@@ -1176,8 +1249,8 @@ Date:   Mon Mar 8 18:43:13 2010 -0800
 
     setsid after fork
 
-** Please, please can we get rid of this one!!!!!
-** IGNORE
+** Please, please can we get rid of this one - the answer is no
+** HANDLE PATCH_MARKER
 commit 52ba3d3168cf60013d10972bc25bc40a410cfe41
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 2 16:25:26 2010 -0800
@@ -1201,7 +1274,7 @@ Date:   Tue Mar 2 16:24:08 2010 -0800
 
     fix libvhdio fread_unlock when it is defined as a macro
 
-** Please, please can we get rid of this one!!!!!
+** Coalesce out stuffs, gone
 ** IGNORE
 commit 55bfef1567005cb1d0217fa48060a41c843afe6d
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1209,8 +1282,8 @@ Date:   Tue Mar 2 16:23:28 2010 -0800
 
     XC-1031: add support for sparse writes during coalesce
 
-** Please, please can we get rid of this one!!!!!
-** IGNORE
+** Please, please can we get rid of this one - no
+** HANDLE PATCH_MARKER
 commit 51b4bd5e32f1276c5805f0801ed067d1c8175dfe
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Fri Feb 26 14:16:34 2010 -0800
@@ -1404,7 +1477,7 @@ Date:   Wed Oct 21 00:23:09 2009 -0700
     as with other LD_PRELOAD hacks, ymmv
 
 ** Try to not use this cache optimization - -C is not used
-** SANITY
+** HANDLE with TODO
 commit 729d55876a90ad9b77b7c5f2487a11fffd90ff77
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:05:51 2009 -0700
@@ -1412,7 +1485,7 @@ Date:   Wed Oct 21 00:05:51 2009 -0700
     add -C switch to vhd-util read to enable caching
 
 ** Try to not use this optimization
-** SANITY
+** HANDLE with TODO
 commit 5a52dc288beaabba364022fe7a005074adc4f272
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Oct 21 00:01:07 2009 -0700
