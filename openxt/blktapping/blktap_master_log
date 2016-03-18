@@ -267,6 +267,8 @@ Date:   Tue Aug 16 17:05:22 2011 -0700
 
     some documentation on libvhdio.
 
+** Stupid rerevert
+** IGNORE
 commit 27a14348e957e790262a2363d03744bb259b5389
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jul 19 14:08:57 2011 -0700
@@ -296,6 +298,8 @@ Date:   Tue Jun 21 11:24:41 2011 -0700
 
     XC-5423: add utility to query number of allocated vhd blocks
 
+** Stupid just get rereverted
+** IGNORE
 commit 93ed3b83f0faa3da8d89b718c87d9841bd8060d7
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Jun 1 11:03:23 2011 +0100
@@ -304,6 +308,8 @@ Date:   Wed Jun 1 11:03:23 2011 +0100
     
     This reverts commit abb20c86563ef81f72ae68b177cdd0ef344eb3ed.
 
+** Nuke it but put a TODO in to maybe investigate. It looks too non portable to be a great option.
+** HANDLE with TODO
 commit abb20c86563ef81f72ae68b177cdd0ef344eb3ed
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue May 31 16:07:03 2011 -0700
@@ -311,7 +317,7 @@ Date:   Tue May 31 16:07:03 2011 -0700
     use fallocate when possible for allocating vhd blocks
 
 *******************************************************************************
-** Remove backport
+** Backport
 ** IGNORE
 commit 73a35f869859651b0d011c6af94a6e3486fa5dc9
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -1334,9 +1340,8 @@ Date:   Thu Oct 29 16:20:09 2009 -0700
 
     add interface for byte-granularity read/write of vhds
 
-** Atomic helpers - I guess we should keep these - uurrg
-** libvhd - PATCH_LIBVHD
-** HANDLE
+** This is a test hook - no idea what the reasoning it. Gone.
+** IGNORE
 commit 580c29b45bd2bcc98d44116e9b4ae9feb9a59bd6
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:18:29 2009 -0700
@@ -1345,7 +1350,7 @@ Date:   Thu Oct 29 16:18:29 2009 -0700
     
         * on SIGCONT, libvhdio will snapshot any open vhds
 
-** Atomic helpers - I guess we should keep these - uurrg
+** Atomic helpers - I guess we should keep these
 ** libvhd - PATCH_LIBVHD
 ** HANDLE
 commit 1b33fc794ba5a7f0139b8f1882987008388414a1
@@ -1354,6 +1359,9 @@ Date:   Thu Oct 29 16:17:19 2009 -0700
 
     use atomic io functions to make libvhd more robust in the face of interrupts
 
+** Atomic helpers - I guess we should keep these
+** Rewrite - this shit is not atomic or pio
+** HANDLE PATCH_LIBVHD
 commit dfc4904151febe35b833cea040b7d4ded24f0c29
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:16:13 2009 -0700
@@ -1421,8 +1429,8 @@ Date:   Wed Oct 21 00:01:07 2009 -0700
 ** IGNORE
 ** [snip]
 
-** This change makes no sense. The test is for whether a block is used but the fix changes the bit fetched to sector.
-** SANITY
+** This change originally makes no sense. But if you look at -i it seems it is about sectors soo...
+** HANDLE PATCH_UPSTREAM_FIXED and upstream (needs some investigation)
 commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Oct 20 23:13:05 2009 -0700
