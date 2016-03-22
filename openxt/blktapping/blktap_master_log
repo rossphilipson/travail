@@ -1296,6 +1296,7 @@ Date:   Tue Apr 20 18:14:02 2010 -0700
 
 ** Used in vhd-copy script, think we need it.
 ** HANDLE vhd-util - PATCH_VHD_UTIL
+** ADDED - blktap2-vhd-print-allocated-virtblock-list.patch
 commit 8332572cf1e8848e49bbe032b75ed030471dc71e
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Fri Apr 9 17:18:28 2010 +0000
