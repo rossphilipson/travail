@@ -9,7 +9,7 @@ Date:   Fri May 30 10:50:43 2014 +0200
 
 ** Not sure, there from the beginning, gone in upstream. Take it since it is a valid fix.
 ** HANDLE - PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 ** TODO not sure about this one
 commit 8f8cb520563f412911a6b73b6f5067229ab11af0
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
@@ -445,7 +445,7 @@ Date:   Wed Apr 20 18:53:20 2011 -0700
 
 ** Legit still in upstream.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit 5b05287e9f90a0ec298a64ba9f5130d8235ce39f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:55 2011 -0700
@@ -454,7 +454,7 @@ Date:   Wed Apr 6 14:18:55 2011 -0700
 
 ** Legit leak still in upstream.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit 29113b54207787faeacbd6b896a0e2944cce9836
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:01 2011 -0700
@@ -563,7 +563,7 @@ Date:   Wed Dec 8 17:43:33 2010 -0800
 
 ** Valid fix that needs to go upstream
 ** HANDLE in PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit a2480dcde324d856e2017350d8b3322577f0e678
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:42:05 2010 -0800
@@ -778,6 +778,7 @@ Date:   Wed Sep 1 14:15:30 2010 -0700
 ** Atomic helpers - fix
 ** libvhd - PATCH_LIBVHD
 ** HANDLE
+** ADDED - blktap2-libvhd-atomic-write-helpers.patch
 commit 4bc6769fbe5325e4d01c30feb36dd23b4b3c67ad
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:15:06 2010 -0700
@@ -786,7 +787,7 @@ Date:   Wed Sep 1 14:15:06 2010 -0700
 
 ** Legit bug, fix upstream
 ** HANDLE in PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit d8fd64a421e065c951818a793b6f3c048453502d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:13:40 2010 -0700
@@ -1026,7 +1027,7 @@ Date:   Thu Jul 1 14:07:03 2010 -0700
 
 ** Looked it over, looks legit. EPERM is better and preventing the retry makes sense.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit df2e16c7c6af2cebdef72d541ae192cbf6a5b55f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:33:47 2010 -0700
@@ -1160,7 +1161,7 @@ Date:   Thu Jul 1 11:12:40 2010 -0700
 ** This is indeed a bug. I upstreamed a patch for it. Need one for now...
 ** UPSTREAMED
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:10:06 2010 -0700
@@ -1510,6 +1511,7 @@ Date:   Thu Oct 29 16:18:29 2009 -0700
 ** Atomic helpers - I guess we should keep these
 ** libvhd - PATCH_LIBVHD
 ** HANDLE
+** ADDED - blktap2-libvhd-atomic-write-helpers.patch
 commit 1b33fc794ba5a7f0139b8f1882987008388414a1
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:17:19 2009 -0700
@@ -1519,6 +1521,7 @@ Date:   Thu Oct 29 16:17:19 2009 -0700
 ** Atomic helpers - I guess we should keep these
 ** Rewrite - this shit is not atomic or pio
 ** HANDLE PATCH_LIBVHD
+** ADDED - blktap2-libvhd-atomic-write-helpers.patch
 commit dfc4904151febe35b833cea040b7d4ded24f0c29
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Oct 29 16:16:13 2009 -0700
@@ -1588,7 +1591,7 @@ Date:   Wed Oct 21 00:01:07 2009 -0700
 
 ** This change originally makes no sense. But if you look at -i it seems it is about sectors soo...
 ** HANDLE PATCH_UPSTREAM_FIXED and upstream (needs some investigation)
-** ADDED
+** ADDED - blktap2-miscellaneous-oxt-fixes.patch
 commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Oct 20 23:13:05 2009 -0700
