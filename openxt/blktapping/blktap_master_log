@@ -7,8 +7,10 @@ Date:   Fri May 30 10:50:43 2014 +0200
 
     Merge branch 'bombardier'
 
-** Not sure, there from the beginning, gone in upstream. Ignore for now.
-** IGNORE
+** Not sure, there from the beginning, gone in upstream. Take it since it is a valid fix.
+** HANDLE - PATCH_UPSTREAM_FIXED
+** ADDED
+** TODO not sure about this one
 commit 8f8cb520563f412911a6b73b6f5067229ab11af0
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Fri May 30 10:48:58 2014 +0200
@@ -443,6 +445,7 @@ Date:   Wed Apr 20 18:53:20 2011 -0700
 
 ** Legit still in upstream.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
+** ADDED
 commit 5b05287e9f90a0ec298a64ba9f5130d8235ce39f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:55 2011 -0700
@@ -451,6 +454,7 @@ Date:   Wed Apr 6 14:18:55 2011 -0700
 
 ** Legit leak still in upstream.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
+** ADDED
 commit 29113b54207787faeacbd6b896a0e2944cce9836
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 6 14:18:01 2011 -0700
@@ -546,8 +550,8 @@ Date:   Thu Dec 9 18:57:13 2010 -0800
     
     dramatically improves performance after the recent addition of fdatasyncs()
 
-** Valid enhancement - would like to upstream.
-** HANDLE in PATCH_UPSTREAM_FIXED
+** Valid enhancement - would like to upstream. Snarled up with pidfile stuff though.
+** HANDLE PATCH_XC4323 (with below)
 commit a0dbd69b0201f47597e43bf3329ab9c4de306399
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:43:33 2010 -0800
@@ -559,6 +563,7 @@ Date:   Wed Dec 8 17:43:33 2010 -0800
 
 ** Valid fix that needs to go upstream
 ** HANDLE in PATCH_UPSTREAM_FIXED
+** ADDED
 commit a2480dcde324d856e2017350d8b3322577f0e678
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:42:05 2010 -0800
@@ -781,6 +786,7 @@ Date:   Wed Sep 1 14:15:06 2010 -0700
 
 ** Legit bug, fix upstream
 ** HANDLE in PATCH_UPSTREAM_FIXED
+** ADDED
 commit d8fd64a421e065c951818a793b6f3c048453502d
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:13:40 2010 -0700
@@ -1020,6 +1026,7 @@ Date:   Thu Jul 1 14:07:03 2010 -0700
 
 ** Looked it over, looks legit. EPERM is better and preventing the retry makes sense.
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
+** ADDED
 commit df2e16c7c6af2cebdef72d541ae192cbf6a5b55f
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:33:47 2010 -0700
@@ -1153,6 +1160,7 @@ Date:   Thu Jul 1 11:12:40 2010 -0700
 ** This is indeed a bug. I upstreamed a patch for it. Need one for now...
 ** UPSTREAMED
 ** HANDLE temp patch - PATCH_UPSTREAM_FIXED
+** ADDED
 commit 5c6f405d11c3bf5fabf705c1ec35a1031e02a555
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Thu Jul 1 11:10:06 2010 -0700
@@ -1580,6 +1588,7 @@ Date:   Wed Oct 21 00:01:07 2009 -0700
 
 ** This change originally makes no sense. But if you look at -i it seems it is about sectors soo...
 ** HANDLE PATCH_UPSTREAM_FIXED and upstream (needs some investigation)
+** ADDED
 commit 027f5abb706078b1f9fd49279f0d207849cd5e4b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Oct 20 23:13:05 2009 -0700
