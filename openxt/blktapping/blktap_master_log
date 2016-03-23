@@ -138,7 +138,7 @@ Date:   Fri Apr 19 11:54:25 2013 +0200
     blktap, install vhd-util.h header (required by mepd)
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit c1690373ab646392e22349e2808ed8cb8ed715a2
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Oct 24 13:37:46 2012 +0200
@@ -221,6 +221,7 @@ Date:   Thu Sep 20 01:38:34 2012 +0100
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit 3c5efe118186cb2713764c24362d3681d3664f31
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Tue Sep 18 15:47:40 2012 -0500
@@ -370,6 +371,7 @@ Date:   Tue Jul 19 14:07:16 2011 -0700
 
 ** Used by toolstack. Not sure if it is crypto related but what the hell
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit 28d01d93c6325c357d7ffe205df7b1c33bb7b0e2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Jun 21 11:24:41 2011 -0700
@@ -428,7 +430,7 @@ Date:   Mon May 2 16:55:18 2011 -0700
     interpose on fclose
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:54:46 2011 -0700
@@ -437,6 +439,7 @@ Date:   Mon May 2 16:54:46 2011 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit cb7392bbbbd2d5d5f1bdac5a5de6875346eac144
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Apr 20 18:53:20 2011 -0700
@@ -470,7 +473,7 @@ Date:   Wed Apr 6 13:56:29 2011 -0700
     fix vhd-util-read for pre-allocated vhds
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 29 11:47:01 2011 -0700
@@ -478,7 +481,7 @@ Date:   Tue Mar 29 11:47:01 2011 -0700
     XC-5214: ignore keys when keyhash is not set
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 969300731a957de6e211b58e89ce390e7a3f1023
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Mar 21 18:54:35 2011 -0700
@@ -486,7 +489,7 @@ Date:   Mon Mar 21 18:54:35 2011 -0700
     XC-5214 - fix keyhash check
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 15 11:06:59 2011 -0700
@@ -664,7 +667,8 @@ Date:   Wed Nov 3 13:42:35 2010 +0000
     before only single directory was supported
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_VHD_CRYPTO note the clone metadata shit is dumped
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit 9555a9bcd4ce8b3d1a6d93389e66f8ae3c5c3755
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Oct 11 16:53:48 2010 +0530
@@ -673,6 +677,7 @@ Date:   Mon Oct 11 16:53:48 2010 +0530
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit f062843e0c7d82072a7619d3939a6fee293c7911
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Oct 11 16:53:11 2010 +0530
@@ -688,7 +693,7 @@ Date:   Fri Sep 24 20:08:13 2010 -0700
     XC-4120: force allocation of empty blocks to ensure sizes match
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:26 2010 -0700
@@ -696,7 +701,7 @@ Date:   Wed Sep 1 14:25:26 2010 -0700
     check for errors when initializing crypto
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_VHD_CRYPTO
+** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:12 2010 -0700
@@ -705,6 +710,7 @@ Date:   Wed Sep 1 14:25:12 2010 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit ece4b70dc7a96df938cbb0f2e7aed26d28f6ce02
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:24:31 2010 -0700
@@ -713,6 +719,7 @@ Date:   Wed Sep 1 14:24:31 2010 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit 68374cffa633f49a226f95c92ecce2671f421ee8
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:23:34 2010 -0700
@@ -721,6 +728,7 @@ Date:   Wed Sep 1 14:23:34 2010 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_VHD_CRYPTO
+** ADDED - blktap2-vhd-keyhash-support.patch
 commit 9072bfc23ce8776f0953c3fa7e92917c0ae4e789
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:22:12 2010 -0700
