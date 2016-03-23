@@ -628,7 +628,7 @@ Date:   Wed Dec 1 17:20:50 2010 -0800
     mounting a vhd.
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** HANDLE PATCH_XC4323 (related to PATCH_VHD_CRYPTO)
 commit a052005f8a231f6ef64c659a146f7e4e840b446a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:11:12 2010 -0800
@@ -648,7 +648,7 @@ Date:   Wed Dec 1 17:07:55 2010 -0800
     also export a few batmap helper functions
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** HANDLE PATCH_XC4323 (or PATCH_ENCRYPTION)
 commit 4267f574ff27a8a25afe5c8a05457b67f6f88fa9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:04:10 2010 -0800

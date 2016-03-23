@@ -175,10 +175,11 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-read.c
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/vhd/lib/vhd-util-read.c
 +++ xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-read.c
-@@ -230,6 +230,30 @@ vhd_print_parent_locators(vhd_context_t
+@@ -230,7 +230,31 @@ vhd_print_parent_locators(vhd_context_t
  }
  
  static void
+-vhd_print_batmap_header(vhd_batmap_t *batmap, int hex)
 +vhd_print_keyhash(vhd_context_t *vhd)
 +{
 +	int ret;
@@ -203,9 +204,10 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-read.c
 +}
 +
 +static void
- vhd_print_batmap_header(vhd_batmap_t *batmap, int hex)
++vhd_print_batmap_header(vhd_context_t *vhd, vhd_batmap_t *batmap, int hex)
  {
  	uint32_t cksm;
+ 
 @@ -241,6 +265,7 @@ vhd_print_batmap_header(vhd_batmap_t *ba
  	       conv(hex, batmap->header.batmap_size));
  	printf("Batmap version      : 0x%08x\n",
@@ -214,6 +216,15 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-read.c
  
  	cksm = vhd_checksum_batmap(batmap);
  	printf("Checksum            : 0x%x|0x%x (%s)\n",
+@@ -281,7 +306,7 @@ vhd_print_headers(vhd_context_t *vhd, in
+ 				return err;
+ 			}
+ 
+-			vhd_print_batmap_header(&vhd->batmap, hex);
++			vhd_print_batmap_header(vhd, &vhd->batmap, hex);
+ 		}
+ 	}
+ 
 Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-scan.c
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/vhd/lib/vhd-util-scan.c
@@ -324,7 +335,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/Makefile
  endif
  
  LIBS              := -Llib -lvhd
-+LIBS              += -lcrypto
++LIBS              += -luuid -lcrypto
  
  all: subdirs-all build
  
@@ -332,16 +343,24 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/Makefile
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/vhd/lib/Makefile
 +++ xen-4.3.4/tools/blktap2/vhd/lib/Makefile
-@@ -27,6 +27,8 @@ ifeq ($(CONFIG_LIBICONV),y)
+@@ -19,14 +19,14 @@ CFLAGS          += -D_GNU_SOURCE
+ CFLAGS          += -fPIC
+ CFLAGS          += -g
+ 
+-ifeq ($(CONFIG_Linux),y)
+ LIBS            := -luuid
+-endif
+ 
+ ifeq ($(CONFIG_LIBICONV),y)
  LIBS            += -liconv
  endif
  
-+LIBS            := -lcrypto
++LIBS            += -lcrypto
 +
  LIB-SRCS        := libvhd.c
  LIB-SRCS        += libvhd-journal.c
  LIB-SRCS        += vhd-util-coalesce.c
-@@ -43,8 +45,10 @@ LIB-SRCS        += vhd-util-snapshot.c
+@@ -43,8 +43,10 @@ LIB-SRCS        += vhd-util-snapshot.c
  LIB-SRCS        += vhd-util-scan.c
  LIB-SRCS        += vhd-util-check.c
  LIB-SRCS        += vhd-util-uuid.c
