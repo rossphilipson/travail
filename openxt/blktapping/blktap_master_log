@@ -839,6 +839,7 @@ Date:   Wed Sep 1 14:10:08 2010 -0700
 ** Mount RO seems to be used in xenmgr etc. See b88008b1d1370070e33b537e7d482f60b020255a
 ** tap-ctl - PATCH_TAP_CTL
 ** HANDLE
+** ADDED - blktap2-tap-ctl-optional-pid-ro-mount.patch
 commit 6ee06eff2f182097579a486f74899dc77a1955a9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:08:33 2010 -0700
@@ -886,6 +887,7 @@ Date:   Tue Aug 10 16:39:19 2010 -0700
 ** More tap_ctl_find_pid
 ** tap-ctl - PATCH_TAP_CTL
 ** HANDLE
+** ADDED - blktap2-tap-ctl-optional-pid-ro-mount.patch
 commit 387962f1645a12db976b82c2a972737e95c286d5
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 19:32:04 2010 -0700
@@ -903,6 +905,7 @@ Date:   Mon Aug 9 18:44:08 2010 -0700
 ** Introduced +tap_ctl_find_pid which is used in installer etc.
 ** tap-ctl - PATCH_TAP_CTL
 ** HANDLE
+** ADDED - blktap2-tap-ctl-optional-pid-ro-mount.patch
 commit 7cef6457c38cc51c46d6eaf32343796b5d7704be
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Aug 9 16:12:18 2010 -0700
