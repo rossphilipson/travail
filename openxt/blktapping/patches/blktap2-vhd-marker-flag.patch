@@ -108,7 +108,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  int
  vhd_write_batmap(vhd_context_t *ctx, vhd_batmap_t *batmap)
  {
-@@ -3419,3 +3457,45 @@ vhd_io_write(vhd_context_t *ctx, char *b
+@@ -3419,3 +3457,39 @@ vhd_io_write(vhd_context_t *ctx, char *b
  
  	return __vhd_io_dynamic_write(ctx, buf, sec, secs);
  }
@@ -122,10 +122,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 +	*marker = 0;
 +
 +	if (!vhd_has_batmap(ctx))
-+		return xattr_get(ctx->fd,
-+				 VHD_XATTR_MARKER,
-+				 (void *)marker,
-+				 sizeof(*marker));
++		return -ENOSYS;
 +
 +	err = vhd_read_batmap_header(ctx, &batmap);
 +	if (err)
@@ -142,10 +139,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 +	vhd_batmap_t batmap;
 +
 +	if (!vhd_has_batmap(ctx))
-+		return xattr_set(ctx->fd,
-+				 VHD_XATTR_MARKER,
-+				 (void *)&marker,
-+				 sizeof(marker));
++		return -ENOSYS;
 +
 +	err = vhd_read_batmap_header(ctx, &batmap);
 +	if (err)
