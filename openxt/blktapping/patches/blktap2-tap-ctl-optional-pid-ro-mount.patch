@@ -7,10 +7,12 @@ Add optional pid argument and ro tapdisk support.
 LONG DESCRIPTION: 
 ################################################################################
 Optional pid argument simplifies device destruction interface and the 
-pause/unpause interfaces.
+pause/unpause interfaces. The code had to be modified to use the old list
+handling because something was missing from an earlier change.
 
 The -R option sets the TAPDISK_MESSAGE_FLAG_RDONLY allowing tapdisks to be
-created and opened RO.
+created and opened RO. Two new APIs to pass flags had to be added because
+something was missing from an earlier change.
 
 ################################################################################
 CHANGELOG 
@@ -40,7 +42,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl-list.c
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/control/tap-ctl-list.c
 +++ xen-4.3.4/tools/blktap2/control/tap-ctl-list.c
-@@ -534,3 +534,28 @@ tap_ctl_find(const char *type, const cha
+@@ -534,3 +534,29 @@ tap_ctl_find(const char *type, const cha
  
  	return ret;
  }
@@ -49,8 +51,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl-list.c
 +tap_ctl_find_pid(int minor)
 +{
 +	int pid, err;
-+	tap_list_t *entry;
-+	struct list_head list = LIST_HEAD_INIT(list);
++	tap_list_t **list, **_entry;
 +
 +	err = tap_ctl_list(&list);
 +	if (err)
@@ -58,14 +59,16 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl-list.c
 +
 +	pid = -1;
 +
-+	tap_list_for_each_entry(entry, &list) {
++	for (_entry = list; *_entry != NULL; ++_entry) {
++		tap_list_t *entry  = *_entry;
++
 +		if (entry->minor == minor) {
 +			pid = entry->pid;
 +			break;
 +		}
 +	}
 +
-+	tap_ctl_list_free(&list);
++	tap_ctl_free_list(list);
 +
 +	return pid >= 0 ? pid : -ENOENT;
 +}
@@ -82,7 +85,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  
  #include "tap-ctl.h"
  
-@@ -247,7 +249,7 @@ usage:
+@@ -247,20 +249,21 @@ usage:
  static void
  tap_cli_create_usage(FILE *stream)
  {
@@ -91,7 +94,14 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  }
  
  static int
-@@ -260,7 +262,7 @@ tap_cli_create(int argc, char **argv)
+ tap_cli_create(int argc, char **argv)
+ {
+-	int c, err;
++	int c, err, flags;
+ 	char *args, *devname;
+ 
++	flags   = 0;
+ 	args    = NULL;
  	devname = NULL;
  
  	optind = 0;
@@ -100,7 +110,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		switch (c) {
  		case 'a':
  			args = optarg;
-@@ -268,6 +270,9 @@ tap_cli_create(int argc, char **argv)
+@@ -268,6 +271,9 @@ tap_cli_create(int argc, char **argv)
  		case 'd':
  			devname = optarg;
  			break;
@@ -110,7 +120,16 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		case '?':
  			goto usage;
  		case 'h':
-@@ -293,19 +298,21 @@ usage:
+@@ -279,7 +285,7 @@ tap_cli_create(int argc, char **argv)
+ 	if (!args)
+ 		goto usage;
+ 
+-	err = tap_ctl_create(args, &devname);
++	err = tap_ctl_create_flags(args, &devname, flags);
+ 	if (!err)
+ 		printf("%s\n", devname);
+ 
+@@ -293,19 +299,21 @@ usage:
  static void
  tap_cli_destroy_usage(FILE *stream)
  {
@@ -126,7 +145,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  
  	pid   = -1;
  	minor = -1;
-+	device = -1;
++	device = NULL;
  
  	optind = 0;
 -	while ((c = getopt(argc, argv, "p:m:h")) != -1) {
@@ -134,7 +153,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		switch (c) {
  		case 'p':
  			pid = atoi(optarg);
-@@ -313,6 +320,9 @@ tap_cli_destroy(int argc, char **argv)
+@@ -313,6 +321,9 @@ tap_cli_destroy(int argc, char **argv)
  		case 'm':
  			minor = atoi(optarg);
  			break;
@@ -144,7 +163,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		case '?':
  			goto usage;
  		case 'h':
-@@ -321,9 +331,40 @@ tap_cli_destroy(int argc, char **argv)
+@@ -321,9 +332,40 @@ tap_cli_destroy(int argc, char **argv)
  		}
  	}
  
@@ -186,7 +205,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  	return tap_ctl_destroy(pid, minor);
  
  usage:
-@@ -498,7 +539,7 @@ usage:
+@@ -498,7 +540,7 @@ usage:
  static void
  tap_cli_pause_usage(FILE *stream)
  {
@@ -195,7 +214,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  }
  
  static int
-@@ -526,9 +567,17 @@ tap_cli_pause(int argc, char **argv)
+@@ -526,9 +568,17 @@ tap_cli_pause(int argc, char **argv)
  		}
  	}
  
@@ -214,7 +233,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  	return tap_ctl_pause(pid, minor);
  
  usage:
-@@ -539,7 +588,7 @@ usage:
+@@ -539,7 +589,7 @@ usage:
  static void
  tap_cli_unpause_usage(FILE *stream)
  {
@@ -223,7 +242,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  }
  
  int
-@@ -572,9 +621,17 @@ tap_cli_unpause(int argc, char **argv)
+@@ -572,9 +622,17 @@ tap_cli_unpause(int argc, char **argv)
  		}
  	}
  
@@ -242,7 +261,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  	return tap_ctl_unpause(pid, minor, args);
  
  usage:
-@@ -633,7 +690,7 @@ usage:
+@@ -633,21 +691,22 @@ usage:
  static void
  tap_cli_open_usage(FILE *stream)
  {
@@ -251,7 +270,15 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  }
  
  static int
-@@ -647,7 +704,7 @@ tap_cli_open(int argc, char **argv)
+ tap_cli_open(int argc, char **argv)
+ {
+ 	const char *args;
+-	int c, pid, minor;
++	int c, pid, minor, flags;
+ 
++	flags = 0;
+ 	pid   = -1;
+ 	minor = -1;
  	args  = NULL;
  
  	optind = 0;
@@ -260,7 +287,7 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		switch (c) {
  		case 'p':
  			pid = atoi(optarg);
-@@ -658,6 +715,9 @@ tap_cli_open(int argc, char **argv)
+@@ -658,6 +717,9 @@ tap_cli_open(int argc, char **argv)
  		case 'a':
  			args = optarg;
  			break;
@@ -270,11 +297,20 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.c
  		case '?':
  			goto usage;
  		case 'h':
+@@ -669,7 +731,7 @@ tap_cli_open(int argc, char **argv)
+ 	if (pid == -1 || minor == -1 || !args)
+ 		goto usage;
+ 
+-	return tap_ctl_open(pid, minor, args);
++	return tap_ctl_open_flags(pid, minor, args, flags);
+ 
+ usage:
+ 	tap_cli_open_usage(stderr);
 Index: xen-4.3.4/tools/blktap2/control/tap-ctl.h
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/control/tap-ctl.h
 +++ xen-4.3.4/tools/blktap2/control/tap-ctl.h
-@@ -77,6 +77,7 @@ int tap_ctl_get_driver_id(const char *ha
+@@ -77,11 +77,13 @@ int tap_ctl_get_driver_id(const char *ha
  int tap_ctl_list(tap_list_t ***list);
  void tap_ctl_free_list(tap_list_t **list);
  int tap_ctl_find(const char *type, const char *path, tap_list_t *tap);
@@ -282,3 +318,68 @@ Index: xen-4.3.4/tools/blktap2/control/tap-ctl.h
  
  int tap_ctl_allocate(int *minor, char **devname);
  int tap_ctl_free(const int minor);
+ 
+ int tap_ctl_create(const char *params, char **devname);
++int tap_ctl_create_flags(const char *params, char **devname, int flags);
+ int tap_ctl_destroy(const int id, const int minor);
+ 
+ int tap_ctl_spawn(void);
+@@ -91,6 +93,7 @@ int tap_ctl_attach(const int id, const i
+ int tap_ctl_detach(const int id, const int minor);
+ 
+ int tap_ctl_open(const int id, const int minor, const char *params);
++int tap_ctl_open_flags(const int id, const int minor, const char *params, int flags);
+ int tap_ctl_close(const int id, const int minor, const int force);
+ 
+ int tap_ctl_pause(const int id, const int minor);
+Index: xen-4.3.4/tools/blktap2/control/tap-ctl-create.c
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/control/tap-ctl-create.c
++++ xen-4.3.4/tools/blktap2/control/tap-ctl-create.c
+@@ -37,6 +37,12 @@
+ int
+ tap_ctl_create(const char *params, char **devname)
+ {
++	return tap_ctl_create_flags(params, devname, 0);
++}
++
++int
++tap_ctl_create_flags(const char *params, char **devname, int flags)
++{
+ 	int err, id, minor;
+ 
+ 	err = tap_ctl_allocate(&minor, devname);
+@@ -53,7 +59,7 @@ tap_ctl_create(const char *params, char
+ 	if (err)
+ 		goto destroy;
+ 
+-	err = tap_ctl_open(id, minor, params);
++	err = tap_ctl_open_flags(id, minor, params, flags);
+ 	if (err)
+ 		goto detach;
+ 
+Index: xen-4.3.4/tools/blktap2/control/tap-ctl-open.c
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/control/tap-ctl-open.c
++++ xen-4.3.4/tools/blktap2/control/tap-ctl-open.c
+@@ -38,6 +38,12 @@
+ int
+ tap_ctl_open(const int id, const int minor, const char *params)
+ {
++	return tap_ctl_open_flags(id, minor, params, 0);
++}
++
++int
++tap_ctl_open_flags(const int id, const int minor, const char *params, int flags)
++{
+ 	int err;
+ 	tapdisk_message_t message;
+ 
+@@ -46,6 +52,7 @@ tap_ctl_open(const int id, const int min
+ 	message.cookie = minor;
+ 	message.u.params.storage = TAPDISK_STORAGE_TYPE_DEFAULT;
+ 	message.u.params.devnum = minor;
++	message.u.params.flags = flags;
+ 
+ 	err = snprintf(message.u.params.path,
+ 		       sizeof(message.u.params.path) - 1, "%s", params);
