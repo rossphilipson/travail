@@ -1028,6 +1028,7 @@ Date:   Mon Jul 26 17:49:20 2010 +0000
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0010
+** DONE Makefile
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 19 20:12:21 2010 +0000

@@ -1,5 +1,10 @@
 ** Frob
 ** Just go through the motions
+** Left this shit out from p0010
+TAPDISK-OBJS := $(TAP-OBJS) $(BLK-OBJS)
+
+tapdisk2: tapdisk2.c $(TAPDISK-OBJS) $(MISC-OBJS)
+        $(CC) $(CFLAGS) -o $@ $(TAPDISK-OBJS) $(MISC-OBJS) $< $(LIBS) $(AIOLIBS)
 diff --git a/drivers/Makefile b/drivers/Makefile - mods
 
 ** From
