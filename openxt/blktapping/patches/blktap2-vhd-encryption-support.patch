@@ -619,3 +619,376 @@ Index: xen-4.3.4/tools/blktap2/include/libvhd.h
  };
  
  static inline uint32_t
+Index: xen-4.3.4/tools/blktap2/drivers/block-crypto.h
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/block-crypto.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2010, XenSource Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in the
++ *       documentation and/or other materials provided with the distribution.
++ *     * Neither the name of XenSource Inc. nor the names of its contributors
++ *       may be used to endorse or promote products derived from this software
++ *       without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
++ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Copyright (c) 2010 Citrix Systems, Inc.
++ */
++
++
++int vhd_open_crypto(vhd_context_t *vhd, const char *name);
++void vhd_crypto_encrypt(vhd_context_t *vhd, td_request_t *t, char *orig_buf);
++void vhd_crypto_decrypt(vhd_context_t *vhd, td_request_t *t);
+Index: xen-4.3.4/tools/blktap2/drivers/crypto/Makefile
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/crypto/Makefile
+@@ -0,0 +1,23 @@
++#
++# Copyright (c) 2014 Citrix Systems, Inc.
++#
++
++# ASFLAGS += -g -I.
++# CFLAGS += -g -I.
++# LDFLAGS += -g
++RANLIB ?= ranlib
++
++LIBXTS-AES-OBJS := xts_aes.o
++
++libxts-aes.a: $(LIBXTS-AES-OBJS)
++	$(AR) r $@ $(LIBXTS-AES-OBJS)
++	$(RANLIB) $@
++
++test_decrypt: test_decrypt.o libxts-aes.a
++	$(CC) $(CFLAGS) -o $@ -lcrypto -L. -lxts-aes $+
++
++clean:
++	rm -f $(LIBXTS-AES-OBJS)
++	rm -f libxts-aes.a
++	rm -f test_decrypt test_decrypt.o
++
+Index: xen-4.3.4/tools/blktap2/drivers/crypto/test_decrypt.c
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/crypto/test_decrypt.c
+@@ -0,0 +1,109 @@
++/*
++ * Copyright (c) 2010, XenSource Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in the
++ *       documentation and/or other materials provided with the distribution.
++ *     * Neither the name of XenSource Inc. nor the names of its contributors
++ *       may be used to endorse or promote products derived from this software
++ *       without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
++ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Copyright (c) 2014 Citrix Systems, Inc.
++ */
++
++
++// #define PERF
++
++#include <err.h>
++#include <stdio.h>
++#include <stdint.h>
++#include "compat-crypto-openssl.h"
++#include "xts_aes.h"
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++
++#define BUFSIZE (512)
++uint8_t dst_buf[BUFSIZE];
++uint8_t src_buf[BUFSIZE];
++
++uint8_t key[32];
++
++int
++main(int argc, char **argv, char **envp)
++{
++    struct crypto_blkcipher *xts_tfm;
++    uint8_t *p_buf;
++    int fd, i, ret;
++    char *keyfile = "test.key";
++
++    fd = open(keyfile, O_RDONLY);
++    if (fd == -1)
++      err(1, "open");
++
++    ret = read(fd, key, sizeof(key));
++    if (ret != sizeof(key))
++      err(1, "read");
++
++    xts_tfm = xts_aes_setup();
++
++    xts_setkey(crypto_blkcipher_tfm(xts_tfm), key, sizeof(key));
++
++#ifdef PERF
++  for (i = 0; i < 1000000; i++) {
++#endif
++
++#ifndef PERF
++    printf("buffers: src %p dst %p\n", src_buf, dst_buf);
++#endif
++    ret = xts_aes_plain_encrypt(xts_tfm, 0, src_buf, src_buf, BUFSIZE);
++#ifndef PERF
++    printf("return %d\n", ret);
++#endif
++
++#ifndef PERF
++    p_buf = src_buf;
++    for (i = 0; i < BUFSIZE; i += 8)
++	printf("%03d/%p: %02x%02x%02x%02x%02x%02x%02x%02x\n", i, &p_buf[i],
++	       p_buf[i], p_buf[i+1], p_buf[i+2], p_buf[i+3],
++	       p_buf[i+4], p_buf[i+5], p_buf[i+6], p_buf[i+7]);
++#endif
++
++    ret = xts_aes_plain_decrypt(xts_tfm, 0, src_buf, src_buf, BUFSIZE);
++#ifndef PERF
++    printf("return %d\n", ret);
++#endif
++
++#ifndef PERF
++    p_buf = src_buf;
++    for (i = 0; i < BUFSIZE; i += 8)
++	printf("%03d/%p: %02x%02x%02x%02x%02x%02x%02x%02x\n", i, &p_buf[i],
++	       p_buf[i], p_buf[i+1], p_buf[i+2], p_buf[i+3],
++	       p_buf[i+4], p_buf[i+5], p_buf[i+6], p_buf[i+7]);
++#endif
++#ifdef PERF
++  }
++#endif
++
++    return 0;
++}
+Index: xen-4.3.4/tools/blktap2/drivers/crypto/xts_aes.c
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/crypto/xts_aes.c
+@@ -0,0 +1,82 @@
++/*
++ * Copyright (c) 2010, XenSource Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in the
++ *       documentation and/or other materials provided with the distribution.
++ *     * Neither the name of XenSource Inc. nor the names of its contributors
++ *       may be used to endorse or promote products derived from this software
++ *       without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
++ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Copyright (c) 2014 Citrix Systems, Inc.
++ */
++
++
++#include <err.h>
++#include <stdio.h>
++#include <stdint.h>
++#include <string.h>
++#include "compat-crypto-openssl.h"
++#include "xts_aes.h"
++
++struct crypto_blkcipher * xts_aes_setup(void)
++{
++	struct crypto_blkcipher *ret;
++
++	ret = calloc(1, sizeof(struct crypto_blkcipher));
++	if (!ret)
++		return NULL;
++	return ret;
++}
++
++int xts_aes_setkey(struct crypto_blkcipher *cipher, const uint8_t *key, unsigned int keysize)
++{
++	const EVP_CIPHER *type;
++
++	switch (keysize) {
++	case 64: type = EVP_aes_256_xts(); break;
++	case 32: type = EVP_aes_128_xts(); break;
++	default: return -21; break;
++	}
++
++	if (!type)
++		return -20;
++
++	EVP_CIPHER_CTX_init(&cipher->en_ctx);
++	EVP_CIPHER_CTX_init(&cipher->de_ctx);
++
++	/* TODO lazily initialize the encrypt context until doing an encryption,
++	 * since it's only needed for a writable node (top diff) */
++	if (!EVP_CipherInit_ex(&cipher->en_ctx, type, NULL, NULL, NULL, 1))
++		return -1;
++	if (!EVP_CipherInit_ex(&cipher->de_ctx, type, NULL, NULL, NULL, 0))
++		return -2;
++	if (!EVP_CIPHER_CTX_set_key_length(&cipher->en_ctx, keysize))
++		return -3;
++	if (!EVP_CipherInit_ex(&cipher->en_ctx, NULL, NULL, key, NULL, 1))
++		return -4;
++	if (!EVP_CIPHER_CTX_set_key_length(&cipher->de_ctx, keysize))
++		return -5;
++	if (!EVP_CipherInit_ex(&cipher->de_ctx, NULL, NULL, key, NULL, 0))
++		return -6;
++	return 0;
++}
+Index: xen-4.3.4/tools/blktap2/drivers/crypto/xts_aes.h
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/crypto/xts_aes.h
+@@ -0,0 +1,77 @@
++/*
++ * Copyright (c) 2010, XenSource Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in the
++ *       documentation and/or other materials provided with the distribution.
++ *     * Neither the name of XenSource Inc. nor the names of its contributors
++ *       may be used to endorse or promote products derived from this software
++ *       without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
++ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Copyright (c) 2014 Citrix Systems, Inc.
++ */
++
++
++extern struct crypto_blkcipher *xts_aes_setup(void);
++
++int xts_aes_setkey(struct crypto_blkcipher *cipher, const uint8_t *key, unsigned int keysize);
++
++typedef uint64_t sector_t;
++
++static inline void
++xts_aes_plain_iv_generate(uint8_t *iv, int iv_size, sector_t sector)
++{
++    memset(iv, 0, iv_size);
++    *(uint32_t *)iv = sector & 0xffffffff; /* LITTLE ENDIAN */
++}
++
++static inline int
++xts_aes_plain_encrypt(struct crypto_blkcipher *xts_tfm, sector_t sector,
++		      uint8_t *dst_buf, uint8_t *src_buf, unsigned int nbytes)
++{
++	uint8_t iv[16];
++	int dstlen;
++	xts_aes_plain_iv_generate(iv, 16, sector);
++
++	if (!EVP_CipherInit_ex(&xts_tfm->en_ctx, NULL, NULL, NULL, iv, -1))
++		return -1;
++	if (!EVP_CipherUpdate(&xts_tfm->en_ctx, dst_buf, &dstlen, src_buf, nbytes))
++		return -2;
++	/* no need to finalize with XTS when multiple of blocksize */
++	return 0;
++}
++
++static inline int
++xts_aes_plain_decrypt(struct crypto_blkcipher *xts_tfm, sector_t sector,
++		      uint8_t *dst_buf, uint8_t *src_buf, unsigned int nbytes)
++{
++	uint8_t iv[16];
++	int dstlen;
++	xts_aes_plain_iv_generate(iv, 16, sector);
++
++	if (!EVP_CipherInit_ex(&xts_tfm->de_ctx, NULL, NULL, NULL, iv, -1))
++		return -1;
++	if (!EVP_CipherUpdate(&xts_tfm->de_ctx, dst_buf, &dstlen, src_buf, nbytes))
++		return -2;
++	/* no need to finalize with XTS when multiple of blocksize */
++	return 0;
++}
+Index: xen-4.3.4/tools/blktap2/drivers/crypto/compat-crypto-openssl.h
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/drivers/crypto/compat-crypto-openssl.h
+@@ -0,0 +1,16 @@
++/*
++ * Copyright (c) 2014 Citrix Systems, Inc.
++ */
++
++#ifndef COMPAT_CRYPTO_OPENSSL_H
++#define COMPAT_CRYPTO_OPENSSL_H
++
++#include <openssl/evp.h>
++
++struct crypto_blkcipher
++{
++	EVP_CIPHER_CTX de_ctx;
++	EVP_CIPHER_CTX en_ctx;
++};
++
++#endif
