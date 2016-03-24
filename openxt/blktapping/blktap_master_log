@@ -26,7 +26,7 @@ Date:   Wed May 14 15:32:57 2014 -0400
     auto-recopyright
 
 ** New crypto stuff again, put it in another patch
-** HANDLED PATCH_ENCRYPTION3
+** HANDLED PATCH_ENCRYPTION3 - p0310
 commit d3a4613f22e6aa16a8b1b1af3393118033edda83
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 21:09:26 2014 -0500
@@ -37,7 +37,7 @@ Date:   Mon Feb 17 21:09:26 2014 -0500
     as well as all of the code it would activate.
 
 ** New crypto stuff again, put it in another patch
-** HANDLED PATCH_ENCRYPTION3
+** HANDLED PATCH_ENCRYPTION3 - p0300
 commit 604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 20:09:01 2014 -0500
@@ -72,7 +72,7 @@ Date:   Tue Oct 8 04:56:04 2013 +0100
     Also fix an error in the usage text.
 
 ** New crypto stuff, put it in another patch
-** HANDLED PATCH_ENCRYPTION2
+** HANDLED PATCH_ENCRYPTION2 - p0230
 commit 6290f973182adfc3618c6a6b5c7aaeae1f0804fe
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:41:58 2013 +0100
@@ -90,7 +90,7 @@ Date:   Fri Sep 6 14:41:58 2013 +0100
     (provided they exist) when encryption is not set in a specific node.
 
 ** New crypto stuff, put it in another patch
-** HANDLED PATCH_ENCRYPTION2
+** HANDLED PATCH_ENCRYPTION2 - p0220
 commit af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:40:29 2013 +0100
@@ -99,7 +99,7 @@ Date:   Fri Sep 6 14:40:29 2013 +0100
     there's only cryptic timeout in blktap
 
 ** New crypto stuff, put it in another patch
-** HANDLED PATCH_ENCRYPTION2
+** HANDLED PATCH_ENCRYPTION2 - p0210
 commit def872845a0756fbb44c2fff2c98a2fc56e2f839
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:14:14 2013 +0100
@@ -112,7 +112,7 @@ Date:   Fri Sep 6 14:14:14 2013 +0100
     still disabled by default.
 
 ** New crypto stuff, put it in another patch
-** HANDLED PATCH_ENCRYPTION2
+** HANDLED PATCH_ENCRYPTION2 - p0200
 commit 7d4b850a749017f6c429756f5e62769e9451ad43
 Author: Vincent Hanquez <vincent.hanquez@eu.citrix.com>
 Date:   Sat Aug 10 10:25:47 2013 +0100
@@ -138,7 +138,7 @@ Date:   Fri Apr 19 11:54:25 2013 +0200
     blktap, install vhd-util.h header (required by mepd)
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0160 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit c1690373ab646392e22349e2808ed8cb8ed715a2
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Oct 24 13:37:46 2012 +0200
@@ -229,7 +229,7 @@ Date:   Tue Sep 18 15:47:40 2012 -0500
     XC-8713 check if vhd is empty before setting keyhash
 
 ** Part of the block crypto module
-** HANDLE PATCH_ENCRYPTION
+** HANDLE PATCH_ENCRYPTION - p0150
 commit 8aff25641de383b9af2b5eff015c0effca5469ea
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Thu Aug 30 12:46:19 2012 +0200
@@ -261,7 +261,7 @@ Date:   Wed Apr 18 13:41:58 2012 -0700
     Changed vhd/lib/vhd-util-check.c to make it compiler under gcc-4.4
 
 ** Part of the block crypto module
-** HANDLE PATCH_ENCRYPTION
+** HANDLE PATCH_ENCRYPTION - p0140
 commit e1e79fc8650fcacee43845417127ede8fc1d0e01
 Author: Rahul Golwalkar <rahul.golwalkar@citrix.com>
 Date:   Fri Jan 27 14:52:23 2012 +0000
@@ -298,7 +298,7 @@ Date:   Tue Oct 11 17:14:22 2011 +0100
     Merge branch 'master' into 4.1
 
 ** Take it
-** HANDLE PATCH_PIC
+** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION) - no p file
 commit 78fb2d8eceb6d1a7b1fdc2f4aad0cb7bf4eb29a2
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Wed Sep 28 13:17:52 2011 -0400
@@ -306,7 +306,7 @@ Date:   Wed Sep 28 13:17:52 2011 -0400
     [blktap] XC-7114 Add -fPIC compiler flag to build system.
 
 ** Take it
-** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION)
+** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION) - p0130
 commit 6df041294c5220a77fbd8d8520cdc432f62a509f
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Sep 28 11:50:34 2011 +0100
@@ -430,7 +430,8 @@ Date:   Mon May 2 16:55:18 2011 -0700
     interpose on fclose
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0120 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** TODO this one probably gets ditched in the end
 commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:54:46 2011 -0700
@@ -473,7 +474,7 @@ Date:   Wed Apr 6 13:56:29 2011 -0700
     fix vhd-util-read for pre-allocated vhds
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0110 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 29 11:47:01 2011 -0700
@@ -481,7 +482,7 @@ Date:   Tue Mar 29 11:47:01 2011 -0700
     XC-5214: ignore keys when keyhash is not set
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0100 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 969300731a957de6e211b58e89ce390e7a3f1023
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Mar 21 18:54:35 2011 -0700
@@ -489,7 +490,7 @@ Date:   Mon Mar 21 18:54:35 2011 -0700
     XC-5214 - fix keyhash check
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0090 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 15 11:06:59 2011 -0700
@@ -536,7 +537,9 @@ Date:   Wed Jan 26 11:37:27 2011 -0800
 *******************************************************************************
 
 ** Probably want to keep this
-** HANDLE PATCH_XC4678
+** xxxxxxxxxxxHANDLE PATCH_XC4678xxxxxxxxxxxxxxx
+** Actually no, if you look at the ticket this is a hack to fix some toolstack problem.
+** IGNORE
 commit 8f6acba75214adb528b31161aa7e966ba5bfc14e
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 15 12:01:31 2010 -0800
@@ -554,7 +557,9 @@ Date:   Thu Dec 9 18:57:13 2010 -0800
     dramatically improves performance after the recent addition of fdatasyncs()
 
 ** Valid enhancement - would like to upstream. Snarled up with pidfile stuff though.
-** HANDLE PATCH_XC4323 (with below)
+** HANDLE xxxxxxxxxxxxxPATCH_XC4323 (with below)xxxxxxxxxxxxxx
+** See a052005f8a231f6ef64c659a146f7e4e840b446a
+** IGNORE
 commit a0dbd69b0201f47597e43bf3329ab9c4de306399
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 17:43:33 2010 -0800
@@ -574,7 +579,9 @@ Date:   Wed Dec 8 17:42:05 2010 -0800
     fix tapdisk2 usage message
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** HANDLE xxxxxxxxxxxxxxPATCH_XC4323xxxxxxxxx
+** See a052005f8a231f6ef64c659a146f7e4e840b446a
+** IGNORE
 commit 5a0d0636ff39fe6a5f18d2e870ee0e34ed844a51
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 15:57:17 2010 -0800
@@ -586,7 +593,9 @@ Date:   Wed Dec 8 15:57:17 2010 -0800
     obvious when tapdisks are not shutdown cleanly.
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** HANDLE xxxxxxxxxxxxxxxxxxxxxxxxxxxxPATCH_XC4323xxxxxxxxxxxxxxxxx
+** See a052005f8a231f6ef64c659a146f7e4e840b446a
+** IGNORE
 commit fd08e3d7968dd08f752c54ad3c54b9099cea3c00
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 8 14:35:15 2010 -0800
@@ -602,7 +611,9 @@ Date:   Tue Dec 7 21:07:17 2010 -0800
     XC-4636: special-case tapdev minors no longer
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** xxxxxxxxxxxxxxxxxxHANDLE PATCH_XC4323xxxxxxxxxxxxxxxxxxxxxx
+** See a052005f8a231f6ef64c659a146f7e4e840b446a
+** IGNORE
 commit 8191a4f116541dc3e5b25f670139da70c213e37b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:23:36 2010 -0800
@@ -612,7 +623,9 @@ Date:   Wed Dec 1 17:23:36 2010 -0800
     keep the failure explicit for now in case any new SRs turn up
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** xxxxxxxxxxxxxxxHANDLE PATCH_XC4323xxxxxxxxxxxxxxxx
+** See a052005f8a231f6ef64c659a146f7e4e840b446a
+** IGNORE
 commit 3444fcfdcff2af17d1792fa2beb252c1ff5b0c44
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:20:50 2010 -0800
@@ -628,7 +641,10 @@ Date:   Wed Dec 1 17:20:50 2010 -0800
     mounting a vhd.
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323 (related to PATCH_VHD_CRYPTO)
+** xxxxxxxxxxxxxHANDLE PATCH_XC4323 (related to PATCH_VHD_CRYPTO)xxxxxxxxxxxxx
+** The more I look at this the more it looks like a hack to deal with invalid checksums
+** It would have probably been better to figure out WTF was hosing checksums.
+** IGNORE
 commit a052005f8a231f6ef64c659a146f7e4e840b446a
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:11:12 2010 -0800
@@ -638,7 +654,9 @@ Date:   Wed Dec 1 17:11:12 2010 -0800
     also display more meaningful error message when batmap cksm is inconsistent
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323
+** xxxxxxxxxxHANDLE PATCH_XC4323xxxxxxxxxxxxx
+** This one does not make sense really - possibly because stuff has changed
+** IGNORE
 commit b45439e18b5f634cb43029d97b056bec6bb58a2b
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:07:55 2010 -0800
@@ -648,7 +666,9 @@ Date:   Wed Dec 1 17:07:55 2010 -0800
     also export a few batmap helper functions
 
 ** Seems like a legit bug and fix - see ticket
-** HANDLE PATCH_XC4323 (or PATCH_ENCRYPTION)
+** xxxxxHANDLE PATCH_XC4323 (or PATCH_ENCRYPTION)xxxxx
+** Not using other f* functions so drop this. Seems it came from an XS backport??
+** IGNORE
 commit 4267f574ff27a8a25afe5c8a05457b67f6f88fa9
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Dec 1 17:04:10 2010 -0800
@@ -656,7 +676,7 @@ Date:   Wed Dec 1 17:04:10 2010 -0800
     XC-4323: fdatasync when extending files
 
 ** VHD encryption
-** Encryption - PATCH_ENCRYPTION
+** Encryption - p0080 - PATCH_ENCRYPTION
 ** HANDLE
 commit 6d5f862479be3b652ecfabca2728f85a1663bb22
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
@@ -693,7 +713,7 @@ Date:   Fri Sep 24 20:08:13 2010 -0700
     XC-4120: force allocation of empty blocks to ensure sizes match
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0070 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:26 2010 -0700
@@ -701,7 +721,7 @@ Date:   Wed Sep 1 14:25:26 2010 -0700
     check for errors when initializing crypto
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
-** HANDLE PATCH_ENCRYPTION see the patch as to why (orig PATCH_VHD_CRYPTO)
+** HANDLE PATCH_ENCRYPTION - p0060 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:12 2010 -0700
@@ -862,9 +882,9 @@ Date:   Wed Sep 1 14:08:02 2010 -0700
 
     missing break
 
-** Also maybe legit, consider
+** Also maybe legit, consider - err = setpriority(PRIO_PROCESS, 0, PRIO_SPECIAL_IO);
 ** driver/tapdisk - PATCH_TAPDISK
-** HANDLE
+** HANDLE (maybe?)
 commit 22f57a80ae2f4016255a0d5eeb730559fb14db40
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 17 12:49:58 2010 -0700
@@ -873,7 +893,8 @@ Date:   Tue Aug 17 12:49:58 2010 -0700
 
 ** It is not clear exactly what this fixes - it seems sorta legit - consider for now
 ** driver/tapdisk - PATCH_TAPDISK
-** HANDLE
+** Actually this is BED crap, see ticket, gone.
+** IGNORE
 commit 3292321524cc5797bd0e01b9d36e71ed4a54cbbf
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 10 16:41:38 2010 -0700
@@ -930,6 +951,7 @@ Date:   Mon Aug 9 16:11:48 2010 -0700
 
 *******************************************************************************
 ** Another major backport from XS, control introduced
+** TODO CHECK PATCH_ENCRYPTION  what was picked up here in drivers esp.
 ** IGNORE
 commit 2c3523d905723e76a760ce31d7dd99068373ca3d
 Author: Jake Wires <Jake.Wires@citrix.com>
@@ -940,7 +962,7 @@ Date:   Mon Aug 9 15:16:58 2010 -0700
 
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
-** HANDLE
+** HANDLE - p0050
 commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Fri Jul 30 23:05:39 2010 +0000
@@ -978,7 +1000,7 @@ Date:   Wed Jul 28 14:47:36 2010 +0100
 
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
-** HANDLE
+** HANDLE - p0040
 commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Tue Jul 27 20:10:37 2010 +0000
@@ -987,7 +1009,7 @@ Date:   Tue Jul 27 20:10:37 2010 +0000
 
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
-** HANDLE
+** HANDLE - p0030
 commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 18:52:11 2010 +0000
@@ -996,7 +1018,7 @@ Date:   Mon Jul 26 18:52:11 2010 +0000
 
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
-** HANDLE
+** HANDLE - p0020
 commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 17:49:20 2010 +0000
@@ -1005,7 +1027,7 @@ Date:   Mon Jul 26 17:49:20 2010 +0000
 
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
-** HANDLE
+** HANDLE - p0010
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 19 20:12:21 2010 +0000
