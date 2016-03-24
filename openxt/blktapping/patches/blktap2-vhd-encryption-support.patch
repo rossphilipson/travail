@@ -2,12 +2,15 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/drivers/Makefile
 +++ xen-4.3.4/tools/blktap2/drivers/Makefile
-@@ -49,6 +49,12 @@ ifeq ($(VHD_STATIC),y)
+@@ -49,6 +49,15 @@ ifeq ($(VHD_STATIC),y)
  td-util: CFLAGS += -static
  endif
  
-+tapdisk tapdisk2 tapdisk-stream tapdisk-diff: LIBS += -lcrypto -Lcrypto -lxts-aes
-+tapdisk tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
++tapdisk2 tapdisk-stream tapdisk-diff: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
++tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
++
++img2qcow qcow2raw qcow-create: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
++img2qcow qcow2raw qcow-create: crypto/libxts-aes.a
 +
 +crypto/libxts-aes.a: crypto/*.c crypto/*.h
 +	$(MAKE) -C crypto libxts-aes.a
@@ -15,7 +18,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
  PORTABLE-OBJS-y :=
  PORTABLE-OBJS-$(CONFIG_Linux)  += blk_linux.o
  PORTABLE-OBJS-$(CONFIG_NetBSD) += blk_netbsd.o
-@@ -81,6 +87,7 @@ BLK-OBJS-y  += aes.o
+@@ -81,18 +90,19 @@ BLK-OBJS-y  += aes.o
  BLK-OBJS-y  += md5.o
  BLK-OBJS-y  += $(PORTABLE-OBJS-y)
  BLK-OBJS-y  += $(REMUS-OBJS)
@@ -23,7 +26,30 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
  
  all: $(IBIN) lock-util qcow-util
  
-@@ -112,5 +119,6 @@ install: all
+ 
+ tapdisk2: $(TAP-OBJS-y) $(BLK-OBJS-y) $(MISC-OBJS-y) tapdisk2.o
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm 
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm 
+ 
+ tapdisk-client: tapdisk-client.o
+ 	$(CC) -o $@ $^ $(LDFLAGS) -lrt
+ 
+ tapdisk-stream tapdisk-diff: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm
+ 
+ td-util: td.o tapdisk-utils.o tapdisk-log.o $(PORTABLE-OBJS-y)
+ 	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS)
+@@ -104,7 +114,7 @@ lock-util: lock.c
+ qcow-util: img2qcow qcow2raw qcow-create
+ 
+ img2qcow qcow2raw qcow-create: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm
+ 
+ install: all
+ 	$(INSTALL_DIR) -p $(DESTDIR)$(INST_DIR)
+@@ -112,5 +122,6 @@ install: all
  
  clean:
  	rm -rf .*.d *.o *~ xen TAGS $(IBIN) $(LIB) $(LOCK_UTIL) $(QCOW_UTIL)
@@ -394,7 +420,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/block-crypto.c
 +            free(basename);
 +            switch (err) {
 +            case 0: /* a key has been found with the same basename */
-+                if (keyhash.cookie == NULL) {
++                if (keyhash.cookie == 0) {
 +                    DPRINTF("key found for %s but no hash set\n", p->file);
 +                    err = -EACCES;
 +                    goto out;
@@ -407,7 +433,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/block-crypto.c
 +                found = 1;
 +                break;
 +            case -ENOENT: /* no key found, get to the next one if the cookie's not set */
-+                if (keyhash.cookie != NULL) {
++                if (keyhash.cookie != 0) {
 +                    err = -ENOKEY;
 +                    goto out;
 +                }
@@ -455,7 +481,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/block-crypto.c
 +            return err;
 +        }
 +
-+        if (keyhash.cookie == NULL) {
++        if (keyhash.cookie == 0) {
 +            return 0;
 +        }
 +
@@ -466,7 +492,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/block-crypto.c
 +	}
 +
 +	xts_aes_setkey(vhd->xts_tfm, key, keysize / 8);
-+	err = 0;
++	return 0;
 +}
 +
 +void

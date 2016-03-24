@@ -13,6 +13,10 @@ diff --git a/drivers/Makefile b/drivers/Makefile - mods
 -
  static int
  check_key(const uint8_t *key, unsigned int keysize,
+
+Had to fix the keyhash.cookie == NULL shit and missing return value
+
+Had to fix makefile w/ CRYPTLIBS and for qcow too
 diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - new
 
 ** Frob
