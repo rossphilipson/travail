@@ -1,0 +1,183 @@
+p0010
+commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
+
+diff --git a/drivers/Makefile b/drivers/Makefile - mods
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - new
+diff --git a/drivers/block-crypto.h b/drivers/block-crypto.h - new
+diff --git a/drivers/block-vhd.c b/drivers/block-vhd.c - mods
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/aes-i586-asm_32.S b/drivers/crypto/aes-i586-asm_32.S - new
+diff --git a/drivers/crypto/aes.h b/drivers/crypto/aes.h - new
+diff --git a/drivers/crypto/aes_generic.c b/drivers/crypto/aes_generic.c - new
+diff --git a/drivers/crypto/aes_glue.c b/drivers/crypto/aes_glue.c - new
+diff --git a/drivers/crypto/b128ops.h b/drivers/crypto/b128ops.h - new
+diff --git a/drivers/crypto/byteorder.h b/drivers/crypto/byteorder.h - new
+diff --git a/drivers/crypto/compat-crypto.h b/drivers/crypto/compat-crypto.h - new
+diff --git a/drivers/crypto/gen-compat-asm-offsets.c b/drivers/crypto/gen-compat-asm-offsets.c - new
+diff --git a/drivers/crypto/gf128mul.c b/drivers/crypto/gf128mul.c - new
+diff --git a/drivers/crypto/gf128mul.h b/drivers/crypto/gf128mul.h - new
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - new
+diff --git a/drivers/crypto/xts.c b/drivers/crypto/xts.c - new
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - new
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - new
+diff --git a/include/libvhd.h b/include/libvhd.h - mods
+
+p0020
+commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0030
+commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
+
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/aes-i586-asm_32.S b/drivers/crypto/aes-i586-asm_32.S - mods
+diff --git a/drivers/crypto/aes.h b/drivers/crypto/aes.h - mods
+diff --git a/drivers/crypto/aes_generic.c b/drivers/crypto/aes_generic.c - mods
+diff --git a/drivers/crypto/aes_glue.c b/drivers/crypto/aes_glue.c - mods
+diff --git a/drivers/crypto/aesni-intel_asm.S b/drivers/crypto/aesni-intel_asm.S - new
+diff --git a/drivers/crypto/aesni-intel_glue.c b/drivers/crypto/aesni-intel_glue.c - new
+diff --git a/drivers/crypto/byteorder.h b/drivers/crypto/byteorder.h - mods
+diff --git a/drivers/crypto/compat-crypto.h b/drivers/crypto/compat-crypto.h - mods
+diff --git a/drivers/crypto/gen-compat-asm-offsets.c b/drivers/crypto/gen-compat-asm-offsets.c - rem
+diff --git a/drivers/crypto/gf128mul.c b/drivers/crypto/gf128mul.c - mods
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+
+p0040
+commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
+
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/aes.h b/drivers/crypto/aes.h - mods
+diff --git a/drivers/crypto/aesni-x86.s b/drivers/crypto/aesni-x86.s - new
+diff --git a/drivers/crypto/aesni-x86_glue.c b/drivers/crypto/aesni-x86_glue.c - new
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+
+p0050
+commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
+
+diff --git a/drivers/crypto/aesni-x86_glue.c b/drivers/crypto/aesni-x86_glue.c - mods
+diff --git a/drivers/crypto/compat-crypto.h b/drivers/crypto/compat-crypto.h - mods
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - mods
+diff --git a/drivers/crypto/xts.c b/drivers/crypto/xts.c - mods
+
+p0060
+commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0070
+commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
+
+diff --git a/drivers/block-vhd.c b/drivers/block-vhd.c - mods
+
+p0080
+commit 6d5f862479be3b652ecfabca2728f85a1663bb22
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0090
+commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0100
+commit 969300731a957de6e211b58e89ce390e7a3f1023
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+diff --git a/drivers/block-vhd.c b/drivers/block-vhd.c - mods
+
+p0110
+commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0120
+commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+diff --git a/include/vhd-util.h b/include/vhd-util.h - mods
+diff --git a/vhd/lib/vhd-util-clone-metadata.c b/vhd/lib/vhd-util-clone-metadata.c - dead
+diff --git a/vhd/lib/vhd-util-dm-encrypt.c b/vhd/lib/vhd-util-dm-encrypt.c - dead
+
+p0130
+commit 6df041294c5220a77fbd8d8520cdc432f62a509f
+
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+
+p0140
+commit e1e79fc8650fcacee43845417127ede8fc1d0e01
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0150
+commit 8aff25641de383b9af2b5eff015c0effca5469ea
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0160
+commit c1690373ab646392e22349e2808ed8cb8ed715a2
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0200
+commit 7d4b850a749017f6c429756f5e62769e9451ad43
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+diff --git a/drivers/crypto/compat-crypto-openssl.h b/drivers/crypto/compat-crypto-openssl.h - new
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - mods
+
+p0210
+commit def872845a0756fbb44c2fff2c98a2fc56e2f839
+
+diff --git a/drivers/Makefile b/drivers/Makefile - mods
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - mods
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - mods
+
+p0220
+commit af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0230
+commit 6290f973182adfc3618c6a6b5c7aaeae1f0804fe
+
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+
+p0300
+commit 604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
+
+diff --git a/drivers/Makefile b/drivers/Makefile - mods
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/compat-crypto-openssl.h b/drivers/crypto/compat-crypto-openssl.h - mods
+diff --git a/drivers/crypto/compat-crypto.h b/drivers/crypto/compat-crypto.h - mods
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - mods
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - mods
+
+p0310
+commit d3a4613f22e6aa16a8b1b1af3393118033edda83
+
+diff --git a/drivers/Makefile b/drivers/Makefile - mods
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - mods
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/aes-i586-asm_32.S b/drivers/crypto/aes-i586-asm_32.S - rem
+diff --git a/drivers/crypto/aes.h b/drivers/crypto/aes.h - rem
+diff --git a/drivers/crypto/aes_generic.c b/drivers/crypto/aes_generic.c - rem
+diff --git a/drivers/crypto/aes_glue.c b/drivers/crypto/aes_glue.c - rem
+diff --git a/drivers/crypto/aesni-intel_asm.S b/drivers/crypto/aesni-intel_asm.S - rem
+diff --git a/drivers/crypto/aesni-intel_glue.c b/drivers/crypto/aesni-intel_glue.c - rem
+diff --git a/drivers/crypto/aesni-x86.s b/drivers/crypto/aesni-x86.s - rem
+diff --git a/drivers/crypto/aesni-x86_glue.c b/drivers/crypto/aesni-x86_glue.c - rem
+diff --git a/drivers/crypto/b128ops.h b/drivers/crypto/b128ops.h - rem
+diff --git a/drivers/crypto/byteorder.h b/drivers/crypto/byteorder.h - rem
+diff --git a/drivers/crypto/compat-crypto.h b/drivers/crypto/compat-crypto.h - rem
+diff --git a/drivers/crypto/gf128mul.c b/drivers/crypto/gf128mul.c - rem
+diff --git a/drivers/crypto/gf128mul.h b/drivers/crypto/gf128mul.h - rem
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - mods
+diff --git a/drivers/crypto/xts.c b/drivers/crypto/xts.c - rem
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - mods
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - mods

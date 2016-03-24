@@ -1,0 +1,35 @@
+** Frob
+** Just go through the motions
+diff --git a/drivers/Makefile b/drivers/Makefile - mods
+
+** From
+** Just add this stuffs back in:
+-int __vhd_util_calculate_keyhash(struct vhd_keyhash *, const uint8_t *, size_t);
+-
+ static int
+ check_key(const uint8_t *key, unsigned int keysize,
+diff --git a/drivers/block-crypto.c b/drivers/block-crypto.c - new
+
+** Frob
+** Just go through the motions
+diff --git a/drivers/block-vhd.c b/drivers/block-vhd.c - mods
+
+** Frob
+** easy 2 lines
+diff --git a/include/libvhd.h b/include/libvhd.h - mods
+
+** Take as is
+diff --git a/drivers/block-crypto.h b/drivers/block-crypto.h - new
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile - mods
+diff --git a/drivers/crypto/test_decrypt.c b/drivers/crypto/test_decrypt.c - new
+diff --git a/drivers/crypto/xts_aes.c b/drivers/crypto/xts_aes.c - new
+diff --git a/drivers/crypto/xts_aes.h b/drivers/crypto/xts_aes.h - new
+diff --git a/drivers/crypto/compat-crypto-openssl.h b/drivers/crypto/compat-crypto-openssl.h - new
+
+
+** Fuck these, just need to not move the def to the header
+diff --git a/include/vhd-util.h b/include/vhd-util.h - mods
+diff --git a/vhd/lib/vhd-util-clone-metadata.c b/vhd/lib/vhd-util-clone-metadata.c - dead
+diff --git a/vhd/lib/vhd-util-dm-encrypt.c b/vhd/lib/vhd-util-dm-encrypt.c - dead
+
+
