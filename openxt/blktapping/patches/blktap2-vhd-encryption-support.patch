@@ -10,7 +10,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
 +tapdisk tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
 +
 +crypto/libxts-aes.a: crypto/*.c crypto/*.h
-+        $(MAKE) -C crypto libxts-aes.a
++	$(MAKE) -C crypto libxts-aes.a
 +
  PORTABLE-OBJS-y :=
  PORTABLE-OBJS-$(CONFIG_Linux)  += blk_linux.o
