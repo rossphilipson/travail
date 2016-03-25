@@ -27,6 +27,7 @@ Date:   Wed May 14 15:32:57 2014 -0400
 
 ** New crypto stuff again, put it in another patch
 ** HANDLED PATCH_ENCRYPTION3 - p0310
+** ADDED - blktap2-vhd-encryption-support.patch
 commit d3a4613f22e6aa16a8b1b1af3393118033edda83
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 21:09:26 2014 -0500
@@ -38,6 +39,7 @@ Date:   Mon Feb 17 21:09:26 2014 -0500
 
 ** New crypto stuff again, put it in another patch
 ** HANDLED PATCH_ENCRYPTION3 - p0300
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Mon Feb 17 20:09:01 2014 -0500
@@ -73,6 +75,7 @@ Date:   Tue Oct 8 04:56:04 2013 +0100
 
 ** New crypto stuff, put it in another patch
 ** HANDLED PATCH_ENCRYPTION2 - p0230
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 6290f973182adfc3618c6a6b5c7aaeae1f0804fe
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:41:58 2013 +0100
@@ -91,6 +94,7 @@ Date:   Fri Sep 6 14:41:58 2013 +0100
 
 ** New crypto stuff, put it in another patch
 ** HANDLED PATCH_ENCRYPTION2 - p0220
+** ADDED - blktap2-vhd-encryption-support.patch
 commit af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:40:29 2013 +0100
@@ -100,6 +104,7 @@ Date:   Fri Sep 6 14:40:29 2013 +0100
 
 ** New crypto stuff, put it in another patch
 ** HANDLED PATCH_ENCRYPTION2 - p0210
+** ADDED - blktap2-vhd-encryption-support.patch
 commit def872845a0756fbb44c2fff2c98a2fc56e2f839
 Author: Vincent Hanquez <vincent.hanquez@citrix.com>
 Date:   Fri Sep 6 14:14:14 2013 +0100
@@ -113,6 +118,7 @@ Date:   Fri Sep 6 14:14:14 2013 +0100
 
 ** New crypto stuff, put it in another patch
 ** HANDLED PATCH_ENCRYPTION2 - p0200
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 7d4b850a749017f6c429756f5e62769e9451ad43
 Author: Vincent Hanquez <vincent.hanquez@eu.citrix.com>
 Date:   Sat Aug 10 10:25:47 2013 +0100
@@ -139,6 +145,7 @@ Date:   Fri Apr 19 11:54:25 2013 +0200
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0160 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit c1690373ab646392e22349e2808ed8cb8ed715a2
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Wed Oct 24 13:37:46 2012 +0200
@@ -230,6 +237,7 @@ Date:   Tue Sep 18 15:47:40 2012 -0500
 
 ** Part of the block crypto module
 ** HANDLE PATCH_ENCRYPTION - p0150
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 8aff25641de383b9af2b5eff015c0effca5469ea
 Author: Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
 Date:   Thu Aug 30 12:46:19 2012 +0200
@@ -262,6 +270,7 @@ Date:   Wed Apr 18 13:41:58 2012 -0700
 
 ** Part of the block crypto module
 ** HANDLE PATCH_ENCRYPTION - p0140
+** ADDED - blktap2-vhd-encryption-support.patch
 commit e1e79fc8650fcacee43845417127ede8fc1d0e01
 Author: Rahul Golwalkar <rahul.golwalkar@citrix.com>
 Date:   Fri Jan 27 14:52:23 2012 +0000
@@ -299,6 +308,7 @@ Date:   Tue Oct 11 17:14:22 2011 +0100
 
 ** Take it
 ** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION) - no p file
+** TODO
 commit 78fb2d8eceb6d1a7b1fdc2f4aad0cb7bf4eb29a2
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Wed Sep 28 13:17:52 2011 -0400
@@ -306,7 +316,8 @@ Date:   Wed Sep 28 13:17:52 2011 -0400
     [blktap] XC-7114 Add -fPIC compiler flag to build system.
 
 ** Take it
-** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION) - p0130
+** PATCH_ENCRYPTION (was HANDLE PATCH_PIC) - p0130
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 6df041294c5220a77fbd8d8520cdc432f62a509f
 Author: Jean Guyader <jean.guyader@eu.citrix.com>
 Date:   Wed Sep 28 11:50:34 2011 +0100
@@ -432,6 +443,7 @@ Date:   Mon May 2 16:55:18 2011 -0700
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0120 - see the patch as to why (orig PATCH_VHD_CRYPTO)
 ** TODO this one probably gets ditched in the end
+** IGNORE shit
 commit f3eb767c708bd7abc2bd49c06805a0cd6ad47bae
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon May 2 16:54:46 2011 -0700
@@ -483,6 +495,7 @@ Date:   Tue Mar 29 11:47:01 2011 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0100 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 969300731a957de6e211b58e89ce390e7a3f1023
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Mon Mar 21 18:54:35 2011 -0700
@@ -491,6 +504,7 @@ Date:   Mon Mar 21 18:54:35 2011 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0090 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 59e0bd9a3ee92946653b3714b1b437fc5c469473
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 15 11:06:59 2011 -0700
@@ -714,6 +728,7 @@ Date:   Fri Sep 24 20:08:13 2010 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0070 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 851d06d3f1eab721180a5608eaa855e7eb38dad2
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:26 2010 -0700
@@ -722,6 +737,7 @@ Date:   Wed Sep 1 14:25:26 2010 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0060 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 83035d3ccabc200a903bc5a47c8ca3ec85802933
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Wed Sep 1 14:25:12 2010 -0700
@@ -963,6 +979,7 @@ Date:   Mon Aug 9 15:16:58 2010 -0700
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0050
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 5773136160b0cec8f6d932a64e84d6b3301ef27c
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Fri Jul 30 23:05:39 2010 +0000
@@ -1001,6 +1018,7 @@ Date:   Wed Jul 28 14:47:36 2010 +0100
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0040
+** ADDED - blktap2-vhd-encryption-support.patch
 commit d6db495bcaa0daf5a85ba2554b86c44b14205a35
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Tue Jul 27 20:10:37 2010 +0000
@@ -1010,6 +1028,7 @@ Date:   Tue Jul 27 20:10:37 2010 +0000
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0030
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 7e77cc8a1a074d77a04be6e252d07ff1ff27d688
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 18:52:11 2010 +0000
@@ -1019,6 +1038,7 @@ Date:   Mon Jul 26 18:52:11 2010 +0000
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0020
+** ADDED - blktap2-vhd-encryption-support.patch
 commit fb41ab1686353d039ea6e144e6086d1df0cd54f0
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 26 17:49:20 2010 +0000
@@ -1028,7 +1048,7 @@ Date:   Mon Jul 26 17:49:20 2010 +0000
 ** VHD encryption
 ** Encryption - PATCH_ENCRYPTION
 ** HANDLE - p0010
-** DONE Makefile
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
 Author: Christian Limpach <Christian.Limpach@citrix.com>
 Date:   Mon Jul 19 20:12:21 2010 +0000

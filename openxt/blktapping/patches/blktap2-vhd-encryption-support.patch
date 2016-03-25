@@ -1,3 +1,67 @@
+################################################################################
+SHORT DESCRIPTION: 
+################################################################################
+VHD encryption support.
+
+################################################################################
+LONG DESCRIPTION: 
+################################################################################
+This patch adds the current VHD encrytion mechanisms used in OpenXT as of 2016.
+This version uses AES XTS encrytion on VHD blocks. The OpenSSL crypto library
+is used to do the encryption/decryption. The implementation is in
+drivers/block-crypto.c and in the files in drivers/crypto/*.
+
+The previous version used the AES XTS crypto support from the Linux kernel. All
+of this was left out in the patch making effort.
+
+################################################################################
+CHANGELOG 
+################################################################################
+Patch formed from commits by: Ross Philipson, philipsonr@ainfosec.com, 3/24/2016
+Philip Tricca <philip.tricca@citrix.com>
+Vincent Hanquez <vincent.hanquez@eu.citrix.com>
+Tomasz Wroblewski <tomasz.wroblewski@citrix.com>
+Jake Wires <Jake.Wires@citrix.com>
+Christian Limpach <Christian.Limpach@citrix.com>
+7a8f7d5ddf2c70bf5c552a1bc8f0070256015b59
+fb41ab1686353d039ea6e144e6086d1df0cd54f0
+7e77cc8a1a074d77a04be6e252d07ff1ff27d688
+d6db495bcaa0daf5a85ba2554b86c44b14205a35
+5773136160b0cec8f6d932a64e84d6b3301ef27c
+83035d3ccabc200a903bc5a47c8ca3ec85802933
+851d06d3f1eab721180a5608eaa855e7eb38dad2
+6d5f862479be3b652ecfabca2728f85a1663bb22
+59e0bd9a3ee92946653b3714b1b437fc5c469473
+969300731a957de6e211b58e89ce390e7a3f1023
+e1e79fc8650fcacee43845417127ede8fc1d0e01
+6df041294c5220a77fbd8d8520cdc432f62a509f
+8aff25641de383b9af2b5eff015c0effca5469ea
+c1690373ab646392e22349e2808ed8cb8ed715a2
+7d4b850a749017f6c429756f5e62769e9451ad43
+def872845a0756fbb44c2fff2c98a2fc56e2f839
+af68e9b46a8d5934fed2dfc86e8a1f08b72f1180
+6290f973182adfc3618c6a6b5c7aaeae1f0804fe
+604aa4179e522bd36e03b43e9ea1b71d1b9c2b4d
+d3a4613f22e6aa16a8b1b1af3393118033edda83
+
+################################################################################
+REMOVAL 
+################################################################################
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+It is unlikely this would be upstreamed itself but there is upstream crypto
+support in blktap2 though it is unclear if it would meet OpenXT's needs.
+
+################################################################################
+INTERNAL DEPENDENCIES 
+################################################################################
+This patch depends on blktap2-vhd-keyhash-support.patch being applied first.
+
+################################################################################
+PATCHES 
+################################################################################
 Index: xen-4.3.4/tools/blktap2/drivers/Makefile
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/drivers/Makefile

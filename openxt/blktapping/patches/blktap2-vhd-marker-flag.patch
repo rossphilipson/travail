@@ -15,13 +15,15 @@ CHANGELOG
 Patch formed from commits by: Ross Philipson, philipsonr@ainfosec.com, 3/22/2016
 Author: Jake Wires <Jake.Wires@citrix.com>
 51b4bd5e32f1276c5805f0801ed067d1c8175dfe
+52ba3d3168cf60013d10972bc25bc40a410cfe41
 
 ################################################################################
 REMOVAL 
 ################################################################################
 Most of the actual code can probably be removed. It was left there for now since
 the status tool uses it. The important thing is to keep the char field in the
-VHD struct so it is layed out correctly for the keyhash stuff.
+VHD struct so it is layed out correctly for the keyhash stuff. As far as can
+be determined, it was used for the BED feature which is gone.
 
 ################################################################################
 UPSTREAM PLAN
