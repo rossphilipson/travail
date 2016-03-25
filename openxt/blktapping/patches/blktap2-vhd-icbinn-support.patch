@@ -1,0 +1,524 @@
+Index: xen-4.3.4/tools/blktap2/vhd/lib/icbinn.c
+===================================================================
+--- /dev/null
++++ xen-4.3.4/tools/blktap2/vhd/lib/icbinn.c
+@@ -0,0 +1,334 @@
++/*
++ * Copyright (c) 2012 Citrix Systems, Inc.
++ */
++
++#include <icbinn.h>
++
++static ICBINN *icb_vhd;
++
++static ICBINN *icb_key;
++
++ICBINN *
++vhd_icbinn_key (void)
++{
++  char proto[1024], *ptr, *host;
++  int port;
++
++  if (icb_key)
++    return icb_key;
++
++  ptr = getenv ("LIBVHD_ICBINN_KEY_SERVER");
++  if (!ptr)
++    return NULL;
++
++  strncpy (proto, ptr, sizeof (proto));
++  proto[sizeof (proto) - 1] = 0;
++
++  host = index (proto, ':');
++  if (!host)
++    return NULL;
++  *(host++) = 0;
++
++  ptr = index (host, ':');
++  if (!ptr)
++    {
++      port = ICBINN_PORT;
++    }
++  else
++    {
++      *ptr = 0;
++      port = atoi (ptr + 1);
++    }
++
++  if (!strcmp (proto, "v4v"))
++    {
++      icb_key = icbinn_clnt_create_v4v (atoi (host), port);
++    }
++  else if (!strcmp (proto, "tcp"))
++    {
++      icb_key = icbinn_clnt_create_tcp (host, port);
++    }
++
++  return icb_key;
++}
++
++ICBINN *
++vhd_icbinn_vhd (void)
++{
++  char proto[1024], *ptr, *host;
++  int port;
++
++  if (icb_vhd)
++    return icb_vhd;
++
++  ptr = getenv ("LIBVHD_ICBINN_VHD_SERVER");
++  if (!ptr)
++    return NULL;
++
++  strncpy (proto, ptr, sizeof (proto));
++  proto[sizeof (proto) - 1] = 0;
++
++  host = index (proto, ':');
++  if (!host)
++    return NULL;
++  *(host++) = 0;
++
++  ptr = index (host, ':');
++  if (!ptr)
++    {
++      port = ICBINN_PORT;
++    }
++  else
++    {
++      *ptr = 0;
++      port = atoi (ptr + 1);
++    }
++
++  if (!strcmp (proto, "v4v"))
++    {
++      icb_vhd = icbinn_clnt_create_v4v (atoi (host), port);
++    }
++  else if (!strcmp (proto, "tcp"))
++    {
++      icb_vhd = icbinn_clnt_create_tcp (host, port);
++    }
++
++  return icb_vhd;
++}
++
++static off64_t
++vhd_icbinn_devops_position (vhd_context_t * vhd)
++{
++  return (off64_t) vhd->offset;
++}
++
++static int
++vhd_icbinn_devops_seek (vhd_context_t * vhd, off64_t off, int whence)
++{
++  struct icbinn_stat buf;
++
++  switch (whence)
++    {
++      //XXX: both of these ought to check for seeks beyond EOF, but they don't
++    case SEEK_SET:
++      vhd->offset = off;
++      break;
++    case SEEK_CUR:
++      vhd->offset += off;
++      break;
++    case SEEK_END:
++
++      if (icbinn_stat (icb_vhd, vhd->file, &buf))
++        return -1;
++
++      if (buf.type != ICBINN_TYPE_FILE)
++        return -1;
++
++      vhd->offset = buf.size + off;
++      break;
++    default:
++      return -1;
++    }
++
++  return 0;
++}
++
++static int
++vhd_icbinn_devops_read (vhd_context_t * vhd, void *buf, size_t count)
++{
++  size_t ret;
++
++  ret = icbinn_pread (icb_vhd, vhd->fd, buf, count, vhd->offset);
++
++  if (ret > 0)
++    vhd->offset += ret;
++
++  return (ret == count) ? 0 : -EIO;
++}
++
++static int
++vhd_icbinn_devops_pread (vhd_context_t * vhd,
++                         void *buf, size_t size, off64_t off)
++{
++  size_t ret = icbinn_pread (icb_vhd, vhd->fd, buf, size, off);
++
++  return (ret == size) ? 0 : -EIO;
++}
++
++static int
++vhd_icbinn_devops_write (vhd_context_t * vhd, void *buf, size_t count)
++{
++  size_t ret;
++
++  ret = icbinn_pwrite (icb_vhd, vhd->fd, buf, count, vhd->offset);
++
++  if (ret > 0)
++    vhd->offset += ret;
++
++  return (ret == count) ? 0 : -EIO;
++}
++
++static int
++vhd_icbinn_devops_pwrite (vhd_context_t * vhd,
++                          void *buf, size_t size, off64_t off)
++{
++  size_t ret = icbinn_pwrite (icb_vhd, vhd->fd, buf, size, off);
++
++  return (ret == size) ? 0 : -EIO;
++}
++
++static void
++vhd_icbinn_devops_close (vhd_context_t * vhd)
++{
++  char *file = vhd->file;
++  int fd = vhd->fd;
++
++  vhd->fd = -1;
++  __vhd_close (vhd);
++
++  if (file)
++    icbinn_close (icb_vhd, fd);
++}
++
++static vhd_devops_t vhd_icbinn_devops = {
++  .position = vhd_icbinn_devops_position,
++  .seek = vhd_icbinn_devops_seek,
++  .read = vhd_icbinn_devops_read,
++  .write = vhd_icbinn_devops_write,
++  .pread = vhd_icbinn_devops_pread,
++  .pwrite = vhd_icbinn_devops_pwrite,
++  .close = vhd_icbinn_devops_close,
++};
++
++
++
++/* Shamelessly stolen of glibc 2.9 with modifications */
++
++/* Return the canonical absolute name of file NAME.  A canonical name
++   does not contain any `.', `..' components nor any repeated path
++   separators ('/') or symlinks.  All path components must exist.  If
++   RESOLVED is null, the result is malloc'd; otherwise, if the
++   canonical name is PATH_MAX chars or more, returns null with `errno'
++   set to ENAMETOOLONG; if the name fits in fewer than PATH_MAX chars,
++   returns the name in RESOLVED.  If the name cannot be resolved and
++   RESOLVED is non-NULL, it contains the path of the first component
++   that cannot be resolved.  If the path can be resolved, RESOLVED
++   holds the same value as the value returned.  */
++
++char *
++vhd_realpath (const char *name, char *resolved)
++{
++  char *rpath, *dest;
++  const char *start, *end, *rpath_limit;
++  long int path_max;
++
++  if (!vhd_icbinn_vhd ())
++    return realpath (name, resolved);
++
++  if ((name == NULL) || (name[0] == '\0'))
++    return realpath (name, resolved);
++
++#ifdef PATH_MAX
++  path_max = PATH_MAX;
++#else
++  path_max = pathconf (name, _PC_PATH_MAX);
++  if (path_max <= 0)
++    path_max = 1024;
++#endif
++
++  if (resolved == NULL)
++    {
++      rpath = malloc (path_max);
++      if (rpath == NULL)
++        return NULL;
++    }
++  else
++    rpath = resolved;
++  rpath_limit = rpath + path_max;
++
++  rpath[0] = '/';
++  dest = rpath + 1;
++
++  for (start = end = name; *start; start = end)
++    {
++      struct icbinn_stat st;
++
++      /* Skip sequence of multiple path-separators.  */
++      while (*start == '/')
++        ++start;
++
++      /* Find end of path component.  */
++      for (end = start; *end && *end != '/'; ++end)
++        /* Nothing.  */ ;
++
++      if (end - start == 0)
++        break;
++      else if (end - start == 1 && start[0] == '.')
++        /* nothing */ ;
++      else if (end - start == 2 && start[0] == '.' && start[1] == '.')
++        {
++          /* Back up to previous component, ignore if at root already.  */
++          if (dest > rpath + 1)
++            while ((--dest)[-1] != '/');
++        }
++      else
++        {
++          size_t new_size;
++
++          if (dest[-1] != '/')
++            *dest++ = '/';
++
++          if (dest + (end - start) >= rpath_limit)
++            {
++              ptrdiff_t dest_offset = dest - rpath;
++              char *new_rpath;
++
++              if (resolved)
++                {
++                  errno = ENAMETOOLONG;
++                  if (dest > rpath + 1)
++                    dest--;
++                  *dest = '\0';
++                  goto error;
++                }
++              new_size = rpath_limit - rpath;
++              if (end - start + 1 > path_max)
++                new_size += end - start + 1;
++              else
++                new_size += path_max;
++              new_rpath = (char *) realloc (rpath, new_size);
++              if (new_rpath == NULL)
++                goto error;
++              rpath = new_rpath;
++              rpath_limit = rpath + new_size;
++
++              dest = rpath + dest_offset;
++            }
++
++          dest = mempcpy (dest, start, end - start);
++          *dest = '\0';
++
++          if (icbinn_stat (icb_vhd, rpath, &st) < 0)
++            {
++              errno = ENOENT;
++              goto error;
++            }
++
++          if ((st.type != ICBINN_TYPE_DIRECTORY) && (*end != '\0'))
++            {
++              errno = ENOTDIR;
++              goto error;
++            }
++        }
++    }
++  if (dest > rpath + 1 && dest[-1] == '/')
++    --dest;
++  *dest = '\0';
++
++  return rpath;
++
++error:
++  if (resolved == NULL)
++    free (rpath);
++  return NULL;
++}
+Index: xen-4.3.4/tools/blktap2/include/libvhd.h
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/include/libvhd.h
++++ xen-4.3.4/tools/blktap2/include/libvhd.h
+@@ -155,6 +155,8 @@ struct vhd_context {
+ 	vhd_batmap_t               batmap;
+ 
+ 	struct crypto_blkcipher   *xts_tfm;
++
++	uint64_t                   offset;
+ };
+ 
+ static inline uint32_t
+Index: xen-4.3.4/tools/blktap2/vhd/Makefile
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/vhd/Makefile
++++ xen-4.3.4/tools/blktap2/vhd/Makefile
+@@ -21,7 +21,7 @@ ifeq ($(VHD_STATIC),y)
+ CFLAGS            += -static
+ endif
+ 
+-LIBS              := -Llib -lvhd
++LIBS              := -Llib -lvhd -licbinn_resolved -ldl -lpthread
+ LIBS              += -luuid -lcrypto
+ 
+ all: subdirs-all build
+Index: xen-4.3.4/tools/blktap2/vhd/lib/Makefile
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/vhd/lib/Makefile
++++ xen-4.3.4/tools/blktap2/vhd/lib/Makefile
+@@ -25,7 +25,7 @@ ifeq ($(CONFIG_LIBICONV),y)
+ LIBS            += -liconv
+ endif
+ 
+-LIBS            += -lcrypto
++LIBS            += -lcrypto -licbinn_resolved -ldl
+ 
+ LIB-SRCS        := libvhd.c
+ LIB-SRCS        += libvhd-journal.c
+Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/vhd/lib/libvhd.c
++++ xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
+@@ -73,6 +73,10 @@ const char* ENV_VAR_FAIL[NUM_FAIL_TESTS]
+ int TEST_FAIL[NUM_FAIL_TESTS];
+ #endif // ENABLE_FAILURE_TESTING
+ 
++static void __vhd_close(vhd_context_t *ctx);
++
++#include "icbinn.c"
++
+ static inline int
+ test_bit (volatile char *addr, int nr)
+ {
+@@ -2470,6 +2474,7 @@ int
+ vhd_open(vhd_context_t *ctx, const char *file, int flags)
+ {
+ 	int err, oflags;
++	ICBINN *icb;
+ 
+ 	if (flags & VHD_OPEN_STRICT)
+ 		vhd_flag_clear(flags, VHD_OPEN_FAST);
+@@ -2478,17 +2483,31 @@ vhd_open(vhd_context_t *ctx, const char
+ 	ctx->fd     = -1;
+ 	ctx->oflags = flags;
+ 
++	icb = vhd_icbinn();
++
+ 	err = namedup(&ctx->file, file);
+ 	if (err)
+ 		return err;
+ 
+-	oflags = O_DIRECT | O_LARGEFILE;
+-	if (flags & VHD_OPEN_RDONLY)
+-		oflags |= O_RDONLY;
+-	if (flags & VHD_OPEN_RDWR)
+-		oflags |= O_RDWR;
++	if (icb) {
++		if (flags & VHD_OPEN_RDONLY)
++			oflags |= ICBINN_RDONLY;
++		if (flags & VHD_OPEN_RDWR)
++			oflags |= ICBINN_RDWR;
++
++		ctx->fd = icbinn_open(icb, ctx->file, oflags);
++		ctx->devops = &vhd_icbinn_devops;
++	}
++	else {
++		oflags = O_DIRECT | O_LARGEFILE;
++		if (flags & VHD_OPEN_RDONLY)
++			oflags |= O_RDONLY;
++		if (flags & VHD_OPEN_RDWR)
++			oflags |= O_RDWR;
++
++		ctx->fd = open(ctx->file, oflags, 0644);
++	}
+ 
+-	ctx->fd = open(ctx->file, oflags, 0644);
+ 	if (ctx->fd == -1) {
+ 		err = -errno;
+ 		VHDLOG("failed to open %s: %d\n", ctx->file, err);
+@@ -2500,6 +2519,7 @@ vhd_open(vhd_context_t *ctx, const char
+ 		goto fail;
+ 
+ 	if (flags & VHD_OPEN_FAST) {
++		/* TODO handle ICBINN open in this case too */
+ 		err = vhd_open_fast(ctx);
+ 		if (err)
+ 			goto fail;
+@@ -2528,8 +2548,12 @@ vhd_open(vhd_context_t *ctx, const char
+ 	return 0;
+ 
+ fail:
+-	if (ctx->fd != -1)
+-		close(ctx->fd);
++	if (ctx->fd != -1) {
++		if (icb)
++			icbinn_close(icb,ctx->fd);
++		else
++			close(ctx->fd);
++	}
+ 	free(ctx->file);
+ 	memset(ctx, 0, sizeof(vhd_context_t));
+ 	return err;
+@@ -2625,14 +2649,29 @@ get_file_size(const char *name)
+ {
+ 	int fd;
+ 	off_t end;
++	ICBINN *icb=vhd_icbinn();
+ 
+-	fd = open(name, O_LARGEFILE | O_RDONLY);
+-	if (fd == -1) {
+-		VHDLOG("unable to open '%s': %d\n", name, errno);
+-		return -errno;
++	if (icb) {
++		struct icbinn_stat buf;
++
++		if (icbinn_stat(icb,name,&buf))
++			return -1;
++
++		if (buf.type != ICBINN_TYPE_FILE)
++			return -1;
++
++		end=buf.size;
+ 	}
+-	end = lseek(fd, 0, SEEK_END);
+-	close(fd); 
++	else {
++		fd = open(name, O_LARGEFILE | O_RDONLY);
++		if (fd == -1) {
++			VHDLOG("unable to open '%s': %d\n", name, errno);
++			return -errno;
++		}
++		end = lseek(fd, 0, SEEK_END);
++		close(fd);
++	}
++
+ 	return end;
+ }
+ 
+@@ -2953,6 +2992,7 @@ __vhd_create(const char *name, const cha
+ 	vhd_footer_t *footer;
+ 	vhd_header_t *header;
+ 	uint64_t size, blks;
++	ICBINN *icb;
+ 
+ 	switch (type) {
+ 	case HD_TYPE_DIFF:
+@@ -2974,8 +3014,15 @@ __vhd_create(const char *name, const cha
+ 	blks   = (bytes + VHD_BLOCK_SIZE - 1) >> VHD_BLOCK_SHIFT;
+ 	size   = blks << VHD_BLOCK_SHIFT;
+ 
+-	ctx.fd = open(name, O_WRONLY | O_CREAT |
+-		      O_TRUNC | O_LARGEFILE | O_DIRECT, 0644);
++	if (icb) {
++		ctx.fd = icbinn_open(icb, (char *) name, ICBINN_WRONLY | ICBINN_CREAT);
++		ctx.devops = &vhd_icbinn_devops;
++	}
++	else {
++		ctx.fd = open(name, O_WRONLY | O_CREAT |
++			      O_TRUNC | O_LARGEFILE | O_DIRECT, 0644);
++	}
++
+ 	if (ctx.fd == -1)
+ 		return -errno;
+ 

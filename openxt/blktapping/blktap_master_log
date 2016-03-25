@@ -219,7 +219,8 @@ Date:   Thu Sep 20 01:43:05 2012 +0100
     and a bit more of the same
 
 ** SyncXT icbinn stuffs
-** HANDLE PATCH_ICBINN
+** HANDLE PATCH_ICBINN  new: vhd/lib/icbinn.c
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 72513d318353fe6be330a3e983c0976837a9e62c
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Thu Sep 20 01:38:34 2012 +0100
@@ -308,7 +309,8 @@ Date:   Tue Oct 11 17:14:22 2011 +0100
 
 ** Take it
 ** HANDLE PATCH_PIC (deps PATCH_ENCRYPTION) - no p file
-** TODO
+** Upstream seems to have ifPIC in all the right places and there is no Config.mk - I think we are fine.
+** IGNORE
 commit 78fb2d8eceb6d1a7b1fdc2f4aad0cb7bf4eb29a2
 Author: Philip Tricca <philip.tricca@citrix.com>
 Date:   Wed Sep 28 13:17:52 2011 -0400
@@ -487,6 +489,7 @@ Date:   Wed Apr 6 13:56:29 2011 -0700
 
 ** Sadly we need this stuff - it is part of our vhd disk crypto
 ** HANDLE PATCH_ENCRYPTION - p0110 - see the patch as to why (orig PATCH_VHD_CRYPTO)
+** ADDED - blktap2-vhd-encryption-support.patch
 commit 3564b239ec0bb6dcf231104d05bd5677f36322ec
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Mar 29 11:47:01 2011 -0700
@@ -900,7 +903,8 @@ Date:   Wed Sep 1 14:08:02 2010 -0700
 
 ** Also maybe legit, consider - err = setpriority(PRIO_PROCESS, 0, PRIO_SPECIAL_IO);
 ** driver/tapdisk - PATCH_TAPDISK
-** HANDLE (maybe?)
+** HANDLE nah, it is to prevent deadlock but no reason is given - sounds like another hackery symptom fix
+** IGNORE
 commit 22f57a80ae2f4016255a0d5eeb730559fb14db40
 Author: Jake Wires <Jake.Wires@citrix.com>
 Date:   Tue Aug 17 12:49:58 2010 -0700
