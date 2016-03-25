@@ -21,6 +21,8 @@ James McKenzie <James.McKenzie@citrix.com>
 1c9f24920ba7995b37d1ce019958d39ff6f88c7e
 2111c6d171dd6e89d7ac574003ed7ef3d66954b3
 1d6a6c3ce279448e654019d1950f225f0f05a49b
+70e886c7cba966902723617ea435d13e4a115120
+d5797db89b7d9a951723887b68f48936f6354c81
 
 ################################################################################
 REMOVAL 
@@ -466,7 +468,18 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		if (path) {
  			*_location = path;
  			return 0;
-@@ -1695,7 +1700,7 @@ vhd_parent_locator_write_at(vhd_context_
+@@ -1670,9 +1675,9 @@ vhd_parent_locator_write_at(vhd_context_
+ 			    const char *parent, off_t off, uint32_t code,
+ 			    size_t max_bytes, vhd_parent_locator_t *loc)
+ {
+-	struct stat stats;
+ 	int err, len, size;
+ 	char *absolute_path, *relative_path, *encoded, *block;
++	ICBINN *icb = vhd_icbinn_vhd();
+ 
+ 	memset(loc, 0, sizeof(vhd_parent_locator_t));
+ 
+@@ -1695,21 +1700,36 @@ vhd_parent_locator_write_at(vhd_context_
  		return -EINVAL;
  	}
  
@@ -475,7 +488,44 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (!absolute_path) {
  		err = -errno;
  		goto out;
-@@ -2470,6 +2475,7 @@ int
+ 	}
+ 
+-	err = stat(absolute_path, &stats);
+-	if (err) {
+-		err = -errno;
+-		goto out;
+-	}
++	if (icb) {
++		struct icbinn_stat stats;
++		err = icbinn_stat(icb,absolute_path, &stats);
++		if (err) {
++			err = -ENOENT;
++			goto out;
++		}
++		if (stats.type != ICBINN_TYPE_FILE) {
++			err = -EINVAL;
++			goto out;
++		}
++	} else {
++		struct stat stats;
+ 
+-	if (!S_ISREG(stats.st_mode) && !S_ISBLK(stats.st_mode)) {
+-		err = -EINVAL;
+-		goto out;
++		err = stat(absolute_path, &stats);
++		if (err) {
++			err = -errno;
++			goto out;
++		}
++
++		if (!S_ISREG(stats.st_mode) && !S_ISBLK(stats.st_mode)) {
++			err = -EINVAL;
++			goto out;
++		}
+ 	}
+ 
+ 	relative_path = relative_path_to(ctx->file, absolute_path, &err);
+@@ -2470,6 +2490,7 @@ int
  vhd_open(vhd_context_t *ctx, const char *file, int flags)
  {
  	int err, oflags;
@@ -483,7 +533,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	if (flags & VHD_OPEN_STRICT)
  		vhd_flag_clear(flags, VHD_OPEN_FAST);
-@@ -2478,28 +2484,47 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2478,28 +2499,48 @@ vhd_open(vhd_context_t *ctx, const char
  	ctx->fd     = -1;
  	ctx->oflags = flags;
  
@@ -499,6 +549,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 -	if (flags & VHD_OPEN_RDWR)
 -		oflags |= O_RDWR;
 +	if (icb) {
++		oflags = 0;
 +		if (flags & VHD_OPEN_RDONLY)
 +			oflags |= ICBINN_RDONLY;
 +		if (flags & VHD_OPEN_RDWR)
@@ -540,7 +591,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		err = vhd_open_fast(ctx);
  		if (err)
  			goto fail;
-@@ -2528,8 +2553,12 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2528,8 +2569,12 @@ vhd_open(vhd_context_t *ctx, const char
  	return 0;
  
  fail:
@@ -555,7 +606,16 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	free(ctx->file);
  	memset(ctx, 0, sizeof(vhd_context_t));
  	return err;
-@@ -2625,14 +2654,29 @@ get_file_size(const char *name)
+@@ -2538,7 +2583,7 @@ fail:
+ void
+ vhd_close(vhd_context_t *ctx)
+ {
+-	if (ctx->file)
++	if (ctx->file && ctx->fd != -1)
+ 		close(ctx->fd);
+ 	free(ctx->file);
+ 	free(ctx->bat.bat);
+@@ -2625,19 +2670,34 @@ get_file_size(const char *name)
  {
  	int fd;
  	off_t end;
@@ -591,7 +651,29 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	return end;
  }
  
-@@ -2741,7 +2785,7 @@ vhd_change_parent(vhd_context_t *child,
+ static int
+-vhd_initialize_header(vhd_context_t *ctx, const char *parent_path, 
++vhd_initialize_header(ICBINN *icb, vhd_context_t *ctx, const char *parent_path,
+ 		uint64_t size, int raw)
+ {
+ 	int err;
+@@ -2663,7 +2723,14 @@ vhd_initialize_header(vhd_context_t *ctx
+ 	if (ctx->footer.type == HD_TYPE_DYNAMIC)
+ 		return 0;
+ 
+-	err = stat(parent_path, &stats);
++	if (icb) {
++		struct icbinn_stat buf;
++		err = icbinn_stat(icb,parent_path,&buf);
++		time(&stats.st_mtime);
++	}
++	else {
++		err = stat(parent_path, &stats);
++	}
+ 	if (err == -1)
+ 		return -errno;
+ 
+@@ -2741,7 +2808,7 @@ vhd_change_parent(vhd_context_t *child,
  	struct stat stats;
  	vhd_context_t parent;
  
@@ -600,7 +682,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (!ppath) {
  		VHDLOG("error resolving parent path %s for %s: %d\n",
  		       parent_path, child->file, errno);
-@@ -2953,6 +2997,7 @@ __vhd_create(const char *name, const cha
+@@ -2953,6 +3020,7 @@ __vhd_create(const char *name, const cha
  	vhd_footer_t *footer;
  	vhd_header_t *header;
  	uint64_t size, blks;
@@ -608,14 +690,14 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	switch (type) {
  	case HD_TYPE_DIFF:
-@@ -2974,8 +3019,15 @@ __vhd_create(const char *name, const cha
+@@ -2974,8 +3042,15 @@ __vhd_create(const char *name, const cha
  	blks   = (bytes + VHD_BLOCK_SIZE - 1) >> VHD_BLOCK_SHIFT;
  	size   = blks << VHD_BLOCK_SHIFT;
  
 -	ctx.fd = open(name, O_WRONLY | O_CREAT |
 -		      O_TRUNC | O_LARGEFILE | O_DIRECT, 0644);
 +	if (icb) {
-+		ctx.fd = icbinn_open(icb, (char *) name, ICBINN_WRONLY | ICBINN_CREAT);
++		ctx.fd = icbinn_open(icb, (char *) name, ICBINN_WRONLY | ICBINN_CREAT | ICBINN_TRUNC);
 +		ctx.devops = &vhd_icbinn_devops;
 +	}
 +	else {
@@ -625,6 +707,47 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 +
  	if (ctx.fd == -1)
  		return -errno;
+ 
+@@ -2985,9 +3060,13 @@ __vhd_create(const char *name, const cha
+ 		goto out;
+ 	}
+ 
+-	err = vhd_test_file_fixed(ctx.file, &ctx.is_block);
+-	if (err)
+-		goto out;
++	if (icb) {
++		ctx.is_block = 0;
++	else {
++		err = vhd_test_file_fixed(ctx.file, &ctx.is_block);
++		if (err)
++			goto out;
++	}
+ 
+ 	vhd_initialize_footer(&ctx, type, size);
+ 
+@@ -2997,7 +3076,7 @@ __vhd_create(const char *name, const cha
+ 			goto out;
+ 	} else {
+ 		int raw = vhd_flag_test(flags, VHD_FLAG_CREAT_PARENT_RAW);
+-		err = vhd_initialize_header(&ctx, parent, size, raw);
++		err = vhd_initialize_header(icb, &ctx, parent, size, raw);
+ 		if (err)
+ 			goto out;
+ 
+@@ -3050,8 +3129,12 @@ __vhd_create(const char *name, const cha
+ 
+ out:
+ 	vhd_close(&ctx);
+-	if (err && !ctx.is_block)
+-		unlink(name);
++	if (err && !ctx.is_block) {
++		if (icb)
++			icbinn_unlink(icb, name);
++		else
++			unlink(name);
++	}
+ 	return err;
+ }
  
 Index: xen-4.3.4/tools/blktap2/drivers/Makefile
 ===================================================================

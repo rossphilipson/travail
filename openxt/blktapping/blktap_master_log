@@ -154,6 +154,7 @@ Date:   Wed Oct 24 13:37:46 2012 +0200
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit d5797db89b7d9a951723887b68f48936f6354c81
 Author: Rick Leeming <rick.leeming@citrix.com>
 Date:   Thu Oct 4 19:34:56 2012 +0100
@@ -172,6 +173,7 @@ Date:   Thu Oct 4 19:34:56 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 70e886c7cba966902723617ea435d13e4a115120
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Sun Sep 23 19:29:11 2012 +0100
