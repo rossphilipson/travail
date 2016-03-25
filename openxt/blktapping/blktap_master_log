@@ -180,6 +180,7 @@ Date:   Sun Sep 23 19:29:11 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 1d6a6c3ce279448e654019d1950f225f0f05a49b
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 15:27:15 2012 +0100
@@ -188,6 +189,7 @@ Date:   Fri Sep 21 15:27:15 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 2111c6d171dd6e89d7ac574003ed7ef3d66954b3
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 12:16:40 2012 +0100
@@ -196,6 +198,7 @@ Date:   Fri Sep 21 12:16:40 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 1c9f24920ba7995b37d1ce019958d39ff6f88c7e
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 11:54:31 2012 +0100
@@ -204,6 +207,7 @@ Date:   Fri Sep 21 11:54:31 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 17d54e14de930ddd0d7e54ea8f58bd8d81ab314b
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Fri Sep 21 10:42:04 2012 +0100
@@ -212,6 +216,7 @@ Date:   Fri Sep 21 10:42:04 2012 +0100
 
 ** SyncXT icbinn stuffs
 ** HANDLE PATCH_ICBINN
+** ADDED - blktap2-vhd-icbinn-support.patch
 commit 116f2edd62095ec74ff24781567b40c22d0c62ce
 Author: James McKenzie <James.McKenzie@citrix.com>
 Date:   Thu Sep 20 01:43:05 2012 +0100

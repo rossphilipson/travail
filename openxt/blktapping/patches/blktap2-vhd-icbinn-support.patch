@@ -1,3 +1,43 @@
+################################################################################
+SHORT DESCRIPTION: 
+################################################################################
+Interdomain VHD synchronization library.
+
+################################################################################
+LONG DESCRIPTION: 
+################################################################################
+ICBINN is a library and framework for allowing access to VHD from the 
+Synchronizer client domain. This patch contains the portion of the ICBINN
+framework that are integrated into blktap2.
+
+################################################################################
+CHANGELOG 
+################################################################################
+Patch formed from commits by: Ross Philipson, philipsonr@ainfosec.com, 3/22/2016
+James McKenzie <James.McKenzie@citrix.com>
+72513d318353fe6be330a3e983c0976837a9e62c
+116f2edd62095ec74ff24781567b40c22d0c62ce
+17d54e14de930ddd0d7e54ea8f58bd8d81ab314b
+1c9f24920ba7995b37d1ce019958d39ff6f88c7e
+2111c6d171dd6e89d7ac574003ed7ef3d66954b3
+1d6a6c3ce279448e654019d1950f225f0f05a49b
+
+################################################################################
+REMOVAL 
+################################################################################
+This patch will move to the meta-syncxt layer.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+
+################################################################################
+INTERNAL DEPENDENCIES 
+################################################################################
+
+################################################################################
+PATCHES 
+################################################################################
 Index: xen-4.3.4/tools/blktap2/vhd/lib/icbinn.c
 ===================================================================
 --- /dev/null
@@ -350,6 +390,15 @@ Index: xen-4.3.4/tools/blktap2/include/libvhd.h
  };
  
  static inline uint32_t
+@@ -331,4 +333,8 @@ int vhd_write_block(vhd_context_t *, uin
+ int vhd_io_read(vhd_context_t *, char *, uint64_t, uint32_t);
+ int vhd_io_write(vhd_context_t *, char *, uint64_t, uint32_t);
+ 
++char *vhd_realpath(const char *path, char *resolved_path);
++struct ICBINN_struct * vhd_icbinn_key(void);
++struct ICBINN_struct * vhd_icbinn_vhd(void);
++
+ #endif
 Index: xen-4.3.4/tools/blktap2/vhd/Makefile
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/vhd/Makefile
@@ -380,7 +429,15 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/vhd/lib/libvhd.c
 +++ xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
-@@ -73,6 +73,10 @@ const char* ENV_VAR_FAIL[NUM_FAIL_TESTS]
+@@ -37,6 +37,7 @@
+ #include <iconv.h>
+ #include <sys/mman.h>
+ #include <sys/stat.h>
++#include <stddef.h>
+ 
+ #include "xattr.h"
+ #include "libvhd.h"
+@@ -73,6 +74,10 @@ const char* ENV_VAR_FAIL[NUM_FAIL_TESTS]
  int TEST_FAIL[NUM_FAIL_TESTS];
  #endif // ENABLE_FAILURE_TESTING
  
@@ -391,7 +448,34 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  static inline int
  test_bit (volatile char *addr, int nr)
  {
-@@ -2470,6 +2474,7 @@ int
+@@ -1277,7 +1282,7 @@ vhd_find_parent(vhd_context_t *ctx, cons
+ 	}
+ 
+ 	/* check parent path relative to child's directory */
+-	cpath = realpath(ctx->file, NULL);
++	cpath = vhd_realpath(ctx->file, NULL);
+ 	if (!cpath) {
+ 		err = -errno;
+ 		goto out;
+@@ -1291,7 +1296,7 @@ vhd_find_parent(vhd_context_t *ctx, cons
+ 	}
+ 
+ 	if (!access(location, R_OK)) {
+-		path = realpath(location, NULL);
++		path = vhd_realpath(location, NULL);
+ 		if (path) {
+ 			*_location = path;
+ 			return 0;
+@@ -1695,7 +1700,7 @@ vhd_parent_locator_write_at(vhd_context_
+ 		return -EINVAL;
+ 	}
+ 
+-	absolute_path = realpath(parent, NULL);
++	absolute_path = vhd_realpath(parent, NULL);
+ 	if (!absolute_path) {
+ 		err = -errno;
+ 		goto out;
+@@ -2470,6 +2475,7 @@ int
  vhd_open(vhd_context_t *ctx, const char *file, int flags)
  {
  	int err, oflags;
@@ -399,11 +483,11 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	if (flags & VHD_OPEN_STRICT)
  		vhd_flag_clear(flags, VHD_OPEN_FAST);
-@@ -2478,17 +2483,31 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2478,28 +2484,47 @@ vhd_open(vhd_context_t *ctx, const char
  	ctx->fd     = -1;
  	ctx->oflags = flags;
  
-+	icb = vhd_icbinn();
++	icb = vhd_icbinn_vhd();
 +
  	err = namedup(&ctx->file, file);
  	if (err)
@@ -437,15 +521,26 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (ctx->fd == -1) {
  		err = -errno;
  		VHDLOG("failed to open %s: %d\n", ctx->file, err);
-@@ -2500,6 +2519,7 @@ vhd_open(vhd_context_t *ctx, const char
  		goto fail;
+ 	}
+ 
+-	err = vhd_test_file_fixed(ctx->file, &ctx->is_block);
+-	if (err)
+-		goto fail;
++	if (icb) {
++		ctx->is_block = 0;
++	else {
++		err = vhd_test_file_fixed(ctx->file, &ctx->is_block);
++		if (err)
++			goto fail;
++	}
  
  	if (flags & VHD_OPEN_FAST) {
 +		/* TODO handle ICBINN open in this case too */
  		err = vhd_open_fast(ctx);
  		if (err)
  			goto fail;
-@@ -2528,8 +2548,12 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2528,8 +2553,12 @@ vhd_open(vhd_context_t *ctx, const char
  	return 0;
  
  fail:
@@ -460,11 +555,11 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	free(ctx->file);
  	memset(ctx, 0, sizeof(vhd_context_t));
  	return err;
-@@ -2625,14 +2649,29 @@ get_file_size(const char *name)
+@@ -2625,14 +2654,29 @@ get_file_size(const char *name)
  {
  	int fd;
  	off_t end;
-+	ICBINN *icb=vhd_icbinn();
++	ICBINN *icb=vhd_icbinn_vhd();
  
 -	fd = open(name, O_LARGEFILE | O_RDONLY);
 -	if (fd == -1) {
@@ -480,9 +575,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 +			return -1;
 +
 +		end=buf.size;
- 	}
--	end = lseek(fd, 0, SEEK_END);
--	close(fd); 
++	}
 +	else {
 +		fd = open(name, O_LARGEFILE | O_RDONLY);
 +		if (fd == -1) {
@@ -491,12 +584,23 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 +		}
 +		end = lseek(fd, 0, SEEK_END);
 +		close(fd);
-+	}
+ 	}
+-	end = lseek(fd, 0, SEEK_END);
+-	close(fd); 
 +
  	return end;
  }
  
-@@ -2953,6 +2992,7 @@ __vhd_create(const char *name, const cha
+@@ -2741,7 +2785,7 @@ vhd_change_parent(vhd_context_t *child,
+ 	struct stat stats;
+ 	vhd_context_t parent;
+ 
+-	ppath = realpath(parent_path, NULL);
++	ppath = vhd_realpath(parent_path, NULL);
+ 	if (!ppath) {
+ 		VHDLOG("error resolving parent path %s for %s: %d\n",
+ 		       parent_path, child->file, errno);
+@@ -2953,6 +2997,7 @@ __vhd_create(const char *name, const cha
  	vhd_footer_t *footer;
  	vhd_header_t *header;
  	uint64_t size, blks;
@@ -504,7 +608,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	switch (type) {
  	case HD_TYPE_DIFF:
-@@ -2974,8 +3014,15 @@ __vhd_create(const char *name, const cha
+@@ -2974,8 +3019,15 @@ __vhd_create(const char *name, const cha
  	blks   = (bytes + VHD_BLOCK_SIZE - 1) >> VHD_BLOCK_SHIFT;
  	size   = blks << VHD_BLOCK_SHIFT;
  
@@ -522,3 +626,163 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (ctx.fd == -1)
  		return -errno;
  
+Index: xen-4.3.4/tools/blktap2/drivers/Makefile
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/drivers/Makefile
++++ xen-4.3.4/tools/blktap2/drivers/Makefile
+@@ -51,9 +51,11 @@ endif
+ 
+ tapdisk2 tapdisk-stream tapdisk-diff: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
+ tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
++tapdisk2 tapdisk-stream tapdisk-diff: ICBLIBS += -licbinn_resolved -lpthread -ldl
+ 
+ img2qcow qcow2raw qcow-create: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
+ img2qcow qcow2raw qcow-create: crypto/libxts-aes.a
++img2qcow qcow2raw qcow-create: ICBLIBS += -licbinn_resolved -lpthread -ldl
+ 
+ crypto/libxts-aes.a: crypto/*.c crypto/*.h
+ 	$(MAKE) -C crypto libxts-aes.a
+@@ -96,13 +98,13 @@ all: $(IBIN) lock-util qcow-util
+ 
+ 
+ tapdisk2: $(TAP-OBJS-y) $(BLK-OBJS-y) $(MISC-OBJS-y) tapdisk2.o
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm 
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) $(ICBLIBS) -lm
+ 
+ tapdisk-client: tapdisk-client.o
+ 	$(CC) -o $@ $^ $(LDFLAGS) -lrt
+ 
+ tapdisk-stream tapdisk-diff: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) $(ICBLIBS) -lm
+ 
+ td-util: td.o tapdisk-utils.o tapdisk-log.o $(PORTABLE-OBJS-y)
+ 	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS)
+@@ -114,7 +116,7 @@ lock-util: lock.c
+ qcow-util: img2qcow qcow2raw qcow-create
+ 
+ img2qcow qcow2raw qcow-create: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
+-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm
++	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) $(ICBLIBS) -lm
+ 
+ install: all
+ 	$(INSTALL_DIR) -p $(DESTDIR)$(INST_DIR)
+Index: xen-4.3.4/tools/blktap2/vhd/lib/relative-path.c
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/vhd/lib/relative-path.c
++++ xen-4.3.4/tools/blktap2/vhd/lib/relative-path.c
+@@ -29,6 +29,8 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++char *vhd_realpath(const char *path, char *resolved_path);
++
+ #include "relative-path.h"
+ 
+ #define sfree(ptr)         \
+@@ -229,14 +231,14 @@ relative_path_to(char *from, char *to, i
+ 		return NULL;
+ 	}
+ 
+-	to_absolute = realpath(to, NULL);
++	to_absolute = vhd_realpath(to, NULL);
+ 	if (!to_absolute) {
+ 		EPRINTF("failed to get absolute path of %s\n", to);
+ 		*err = -errno;
+ 		goto out;
+ 	}
+ 
+-	from_absolute = realpath(from, NULL);
++	from_absolute = vhd_realpath(from, NULL);
+ 	if (!from_absolute) {
+ 		EPRINTF("failed to get absolute path of %s\n", from);
+ 		*err = -errno;
+Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-key.c
+===================================================================
+--- xen-4.3.4.orig/tools/blktap2/vhd/lib/vhd-util-key.c
++++ xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-key.c
+@@ -38,6 +38,8 @@
+ 
+ #include <openssl/evp.h>
+ 
++#include "icbinn.h"
++
+ #include "libvhd.h"
+ 
+ #define MAX_KEY_SIZE 512
+@@ -92,6 +94,58 @@ out:
+ 	return err;
+ }
+ 
++static int
++vhd_util_read_key_icbinn(ICBINN *icb, const char *keypath, uint8_t *key,
++		  size_t max_size, size_t *out_size)
++{
++	int fd, err;
++	ssize_t size;
++	struct icbinn_stat sb;
++
++
++
++	err = icbinn_stat(icb, keypath, &sb);
++	if (err) {
++		ERR("failed to stat %s\n", keypath);
++		err = -ENOENT;
++		goto out;
++	}
++
++	if (sb.type != ICBINN_TYPE_FILE) {
++		ERR("%s isn't a file\n", keypath);
++		err = -EISDIR;
++		goto out;
++	}
++
++	fd = icbinn_open(icb, keypath, O_RDONLY);
++	if (fd == -1) {
++		ERR("failed to open %s\n", keypath );
++		err = -EINVAL;
++		goto out;
++	}
++
++	size = icbinn_pread(icb, fd, key, max_size, 0);
++	if (size == -1) {
++		ERR("failed to read key\n");
++		err = -EIO;
++		goto out;
++	}
++
++	if (size != sb.size) {
++		ERR("short read of key\n");
++		err = -EIO;
++		goto out;
++	}
++
++	if (out_size)
++		*out_size = size;
++
++out:
++	if (fd != -1)
++		icbinn_close(icb,fd);
++	return err;
++}
++
+ /*
+  * calculates keyhash by taking a SHA256 hash of @keyhash->nonce + key
+  */
+@@ -138,9 +192,15 @@ vhd_util_calculate_keyhash(struct vhd_ke
+ 	int err;
+ 	size_t size;
+ 	uint8_t key[MAX_KEY_SIZE];
++	ICBINN *icb = vhd_icbinn_key();
+ 
+ 	size = 0;
+-	err = vhd_util_read_key(keypath, key, sizeof(key), &size);
++	if (icb) {
++		err = vhd_util_read_key_icbinn(icb, keypath, key, sizeof(key), &size);
++	}
++	else {
++		err = vhd_util_read_key(keypath, key, sizeof(key), &size);
++	}
+ 	if (err) {
+ 		ERR("failed to read key: %d\n", err);
+ 		goto out;
