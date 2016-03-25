@@ -9,7 +9,8 @@ LONG DESCRIPTION:
 ICBINN is a library and framework for allowing access to VHD from the 
 Synchronizer client domain. This patch contains the portion of the ICBINN
 framework that are integrated into blktap2. Had to add the devops support from
-an earlier dead feature.
+an earlier dead feature. Switched the vhd_position function back to off_t from
+off64_t. To use the latter would take a bunch of changes.
 
 ################################################################################
 CHANGELOG 
@@ -144,10 +145,10 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/icbinn.c
 +  return icb_vhd;
 +}
 +
-+static off64_t
++static off_t
 +vhd_icbinn_devops_position (vhd_context_t * vhd)
 +{
-+  return (off64_t) vhd->offset;
++  return (off_t) vhd->offset;
 +}
 +
 +static int
@@ -393,7 +394,7 @@ Index: xen-4.3.4/tools/blktap2/include/libvhd.h
  typedef uint32_t                   vhd_flag_creat_t;
  
 +struct vhd_devops {
-+	off64_t (*position)        (vhd_context_t *);
++	off_t (*position)          (vhd_context_t *);
 +	int (*seek)                (vhd_context_t *, off64_t, int);
 +	int (*read)                (vhd_context_t *, void *, size_t);
 +	int (*write)               (vhd_context_t *, void *, size_t);
@@ -550,7 +551,137 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	}
  
  	relative_path = relative_path_to(ctx->file, absolute_path, &err);
-@@ -2470,6 +2490,7 @@ int
+@@ -2339,8 +2359,8 @@ vhd_atomic_io(ssize_t (*f) (int, void *,
+ 	return res;
+ }
+ 
+-int
+-vhd_seek(vhd_context_t *ctx, off_t offset, int whence)
++static int
++__vhd_seek(vhd_context_t *ctx, off_t offset, int whence)
+ {
+ 	off_t off;
+ 
+@@ -2354,14 +2374,14 @@ vhd_seek(vhd_context_t *ctx, off_t offse
+ 	return 0;
+ }
+ 
+-off_t
+-vhd_position(vhd_context_t *ctx)
++static off_t
++__vhd_position(vhd_context_t *ctx)
+ {
+ 	return lseek(ctx->fd, 0, SEEK_CUR);
+ }
+ 
+-int
+-vhd_read(vhd_context_t *ctx, void *buf, size_t size)
++static int
++__vhd_read(vhd_context_t *ctx, void *buf, size_t size)
+ {
+ 	size_t ret;
+ 
+@@ -2377,8 +2397,8 @@ vhd_read(vhd_context_t *ctx, void *buf,
+ 	return (errno ? -errno : -EIO);
+ }
+ 
+-int
+-vhd_write(vhd_context_t *ctx, void *buf, size_t size)
++static int
++__vhd_write(vhd_context_t *ctx, void *buf, size_t size)
+ {
+ 	size_t ret;
+ 
+@@ -2394,6 +2414,88 @@ vhd_write(vhd_context_t *ctx, void *buf,
+ 	return (errno ? -errno : -EIO);
+ }
+ 
++static int
++__vhd_pread(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
++{
++	ssize_t ret;
++
++	errno = 0;
++
++	ret = vhd_atomic_pio(pread, ctx->fd, buf, size, offset);
++	if (ret == size)
++		return 0;
++
++	VHDLOG("%s: pread of %zu returned %zd, errno: %d\n",
++	       ctx->file, size, ret, -errno);
++
++	return (errno ? -errno : -EIO);
++}
++
++static int
++__vhd_pwrite(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
++{
++	ssize_t ret;
++
++	errno = 0;
++
++	ret = vhd_atomic_pio(vpwrite, ctx->fd, buf, size, offset);
++	if (ret == size)
++		return 0;
++
++	VHDLOG("%s: pwrite of %zu returned %zd, errno: %d\n",
++	       ctx->file, size, ret, -errno);
++
++	return (errno ? -errno : -EIO);
++}
++
++int
++vhd_seek(vhd_context_t *ctx, off64_t offset, int whence)
++{
++	if (ctx->devops && ctx->devops->seek)
++		return ctx->devops->seek(ctx, offset, whence);
++	return __vhd_seek(ctx, offset, whence);
++}
++
++off_t
++vhd_position(vhd_context_t *ctx)
++{
++	if (ctx->devops && ctx->devops->position)
++		return ctx->devops->position(ctx);
++	return __vhd_position(ctx);
++}
++
++int
++vhd_read(vhd_context_t *ctx, void *buf, size_t size)
++{
++	if (ctx->devops && ctx->devops->read)
++		return ctx->devops->read(ctx, buf, size);
++	return __vhd_read(ctx, buf, size);
++}
++
++int
++vhd_write(vhd_context_t *ctx, void *buf, size_t size)
++{
++	if (ctx->devops && ctx->devops->write)
++		return ctx->devops->write(ctx, buf, size);
++	return __vhd_write(ctx, buf, size);
++}
++
++int
++vhd_pread(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
++{
++	if (ctx->devops && ctx->devops->pread)
++		return ctx->devops->pread(ctx, buf, size, offset);
++	return __vhd_pread(ctx, buf, size, offset);
++}
++
++int
++vhd_pwrite(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
++{
++	if (ctx->devops && ctx->devops->pwrite)
++		return ctx->devops->pwrite(ctx, buf, size, offset);
++	return __vhd_pwrite(ctx, buf, size, offset);
++}
++
+ int
+ vhd_offset(vhd_context_t *ctx, uint32_t sector, uint32_t *offset)
+ {
+@@ -2470,6 +2572,7 @@ int
  vhd_open(vhd_context_t *ctx, const char *file, int flags)
  {
  	int err, oflags;
@@ -558,7 +689,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	if (flags & VHD_OPEN_STRICT)
  		vhd_flag_clear(flags, VHD_OPEN_FAST);
-@@ -2478,28 +2499,49 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2478,28 +2581,49 @@ vhd_open(vhd_context_t *ctx, const char
  	ctx->fd     = -1;
  	ctx->oflags = flags;
  
@@ -617,7 +748,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		err = vhd_open_fast(ctx);
  		if (err)
  			goto fail;
-@@ -2528,17 +2570,21 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2528,17 +2652,21 @@ vhd_open(vhd_context_t *ctx, const char
  	return 0;
  
  fail:
@@ -644,7 +775,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		close(ctx->fd);
  	free(ctx->file);
  	free(ctx->bat.bat);
-@@ -2546,6 +2592,14 @@ vhd_close(vhd_context_t *ctx)
+@@ -2546,6 +2674,14 @@ vhd_close(vhd_context_t *ctx)
  	memset(ctx, 0, sizeof(vhd_context_t));
  }
  
@@ -659,7 +790,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  static inline void
  vhd_initialize_footer(vhd_context_t *ctx, int type, uint64_t size)
  {
-@@ -2625,19 +2679,34 @@ get_file_size(const char *name)
+@@ -2625,19 +2761,34 @@ get_file_size(const char *name)
  {
  	int fd;
  	off_t end;
@@ -701,7 +832,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		uint64_t size, int raw)
  {
  	int err;
-@@ -2663,7 +2732,14 @@ vhd_initialize_header(vhd_context_t *ctx
+@@ -2663,7 +2814,14 @@ vhd_initialize_header(vhd_context_t *ctx
  	if (ctx->footer.type == HD_TYPE_DYNAMIC)
  		return 0;
  
@@ -717,7 +848,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (err == -1)
  		return -errno;
  
-@@ -2741,7 +2817,7 @@ vhd_change_parent(vhd_context_t *child,
+@@ -2741,7 +2899,7 @@ vhd_change_parent(vhd_context_t *child,
  	struct stat stats;
  	vhd_context_t parent;
  
@@ -726,7 +857,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (!ppath) {
  		VHDLOG("error resolving parent path %s for %s: %d\n",
  		       parent_path, child->file, errno);
-@@ -2953,6 +3029,7 @@ __vhd_create(const char *name, const cha
+@@ -2953,6 +3111,7 @@ __vhd_create(const char *name, const cha
  	vhd_footer_t *footer;
  	vhd_header_t *header;
  	uint64_t size, blks;
@@ -734,7 +865,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	switch (type) {
  	case HD_TYPE_DIFF:
-@@ -2974,8 +3051,17 @@ __vhd_create(const char *name, const cha
+@@ -2974,8 +3133,17 @@ __vhd_create(const char *name, const cha
  	blks   = (bytes + VHD_BLOCK_SIZE - 1) >> VHD_BLOCK_SHIFT;
  	size   = blks << VHD_BLOCK_SHIFT;
  
@@ -754,7 +885,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (ctx.fd == -1)
  		return -errno;
  
-@@ -2985,9 +3071,14 @@ __vhd_create(const char *name, const cha
+@@ -2985,9 +3153,14 @@ __vhd_create(const char *name, const cha
  		goto out;
  	}
  
@@ -772,7 +903,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	vhd_initialize_footer(&ctx, type, size);
  
-@@ -2997,7 +3088,7 @@ __vhd_create(const char *name, const cha
+@@ -2997,7 +3170,7 @@ __vhd_create(const char *name, const cha
  			goto out;
  	} else {
  		int raw = vhd_flag_test(flags, VHD_FLAG_CREAT_PARENT_RAW);
@@ -781,7 +912,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		if (err)
  			goto out;
  
-@@ -3050,8 +3141,12 @@ __vhd_create(const char *name, const cha
+@@ -3050,8 +3223,12 @@ __vhd_create(const char *name, const cha
  
  out:
  	vhd_close(&ctx);
