@@ -8,7 +8,8 @@ LONG DESCRIPTION:
 ################################################################################
 ICBINN is a library and framework for allowing access to VHD from the 
 Synchronizer client domain. This patch contains the portion of the ICBINN
-framework that are integrated into blktap2.
+framework that are integrated into blktap2. Had to add the devops support from
+an earlier dead feature.
 
 ################################################################################
 CHANGELOG 
@@ -383,16 +384,40 @@ Index: xen-4.3.4/tools/blktap2/include/libvhd.h
 ===================================================================
 --- xen-4.3.4.orig/tools/blktap2/include/libvhd.h
 +++ xen-4.3.4/tools/blktap2/include/libvhd.h
-@@ -155,6 +155,8 @@ struct vhd_context {
+@@ -124,9 +124,20 @@ typedef struct vhd_bat             vhd_b
+ typedef struct vhd_batmap          vhd_batmap_t;
+ typedef struct dd_batmap_hdr       vhd_batmap_header_t;
+ typedef struct prt_loc             vhd_parent_locator_t;
++typedef struct vhd_devops          vhd_devops_t;
+ typedef struct vhd_context         vhd_context_t;
+ typedef uint32_t                   vhd_flag_creat_t;
+ 
++struct vhd_devops {
++	off64_t (*position)        (vhd_context_t *);
++	int (*seek)                (vhd_context_t *, off64_t, int);
++	int (*read)                (vhd_context_t *, void *, size_t);
++	int (*write)               (vhd_context_t *, void *, size_t);
++	int (*pread)               (vhd_context_t *, void *, size_t, off64_t);
++	int (*pwrite)              (vhd_context_t *, void *, size_t, off64_t);
++	void (*close)              (vhd_context_t *);
++};
++
+ struct vhd_bat {
+ 	uint32_t                   spb;
+ 	uint32_t                   entries;
+@@ -154,7 +165,11 @@ struct vhd_context {
+ 	vhd_bat_t                  bat;
  	vhd_batmap_t               batmap;
  
++	vhd_devops_t              *devops;
++
  	struct crypto_blkcipher   *xts_tfm;
 +
 +	uint64_t                   offset;
  };
  
  static inline uint32_t
-@@ -331,4 +333,8 @@ int vhd_write_block(vhd_context_t *, uin
+@@ -331,4 +346,8 @@ int vhd_write_block(vhd_context_t *, uin
  int vhd_io_read(vhd_context_t *, char *, uint64_t, uint32_t);
  int vhd_io_write(vhd_context_t *, char *, uint64_t, uint32_t);
  
@@ -533,7 +558,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	if (flags & VHD_OPEN_STRICT)
  		vhd_flag_clear(flags, VHD_OPEN_FAST);
-@@ -2478,28 +2499,48 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2478,28 +2499,49 @@ vhd_open(vhd_context_t *ctx, const char
  	ctx->fd     = -1;
  	ctx->oflags = flags;
  
@@ -580,6 +605,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 -		goto fail;
 +	if (icb) {
 +		ctx->is_block = 0;
++	}
 +	else {
 +		err = vhd_test_file_fixed(ctx->file, &ctx->is_block);
 +		if (err)
@@ -591,7 +617,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		err = vhd_open_fast(ctx);
  		if (err)
  			goto fail;
-@@ -2528,8 +2569,12 @@ vhd_open(vhd_context_t *ctx, const char
+@@ -2528,17 +2570,21 @@ vhd_open(vhd_context_t *ctx, const char
  	return 0;
  
  fail:
@@ -606,16 +632,34 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	free(ctx->file);
  	memset(ctx, 0, sizeof(vhd_context_t));
  	return err;
-@@ -2538,7 +2583,7 @@ fail:
- void
- vhd_close(vhd_context_t *ctx)
+ }
+ 
+-void
+-vhd_close(vhd_context_t *ctx)
++static void
++__vhd_close(vhd_context_t *ctx)
  {
 -	if (ctx->file)
 +	if (ctx->file && ctx->fd != -1)
  		close(ctx->fd);
  	free(ctx->file);
  	free(ctx->bat.bat);
-@@ -2625,19 +2670,34 @@ get_file_size(const char *name)
+@@ -2546,6 +2592,14 @@ vhd_close(vhd_context_t *ctx)
+ 	memset(ctx, 0, sizeof(vhd_context_t));
+ }
+ 
++void
++vhd_close(vhd_context_t *ctx)
++{
++        if (ctx->devops && ctx->devops->close)
++                return ctx->devops->close(ctx);
++        return __vhd_close(ctx);
++}
++
+ static inline void
+ vhd_initialize_footer(vhd_context_t *ctx, int type, uint64_t size)
+ {
+@@ -2625,19 +2679,34 @@ get_file_size(const char *name)
  {
  	int fd;
  	off_t end;
@@ -657,7 +701,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		uint64_t size, int raw)
  {
  	int err;
-@@ -2663,7 +2723,14 @@ vhd_initialize_header(vhd_context_t *ctx
+@@ -2663,7 +2732,14 @@ vhd_initialize_header(vhd_context_t *ctx
  	if (ctx->footer.type == HD_TYPE_DYNAMIC)
  		return 0;
  
@@ -673,7 +717,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (err == -1)
  		return -errno;
  
-@@ -2741,7 +2808,7 @@ vhd_change_parent(vhd_context_t *child,
+@@ -2741,7 +2817,7 @@ vhd_change_parent(vhd_context_t *child,
  	struct stat stats;
  	vhd_context_t parent;
  
@@ -682,7 +726,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (!ppath) {
  		VHDLOG("error resolving parent path %s for %s: %d\n",
  		       parent_path, child->file, errno);
-@@ -2953,6 +3020,7 @@ __vhd_create(const char *name, const cha
+@@ -2953,6 +3029,7 @@ __vhd_create(const char *name, const cha
  	vhd_footer_t *footer;
  	vhd_header_t *header;
  	uint64_t size, blks;
@@ -690,12 +734,14 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	switch (type) {
  	case HD_TYPE_DIFF:
-@@ -2974,8 +3042,15 @@ __vhd_create(const char *name, const cha
+@@ -2974,8 +3051,17 @@ __vhd_create(const char *name, const cha
  	blks   = (bytes + VHD_BLOCK_SIZE - 1) >> VHD_BLOCK_SHIFT;
  	size   = blks << VHD_BLOCK_SHIFT;
  
 -	ctx.fd = open(name, O_WRONLY | O_CREAT |
 -		      O_TRUNC | O_LARGEFILE | O_DIRECT, 0644);
++	icb = vhd_icbinn_vhd();
++
 +	if (icb) {
 +		ctx.fd = icbinn_open(icb, (char *) name, ICBINN_WRONLY | ICBINN_CREAT | ICBINN_TRUNC);
 +		ctx.devops = &vhd_icbinn_devops;
@@ -708,7 +754,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  	if (ctx.fd == -1)
  		return -errno;
  
-@@ -2985,9 +3060,13 @@ __vhd_create(const char *name, const cha
+@@ -2985,9 +3071,14 @@ __vhd_create(const char *name, const cha
  		goto out;
  	}
  
@@ -717,6 +763,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
 -		goto out;
 +	if (icb) {
 +		ctx.is_block = 0;
++	}
 +	else {
 +		err = vhd_test_file_fixed(ctx.file, &ctx.is_block);
 +		if (err)
@@ -725,7 +772,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  
  	vhd_initialize_footer(&ctx, type, size);
  
-@@ -2997,7 +3076,7 @@ __vhd_create(const char *name, const cha
+@@ -2997,7 +3088,7 @@ __vhd_create(const char *name, const cha
  			goto out;
  	} else {
  		int raw = vhd_flag_test(flags, VHD_FLAG_CREAT_PARENT_RAW);
@@ -734,7 +781,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/libvhd.c
  		if (err)
  			goto out;
  
-@@ -3050,8 +3129,12 @@ __vhd_create(const char *name, const cha
+@@ -3050,8 +3141,12 @@ __vhd_create(const char *name, const cha
  
  out:
  	vhd_close(&ctx);
@@ -757,7 +804,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
  
  tapdisk2 tapdisk-stream tapdisk-diff: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
  tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
-+tapdisk2 tapdisk-stream tapdisk-diff: ICBLIBS += -licbinn_resolved -lpthread -ldl
++tapdisk2 tapdisk-stream tapdisk-diff td-util: ICBLIBS += -licbinn_resolved -lpthread -ldl
  
  img2qcow qcow2raw qcow-create: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
  img2qcow qcow2raw qcow-create: crypto/libxts-aes.a
@@ -765,7 +812,7 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
  
  crypto/libxts-aes.a: crypto/*.c crypto/*.h
  	$(MAKE) -C crypto libxts-aes.a
-@@ -96,13 +98,13 @@ all: $(IBIN) lock-util qcow-util
+@@ -96,16 +98,16 @@ all: $(IBIN) lock-util qcow-util
  
  
  tapdisk2: $(TAP-OBJS-y) $(BLK-OBJS-y) $(MISC-OBJS-y) tapdisk2.o
@@ -780,7 +827,11 @@ Index: xen-4.3.4/tools/blktap2/drivers/Makefile
 +	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) $(ICBLIBS) -lm
  
  td-util: td.o tapdisk-utils.o tapdisk-log.o $(PORTABLE-OBJS-y)
- 	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS)
+-	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS)
++	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS) $(ICBLIBS)
+ 
+ lock-util: lock.c
+ 	$(CC) $(CFLAGS) -DUTIL -o lock-util lock.c $(LDFLAGS)
 @@ -114,7 +116,7 @@ lock-util: lock.c
  qcow-util: img2qcow qcow2raw qcow-create
  
@@ -841,7 +892,7 @@ Index: xen-4.3.4/tools/blktap2/vhd/lib/vhd-util-key.c
 +vhd_util_read_key_icbinn(ICBINN *icb, const char *keypath, uint8_t *key,
 +		  size_t max_size, size_t *out_size)
 +{
-+	int fd, err;
++	int fd = -1, err;
 +	ssize_t size;
 +	struct icbinn_stat sb;
 +
