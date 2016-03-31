@@ -148,6 +148,7 @@ function xl_hack_tools()
         cp /usr/sbin/td-util /storage/xen-tools-orig
         cp /usr/sbin/vhd-update /storage/xen-tools-orig
         cp /usr/sbin/vhd-util /storage/xen-tools-orig
+        cp /usr/bin/qemu-system-i386 /storage/xen-tools-orig
     fi
 
     rm /usr/lib/libblktapctl.so.0.1.0
@@ -168,12 +169,40 @@ function xl_hack_tools()
     cp $1/usr/sbin/vhd-update /usr/sbin
     cp $1/usr/sbin/vhd-util /usr/sbin
     cp $1/usr/sbin/xl /usr/sbin
+    if [ -e $1/usr/bin/qemu-system-i386 ]; then
+        cp $1/usr/bin/qemu-system-i386 /usr/bin
+    fi
+
 
     pushd /usr/lib
     ln -fs libblktapctl.so.1.0.0 libblktapctl.so.1.0
     ln -fs libxenlight.so.4.3.0 libxenlight.so.4.3
     ln -fs libxlutil.so.4.3.0 libxlutil.so.4.3
     popd
+}
+
+function xl_hack_stage()
+{
+    local dstpath=${PWD}/image
+
+    echo "Stage xl and qemu hack..."
+
+    if [ -e dstpath ]; then
+        rm -rf dstpath
+    fi
+
+    if [ ! -e /storage/image.tar.gz ]; then
+        echo "No /storage/image.tar.gz - you are wasting my time!"
+        exit
+    fi
+
+    mv /storage/image.tar.gz .
+    tar -xzf image.tar.gz
+
+    if [ -e /storage/qemu-system-i386 ]; then
+        mkdir -p dstpath/usr/bin
+        mv /storage/qemu-system-i386 dstpath/usr/bin
+    fi
 }
 
 function usage()
@@ -184,11 +213,12 @@ Usage:
   -r <file> Retap a vhd, use a full path to vhd file.
   -n <ip>   Hack up the xen bridge with an IP.
   -d <id>   Hack a new domid in.
+  -s        Stage new Xen tools for install.
   -t <path> Reinstall Xen tools hack, use full path to image base dir.
 EOF
 }
 
-getopts "ir:n:d:t:" OPTION
+getopts "ir:n:d:st:" OPTION
 
 case $OPTION in
     i)
@@ -202,6 +232,9 @@ case $OPTION in
         ;;
     d)
         xl_hack_domid $OPTARG
+        ;;
+    s)
+        xl_hack_stage
         ;;
     t)
         xl_hack_tools $OPTARG
