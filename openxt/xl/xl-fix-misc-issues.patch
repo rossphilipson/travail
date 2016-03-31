@@ -1,0 +1,13 @@
+Index: xen-4.3.4/tools/libxl/xl.c
+===================================================================
+--- xen-4.3.4.orig/tools/libxl/xl.c
++++ xen-4.3.4/tools/libxl/xl.c
+@@ -116,7 +116,7 @@ static void parse_global_config(const ch
+         lockfile = strdup(XL_LOCK_FILE);
+     }
+ 
+-    if (!lockfile < 0) {
++    if (!lockfile) {
+         fprintf(stderr, "failed to allocate lockdir \n");
+         exit(1);
+     }
