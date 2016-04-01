@@ -111,6 +111,19 @@ function xl_hack_netup()
     ifconfig xenbr0 up
     ifconfig xenbr0 $1
     ifconfig eth0 up
+
+    if [ -z "`lsmod | grep "xen_netback"`" ]; then
+        if [ ! -e /storage/kernel-module-xen-netback_3.18.28-r2_xenclient_dom0.ipk ]; then
+            echo "Cannot find xen_netback package, cannot install it, sorry"
+            exit
+        fi
+        mount -o remount,rw /
+        opkg install /storage/kernel-module-xen-netback_3.18.28-r2_xenclient_dom0.ipk
+        modprobe xen_netback
+        sync
+        mount -o remount,ro /
+    fi
+
 }
 
 function xl_hack_domid()
