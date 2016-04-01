@@ -44,6 +44,12 @@ function xl_hack_init()
         mv /storage/uivm /storage/uivm-hidden
     fi
 
+    # Put the Debain VM UUID in dbd configuration
+    local uuid=`grep uuid debian.hvm | cut -d\= -f2 | sed -e 's/^[ \"]*//' -e 's/.$//'`
+    if [ `db-exists /vm/$uuid` != "true" ]; then
+        db-write /vm/$uuid
+    fi
+
     # Creat things, copy things
     echo "1" > /tmp/domid
 
