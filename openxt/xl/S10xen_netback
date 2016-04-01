@@ -1,0 +1,26 @@
+#!/bin/bash
+# chkconfig: 2345 80 20
+# description: script to load xen_netback
+# portability changes welcome!
+
+# vars:
+#
+# START			distribution specific way of kicking programs
+# END			distribution specific way of checking return status
+# PROGRAM		the executable to run
+# ARGUMENTS		the argument we're going to call PROGRAM with
+# VERBOSE		put yes/no (case sensitive) to verbose or to be quiet
+
+case "$1" in
+  start|""|reload|force-reload|restart)
+        /sbin/modprobe microcode
+	exit 0
+	;;
+  stop)
+	;;
+  status)
+	;;
+  *)
+	echo "$0 usage: {start|restart}"
+	exit 1
+esac

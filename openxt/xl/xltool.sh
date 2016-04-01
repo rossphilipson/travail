@@ -142,6 +142,12 @@ function xl_hack_netup()
         mount -o remount,rw /
         opkg install /storage/kernel-module-xen-netback_3.18.28-r2_xenclient_dom0.ipk
         modprobe xen_netback
+
+	# Always modprobe at rl 5
+        if [ ! -e /etc/rc5.d/S10xen_netback ]; then
+            cp S10xen_netback /etc/rc5.d
+            chmod a+x /etc/rc5.d/S10xen_netback
+        fi
         sync
         mount -o remount,ro /
     fi
