@@ -24,6 +24,17 @@ function xl_hack_init()
     cat /etc/selinux/config | sed 's/SELINUX=.*//g' > /tmp/config
     cat /tmp/config | sed "1s/^/SELINUX=permissive/" > /etc/selinux/config
 
+    # Add a little space to /
+    if [ -z "`df -h / | grep "1.3"`" ]; then
+        lvresize -L +1G  /dev/xenclient/root
+        resize2fs -p /dev/xenclient/root
+    fi
+
+    # Enable grub menu and editing
+    if [ -z "`grep "edit_and_shell" /boot/system/grub/grub.cfg`" ]; then
+        sed -i 's/set timeout=.*/set timeout=5/g' /boot/system/grub/grub.cfg
+        sed -i '4s/^/\nset edit_and_shell=1\n/' /boot/system/grub/grub.cfg
+    fi
     echo "1" > /tmp/domid
 
     if [ ! -e /var/lib/xen ]; then
