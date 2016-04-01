@@ -13,7 +13,7 @@
 
 case "$1" in
   start|""|reload|force-reload|restart)
-        /sbin/modprobe microcode
+	/sbin/modprobe xen_netback
 	exit 0
 	;;
   stop)
