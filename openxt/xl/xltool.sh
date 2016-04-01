@@ -50,6 +50,11 @@ function xl_hack_init()
         db-write /vm/$uuid
     fi
 
+    # Fix the vif-common.sh script to use a compatible name
+    if [ -z "`grep "sed" /etc/xen/scripts/vif-common.sh`" ]; then
+        sed -i '119s/^/    dev=`echo ${dev} | sed \"s\/....$\/\/\"`\n/' /etc/xen/scripts/vif-common.sh
+    fi
+
     # Creat things, copy things
     echo "1" > /tmp/domid
 
@@ -122,6 +127,7 @@ function xl_hack_retap()
 function xl_hack_netup()
 {
     echo "Nethack xl IP: $1"
+    ifconfig eth0 down 
     brctl addbr xenbr0
     brctl addif xenbr0 eth0
     ifconfig xenbr0 up
@@ -218,6 +224,9 @@ function xl_hack_tools()
     ln -fs libxenlight.so.4.3.0 libxenlight.so.4.3
     ln -fs libxlutil.so.4.3.0 libxlutil.so.4.3
     popd
+
+    sync
+    mount -o remount,ro /
 }
 
 function xl_hack_stage()
