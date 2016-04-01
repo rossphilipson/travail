@@ -3,6 +3,8 @@ name = "Debian"
 uuid = "7c85049a-9bdd-11e2-9e91-18037322eb44"
 memory = 1024
 vcpus = 1
-disk = ['/dev/xen/blktap-2/tapdev0,raw,xvda,rw']
+disk = ['tap2:/storage/disks/debian-7.8-x64-clean.vhd,vhd,xvda,rw']
 videoram = 16
 vif = [ "bridge=xenbr0,script=vif-bridge" ]
+
+#disk = ['tap2:/storage/disks/debian-7.8-x64-clean.vhd,vhd,xvda,rw']
