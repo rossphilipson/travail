@@ -35,6 +35,16 @@ function xl_hack_init()
         sed -i 's/set timeout=.*/set timeout=5/g' /boot/system/grub/grub.cfg
         sed -i '4s/^/\nset edit_and_shell=1\n/' /boot/system/grub/grub.cfg
     fi
+
+    # Take out NDVM and UIVM
+    if [ -e /storage/ndvm ]; then
+        xec-vm -n Network shutdown
+        xec-vm -n uivm shutdown
+        mv /storage/ndvm /storage/ndvm-hidden
+        mv /storage/uivm /storage/uivm-hidden
+    fi
+
+    # Creat things, copy things
     echo "1" > /tmp/domid
 
     if [ ! -e /var/lib/xen ]; then
@@ -196,7 +206,6 @@ function xl_hack_tools()
     if [ -e $1/usr/bin/qemu-system-i386 ]; then
         cp $1/usr/bin/qemu-system-i386 /usr/bin
     fi
-
 
     pushd /usr/lib
     ln -fs libblktapctl.so.1.0.0 libblktapctl.so.1.0
