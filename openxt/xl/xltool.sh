@@ -56,8 +56,6 @@ function xl_hack_init()
     fi
 
     # Creat things, copy things
-    echo "1" > /tmp/domid
-
     if [ ! -e /var/lib/xen ]; then
         mkdir /var/lib/xen
     fi
@@ -152,12 +150,6 @@ function xl_hack_netup()
         mount -o remount,ro /
     fi
 
-}
-
-function xl_hack_domid()
-{
-    echo "Hack xl domid $1"
-    echo $1 > /tmp/domid
 }
 
 function xl_hack_tools()
@@ -266,13 +258,12 @@ Usage:
   -i        Init stuff to make xl happy.
   -r <file> Retap a vhd, use a full path to vhd file.
   -n <ip>   Hack up the xen bridge with an IP.
-  -d <id>   Hack a new domid in.
   -s        Stage new Xen tools for install.
   -t <path> Reinstall Xen tools hack, use full path to image base dir.
 EOF
 }
 
-getopts "ir:n:d:st:" OPTION
+getopts "ir:n:st:" OPTION
 
 case $OPTION in
     i)
@@ -283,9 +274,6 @@ case $OPTION in
         ;;
     n)
         xl_hack_netup $OPTARG
-        ;;
-    d)
-        xl_hack_domid $OPTARG
         ;;
     s)
         xl_hack_stage

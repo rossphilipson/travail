@@ -1,9 +1,24 @@
 #!/bin/bash
 
-DOMID=`cat /tmp/domid`
+ARGS="$*"
+DOMID=""
+
+IFS=', ' read -r -a ARR <<< "$ARGS"
+
+i=0
+while [ $i -lt ${#ARR[@]} ]; do
+    if [ "${ARR[$i]}" = "-xen-domid" ]; then
+        let i=i+1
+        DOMID=${ARR[$i]}
+    fi
+    let i=i+1
+done
+
 XL_QMP_PATH="/var/run/xen/qmp-libxl-"
 XL_QMP_PATH="$XL_QMP_PATH$DOMID"
-let "NEWID=$DOMID+1"
-echo "$NEWID" > /tmp/domid
 
-/usr/bin/qemu-system-i386 -xen-domid $DOMID -nodefaults -name qemu-3.0 -machine xenfv,max-ram-below-4g=0xf0000000 -m 1024 -vga std -display surfman -drive file=/dev/xen/blktap-2/tapdev0,if=ide,index=0,media=disk,format=raw,readonly=off -chardev socket,id=libxl-cmd,path=$XL_QMP_PATH,server,nowait -qmp unix:$XL_QMP_PATH,server,nowait -serial tcp:192.168.2.105:3535 -net tap,vlan=0,ifname=tap0,script=/usr/xen/bin/qemu-ifup -vnc :0
+# Keep hvmloader from dropping the ball on VGABios
+xenstore-write /local/domain/$DOMID/hvmloader/bios "seabios"
+xenstore-write /local/domain/$DOMID/hvmlooder/seabios-legacy-load-roms "1"
+
+/usr/bin/qemu-system-i386 -xen-domid $DOMID -nodefaults -name qemu-3.0 -machine xenfv,max-ram-below-4g=0xf0000000 -m 1024 -vga std -display surfman -drive file=/dev/xen/blktap-2/tapdev0,if=ide,index=0,media=disk,format=raw,readonly=off -chardev socket,id=libxl-cmd,path=$XL_QMP_PATH,server,nowait -qmp unix:$XL_QMP_PATH,server,nowait -serial tcp:192.168.2.105:3535 -net tap,vlan=0,ifname=tap0,script=/usr/xen/bin/qemu-ifup
