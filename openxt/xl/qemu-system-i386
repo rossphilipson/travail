@@ -68,4 +68,4 @@ if [ ! -e /var/run/xen ]; then
     mkdir /var/run/xen
 fi
 
-/usr/bin/qemu-system-i386 -xen-domid $DOMID -nodefaults -name qemu-3.0 -machine xenfv,max-ram-below-4g=0xf0000000 -m 1024 -vga std -display surfman -drive file=/dev/xen/blktap-2/$TAP,if=ide,index=0,media=disk,format=raw,readonly=off -chardev socket,id=libxl-cmd,path=$XL_QMP_PATH,server,nowait -qmp unix:$XL_QMP_PATH,server,nowait $SERIAL $VIF
+/usr/bin/qemu-system-i386 -xen-domid $DOMID -nodefaults -name qemu-3.0 -machine xenfv,max-ram-below-4g=0xf0000000 -m 1024 -vga std -display surfman -drive file=/dev/xen/blktap-2/$TAP,if=ide,index=0,media=disk,format=raw,readonly=off -chardev socket,id=libxl-cmd,path=$XL_QMP_PATH,server,nowait -qmp unix:$XL_QMP_PATH,server,nowait $SERIAL $VIF -vnc :0
