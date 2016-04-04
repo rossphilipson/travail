@@ -81,14 +81,14 @@ function xl_hack_init()
 
 function xl_hack_retap()
 {
-    echo "Retapping shit for $1"
+    echo "Retapping stuffs for $1"
 
     local taps=(`tap-ctl list`)
     local count=0
     local pid=0
 
     if [ ! -e $1 ]; then
-        echo "Cannot retap missing file: $1 fix that shit!"
+        echo "Cannot retap missing file: $1 fix that!"
         exit
     fi
 
@@ -157,7 +157,7 @@ function xl_hack_tools()
     echo "Setup xl tools hack..."
 
     if [ ! -e $1 ]; then
-        echo "No tools dir $1 WTF!"
+        echo "No tools dir $1 hugh!"
         exit
     fi
 
@@ -285,4 +285,3 @@ case $OPTION in
         usage
         ;;
 esac
-

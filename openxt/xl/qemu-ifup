@@ -1,9 +1,9 @@
 #!/bin/sh
 
-echo "Executing /etc/qemu-ifup" >> /tmp/shit
-echo "Bringing up $1 for bridged mode..." >> /tmp/shit
+echo "[`date`] Executing /etc/qemu-ifup" >> /tmp/qemu-ifup.log
+echo "Bringing up $1 for bridged mode..." >> /tmp/qemu-ifup.log
 ifconfig $1 0.0.0.0 promisc up
-echo "Adding $1 to xenbr0..." >> /tmp/shit
+echo "Adding $1 to xenbr0..." >> /tmp/qemu-ifup.log
 brctl addif xenbr0 $1
-echo "Done" >> /tmp/shit
+echo "[`date`] Done" >> /tmp/qemu-ifup.log
 sleep 2
