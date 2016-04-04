@@ -25,7 +25,7 @@ function xl_hack_init()
     cat /tmp/config | sed "1s/^/SELINUX=permissive/" > /etc/selinux/config
 
     # Add a little space to /
-    if [ -z "`df -h / | grep "1.3"`" ]; then
+    if [ -z "`df -h / | grep "1."`" ]; then
         lvresize -L +1G  /dev/xenclient/root
         resize2fs -p /dev/xenclient/root
     fi
@@ -229,12 +229,10 @@ function xl_hack_tools()
 
 function xl_hack_stage()
 {
-    local dstpath=${PWD}/image
-
     echo "Stage xl and qemu hack..."
 
-    if [ -e dstpath ]; then
-        rm -rf dstpath
+    if [ -e image ]; then
+        rm -rf image
     fi
 
     if [ ! -e /storage/image.tar.gz ]; then
@@ -246,8 +244,7 @@ function xl_hack_stage()
     tar -xzf image.tar.gz
 
     if [ -e /storage/qemu-system-i386 ]; then
-        mkdir -p dstpath/usr/bin
-        mv /storage/qemu-system-i386 dstpath/usr/bin
+        mv /storage/qemu-system-i386 image/usr/bin
     fi
 }
 
