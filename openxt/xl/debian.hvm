@@ -5,6 +5,9 @@ memory = 1024
 vcpus = 1
 disk = ['tap2:/storage/disks/debian-7.8-x64-clean.vhd,vhd,xvda,rw']
 videoram = 16
-vif = [ "bridge=xenbr0,script=vif-bridge" ]
 
-#disk = ['tap2:/storage/disks/debian-7.8-x64-clean.vhd,vhd,xvda,rw']
+# Optional vif line if you want networking
+#vif = [ "bridge=xenbr0,script=vif-bridge" ]
+
+# Optional serial line if you want serial tracing
+#serial = "tcp:<my-target-ip>:3535,nodelay"
