@@ -60,10 +60,6 @@ function xl_hack_init()
         mkdir /var/lib/xen
     fi
 
-    if [ ! -e /var/run/xen ]; then
-        mkdir /var/run/xen
-    fi
-
     if [ ! -e /var/log/xen ]; then
         mkdir /var/log/xen
     fi
