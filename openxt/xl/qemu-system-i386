@@ -61,7 +61,7 @@ XL_QMP_PATH="$XL_QMP_PATH$DOMID"
 
 # Keep hvmloader from dropping the ball on VGABios
 xenstore-write /local/domain/$DOMID/hvmloader/bios "seabios"
-xenstore-write /local/domain/$DOMID/hvmlooder/seabios-legacy-load-roms "1"
+xenstore-write /local/domain/$DOMID/hvmloader/seabios-legacy-load-roms "1"
 
 # Recreate /var/run/xen after a reboot
 if [ ! -e /var/run/xen ]; then
