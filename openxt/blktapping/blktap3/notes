@@ -1,0 +1,22 @@
+This is the page on the Wiki with the busted link:
+http://wiki.xenproject.org/wiki/Blktap3
+
+Then there is the post about halting development:
+http://lists.xenproject.org/archives/html/xen-devel/2013-07/msg02433.html
+
+Then it seems to be revived here:
+http://www.gossamer-threads.com/lists/xen/devel/351077
+
+And a blog:
+http://xenserver.org/discuss-virtualization/virtualization-blog/entry/tapdisk3.html
+
+And slides:
+http://www.xenproject.org/component/allvideoshare/video/xpds14-scaling.html
+http://www.slideshare.net/xen_com_mgr/20140818-scaling-xens-aggregate-storage-performance
+
+Grants:
+https://blog.xenproject.org/2012/11/23/improving-block-protocol-scalability-with-persistent-grants/
+http://lists.xenproject.org/archives/html/xen-devel/2015-05/msg01498.html
+
+IOMMU approach
+http://www.slideshare.net/xen_com_mgr/10-kk-ramredesigningxenmemorysharingmechanism

@@ -1,0 +1,34 @@
+So grants come in different flavors.
+
+Grant Mapping:
+-----------------------------------
+Tradition form. Zero copy.
+Guest makes page X available to backend via gref
+Page mapped into backend and used directly.
+Downside: TLB flushes and grant table lock contention on backend domain.
+
+Persistent grants:
+-----------------------------------
+From circa 2014. One copy.
+Front and back end persist grant mappings.
+Front has to maintain a list.
+Back has to search for mappings.
+Downsides: Data copying and overhead of tracking grants/searching mappings.
+
+Grant Copy:
+-----------------------------------
+From circa 2014 in tapdisk3. One copy.
+Uses Xen (GNTTABOP_copy) to copy interdomain.
+Still uses grefs and grant controls.
+Downsides: Data copying and memory overhead.
+
+Ref:
+-----------------------------------
+
+Grants:
+http://www.slideshare.net/xen_com_mgr/20140818-scaling-xens-aggregate-storage-performance
+https://blog.xenproject.org/2012/11/23/improving-block-protocol-scalability-with-persistent-grants/
+http://lists.xenproject.org/archives/html/xen-devel/2015-05/msg01498.html
+
+IOMMU approach
+http://www.slideshare.net/xen_com_mgr/10-kk-ramredesigningxenmemorysharingmechanism
