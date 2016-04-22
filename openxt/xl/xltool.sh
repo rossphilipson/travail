@@ -1,6 +1,6 @@
 #! /bin/sh
 
-function xl_hack_init()
+function xl_hack_init
 {
     echo "Init xl hacks..."
     if [ -z "`grep "flask_enforcing=0" /boot/system/grub/grub.cfg`" ]; then
@@ -75,7 +75,7 @@ function xl_hack_init()
     echo "Init xl hacks complete"
 }
 
-function xl_hack_retap()
+function xl_hack_retap
 {
     echo "Retapping stuffs for $1"
 
@@ -118,7 +118,7 @@ function xl_hack_retap()
     tap-ctl list
 }
 
-function xl_hack_netup()
+function xl_hack_netup
 {
     echo "Nethack xl IP: $1"
     ifconfig eth0 down 
@@ -148,7 +148,7 @@ function xl_hack_netup()
 
 }
 
-function xl_hack_tools()
+function xl_hack_tools
 {
     echo "Setup xl tools hack..."
 
@@ -223,7 +223,7 @@ function xl_hack_tools()
     mount -o remount,ro /
 }
 
-function xl_hack_stage()
+function xl_hack_stage
 {
     echo "Stage xl and qemu hack..."
 
@@ -244,7 +244,7 @@ function xl_hack_stage()
     fi
 }
 
-function usage()
+function usage
 {
 cat <<EOF
 Usage:
