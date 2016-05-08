@@ -10,7 +10,7 @@ Index: qemu-1.4.0/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2027,6 +2028,150 @@ static CharDriverState *qemu_chr_open_wi
+@@ -2027,6 +2028,168 @@ static CharDriverState *qemu_chr_open_wi
  #endif /* !_WIN32 */
  
  /***********************************************************/
@@ -22,6 +22,8 @@ Index: qemu-1.4.0/qemu-char.c
 +#define V4V_CHARDRV_PORT 5100
 +#define V4V_CHARDRV_RING_SIZE \
 +  (V4V_ROUNDUP((((4096)*4) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
++
++#define V4V_CHARDRV_NAME "[v4v-chardrv]"
 +
 +typedef struct {
 +    int fd;
@@ -36,8 +38,16 @@ Index: qemu-1.4.0/qemu-char.c
 +static int v4v_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 +{
 +    V4vCharDriver *s = chr->opaque;
++    int ret;
 +
-+    return send(s->fd, (const void *)buf, len, 0);
++    ret = v4v_sendto(s->fd, buf, len, 0, &s->remote_addr);
++    if (ret != len) {
++        fprintf(stderr, "%s error: v4v_sendto() failed (%s) - %d %d.\n",
++                V4V_CHARDRV_NAME, strerror(errno), ret, len);
++        return 0;
++    }
++
++    return ret;
 +}
 +
 +static int v4v_chr_read_poll(void *opaque)
@@ -62,14 +72,19 @@ Index: qemu-1.4.0/qemu-char.c
 +{
 +    CharDriverState *chr = opaque;
 +    NetCharDriver *s = chr->opaque;
++    int ret;
 +
 +    if (s->max_size == 0)
 +        return;
-+    s->bufcnt = qemu_recv(s->fd, s->buf, sizeof(s->buf), 0);
-+    s->bufptr = s->bufcnt;
-+    if (s->bufcnt <= 0)
-+        return;
 +
++    ret = v4v_recvfrom(s->fd, s->buf, sizeof(s->buf), 0, &s->remote_addr);
++    if (ret != sizeof(s->buf)) {
++        fprintf(stderr, "%s error: v4v_recvfrom() failed (%s) - %d %d.\n",
++                V4V_CHARDRV_NAME, strerror(errno), ret, sizeof(s->buf));
++        return;
++    }
++
++    s->bufcnt = ret;
 +    s->bufptr = 0;
 +    while (s->max_size > 0 && s->bufptr < s->bufcnt) {
 +        qemu_chr_be_write(chr, &s->buf[s->bufptr], 1);
@@ -117,19 +132,22 @@ Index: qemu-1.4.0/qemu-char.c
 +
 +    fd = v4v_socket(SOCK_DGRAM);
 +    if (fd < 0) {
-+        error_setg(&local_error, "cannot open v4v socket - err: %d", fd);
++        error_setg(&local_error, "%s cannot open v4v socket - err: %d",
++                   V4V_CHARDRV_NAME, fd);
 +        goto return_err;
 +    }
 +
 +    if (ioctl(fd, V4VIOCSETRINGSIZE, &v4v_ring_size)) {
 +        error_setg(&local_error,
-+                   "failed to set ring size v4v socket - err: %d", errno);
++                   "%s failed to set ring size v4v socket - err: %d",
++                   V4V_CHARDRV_NAME, errno);
 +        goto return_err;
 +    }
 +
 +    if (v4v_bind(fd, &pts->local_addr, 0)) {
 +        error_setg(&local_error,
-+                   "failed to bind socket - err: %d", errno);
++                   "%s failed to bind socket - err: %d",
++                   V4V_CHARDRV_NAME, errno);
 +        goto return_err;
 +    }
 +
@@ -161,7 +179,7 @@ Index: qemu-1.4.0/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -2852,6 +2997,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -2852,6 +3015,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -169,7 +187,7 @@ Index: qemu-1.4.0/qemu-char.c
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename);
          return opts;
-@@ -2979,6 +3125,7 @@ static const struct {
+@@ -2979,6 +3143,7 @@ static const struct {
      { .name = "null",      .open = qemu_chr_open_null },
      { .name = "socket",    .open = qemu_chr_open_socket },
      { .name = "udp",       .open = qemu_chr_open_udp },
