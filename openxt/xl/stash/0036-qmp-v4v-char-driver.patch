@@ -68,10 +68,10 @@ Index: qemu-1.4.0/qemu-char.c
 +    return s->max_size;
 +}
 +
-+static void udp_chr_read(void *opaque)
++static void v4v_chr_read(void *opaque)
 +{
 +    CharDriverState *chr = opaque;
-+    NetCharDriver *s = chr->opaque;
++    V4vCharDriver *s = chr->opaque;
 +    int ret;
 +
 +    if (s->max_size == 0)
@@ -132,20 +132,20 @@ Index: qemu-1.4.0/qemu-char.c
 +
 +    fd = v4v_socket(SOCK_DGRAM);
 +    if (fd < 0) {
-+        error_setg(&local_error, "%s cannot open v4v socket - err: %d",
++        error_setg(&local_err, "%s cannot open v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, fd);
 +        goto return_err;
 +    }
 +
 +    if (ioctl(fd, V4VIOCSETRINGSIZE, &v4v_ring_size)) {
-+        error_setg(&local_error,
++        error_setg(&local_err,
 +                   "%s failed to set ring size v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, errno);
 +        goto return_err;
 +    }
 +
-+    if (v4v_bind(fd, &pts->local_addr, 0)) {
-+        error_setg(&local_error,
++    if (v4v_bind(fd, &s->local_addr, 0)) {
++        error_setg(&local_err,
 +                   "%s failed to bind socket - err: %d",
 +                   V4V_CHARDRV_NAME, errno);
 +        goto return_err;
