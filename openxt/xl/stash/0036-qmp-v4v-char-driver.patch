@@ -10,7 +10,7 @@ Index: qemu-1.4.0/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2027,6 +2028,174 @@ static CharDriverState *qemu_chr_open_wi
+@@ -2027,6 +2028,168 @@ static CharDriverState *qemu_chr_open_wi
  #endif /* !_WIN32 */
  
  /***********************************************************/
@@ -24,7 +24,6 @@ Index: qemu-1.4.0/qemu-char.c
 +  (V4V_ROUNDUP((((4096)*4) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
 +
 +#define V4V_CHARDRV_NAME  "[v4v-chardrv]"
-+#define V4V_CHARDRV_HELLO "d2bb2546-155e-11e6-bf28-af0531854834"
 +
 +typedef struct {
 +    int fd;
@@ -152,11 +151,6 @@ Index: qemu-1.4.0/qemu-char.c
 +        goto return_err;
 +    }
 +
-+    /* Send a hello to the other end */
-+    if (!v4v_chr_write(chr, (const uint8_t*)V4V_CHARDRV_HELLO,
-+                       sizeof(V4V_CHARDRV_HELLO) - 1))
-+        goto return_err;
-+
 +    s->fd = fd;
 +    s->bufcnt = 0;
 +    s->bufptr = 0;
@@ -185,7 +179,7 @@ Index: qemu-1.4.0/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -2852,6 +3021,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -2852,6 +3015,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -193,7 +187,7 @@ Index: qemu-1.4.0/qemu-char.c
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename);
          return opts;
-@@ -2979,6 +3149,7 @@ static const struct {
+@@ -2979,6 +3143,7 @@ static const struct {
      { .name = "null",      .open = qemu_chr_open_null },
      { .name = "socket",    .open = qemu_chr_open_socket },
      { .name = "udp",       .open = qemu_chr_open_udp },
