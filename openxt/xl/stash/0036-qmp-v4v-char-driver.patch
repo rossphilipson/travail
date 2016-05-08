@@ -19,7 +19,7 @@ Index: qemu-1.4.0/qemu-char.c
 +#define V4V_TYPE 'W'
 +#define V4VIOCSETRINGSIZE       _IOW (V4V_TYPE,  1, uint32_t)
 +
-+#define V4V_CHARDRV_PORT 5100
++#define V4V_QH_PORT 5100
 +#define V4V_CHARDRV_RING_SIZE \
 +  (V4V_ROUNDUP((((4096)*4) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
 +
@@ -127,7 +127,7 @@ Index: qemu-1.4.0/qemu-char.c
 +
 +    s->local_addr.port = V4V_PORT_NONE;
 +    s->local_addr.domain = V4V_DOMID_ANY;
-+    s->remote_addr.port = V4V_CHARDRV_PORT;
++    s->remote_addr.port = V4V_QH_PORT;
 +    s->remote_addr.domain = 0;
 +
 +    fd = v4v_socket(SOCK_DGRAM);
