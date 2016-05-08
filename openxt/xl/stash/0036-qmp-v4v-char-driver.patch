@@ -79,9 +79,9 @@ Index: qemu-1.4.0/qemu-char.c
 +        return;
 +
 +    ret = v4v_recvfrom(s->fd, s->buf, sizeof(s->buf), 0, &s->remote_addr);
-+    if (ret != sizeof(s->buf)) {
-+        fprintf(stderr, "%s error: v4v_recvfrom() failed (%s) - %d %d.\n",
-+                V4V_CHARDRV_NAME, strerror(errno), ret, sizeof(s->buf));
++    if (ret < 0) {
++        fprintf(stderr, "%s error: v4v_recvfrom() failed (%s) - %d.\n",
++                V4V_CHARDRV_NAME, strerror(errno), ret);
 +        return;
 +    }
 +
@@ -154,7 +154,7 @@ Index: qemu-1.4.0/qemu-char.c
 +
 +    /* Send a hello to the other end */
 +    if (!v4v_chr_write(chr, (const uint8_t*)V4V_CHARDRV_HELLO,
-+                       strlen(V4V_CHARDRV_HELLO)))
++                       sizeof(V4V_CHARDRV_HELLO) - 1))
 +        goto return_err;
 +
 +    s->fd = fd;
