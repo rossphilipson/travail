@@ -6,3 +6,26 @@ python-textutils_2.7.9-r1_core2-32.ipk python-contextlib_2.7.9-r1_core2-32.ipk p
 python-readline_2.7.9-r1_core2-32.ipk
 python-pprint_2.7.9-r1_core2-32.ipk
 
+S3 Sleep/Resume:
+{u'timestamp': {u'seconds': 1463154718, u'microseconds': 587739}, u'event': u'SUSPEND'}
+{u'timestamp': {u'seconds': 1463155022, u'microseconds': 621949}, u'event': u'WAKEUP'}
+
+S4 Hibernate:
+{u'timestamp': {u'seconds': 1463155070, u'microseconds': 164949}, u'event': u'SUSPEND_DISK'}
+{u'timestamp': {u'seconds': 1463155070, u'microseconds': 165368}, u'event': u'SHUTDOWN'}
+{u'timestamp': {u'seconds': 1463155070, u'microseconds': 165571}, u'data': {u'device': u'ide1-cd0', u'tray-open': True}, u'event': u'DEVICE_TRAY_MOVED'}
+
+S5 Shutdown
+{u'timestamp': {u'seconds': 1463155144, u'microseconds': 773069}, u'event': u'SHUTDOWN'}
+{u'timestamp': {u'seconds': 1463155144, u'microseconds': 773155}, u'data': {u'device': u'ide1-cd0', u'tray-open': True}, u'event': u'DEVICE_TRAY_MOVED'}
+
+Restart (not sure why there are 2 RESET events)
+{u'timestamp': {u'seconds': 1463160189, u'microseconds': 931012}, u'event': u'RESET'}
+{u'timestamp': {u'seconds': 1463160189, u'microseconds': 931587}, u'event': u'RESET'}
+{u'timestamp': {u'seconds': 1463160190, u'microseconds': 63973}, u'event': u'SHUTDOWN'}
+{u'timestamp': {u'seconds': 1463160190, u'microseconds': 64086}, u'data': {u'device': u'ide1-cd0', u'tray-open': True}, u'event': u'DEVICE_TRAY_MOVED'}
+
+Note:
+
+ - Not sure what STOP is, possibly a toolstack pause/resume along with the RESUME event; we don't do that
+ - There is not STARTUP event; I guess that makes sense.
