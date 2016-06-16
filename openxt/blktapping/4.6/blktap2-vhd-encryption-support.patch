@@ -304,7 +304,7 @@ Index: xen/tools/blktap2/drivers/block-crypto.c
 +		goto out;
 +	}
 +
-+	DPRINTF("using keyfile %s, keysize %d\n", keyfile, keysize);
++	DPRINTF("using keyfile %s, keysize %d\n", keyfile, (int)keysize);
 +	err = 0;
 +
 +out:
