@@ -1039,7 +1039,7 @@ Index: xen/tools/blktap2/drivers/Makefile
 +img2qcow qcow2raw qcow-create: crypto/libxts-aes.a
 +
 +crypto/libxts-aes.a: crypto/*.c crypto/*.h
-+        $(MAKE) -C crypto libxts-aes.a
++	$(MAKE) -C crypto libxts-aes.a
 +
  PORTABLE-OBJS-y :=
  PORTABLE-OBJS-$(CONFIG_Linux)  += blk_linux.o
