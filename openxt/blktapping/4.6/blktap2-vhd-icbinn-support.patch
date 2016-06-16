@@ -1061,7 +1061,7 @@ Index: xen/tools/blktap2/drivers/Makefile
 +img2qcow qcow2raw qcow-create: ICBLIBS += -licbinn_resolved -lpthread -ldl
  
  crypto/libxts-aes.a: crypto/*.c crypto/*.h
-         $(MAKE) -C crypto libxts-aes.a
+ 	$(MAKE) -C crypto libxts-aes.a
 @@ -91,16 +93,16 @@ all: $(IBIN) lock-util qcow-util
  
  
