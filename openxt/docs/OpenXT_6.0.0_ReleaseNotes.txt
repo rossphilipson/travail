@@ -128,7 +128,7 @@ https://openxt.atlassian.net/browse/OXT-423
 
 ==== Pass-through devices must be removed from VMs before physically removed.
 
-Proceedure:
+Procedure:
 
 - Edit the VM settings that has the PCI device assigned.
 - On the "PCI Pass Through" tab, remove the device(s) in question.
@@ -154,7 +154,7 @@ https://openxt.atlassian.net/browse/OXT-661
 
 ==== Installation of OpenXT may occasionally fail due to previous disk layouts.
 
-This failure has been see when installing on systems that had a previous
+This failure has been seen when installing on systems that had a previous
 operating system installed like Windows 10.
 
 Workaround:
