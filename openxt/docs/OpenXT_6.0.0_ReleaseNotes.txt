@@ -27,6 +27,7 @@ List of security fixes:
 
 - OpenEmbedded security fixes - see Security Fixes tabe - https://www.yoctoproject.org/downloads/core/jethro20
 - Xen XSA-154, XSA-182
+- Linux Kernel CVE-2016-5696
 - glibc CVE-2015-7547
 - wpa_supplicant CVE-2015-8041, CVE-2015-4141
 
@@ -39,6 +40,8 @@ Known issues and workarounds for OpenXT v6.0.0
 
 ==== Ubuntu 15.10 (and later) DVD VM boot failure.
 
+Ubuntu Live and Full insall DVDs fail to boot in VMs.
+
 Workaround:
 
 Use the Ubuntu MinimalCD network installation:
@@ -49,3 +52,94 @@ Ticket:
 
 https://openxt.atlassian.net/browse/OXT-431
 
+==== Broadcom NetXtreme M5722 Ethernet PCI Pass-through.
+
+This NIC is known to cause BSODs in Windows guests and cannot currently
+be used for pass-through in OpenXT.
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-453
+
+==== Anaconda installer failure during VM installation.
+
+This effects distributions that use Anacond (e.g. Fedora and CentOS). The
+underlying problem is an interoperability issue between the guest device
+model and the bochs_drm driver that is being loaded during the install.
+
+- Workaround to install CentOS in graphics mode:
+* Press tab on the CD bootloader
+* Add " bochs_drm.blacklist=yes" to the kernel command line
+* Press enter
+* Once the installer starts, switch on eth0 in "NETWORK & HOST NAME"
+* Install
+- Workaround to install Fedora in graphics mode:
+* Press tab on the CD bootloader
+* Add " bochs_drm.fbdev=false" to the kernel command line
+* Press enter
+* Once the installer starts, switch on eth0 in "NETWORK & HOST NAME"
+* Install
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-485
+
+==== The CD auto-assign feature is disabled for the 6.0 release.
+
+CDROM auto-assign has been completely disabled, as well as the "CDROM install"
+option in the VM creation wizard. The only way to assign a CDROM to a guest
+is to do so manually in the Devices window. The "Always Us With This VM" option
+defaults to true, implying that assignments will persist across reboots,
+enabling guests to boot to CDROMs.
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-635
+
+==== TXT/Measure Launch unusable on certain systems.
+
+This may not be an exhaustive list but these are the systems where TXT and
+Measured Launch is known not to work:
+
+- Dell Venue - unknown firmware version
+- Dell 7450 - A13 firmware version
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-388
+
+==== Windows Update performance issues and hangs in Windows 7 guests.
+
+This is not an OpenXT issue but rather a Windows Update issue that occurs on
+bare metal installs as well. This is covered here to aid uses in getting
+Windows Update to work. See the following Wiki with details on how to
+accomplish this:
+
+https://openxt.atlassian.net/wiki/display/DC/Installing+Windows+7
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-423
+
+==== Pass-through devices must be removed from VMs before physically removed.
+
+TODO
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-687
+
+==== Cannot install VM from any CD drive during new VM setup.
+
+Because of changes to the behavior of CD auto-assignment (see above), a newly
+created VM cannot be started from a CD on the final page of the new VM wizard.
+
+Workaround:
+
+- Create a VM, on the final page, select "Create VM & Instal OS later"
+- In Devices, assign the CD-ROM to the VM, make sure "Always Use With This VM" is checked
+- Start the VM
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-661
