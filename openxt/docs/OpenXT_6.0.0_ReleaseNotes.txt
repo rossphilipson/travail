@@ -123,7 +123,10 @@ https://openxt.atlassian.net/browse/OXT-423
 
 ==== Pass-through devices must be removed from VMs before physically removed.
 
-TODO
+Proceedure:
+
+- Edit the VM settings that has the PCI device assigned.
+- On the "PCI Pass Through" tab, remove the device(s) in question.
 
 Ticket:
 
@@ -143,3 +146,43 @@ Workaround:
 Ticket:
 
 https://openxt.atlassian.net/browse/OXT-661
+
+==== Installation of OpenXT may occasionally fail due to previous disk layouts.
+
+This failure has been see when installing on systems that had a previous
+operating system installed like Windows 10.
+
+Workaround:
+
+- The install will fail after selecting to do a clean install.
+- Type Alt-F3 and enter +root+ as the user ID.
+- Run +dd if=/dev/zero of=/dev/sda+ for a few seconds in the terminal.
+- Reboot and restart the installation.
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-710
+
+==== (Advanced) Building Linux PV drivers on distros with newer kernels.
+
+The OpenXT V4V driver for Linux will not build on Linux distributions with
+newer kernels. This has been seen with Ubuntu 14.x/15.x. The workaround is
+to use the following patch and then rebuild the DKMS package for V4V.
+
+--------------------------------------------------------------------------------------------
+diff --git a/openxt-v4v/openxt-v4v.c b/openxt-v4v/openxt-v4v.c
+index d103350..74a6174 100644
+--- a/openxt-v4v/openxt-v4v.c
++++ b/openxt-v4v/openxt-v4v.c
+@@ -62,6 +62,9 @@
+ #include <linux/slab.h>
+ #endif
+ 
++#define get_unused_fd() get_unused_fd_flags(0)
++extern int get_unused_fd_flags(unsigned flags);
++
+ #define MOAN do { printk(KERN_ERR "%s:%d MOAN called\n",__FILE__,__LINE__); } while (1==0)
+ 
+ #define DEFAULT_RING_SIZE      (V4V_ROUNDUP((((PAGE_SIZE)*32) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
+--------------------------------------------------------------------------------------------
+
