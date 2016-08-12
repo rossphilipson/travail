@@ -35,3 +35,17 @@ Known Issues
 ------------
 
 Known issues and workarounds for OpenXT v6.0.0
+
+
+==== Ubuntu 15.10 (and later) DVD VM boot failure.
+
+Workaround:
+
+Use the Ubuntu MinimalCD network installation:
+
+https://help.ubuntu.com/community/Installation/MinimalCD
+
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-431
+
