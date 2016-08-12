@@ -1,0 +1,27 @@
+OpenXT 6.0.0 Release Notes
+==========================
+Ross Philipson <philipsonr@ainfosec.com>
+v1.0, August 2016: First revision
+
+:numbered:
+Features
+--------
+
+New in OpenXT v6.0.0:
+
+- OpenEmbedded platform update - Yocto release 2.0 (Jethro) - see https://www.yoctoproject.org/downloads/core/jethro20
+- Linux Kernel update 4.4.16
+- Intel Skylake support
+- Package Updates
+
+:numbered:
+Security Fixes
+--------------
+
+List of security fixes
+
+:numbered:
+Known Issues
+------------
+
+Known issues and workarounds for OpenXT v6.0.0
