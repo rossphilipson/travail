@@ -11,13 +11,15 @@ New in OpenXT v6.0.0:
 
 - OpenEmbedded platform update - Yocto release 2.0 (Jethro) - see https://www.yoctoproject.org/downloads/core/jethro20
 - Linux Kernel update 4.4.16
-- Xen 4.3.4
+- Xen update 4.3.4
 - Intel Skylake support
 - Package Updates
 * OpenSSL 1.0.1t
 * OpenSSH 7.1p2
 * rsyslog 7.6.1
 * logrotate 3.9.1
+
+<<<
 
 :numbered:
 Security Fixes
@@ -27,9 +29,12 @@ List of security fixes:
 
 - OpenEmbedded security fixes - see Security Fixes tab - https://www.yoctoproject.org/downloads/core/jethro20
 - Xen XSA-154, XSA-182
-- Linux Kernel CVE-2016-5696
+- Linux Kernel CVE-2016-5696, CVE-2016-0758, CVE-2016-3135, CVE-2016-3672, CVE-2016-3951,
+CVE-2016-4482, CVE-2016-4568, CVE-2016-4569, CVE-2016-4578, CVE-2016-5244
 - glibc CVE-2015-7547
 - wpa_supplicant CVE-2015-8041, CVE-2015-4141
+
+<<<
 
 :numbered:
 Known Issues
