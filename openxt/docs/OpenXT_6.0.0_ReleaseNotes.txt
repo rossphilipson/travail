@@ -25,7 +25,7 @@ Security Fixes
 
 List of security fixes:
 
-- OpenEmbedded security fixes - see Security Fixes tabe - https://www.yoctoproject.org/downloads/core/jethro20
+- OpenEmbedded security fixes - see Security Fixes tab - https://www.yoctoproject.org/downloads/core/jethro20
 - Xen XSA-154, XSA-182
 - Linux Kernel CVE-2016-5696
 - glibc CVE-2015-7547
@@ -40,7 +40,7 @@ Known issues and workarounds for OpenXT v6.0.0
 
 ==== Ubuntu 15.10 (and later) DVD VM boot failure.
 
-Ubuntu Live and Full insall DVDs fail to boot in VMs.
+Ubuntu Live and Full install DVDs fail to boot in VMs.
 
 Workaround:
 
@@ -63,18 +63,18 @@ https://openxt.atlassian.net/browse/OXT-453
 
 ==== Anaconda installer failure during VM installation.
 
-This effects distributions that use Anacond (e.g. Fedora and CentOS). The
+This effects distributions that use Anaconda (e.g. Fedora and CentOS). The
 underlying problem is an interoperability issue between the guest device
 model and the bochs_drm driver that is being loaded during the install.
 
-- Workaround to install CentOS in graphics mode:
-* Press tab on the CD bootloader
+- Workaround to install CentOS:
+* Press tab on the CD bootloader screen
 * Add " bochs_drm.blacklist=yes" to the kernel command line
 * Press enter
 * Once the installer starts, switch on eth0 in "NETWORK & HOST NAME"
 * Install
-- Workaround to install Fedora in graphics mode:
-* Press tab on the CD bootloader
+- Workaround to install Fedora:
+* Press tab on the CD bootloader screen
 * Add " bochs_drm.fbdev=false" to the kernel command line
 * Press enter
 * Once the installer starts, switch on eth0 in "NETWORK & HOST NAME"
@@ -139,7 +139,7 @@ created VM cannot be started from a CD on the final page of the new VM wizard.
 
 Workaround:
 
-- Create a VM, on the final page, select "Create VM & Instal OS later"
+- Create a VM, on the final page, select "Create VM & Install OS later"
 - In Devices, assign the CD-ROM to the VM, make sure "Always Use With This VM" is checked
 - Start the VM
 
@@ -162,6 +162,8 @@ Workaround:
 Ticket:
 
 https://openxt.atlassian.net/browse/OXT-710
+
+<<<
 
 ==== (Advanced) Building Linux PV drivers on distros with newer kernels.
 
