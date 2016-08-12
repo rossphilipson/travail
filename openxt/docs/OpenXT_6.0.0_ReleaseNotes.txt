@@ -193,3 +193,6 @@ index d103350..74a6174 100644
  #define DEFAULT_RING_SIZE      (V4V_ROUNDUP((((PAGE_SIZE)*32) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
 --------------------------------------------------------------------------------------------
 
+Ticket:
+
+https://openxt.atlassian.net/browse/OXT-326
