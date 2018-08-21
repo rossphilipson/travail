@@ -29,7 +29,6 @@ sl_lz_header:
 lz_first_stack:
     .fill 0x1d6, 1, 0
 
-
 .text 2
 
 .global rm_header
