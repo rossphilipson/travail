@@ -10,12 +10,15 @@
 .global bootsect_start
 bootsect_start:
 
-.section .bsdata, "aw"
-
-.global sl_lz_header
-sl_lz_header:
+.global sl_header
+sl_header:
     .word 0      /* SL header LZ offset to code start */
     .word 0xffff /* SL header LZ total length */
+
+.section .bsdata, "aw"
+
+.global lz_header
+lz_header:
     .long 0      /* Total size of TrenchBoot Intermediate Loader */
     .fill 0x14   /* MSB Key Hash */
 
@@ -37,11 +40,6 @@ ram_size:    .word 0          /* ram_size: DO NOT USE - for bootsect.S use only 
 vid_mode:    .word 0          /* vid_mode: Video mode control */
 root_dev:    .word 0          /* root_dev: Default root device number */
 boot_flag:   .word 0xAA55     /* boot_flag: 0xAA55 magic number */
-/* TODO do we care about the extended header field beyond 512 bytes? */
-    /*.word 0           jump: Jump instruction */
-    /*.long 0x53726448  header: Magic signature "HdrS" */
-    /*.word 0x020d      version: Boot protocol version supported */
-    /* ... */
 
 /* Offset 512, entry point */
 
@@ -68,10 +66,11 @@ realmode_swtch:
     .word 0, 0     /* default_switch, SETUPSEG */
 
 /*
- * NB: cropping out remainder of extended header - dps
- *
- * End of setup header #####################################################
-*/
+ * TODO need the rest of the extended header field beyond 512 bytes. They
+ * have been cropped out for now.
+ */
+
+/* End of setup header ##################################################### */
 
 .code32
 

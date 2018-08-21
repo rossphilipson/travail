@@ -13,6 +13,8 @@
  * |   Stage       |
  * |   Heap        |
  * +---------------+ EAX (begin LZ)
+ * |   SL Header   | [0x8b]
+ * | ------------- |
  * |   LZ Header   | [0x24b]
  * | ------------- |
  * |   First       | [0x1BCb]
@@ -46,12 +48,15 @@
 #define LZ_SECOND_STAGE_HEAP_SIZE    (0x1000)
 
 #define LZ_SL_HEADER_OFFSET          (0x0)
-#define LZ_SL_HEADER_SIZE            (0x24)
+#define LZ_SL_HEADER_SIZE            (0x8)
+
+#define LZ_HEADER_OFFSET             (0x8)
+#define LZ_HEADER_SIZE               (0x1c)
 
 #define LZ_FIRST_STAGE_STACK_START   (0x1e0)
 #define LZ_FIRST_STAGE_STACK_SIZE    (0x1bc)
 
-#define LZ_RM_HEADER_OFFSET          (0x1fa)
+#define LZ_RM_HEADER_OFFSET          (0x1ef)
 #define LZ_RM_HEADER_SIZE            (0xf)
 
 #define LZ_DEV_TABLE_OFFSET          (0xa000)
