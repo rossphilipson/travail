@@ -10,24 +10,27 @@
 
 .code32
 
-.section .sl_lz_header, "w"
+.section .text
+
+.text 0
 
 .global sl_lz_header
 sl_lz_header:
-    .word lz_entry /* SL header LZ offset to code start */
-    .word 0xffff   /* SL header LZ total length */
-    .long 0        /* Total size of TrenchBoot Intermediate Loader */
-    .long 0x1000   /* Size of LZ second stage stack */
-    .long 0x1000   /* Size of LZ second stage heap */
-    .byte 0x14     /* MSB Key Hash */
+    .word 0       /* SL header LZ offset to code start */
+    .word 0xffff  /* SL header LZ total length */
+    .long 0       /* Total size of TrenchBoot Intermediate Loader */
+    .long 0x1000  /* Size of LZ second stage stack */
+    .long 0x1000  /* Size of LZ second stage heap */
+    .byte 0x14    /* MSB Key Hash */
 
-.section .lz_first_stack, "w"
+.text 1
 
 .global lz_first_stack
 lz_first_stack:
     .fill 0x1d6, 1, 0
 
-.section .rm_header, "w"
+
+.text 2
 
 .global rm_header
 rm_header:
@@ -41,7 +44,7 @@ rm_header:
     .word 0        /* jump: Jump instruction */
     .string "HdrS" /* header: Magic signature "HdrS" */
 
-.section .text
+.text 3
 
 ENTRY(lz_entry)
    /*
