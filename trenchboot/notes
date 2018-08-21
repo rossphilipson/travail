@@ -1,0 +1,2 @@
+bios.bin: bios.bin.elf
+        objcopy -O binary bios.bin.elf bios.bin

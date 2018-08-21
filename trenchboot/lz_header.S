@@ -38,7 +38,7 @@ rm_header:
     .word 0        /* vid_mode: Video mode control */
     .word 0        /* root_dev: Default root device number */
     .word 0xAA55   /* boot_flag: 0xAA55 magic number */
-    .word 0        /*jump: Jump instruction */
+    .word 0        /* jump: Jump instruction */
     .string "HdrS" /* header: Magic signature "HdrS" */
 
 .section .text

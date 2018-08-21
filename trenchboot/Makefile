@@ -12,7 +12,7 @@ OBJ += $(SRC:.c=.o)
 all: lz_header
 
 lz_header: $(OBJ)
-	$(LD) lz_header.lds $(LDFLAGS) $^ -o $@
+	$(LD) -T lz_header.lds $(LDFLAGS) $^ -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
