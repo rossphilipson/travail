@@ -21,7 +21,7 @@ sl_lz_header:
     .long 0       /* Total size of TrenchBoot Intermediate Loader */
     .long 0x1000  /* Size of LZ second stage stack */
     .long 0x1000  /* Size of LZ second stage heap */
-    .byte 0x14    /* MSB Key Hash */
+    .fill 0x14    /* MSB Key Hash */
 
 .text 1
 
