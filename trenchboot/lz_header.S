@@ -137,7 +137,7 @@ _entry:
 2:
     movl %ecx, (%eax)
 
-    /* Next page is the PDs that map 1G as 2M pages */
+    /* Third page is the PD that map 1G as 2M pages */
     movl %ebx, %eax
     addl $(LZ_PAGE_TABLES_OFFSET + 2*PAGE_SIZE), %eax
     xorl %edx, %edx
@@ -153,6 +153,34 @@ _entry:
     jmp 1b
 2:
     /* Done setting up page tables */
+
+    /* Restore CR4, PAE must be enabled before IA-32e mode */
+    movl %cr4, %ecx
+    orl $(CR4_PAE | CR4_PGE), %ecx
+    movl %ecx, %cr4
+
+    /* Load PML4 table location into PT base register */
+    movl %ebx, %eax
+    addl $LZ_PAGE_TABLES_OFFSET, %eax
+    movl %eax, %cr3
+
+    /* Enable IA-32e mode and paging */
+    movl $MSR_EFER, %ecx
+    rdmsr
+    orl $(1 << EFER_LME), %eax
+    wrmsr
+    movl %cr0, %eax
+    orl $(CR0_PG | CR0_NE | CR0_ET | CR0_MP | CR0_PE), %eax
+    movl %eax, %cr0
+    jmp 1f
+1:
+
+    /* Now in IA-32e compatibility mode */
+
+    /* Setup GDT and ljmp to 64b mode */
+    movl %esi, %ebx
+    addl $(gdt_desc64 - _entry), %ebx
+    lgdt (%ebx)
 
 jump64:
     .byte 0xea       /* far jmp op */
