@@ -88,6 +88,8 @@ _entry:
     */
     movl %eax, %ebx
 
+    /* TODO check we are below 4G? */
+
     /* Clear R_INIT and DIS_A20M.  */
     movl $(VM_CR_MSR), %ecx
     rdmsr
@@ -116,12 +118,41 @@ _entry:
     orl $0x3, %ecx
     movl %ecx, (%eax)
 
-    /* Second page is the PDP table with 1 PD entry */
+    /*
+     * Second page is the PDP table with 1 PD entry. Need to figure out
+     * which 1G range the LZ is in to determine what range to identity map.
+     */
     addl $PAGE_SIZE, %eax
     movl %eax, %ecx
     addl $PAGE_SIZE, %ecx
     orl $0x3, %ecx
+    xorl %edx, %edx
+    movl $GIGABYTE, %edi
+1:
+    cmpl %ebx, %edi
+    jl 2f
+    addl $GIGABYTE, %edi
+    addl $8, %eax
+    jmp 1b
+2:
     movl %ecx, (%eax)
+
+    /* Next page is the PDs that map 1G as 2M pages */
+    movl %ebx, %eax
+    addl $(LZ_PAGE_TABLES_OFFSET + 2*PAGE_SIZE), %eax
+    xorl %edx, %edx
+    xorl %ecx, %ecx
+    addl $0x83, %ecx
+1:
+    cmpw $512, %dx
+    jz 2f
+    movl %ecx, (%eax)
+    addl $0x8, %eax
+    addl $0x200000, %ecx
+    incw %dx
+    jmp 1b
+2:
+    /* Done setting up page tables */
 
 jump64:
     .byte 0xea       /* far jmp op */

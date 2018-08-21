@@ -1,9 +1,11 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
-#define PAGE_SHIFT       12
-#define PAGE_SIZE        (1 << PAGE_SHIFT)
-#define PAGE_MASK        (~(PAGE_SIZE-1))
+#define PAGE_SHIFT  12
+#define PAGE_SIZE   (1 << PAGE_SHIFT)
+#define PAGE_MASK   (~(PAGE_SIZE-1))
+
+#define GIGABYTE    0x40000000
 
 #ifdef __ASSEMBLY__
 #define ENTRY(name)                             \
