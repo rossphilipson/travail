@@ -1,5 +1,5 @@
 CFLAGS = -ffreestanding -fPIE -fno-exceptions -fshort-wchar -mno-ms-bitfields
-#CFLAGS += -Iinclude
+CFLAGS += -Iinclude
 AFLAGS = -D__ASSEMBLY__ $(patsubst -std=gnu%,,$(CFLAGS))
 #LDFLAGS = -nostdlib -Wl,-pie -Wl,--no-seh -Wl,--subsystem,10 -e efi_main
 LDFLAGS = -nostdlib -pie -e lz_entry
