@@ -72,9 +72,9 @@ realmode_swtch:
 
 /* End of setup header ##################################################### */
 
-.code32
-
 .section .text
+
+.code32
 
 .globl _entry
 _entry:
@@ -86,7 +86,80 @@ _entry:
     * point which is our only known location in protected mode. We will
     * use it to set things right then validate it later.
     */
-    movl %eax, %ebp
+    movl %eax, %ebx
 
-    call setup
+    /* Clear R_INIT and DIS_A20M.  */
+    movl $(VM_CR_MSR), %ecx
+    rdmsr
+    andl $(~(1 << VM_CR_R_INIT)), %eax
+    andl $(~(1 << VM_CR_DIS_A20M)), %eax
+    wrmsr
+
+    /* Fixup some addresses for the GDT and long jump */
+    movl %ebx, %ecx
+    addl $(gdt_desc64 - _entry + 2), %ecx
+    movl %ebx, %eax
+    addl $(gdt_table64 - _entry), %eax
+    movl %eax, (%ecx)
+
+    movl %ebx, %ecx
+    addl $(jump64 - _entry + 1), %ecx
+    movl %ebx, %eax
+    addl $(entry64 - _entry), %eax
+    movl %eax, (%ecx)
+
+    /* First page is the PML4 table with one PDP entry */
+    movl %ebx, %eax
+    addl $(LZ_PAGE_TABLES_OFFSET), %eax
+    movl %eax, %ecx
+    addl $PAGE_SIZE, %ecx
+    orl $0x3, %ecx
+    movl %ecx, (%eax)
+
+    /* Second page is the PDP table with 1 PD entry */
+    addl $PAGE_SIZE, %eax
+    movl %eax, %ecx
+    addl $PAGE_SIZE, %ecx
+    orl $0x3, %ecx
+    movl %ecx, (%eax)
+
+jump64:
+    .byte 0xea       /* far jmp op */
+    .long 0x00000000 /* offset (fixed up) */
+    .word CS_SEL64   /* 64b code segment selector */
+
+.code64
+
+entry64:
+
+    /* End of the line, we should never return */
+    callq setup
     ud2
+
+/* GDT */
+	.align 16
+gdt_desc64:
+	.word	gdt_table64_end - gdt_table64 - 1 /* Limit */
+	.quad	0x0000000000000000 /* Base */
+gdt_desc64_end:
+
+	.align 16
+gdt_table64:
+	/* Null Segment */
+	.quad	0x0000000000000000
+	/* Code Segment */
+	.word	0x0000 /* Limit 1 */
+	.word	0x0000 /* Base 1 */
+	.byte	0x00   /* Base 2 */
+	.byte	0x9a   /* P=1 DPL=0 11=code C=0 R=1 A=0 */
+	.byte	0x20   /* G=0 D=0 L=1 D=0 AVL=0 Limit 2 */
+	.byte	0x00   /* Base 3 */
+	/* Data Segment */
+	.word	0x0000 /* Limit 1 */
+	.word	0x0000 /* Base 1 */
+	.byte	0x00   /* Base 2 */
+	.byte	0x92   /* P=1 DPL=0 10=code C=0 W=1 A=0 */
+	.byte	0x00   /* G=0 D=0 L=0 D=0 AVL=0 Limit 2 */
+	.byte	0x00   /* Base 3 */
+gdt_table64_end:
+
