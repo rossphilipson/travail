@@ -207,10 +207,27 @@ entry64:
     addq $LZ_FIRST_STAGE_STACK_START, %rax
     movq %rax, %rsp
 
+    /* Pass the base of the LZ to the setup code */
+    movq %rbx, %rcx
 
     /* End of the line, we should never return */
     callq setup
     ud2
+
+.globl print_char
+print_char:
+    /* Args ECX, Clobbers EDX, EAX */
+    xorq %rdx, %rdx
+    movw $0x3f8, %dx
+    addw $5, %dx
+1:
+    inb %dx, %al
+    testb $0x20, %al
+    jz 1b
+    movw $0x3f8, %dx
+    movb %cl, %al
+    outb %al, %dx
+    retq
 
 /* GDT */
 	.align 16
