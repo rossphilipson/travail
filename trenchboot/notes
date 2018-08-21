@@ -1,2 +1,13 @@
+# From qboot, this is the make step to turn the elf into a flat binary.
 bios.bin: bios.bin.elf
         objcopy -O binary bios.bin.elf bios.bin
+
+# You can use a trick like this to make .text subsections and force
+# things into .text.
+.section .text
+.text 0
+# Some header
+.text 1
+# Some other header
+.text 2
+# Actual code

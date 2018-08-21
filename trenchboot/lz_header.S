@@ -8,11 +8,7 @@
 #define CS_SEL64         0x0008
 #define DS_SEL64         0x0010
 
-.code32
-
-.section .text
-
-.text 0
+.section .sl_lz_header, "w"
 
 .global sl_lz_header
 sl_lz_header:
@@ -23,13 +19,13 @@ sl_lz_header:
     .long 0x1000  /* Size of LZ second stage heap */
     .fill 0x14    /* MSB Key Hash */
 
-.text 1
+.section .lz_first_stack, "w"
 
 .global lz_first_stack
 lz_first_stack:
     .fill 0x1d6, 1, 0
 
-.text 2
+.section .rm_header, "w"
 
 .global rm_header
 rm_header:
@@ -43,7 +39,9 @@ rm_header:
     .word 0        /* jump: Jump instruction */
     .string "HdrS" /* header: Magic signature "HdrS" */
 
-.text 3
+.code32
+
+.section .text
 
 ENTRY(lz_entry)
    /*
