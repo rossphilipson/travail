@@ -162,6 +162,23 @@ jump64:
 .code64
 
 entry64:
+    /* Load data segment regs */
+    movw $DS_SEL64, %ax
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
+
+    /* ESI still has original EBX, put it back */
+    xorq %rbx, %rbx
+    movl %esi, %ebx
+
+    /* Load the stage 1 stack */
+    movq %rbx, %rax
+    addq $LZ_FIRST_STAGE_STACK_START, %rax
+    movq %rax, %rsp
+
 
     /* End of the line, we should never return */
     callq setup
