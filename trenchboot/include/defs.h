@@ -8,6 +8,10 @@
 #ifdef __ASSEMBLY__
 #define ENTRY(name)                             \
   .globl name;                                  \
+  name:
+
+#define ENTRY_ALIGN(name)                       \
+  .globl name;                                  \
   .align 16,0x90;                               \
   name:
 #endif
