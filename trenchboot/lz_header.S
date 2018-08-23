@@ -1,6 +1,9 @@
 #include <defs.h>
 #include <config.h>
 
+#define XLFLAGS (1<<0) /* 64b Kernel */
+#define COMMAND_LINE_SIZE 2048 /* Same as Linux */
+
 /* 64b selectors */
 #define CS_SEL64         0x0008
 #define DS_SEL64         0x0010
@@ -77,7 +80,20 @@ _start:
     .long 0        /* cmd_line_ptr: Pointer to kernel cmdline setup by loader */
     .long 0x7fffffff /* initrd_addr_max: TODO use Linux default? */
     .long 0x100000 /* kernel_alignment: TODO set to default 16M? */
-    .byte 0        /* relocatable_kernel: TODO don't want it relocated? */
+    .byte 1        /* relocatable_kernel: TODO we should be relocatable by loader */
+    .byte 12       /*  min_alignment: Min kernel alignment must be page size */
+    .word XLFLAGS  /* xloadflags: boot protocol option flags - TODO others? */
+    .long COMMAND_LINE_SIZE-1 /* cmdline_size: length of the command line */
+    .long 0        /* hardware_subarch: subarchitecture set to 0 for normal x86 PC */
+    .quad 0        /* hardware_subarch_data: subarchitecture specific */
+    .long 0        /* payload_offset: kernel payload - TODO need to sort out */
+    .long 0        /* payload_length: kernel length - TODO need to sort out */
+    .quad 0        /* setup_data: 64-bit physical pointer to single linked
+                      list of struct setup_data - TODO need to sort out */
+    .quad 0        /* pref_address: preferred load addr - TODO we don't care do we */
+    .long 0        /* init_size: kernel initialization size - TODO need to sort out */
+    .long 0        /* handover_offsetFilled in by build.c */
+
 
 /* End of setup header ##################################################### */
 
