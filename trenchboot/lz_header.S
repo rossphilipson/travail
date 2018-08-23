@@ -5,7 +5,7 @@
 #define CS_SEL64         0x0008
 #define DS_SEL64         0x0010
 
-.section .bstext, "ax"
+.section .bsdata, "aw"
 
 .global bootsect_start
 bootsect_start:
@@ -14,8 +14,6 @@ bootsect_start:
 sl_header:
     .word 0      /* SL header LZ offset to code start */
     .word 0xffff /* SL header LZ total length */
-
-.section .bsdata, "aw"
 
 .global lz_header
 lz_header:
@@ -33,13 +31,13 @@ sentinel:
 
 .global hdr
 hdr:
-setup_sects: .byte 0          /* setup_sects: The size of the setup in sectors */
-root_flags:  .word 0          /* root_flags: If set, the root is mounted readonly */
-syssize:     .long 0          /* syssize: The size of the 32-bit code in 16-byte paras */
-ram_size:    .word 0          /* ram_size: DO NOT USE - for bootsect.S use only */
-vid_mode:    .word 0          /* vid_mode: Video mode control */
-root_dev:    .word 0          /* root_dev: Default root device number */
-boot_flag:   .word 0xAA55     /* boot_flag: 0xAA55 magic number */
+setup_sects: .byte 0          /* The size of the setup in sectors, Filled in by build.c */
+root_flags:  .word 0          /* If set, the root is mounted readonly */
+syssize:     .long 0          /* The size of the 32-bit code in 16-byte paras. Filled in by build.c */
+ram_size:    .word 0          /* DO NOT USE - for bootsect.S use only */
+vid_mode:    .word 0          /* Video mode control */
+root_dev:    .word 0          /* Default root device number. Filled in by build.c */
+boot_flag:   .word 0xAA55     /* 0xAA55 magic number */
 
 /* Offset 512, entry point */
 
@@ -59,16 +57,27 @@ _start:
     /* Part 2 of the header, from the old setup.S */
 
     .ascii "HdrS"  /* header: Magic signature "HdrS" */
-    .word  0x020d  /* version: Boot protocol version supported (>= 0x0105) */
-					# or else old loadlin-1.5 will fail)
+    .word  0x020d  /* version: Boot protocol version supported (>= 0x0105)
+                      or else old loadlin-1.5 will fail) */
 .globl realmode_swtch
-realmode_swtch:
-    .word 0, 0     /* default_switch, SETUPSEG */
-
-/*
- * TODO need the rest of the extended header field beyond 512 bytes. They
- * have been cropped out for now.
- */
+    .word 0, 0     /* realmode_switch: hdefault_switch, SETUPSEG */
+    .word 0x1000   /* start_sys_seg: gobsolete and meaningless, but just
+                      in case something decided to "use" it */
+    .word 0        /* kernel_version: set to NULL which is valid */
+    .byte 0x0f     /* type_of_loader: 0xf Special LZ loader */
+    .byte 0        /* loadflags: TODO none of the flags really mean much */
+    .word 0        /* setup_move_size: TODO not sure what to do with this */
+    .long 0        /* code32_start: TODO not sure what to do with this */
+    .long 0        /* ramdisk_image: built in ramdisk, this is not needed */
+    .long 0        /* ramdisk_size: built in ramdisk, this is not needed */
+    .long 0        /* bootsect_kludge: obsolete */
+    .word 0        /* heap_end_ptr: flag not set, not using this */
+    .byte 0        /* ext_loader_ver: Extended boot loader version */
+    .byte 0        /* ext_loader_type: Extended boot loader type */
+    .long 0        /* cmd_line_ptr: Pointer to kernel cmdline setup by loader */
+    .long 0x7fffffff /* initrd_addr_max: TODO use Linux default? */
+    .long 0x100000 /* kernel_alignment: TODO set to default 16M? */
+    .byte 0        /* relocatable_kernel: TODO don't want it relocated? */
 
 /* End of setup header ##################################################### */
 
@@ -227,6 +236,11 @@ print_char:
     movw $0x3f8, %dx
     movb %cl, %al
     outb %al, %dx
+    retq
+
+.globl load_stack
+load_stack:
+    movq %rcx, %rsp
     retq
 
 /* GDT */

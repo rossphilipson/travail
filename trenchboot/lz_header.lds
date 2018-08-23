@@ -8,7 +8,6 @@ ENTRY(_start)
 SECTIONS
 {
 	. = 0;
-	.bstext		: { *(.bstext) }
 	.bsdata		: { *(.bsdata) }
 
 	. = 495;
