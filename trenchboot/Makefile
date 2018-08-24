@@ -9,10 +9,10 @@ OBJ = $(ASM:.S=.o) # must be first
 OBJ += $(SRC:.c=.o)
 
 .PHONY: all
-all: lz_header
+all: lz_header.bin
 
 lz_header.bin: lz_header
-	objcopy -O binary lz_header lz_header.bin
+	$(PWD)/mkbin.sh
 
 lz_header: $(OBJ)
 	$(LD) -T lz_header.lds $(LDFLAGS) $^ -o $@
@@ -25,4 +25,4 @@ lz_header: $(OBJ)
 
 .PHONY: clean
 clean:
-	rm -f lz_header.bin lz_header *.o
+	rm -f lz_header.bin lz_header *.dsm *.hex *.elf *.o

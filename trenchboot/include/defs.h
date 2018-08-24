@@ -20,6 +20,7 @@
 
 #define __packed        __attribute__ ((packed))
 #define __maybe_unused  __attribute__ ((unused))
+#define __text          __attribute__ ((__section__ (".text#")))
 
 /* CRs */
 #define CR0_PE  0x00000001 /* Protected mode Enable */

@@ -1,4 +1,4 @@
-#define __text     __attribute__ ((__section__ (".text#")))
+#include <defs.h>
 
 volatile __text int tester = 0;
 

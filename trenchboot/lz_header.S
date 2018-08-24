@@ -60,12 +60,12 @@ _start:
     /* Part 2 of the header, from the old setup.S */
 
     .ascii "HdrS"  /* header: Magic signature "HdrS" */
-    .word  0x020d  /* version: Boot protocol version supported (>= 0x0105)
-                      or else old loadlin-1.5 will fail) */
+    .word  0x020d  /* version: Boot protocol version supported (>= 0x0105) */
+                   /* or else old loadlin-1.5 will fail) */
 .globl realmode_swtch
     .word 0, 0     /* realmode_switch: hdefault_switch, SETUPSEG */
-    .word 0x1000   /* start_sys_seg: gobsolete and meaningless, but just
-                      in case something decided to "use" it */
+    .word 0x1000   /* start_sys_seg: gobsolete and meaningless, but just */
+                   /* in case something decided to "use" it */
     .word 0        /* kernel_version: set to NULL which is valid */
     .byte 0x0f     /* type_of_loader: 0xf Special LZ loader */
     .byte 0        /* loadflags: TODO none of the flags really mean much */
@@ -81,15 +81,15 @@ _start:
     .long 0x7fffffff /* initrd_addr_max: TODO use Linux default? */
     .long 0x100000 /* kernel_alignment: TODO set to default 16M? */
     .byte 1        /* relocatable_kernel: TODO we should be relocatable by loader */
-    .byte 12       /*  min_alignment: Min kernel alignment must be page size */
+    .byte 12       /* min_alignment: Min kernel alignment must be page size */
     .word XLFLAGS  /* xloadflags: boot protocol option flags - TODO others? */
     .long COMMAND_LINE_SIZE-1 /* cmdline_size: length of the command line */
     .long 0        /* hardware_subarch: subarchitecture set to 0 for normal x86 PC */
     .quad 0        /* hardware_subarch_data: subarchitecture specific */
     .long 0        /* payload_offset: kernel payload - TODO need to sort out */
     .long 0        /* payload_length: kernel length - TODO need to sort out */
-    .quad 0        /* setup_data: 64-bit physical pointer to single linked
-                      list of struct setup_data - TODO need to sort out */
+    .quad 0        /* setup_data: 64-bit physical pointer to single linked */
+                   /* list of struct setup_data - TODO need to sort out */
     .quad 0        /* pref_address: preferred load addr - TODO we don't care do we */
     .long 0        /* init_size: kernel initialization size - TODO need to sort out */
     .long 0        /* handover_offsetFilled in by build.c */
