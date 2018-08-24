@@ -17,6 +17,8 @@
  * Just a snippet from kernel of what we need
  */
 
+#include "types.h"
+
 #ifndef BOOT_BOOT_H
 #define BOOT_BOOT_H
 
