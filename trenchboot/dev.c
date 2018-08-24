@@ -1,7 +1,5 @@
-
-
-#include "types.h"
-#include "pci.h"
+#include <types.h>
+#include <pci.h>
 
 #define DEV_PCI_BUS             0x0
 #define DEV_PCI_DEVICE          0x18

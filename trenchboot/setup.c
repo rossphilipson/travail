@@ -1,3 +1,7 @@
+#define __text     __attribute__ ((__section__ (".text#")))
+
+volatile __text int tester = 0;
+
 void setup(void *lz_base)
 {
     /*
@@ -8,4 +12,11 @@ void setup(void *lz_base)
      * ... When all is done, drop back to 32b protected mode, paging off and
      * trampoline to the kernel.
      */
+
+     /*
+      * TODO this is just an example of forcing a global into our .text section
+      * and the resultant code using RIP relative addressing to access it. This
+      * can be removed later.
+      */
+     tester += 10;
 }

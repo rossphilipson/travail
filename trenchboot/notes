@@ -11,3 +11,6 @@ bios.bin: bios.bin.elf
 # Some other header
 .text 2
 # Actual code
+
+# objcopy can rip out sections:
+objcopy --remove-section .comment lz_header
