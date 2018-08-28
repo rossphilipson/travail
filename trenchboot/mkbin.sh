@@ -16,7 +16,7 @@ objcopy --remove-section .strtab lz_header
 objcopy --remove-section .shstrtab lz_header
 
 # Make flat binary image
-objcopy -O binary lz_header lz_header.bin
+objcopy -O binary --pad-to 0x10000 lz_header lz_header.bin
 
 # Plus some debug files
 objdump -d lz_header.elf > lz_header.dsm
