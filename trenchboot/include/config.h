@@ -55,6 +55,8 @@
 #define LZ_FIRST_STAGE_STACK_START   (0x200)
 #define LZ_FIRST_STAGE_STACK_SIZE    (0x1dc)
 
+#define LZ_DATA_SECTION_SIZE         (0x200)
+
 #define LZ_DEV_TABLE_OFFSET          (0xa000)
 #define LZ_DEV_TABLE_SIZE            (0x3000)
 

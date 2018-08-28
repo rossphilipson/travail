@@ -190,8 +190,54 @@ print_char:
 
 .globl load_stack
 load_stack:
-    movq %rcx, %rsp
+    movq %rdi, %rsp
     retq
+
+.globl lz_exit
+lz_exit:
+    /* RDI has protected mode kernel entry */
+    /* RSI has LZ base */
+
+    /* Save entry target */
+    movl %edi, %ebx
+
+    /* Setup target to ret to compat mode */
+    addq $LZ_DATA_SECTION_SIZE, %rsi
+    addq $(entry_compat - _entry), %rsi
+    xorq %rcx, %rcx
+    movl %esi, %ecx
+
+    /* Do the far return */
+    pushq $CS_SEL32
+    pushq %rcx
+    retf
+
+.code32
+
+entry_compat:
+    /* Now in IA-32e compatibility mode, next stop is protected mode */
+    /* Load 32b data segment in the segment regs */
+    movw $DS_SEL32, %ax
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
+
+    /* Turn paging off - we are identity mapped so we will survive */
+    movl %cr0, %eax
+    andl $(~CR0_PG), %eax
+    movl %eax, %cr0
+
+    /* Disable IA-32e mode */
+    movl $MSR_EFER, %ecx
+    rdmsr
+    andl $(~(1 << EFER_LME)), %eax
+    wrmsr
+
+entry32:
+    /* Now in protected mode, jump to entry target */
+    jmp *%ebx
 
 /* GDT */
 .align 16
