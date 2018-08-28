@@ -1,22 +1,19 @@
 #include <defs.h>
+#include <config.h>
+#include <types.h>
 
-volatile __text int tester = 0;
+extern __text u8 *dev_table;
 
 void setup(void *lz_base)
 {
     /*
      * TODO we are in 64b mode, paging is setup. This is the launching
      * point. We can now do what we want. First order of business is to setup
-     * DEV to cover memory from LZ_SECOND_STAGE_STACK_OFFSET and load a
-     * bigger stack...
-     * ... When all is done, drop back to 32b protected mode, paging off and
-     * trampoline to the kernel.
+     * DEV to cover memory from the start of bzImage to the end of the LZ "kernel".
+     * At the end, trampoline to the PM entry point which will include the
+     * TrenchBoot stub.
      */
 
-     /*
-      * TODO this is just an example of forcing a global into our .text section
-      * and the resultant code using RIP relative addressing to access it. This
-      * can be removed later.
-      */
-     tester += 10;
+     /* Setup pointer to global dev_table bitmap for DEV protection */
+     dev_table = (u8*)lz_base + LZ_DEV_TABLE_OFFSET;
 }

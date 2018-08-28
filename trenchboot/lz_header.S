@@ -165,7 +165,7 @@ entry64:
     movq %rax, %rsp
 
     /* Pass the base of the LZ to the setup code */
-    movq %rbx, %rcx
+    pushq %rbx
 
     /* End of the line, we should never return */
     callq setup
