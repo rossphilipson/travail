@@ -4,6 +4,8 @@
 /* 64b selectors */
 #define CS_SEL64         0x0008
 #define DS_SEL64         0x0010
+#define CS_SEL32         0x0018
+#define DS_SEL32         0x0020
 
 .section .lzdata, "aw"
 
@@ -202,18 +204,32 @@ gdt_desc64_end:
 gdt_table64:
     /* Null Segment */
     .quad 0x0000000000000000
-    /* Code Segment */
+    /* 64b Code Segment */
     .word 0x0000 /* Limit 1 */
     .word 0x0000 /* Base 1 */
     .byte 0x00   /* Base 2 */
-    .byte 0x9a   /* P=1 DPL=0 11=code C=0 R=1 A=0 */
-    .byte 0x20   /* G=0 D=0 L=1 D=0 AVL=0 Limit 2 */
+    .byte 0x9a   /* P=1 DPL=0 S=1 Type=1010 C=0 R=1 A=0 */
+    .byte 0x20   /* G=0 D=0 L=1 AVL=0 Limit 2 */
     .byte 0x00   /* Base 3 */
-    /* Data Segment */
+    /* 64b Data Segment */
     .word 0x0000 /* Limit 1 */
     .word 0x0000 /* Base 1 */
     .byte 0x00   /* Base 2 */
-    .byte 0x92   /* P=1 DPL=0 10=code C=0 W=1 A=0 */
-    .byte 0x00   /* G=0 D=0 L=0 D=0 AVL=0 Limit 2 */
+    .byte 0x92   /* P=1 DPL=0 S=1 Type=0010 C=0 W=1 A=0 */
+    .byte 0x00   /* G=0 D=0 L=0 AVL=0 Limit 2 */
+    .byte 0x00   /* Base 3 */
+    /* 32b Code Segment */
+    .word 0xffff /* Limit 1 */
+    .word 0x0000 /* Base 1 */
+    .byte 0x00   /* Base 2 */
+    .byte 0x9a   /* P=1 DPL=0 S=1 Type=0010 C=0 W=1 A=0 */
+    .byte 0xcf   /* G=1 D=1 L=0 AVL=0 Limit 2 */
+    .byte 0x00   /* Base 3 */
+    /* 32b Data Segment */
+    .word 0xffff /* Limit 1 */
+    .word 0x0000 /* Base 1 */
+    .byte 0x00   /* Base 2 */
+    .byte 0x92   /* P=1 DPL=0 S=1 Type=0010 C=0 W=1 A=0 */
+    .byte 0xcf   /* G=1 D=1 L=0 AVL=0 Limit 2 */
     .byte 0x00   /* Base 3 */
 gdt_table64_end:
