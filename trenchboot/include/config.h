@@ -4,6 +4,12 @@
 /**********************************************************
  * LZ fixed memory layout
  *
+ * +---------------+ EAX - 0x2000 - Size IL Image
+ * |               |
+ * | Intermediate  |
+ * |   Loader      |
+ * |   bzImage     |
+ * |               |
  * +---------------+ EAX - 0x2000
  * |   Second      |
  * |   Stage       |
@@ -17,27 +23,20 @@
  * | ------------- |
  * |   LZ Header   | [0x20b]
  * | ------------- |
- * |   First       | [0x1BCb]
+ * |   First       | [0x1DCb]
  * |   Stage       |
  * |   Stack       |
- * | ------------- | EAX + 0x1EF
- * |  Sentinel +   | [0x11b]
- * |  Realmode     |
- * |  Header       |
  * | ------------- | EAX + 0x200
  * |               |
- * |    Code       |
+ * |   LZ Code     |
  * |               |
  * | ------------- | EAX + 0xA000
  * |     DEV       | [0x3000b]
- * |    Table      |
+ * |   Tables      |
  * | ------------- | EAX + 0xD000
  * |    Page       | [0x3000b]
  * |   Tables      |
  * +---------------+ EAX + 0x10000 (end of LZ)
- * |   Rest of     |
- * |    Image      |
- *       ...
  *
  **********************************************************/
 
@@ -53,11 +52,8 @@
 #define LZ_HEADER_OFFSET             (0x4)
 #define LZ_HEADER_SIZE               (0x20)
 
-#define LZ_FIRST_STAGE_STACK_START   (0x1e0)
-#define LZ_FIRST_STAGE_STACK_SIZE    (0x1bc)
-
-#define LZ_RM_HEADER_OFFSET          (0x1ef)
-#define LZ_RM_HEADER_SIZE            (0xf)
+#define LZ_FIRST_STAGE_STACK_START   (0x200)
+#define LZ_FIRST_STAGE_STACK_SIZE    (0x1dc)
 
 #define LZ_DEV_TABLE_OFFSET          (0xa000)
 #define LZ_DEV_TABLE_SIZE            (0x3000)

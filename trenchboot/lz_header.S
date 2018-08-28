@@ -1,101 +1,29 @@
 #include <defs.h>
 #include <config.h>
 
-#define XLFLAGS (1<<0) /* 64b Kernel */
-#define COMMAND_LINE_SIZE 2048 /* Same as Linux */
-
 /* 64b selectors */
 #define CS_SEL64         0x0008
 #define DS_SEL64         0x0010
 
-.section .bsdata, "aw"
+.section .lzdata, "aw"
 
-.global bootsect_start
-bootsect_start:
+.global lz_start
+lz_start:
 
 .global sl_header
 sl_header:
-    .word 0      /* SL header LZ offset to code start */
+    .word (_entry - lz_start) /* SL header LZ offset to code start */
     .word 0xffff /* SL header LZ total length */
 
 .global lz_header
 lz_header:
     .long 0      /* Total size of TrenchBoot Intermediate Loader */
+                 /* bzImage (padded out to next page) */
     .fill 0x14   /* MSB Key Hash */
 
 .global lz_first_stack
 lz_first_stack:
     .fill LZ_FIRST_STAGE_STACK_SIZE, 1, 0
-
-.section .header, "a"
-.globl	sentinel
-sentinel:
-    .byte 0xff, 0xff /* Used to detect broken loaders */
-
-.global hdr
-hdr:
-setup_sects: .byte 0          /* The size of the setup in sectors, Filled in by build.c */
-root_flags:  .word 0          /* If set, the root is mounted readonly */
-syssize:     .long 0          /* The size of the 32-bit code in 16-byte paras. Filled in by build.c */
-ram_size:    .word 0          /* DO NOT USE - for bootsect.S use only */
-vid_mode:    .word 0          /* Video mode control */
-root_dev:    .word 0          /* Default root device number. Filled in by build.c */
-boot_flag:   .word 0xAA55     /* 0xAA55 magic number */
-
-/* Offset 512, entry point */
-
-.globl _start
-_start:
-
-    /*
-     * Explicitly enter this as bytes, or the assembler
-     * tries to generate a 3-byte jump here, which causes
-     * everything else to push off to the wrong offset.
-     * short (2-byte) jump
-     */
-    .byte 0xeb
-    .byte _entry-1f
-1:
-
-    /* Part 2 of the header, from the old setup.S */
-
-    .ascii "HdrS"  /* header: Magic signature "HdrS" */
-    .word  0x020d  /* version: Boot protocol version supported (>= 0x0105) */
-                   /* or else old loadlin-1.5 will fail) */
-.globl realmode_swtch
-    .word 0, 0     /* realmode_switch: hdefault_switch, SETUPSEG */
-    .word 0x1000   /* start_sys_seg: gobsolete and meaningless, but just */
-                   /* in case something decided to "use" it */
-    .word 0        /* kernel_version: set to NULL which is valid */
-    .byte 0x0f     /* type_of_loader: 0xf Special LZ loader */
-    .byte 0        /* loadflags: TODO none of the flags really mean much */
-    .word 0        /* setup_move_size: TODO not sure what to do with this */
-    .long 0        /* code32_start: TODO not sure what to do with this */
-    .long 0        /* ramdisk_image: built in ramdisk, this is not needed */
-    .long 0        /* ramdisk_size: built in ramdisk, this is not needed */
-    .long 0        /* bootsect_kludge: obsolete */
-    .word 0        /* heap_end_ptr: flag not set, not using this */
-    .byte 0        /* ext_loader_ver: Extended boot loader version */
-    .byte 0        /* ext_loader_type: Extended boot loader type */
-    .long 0        /* cmd_line_ptr: Pointer to kernel cmdline setup by loader */
-    .long 0x7fffffff /* initrd_addr_max: TODO use Linux default? */
-    .long 0x100000 /* kernel_alignment: TODO set to default 16M? */
-    .byte 1        /* relocatable_kernel: TODO we should be relocatable by loader */
-    .byte 12       /* min_alignment: Min kernel alignment must be page size */
-    .word XLFLAGS  /* xloadflags: boot protocol option flags - TODO others? */
-    .long COMMAND_LINE_SIZE-1 /* cmdline_size: length of the command line */
-    .long 0        /* hardware_subarch: subarchitecture set to 0 for normal x86 PC */
-    .quad 0        /* hardware_subarch_data: subarchitecture specific */
-    .long 0        /* payload_offset: kernel payload - TODO need to sort out */
-    .long 0        /* payload_length: kernel length - TODO need to sort out */
-    .quad 0        /* setup_data: 64-bit physical pointer to single linked */
-                   /* list of struct setup_data - TODO need to sort out */
-    .quad 0        /* pref_address: preferred load addr - TODO we don't care do we */
-    .long 0        /* init_size: kernel initialization size - TODO need to sort out */
-    .long 0        /* handover_offsetFilled in by build.c */
-
-
-/* End of setup header ##################################################### */
 
 .section .text
 
@@ -112,6 +40,7 @@ _entry:
     * use it to set things right then validate it later.
     */
     movl %eax, %ebx
+    movl %eax, %esi
 
     /* TODO check we are below 4G? */
 
@@ -147,6 +76,9 @@ _entry:
      * Second page is the PDP table with 1 PD entry. Need to figure out
      * which 1G range the LZ is in to determine what range to identity map.
      */
+    movl 4(%ebx), %ecx
+    subl %ecx, %ebx /* EBX now at start of IL bzImage */
+
     addl $PAGE_SIZE, %eax
     movl %eax, %ecx
     addl $PAGE_SIZE, %ecx
@@ -161,6 +93,7 @@ _entry:
     jmp 1b
 2:
     movl %ecx, (%eax)
+    movl %esi, %ebx
 
     /* Third page is the PD that map 1G as 2M pages */
     movl %ebx, %eax
@@ -203,7 +136,6 @@ _entry:
     /* Now in IA-32e compatibility mode */
 
     /* Setup GDT and ljmp to 64b mode */
-    movl %esi, %ebx
     addl $(gdt_desc64 - _entry), %ebx
     lgdt (%ebx)
 
@@ -260,29 +192,28 @@ load_stack:
     retq
 
 /* GDT */
-	.align 16
+.align 16
 gdt_desc64:
-	.word	gdt_table64_end - gdt_table64 - 1 /* Limit */
-	.quad	0x0000000000000000 /* Base */
+    .word gdt_table64_end - gdt_table64 - 1 /* Limit */
+    .quad 0x0000000000000000 /* Base */
 gdt_desc64_end:
 
-	.align 16
+.align 16
 gdt_table64:
-	/* Null Segment */
-	.quad	0x0000000000000000
-	/* Code Segment */
-	.word	0x0000 /* Limit 1 */
-	.word	0x0000 /* Base 1 */
-	.byte	0x00   /* Base 2 */
-	.byte	0x9a   /* P=1 DPL=0 11=code C=0 R=1 A=0 */
-	.byte	0x20   /* G=0 D=0 L=1 D=0 AVL=0 Limit 2 */
-	.byte	0x00   /* Base 3 */
-	/* Data Segment */
-	.word	0x0000 /* Limit 1 */
-	.word	0x0000 /* Base 1 */
-	.byte	0x00   /* Base 2 */
-	.byte	0x92   /* P=1 DPL=0 10=code C=0 W=1 A=0 */
-	.byte	0x00   /* G=0 D=0 L=0 D=0 AVL=0 Limit 2 */
-	.byte	0x00   /* Base 3 */
+    /* Null Segment */
+    .quad 0x0000000000000000
+    /* Code Segment */
+    .word 0x0000 /* Limit 1 */
+    .word 0x0000 /* Base 1 */
+    .byte 0x00   /* Base 2 */
+    .byte 0x9a   /* P=1 DPL=0 11=code C=0 R=1 A=0 */
+    .byte 0x20   /* G=0 D=0 L=1 D=0 AVL=0 Limit 2 */
+    .byte 0x00   /* Base 3 */
+    /* Data Segment */
+    .word 0x0000 /* Limit 1 */
+    .word 0x0000 /* Base 1 */
+    .byte 0x00   /* Base 2 */
+    .byte 0x92   /* P=1 DPL=0 10=code C=0 W=1 A=0 */
+    .byte 0x00   /* G=0 D=0 L=0 D=0 AVL=0 Limit 2 */
+    .byte 0x00   /* Base 3 */
 gdt_table64_end:
-
