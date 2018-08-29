@@ -21,9 +21,9 @@
  * +---------------+ EAX (begin LZ)
  * |   SL Header   | [0x4b]
  * | ------------- |
- * |   LZ Header   | [0x20b]
+ * |   LZ Header   | [0x1Cb]
  * | ------------- |
- * |   First       | [0x1DCb]
+ * |   First       | [0x1E0b]
  * |   Stage       |
  * |   Stack       |
  * | ------------- | EAX + 0x200
@@ -50,10 +50,10 @@
 #define LZ_SL_HEADER_SIZE            (0x4)
 
 #define LZ_HEADER_OFFSET             (0x4)
-#define LZ_HEADER_SIZE               (0x20)
+#define LZ_HEADER_SIZE               (0x1c)
 
 #define LZ_FIRST_STAGE_STACK_START   (0x200)
-#define LZ_FIRST_STAGE_STACK_SIZE    (0x1dc)
+#define LZ_FIRST_STAGE_STACK_SIZE    (0x1e0)
 
 #define LZ_DATA_SECTION_SIZE         (0x200)
 

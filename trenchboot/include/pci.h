@@ -1,6 +1,5 @@
-
-#include "boot.h"
-
+#ifndef __PCI_H__
+#define __PCI_H__
 
 #define PCI_CONFIG_ADDR_PORT    (0x0cf8)
 #define PCI_CONFIG_DATA_PORT    (0x0cfc)
@@ -36,3 +35,5 @@ int pci_conf1_read(unsigned int seg, unsigned int bus,
 
 int pci_conf1_write(unsigned int seg, unsigned int bus,
                     unsigned int devfn, int reg, int len, u32 value);
+
+#endif /* __PCI_H__ */

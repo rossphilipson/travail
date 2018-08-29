@@ -1,6 +1,5 @@
-#include <types.h>
-#include <pci.h>
-
+#ifndef __DEV_H__
+#define __DEV_H__
 
 #define DEV_PCI_BUS             0x0
 #define DEV_PCI_DEVICE          0x18
@@ -78,3 +77,5 @@ u32 dev_locate(void);
 u32 dev_load_map(u32 dev, u32 dev_bitmap_paddr);
 void dev_flush_cache(u32 dev);
 void dev_protect_page(u32 pfn, u8 *bit_vector);
+
+#endif /* __DEV_H__ */

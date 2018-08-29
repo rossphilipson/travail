@@ -1,7 +1,7 @@
 #include <defs.h>
+#include <types.h>
+#include <pci.h>
 #include <dev.h>
-
-__text u8 *dev_table = NULL;
 
 u32 dev_locate(void)
 {

@@ -17,10 +17,19 @@
  * Just a snippet from kernel of what we need
  */
 
-#include "types.h"
+#ifndef __BOOT_H__
+#define __BOOT_H__
 
-#ifndef BOOT_BOOT_H
-#define BOOT_BOOT_H
+typedef struct __packed sl_header {
+    u16 lz_offet;
+    u16 lz_length;
+} sl_header_t;
+
+typedef struct __packed lz_header {
+    u32 trenchboot_loader_size;
+    u32 zero_page_addr;
+    u8  msb_key_hash[20];
+} lz_header_t;
 
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)
@@ -70,8 +79,13 @@ static inline void die(void)
 	asm volatile("ud2");
 }
 
+/* Accessors */
+lz_header_t *get_lz_header(void);
+void *get_zero_page(void);
+void *get_dev_table(void);
+
 /* Assembly routines */
 void load_stack(const void *new_stack);
 void lz_exit(const void *pm_enrty, const void *base);
 
-#endif
+#endif /* __BOOT_H__ */

@@ -1,3 +1,32 @@
+# Fron TBOOT - pretty good view of the layout
+/* recommended layout
+        |  Protected-mode kernel    |  The kernel protected-mode code.
+100000  +---------------------------+
+        |  I/O memory hole          |
+0A0000  +---------------------------+
+        |  Reserved for BIOS        |  Do not use.  Reserved for BIOS EBDA.
+099100  +---------------------------+
+        |  cmdline                  |
+099000  +---------------------------+
+        |  Stack/heap               |  For use by the kernel real-mode code.
+098000  +---------------------------+
+        |  Kernel setup             |  The kernel real-mode code.
+090200  +---------------------------+
+        |  Kernel boot sector       |  The kernel legacy boot sector.
+090000  +---------------------------+
+        |  Boot loader              |  <- Boot sector entry point 0000:7C00
+001000  +---------------------------+
+        |  Reserved for MBR/BIOS    |
+000800  +---------------------------+
+        |  Typically used by MBR    |
+000600  +---------------------------+
+        |  BIOS use only            |
+000000  +---------------------------+
+*/
+
+# Protected mode entry is startup_32 where ESI is passed with
+# the location of the zero page (boot_params).
+
 # From qboot, this is the make step to turn the elf into a flat binary.
 bios.bin: bios.bin.elf
         objcopy -O binary bios.bin.elf bios.bin

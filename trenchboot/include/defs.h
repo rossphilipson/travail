@@ -24,6 +24,9 @@
 #define __maybe_unused  __attribute__ ((unused))
 #define __text          __attribute__ ((__section__ (".text#")))
 
+/* Boot Params */
+#define BP_CODE32_START  0x214
+
 /* CRs */
 #define CR0_PE  0x00000001 /* Protected mode Enable */
 #define CR0_MP  0x00000002 /* "Math" (fpu) Present */

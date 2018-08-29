@@ -1,5 +1,5 @@
-#ifndef _TYPES_H_
-#define _TYPES_H_
+#ifndef __TYPES_H__
+#define __TYPES_H__
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -24,4 +24,4 @@ typedef long long		s64;
 	(void) (&_x == &_y);	\
 	_x > _y ? _x : _y; })
 
-#endif /* _TYPES_H_ */
+#endif /* __TYPES_H__ */

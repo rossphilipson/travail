@@ -12,18 +12,16 @@
 .global lz_start
 lz_start:
 
-.global sl_header
 sl_header:
     .word (_entry - lz_start) /* SL header LZ offset to code start */
     .word 0xffff /* SL header LZ total length */
 
-.global lz_header
 lz_header:
     .long 0      /* Total size of TrenchBoot Intermediate Loader */
                  /* bzImage (padded out to next page) */
+    .long 0      /* Zero Page address */
     .fill 0x14   /* MSB Key Hash */
 
-.global lz_first_stack
 lz_first_stack:
     .fill LZ_FIRST_STAGE_STACK_SIZE, 1, 0
 

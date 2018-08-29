@@ -1,4 +1,7 @@
+#include <defs.h>
+#include <types.h>
 #include <errno-base.h>
+#include <boot.h>
 #include <pci.h>
 
 /*
