@@ -2,10 +2,12 @@
 #include <types.h>
 #include <config.h>
 #include <boot.h>
+#include <sha1sum.h>
 
-__text lz_header_t *lz_header;
-__text void *zero_page;
-__text void *dev_table;
+static __text lz_header_t *lz_header;
+static __text void *zero_page;
+static __text void *dev_table;
+static __text SHA1_CONTEXT sha1ctx;
 
 lz_header_t *get_lz_header(void)
 {
@@ -26,6 +28,7 @@ void setup(void *lz_base)
 {
     u32 *code32_start;
     void *pm_kernel_entry;
+    void *tl_image_base;
 
     /*
      * Now in 64b mode, paging is setup. This is the launching point. We can
@@ -49,7 +52,9 @@ void setup(void *lz_base)
     /* Switch to our nice big stack */
     load_stack((u8*)lz_base + LZ_PAGE_TABLES_OFFSET + LZ_PAGE_TABLES_SIZE);
 
-    /* TODO do SHA1 */
+    /* Do the SHA1 of the Trenchboot Loader image */
+    tl_image_base = (u8*)lz_base - PAGE_UP(lz_header->trenchboot_loader_size);
+    sha1sum(&sha1ctx, tl_image_base, lz_header->trenchboot_loader_size);
 
     /* TODO extend TPM PCRs */
 

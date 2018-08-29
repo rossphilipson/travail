@@ -5,7 +5,8 @@
 
 #define PAGE_SHIFT  12
 #define PAGE_SIZE   (1 << PAGE_SHIFT)
-#define PAGE_MASK   (~(PAGE_SIZE-1))
+#define PAGE_MASK   (~(PAGE_SIZE - 1))
+#define PAGE_UP(p)  (((u64)(p) + PAGE_SIZE - 1) & PAGE_MASK)
 
 #define GIGABYTE    0x40000000
 
