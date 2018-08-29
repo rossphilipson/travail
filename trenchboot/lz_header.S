@@ -191,6 +191,11 @@ load_stack:
     movq %rdi, %rsp
     retq
 
+.globl stgi
+stgi:
+    .byte 0x0f, 0x01, 0xdc
+    retq
+
 .globl lz_exit
 lz_exit:
     /* RDI has protected mode kernel entry */

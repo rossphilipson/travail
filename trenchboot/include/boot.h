@@ -97,6 +97,7 @@ void *get_dev_table(void);
 
 /* Assembly routines */
 void load_stack(const void *new_stack);
+void stgi(void);
 void lz_exit(const void *pm_enrty, const void *base);
 
 #endif /* __BOOT_H__ */
