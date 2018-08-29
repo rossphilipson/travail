@@ -79,6 +79,16 @@ static inline void die(void)
 	asm volatile("ud2");
 }
 
+/* Lib */
+static inline void *memset(void *s, int c, u32 n)
+{
+    char *buf = (char*)s;
+
+    for ( ; n--; )
+        *buf++ = c;
+
+    return buf;
+}
 /* Accessors */
 lz_header_t *get_lz_header(void);
 void *get_zero_page(void);
