@@ -53,7 +53,8 @@ void setup(void *lz_base)
     load_stack((u8*)lz_base + LZ_PAGE_TABLES_OFFSET + LZ_PAGE_TABLES_SIZE);
 
     /* Do the SHA1 of the Trenchboot Loader image */
-    tl_image_base = (u8*)lz_base - PAGE_UP(lz_header->trenchboot_loader_size);
+    tl_image_base = (u8*)lz_base - LZ_SECOND_STAGE_STACK_SIZE -
+                    PAGE_UP(lz_header->trenchboot_loader_size);
     sha1sum(&sha1ctx, tl_image_base, lz_header->trenchboot_loader_size);
 
     /* TODO extend TPM PCRs */

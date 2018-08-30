@@ -4,20 +4,16 @@
 /**********************************************************
  * LZ fixed memory layout
  *
- * +---------------+ EAX - 0x2000 - Size IL Image
+ * +---------------+ EAX - 0x1000 - PAGE_UP(Size IL Image)
  * |               |
  * | Intermediate  |
  * |   Loader      |
  * |   bzImage     |
  * |               |
- * +---------------+ EAX - 0x2000
- * |   Second      |
- * |   Stage       |
- * |   Stack       |
  * +---------------+ EAX - 0x1000
  * |   Second      |
  * |   Stage       |
- * |   Heap        |
+ * |   Stack       |
  * +---------------+ EAX (begin LZ)
  * |   SL Header   | [0x4b]
  * | ------------- |
@@ -40,11 +36,8 @@
  *
  **********************************************************/
 
-#define LZ_SECOND_STAGE_STACK_OFFSET (0x2000) /* Negative */
+#define LZ_SECOND_STAGE_STACK_OFFSET (0x1000) /* Negative */
 #define LZ_SECOND_STAGE_STACK_SIZE   (0x1000)
-
-#define LZ_SECOND_STAGE_HEAP_OFFSET  (0x1000) /* Negative */
-#define LZ_SECOND_STAGE_HEAP_SIZE    (0x1000)
 
 #define LZ_SL_HEADER_OFFSET          (0x0)
 #define LZ_SL_HEADER_SIZE            (0x4)
