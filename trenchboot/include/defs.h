@@ -58,8 +58,9 @@
 
 /* MSRs */
 
-#define MSR_EFER  0xc0000080
-#define VM_CR_MSR 0xc0010114
+#define IA32_EFER     0xc0000080
+#define IA32_VM_CR    0xc0010114
+#define IA32_DEBUGCTL 0x000001d9
 
 /* EFER bits */
 #define EFER_SCE 0  /* SYSCALL/SYSRET */

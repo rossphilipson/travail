@@ -42,10 +42,8 @@ _entry:
     movl %eax, %ebx
     movl %eax, %esi
 
-    /* TODO check we are below 4G? */
-
     /* Clear R_INIT and DIS_A20M.  */
-    movl $(VM_CR_MSR), %ecx
+    movl $(IA32_VM_CR), %ecx
     rdmsr
     andl $(~(1 << VM_CR_R_INIT)), %eax
     andl $(~(1 << VM_CR_DIS_A20M)), %eax
@@ -123,7 +121,7 @@ _entry:
     movl %eax, %cr3
 
     /* Enable IA-32e mode and paging */
-    movl $MSR_EFER, %ecx
+    movl $(IA32_EFER), %ecx
     rdmsr
     orl $(1 << EFER_LME), %eax
     wrmsr
@@ -233,13 +231,40 @@ entry_compat:
     movl %eax, %cr0
 
     /* Disable IA-32e mode */
-    movl $MSR_EFER, %ecx
+    movl $(IA32_EFER), %ecx
     rdmsr
     andl $(~(1 << EFER_LME)), %eax
     wrmsr
 
 entry32:
-    /* Now in protected mode, jump to entry target */
+    /* Now in protected mode, make things look like TXT post launch */
+    movl %cr0, %eax
+    andl $(~CR0_WP), %eax
+    andl $(~CR0_AM), %eax
+    movl %eax, %cr0 /* -PG, -AM, -WP; Others unchanged */
+
+    movl %cr4, %eax
+    xorl %eax, %eax
+    andl $(CR4_SMXE), %eax
+    movl %eax, %cr4 /* 0x00004000 +SMX -PAE -PGE*/
+
+    movl $(IA32_EFER), %ecx
+    rdmsr
+    andl $(~(1 << EFER_SCE)), %eax
+    andl $(~(1 << EFER_NXE)), %eax
+    andl $(~(1 << EFER_SVME)), %eax
+    wrmsr /* IA32_EFER = 0 */
+
+    movl %dr7, %eax
+    movl $(0x00000400), %eax
+    movl %eax, %dr7 /* DR7 = 00000400H */
+
+    movl $(IA32_DEBUGCTL), %ecx
+    rdmsr
+    xorw %ax, %ax /* 16 - 63 reserved */
+    wrmsr /* IA32_DEBUGCTL = 0 */
+
+    /* Jump to entry target */
     jmp *%ebx
 
 /* GDT */
