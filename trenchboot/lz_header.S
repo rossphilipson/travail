@@ -238,6 +238,12 @@ entry_compat:
 
 entry32:
     /* Now in protected mode, make things look like TXT post launch */
+    pushfl
+    popl %eax
+    movl $(0x00000002), %eax
+    pushl %eax
+    popfl /* EFLAGS = 00000002H */
+
     movl %cr0, %eax
     andl $(~CR0_WP), %eax
     andl $(~CR0_AM), %eax
