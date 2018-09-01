@@ -75,7 +75,7 @@ _entry:
      * which 1G range the LZ is in to determine what range to identity map.
      */
     movl 4(%ebx), %ecx
-    subl %ecx, %ebx /* EBX now at start of IL bzImage */
+    subl %ecx, %ebx /* EBX now at start of LZ */
 
     addl $PAGE_SIZE, %eax
     movl %eax, %ecx
@@ -171,7 +171,8 @@ entry64:
 
 .globl print_char
 print_char:
-    /* Args ECX, Clobbers EDX, EAX */
+    pushq %rax
+    pushq %rdx
     xorq %rdx, %rdx
     movw $0x3f8, %dx
     addw $5, %dx
@@ -180,8 +181,10 @@ print_char:
     testb $0x20, %al
     jz 1b
     movw $0x3f8, %dx
-    movb %cl, %al
+    movl %edi, %eax
     outb %al, %dx
+    popq %rdx
+    popq %rax
     retq
 
 .globl load_stack
