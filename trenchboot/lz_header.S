@@ -202,14 +202,14 @@ lz_exit:
     /* RDI has protected mode kernel entry */
     /* RSI has LZ base */
 
-    /* Save entry target */
+    /* Save entry target. EBX - startup_32, EDX - LZ base */
     movl %edi, %ebx
 
     /* Setup target to ret to compat mode */
-    addq $LZ_DATA_SECTION_SIZE, %rsi
-    addq $(entry_compat - _entry), %rsi
+    addq $LZ_DATA_SECTION_SIZE, %rdi
+    addq $(entry_compat - _entry), %rdi
     xorq %rcx, %rcx
-    movl %esi, %ecx
+    movl %edi, %ecx
 
     /* Do the far return */
     pushq $CS_SEL32
@@ -273,7 +273,10 @@ entry32:
     xorw %ax, %ax /* 16 - 63 reserved */
     wrmsr /* IA32_DEBUGCTL = 0 */
 
-    /* Jump to entry target */
+    /* Safe to move to EDX now, rdmsr would have clobbered it */
+    movl %esi, %edx
+
+    /* Jump to entry target. EBX - startup_32, EDX - LZ base*/
     jmp *%ebx
 
 /* GDT */
