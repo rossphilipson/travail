@@ -99,6 +99,6 @@ void *get_dev_table(void);
 void load_stack(const void *new_stack);
 void print_char(char c);
 void stgi(void);
-void lz_exit(const void *pm_enrty, const void *base);
+void lz_exit(const void *pm_enrty, const void *zp_base, const void *lz_base);
 
 #endif /* __BOOT_H__ */

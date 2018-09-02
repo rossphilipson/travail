@@ -63,7 +63,7 @@ void setup(void *lz_base)
     pm_kernel_entry = (void*)((u64)(*code32_start));
 
     /* End of the line, off to the protected mode entry into the kernel */
-    lz_exit(pm_kernel_entry, lz_base);
+    lz_exit(pm_kernel_entry, zero_page, lz_base);
 
     /* Should never get here */
     die();

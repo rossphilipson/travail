@@ -200,12 +200,17 @@ stgi:
 .globl lz_exit
 lz_exit:
     /* RDI has protected mode kernel entry */
-    /* RSI has LZ base */
+    /* RSI has ZP base (where startup_32 expects it) */
+    /* RDX has LZ base (where Trenchboot expects it) */
 
-    /* Save entry target. EBX - startup_32, EDX - LZ base */
+    /* Save entry target where TXT would pass it */
     movl %edi, %ebx
 
+    /* Stash RDX in RBP since r/w MSR will clobber it */
+    movq %rdx, %rbp
+
     /* Setup target to ret to compat mode */
+    movq %rdx, %rdi
     addq $LZ_DATA_SECTION_SIZE, %rdi
     addq $(entry_compat - _entry), %rdi
     xorq %rcx, %rcx
@@ -273,10 +278,8 @@ entry32:
     xorw %ax, %ax /* 16 - 63 reserved */
     wrmsr /* IA32_DEBUGCTL = 0 */
 
-    /* Safe to move to EDX now, rdmsr would have clobbered it */
-    movl %esi, %edx
-
-    /* Jump to entry target. EBX - startup_32, EDX - LZ base*/
+    /* Jump to entry target - EBX: startup_32 ESI: ZP base EDX: LZ base */
+    movl %ebp, %edx
     jmp *%ebx
 
 /* GDT */
