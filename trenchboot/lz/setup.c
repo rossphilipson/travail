@@ -2,6 +2,7 @@
 #include <types.h>
 #include <config.h>
 #include <boot.h>
+#include <dev.h>
 #include <sha1sum.h>
 
 static __text lz_header_t *lz_header;
@@ -26,6 +27,8 @@ void *get_dev_table(void)
 
 void setup(void *lz_base)
 {
+    u64 pfn, end_pfn;
+    u32 dev;
     u32 *code32_start;
     void *pm_kernel_entry;
     void *tl_image_base;
@@ -47,7 +50,19 @@ void setup(void *lz_base)
     /* Pointer to global dev_table bitmap for DEV protection */
     dev_table = (u8*)lz_base + LZ_DEV_TABLE_OFFSET;
 
-    /* TODO setup DEV */
+    /* DEV CODE */
+    pfn = PAGE_PFN(zero_page);
+    end_pfn = PAGE_PFN(PAGE_DOWN((u8*)lz_base + 0x10000));
+
+    /* TODO: check end_pfn is not ouside of range of DEV map */
+
+    /* build protection bitmap */
+    for (;pfn++; pfn <= end_pfn)
+        dev_protect_page(pfn, (u8*)dev_table);
+
+    dev = dev_locate();
+    dev_load_map(dev, (u32)dev_table);
+    dev_flush_cache(dev);
 
     /* Switch to our nice big stack */
     load_stack((u8*)lz_base + LZ_PAGE_TABLES_OFFSET + LZ_PAGE_TABLES_SIZE);

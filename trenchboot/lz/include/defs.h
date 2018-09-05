@@ -3,10 +3,12 @@
 
 #define NULL 0
 
-#define PAGE_SHIFT  12
-#define PAGE_SIZE   (1 << PAGE_SHIFT)
-#define PAGE_MASK   (~(PAGE_SIZE - 1))
-#define PAGE_UP(p)  (((u64)(p) + PAGE_SIZE - 1) & PAGE_MASK)
+#define PAGE_SHIFT      12
+#define PAGE_SIZE       (1 << PAGE_SHIFT)
+#define PAGE_MASK       (~(PAGE_SIZE - 1))
+#define PAGE_UP(p)      (((u64)(p) + PAGE_SIZE - 1) & PAGE_MASK)
+#define PAGE_DOWN(p)    ((u64)(p) & ~(PAGE_SIZE - 1))
+#define PAGE_PFN(p)     ((u64)((p) >> PAGE_SHIFT))
 
 #define GIGABYTE    0x40000000
 
