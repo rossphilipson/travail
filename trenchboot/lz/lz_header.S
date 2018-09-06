@@ -190,6 +190,7 @@ print_char:
 .globl load_stack
 load_stack:
     movq %rdi, %rsp
+    movq %rsp, %rbp /* For consistency */
     retq
 
 .globl stgi

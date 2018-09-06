@@ -2,36 +2,23 @@
 #include <types.h>
 #include <config.h>
 #include <boot.h>
+#include <pci.h>
 #include <dev.h>
 #include <sha1sum.h>
 
+static __text void *lz_base;
 static __text lz_header_t *lz_header;
 static __text void *zero_page;
 static __text void *dev_table;
 static __text SHA1_CONTEXT sha1ctx;
+static __text u32 *code32_start;
+static __text void *pm_kernel_entry;
+static __text void *tl_image_base;
 
-lz_header_t *get_lz_header(void)
-{
-    return lz_header;
-}
-
-void *get_zero_page(void)
-{
-    return zero_page;
-}
-
-void *get_dev_table(void)
-{
-    return dev_table;
-}
-
-void setup(void *lz_base)
+void setup(void *_lz_base)
 {
     u64 pfn, end_pfn;
     u32 dev;
-    u32 *code32_start;
-    void *pm_kernel_entry;
-    void *tl_image_base;
 
     /*
      * Now in 64b mode, paging is setup. This is the launching point. We can
@@ -40,6 +27,12 @@ void setup(void *lz_base)
      * At the end, trampoline to the PM entry point which will include the
      * TrenchBoot stub.
      */
+
+    /*
+     * Store all stack variables used after the stack switch in text section as
+     * globals or they will be lost on the old stack.
+     */
+    lz_base = _lz_base;
 
     /* The LZ header setup by the bootloader */
     lz_header = (lz_header_t*)((u8*)lz_base + sizeof(sl_header_t));
@@ -61,11 +54,14 @@ void setup(void *lz_base)
         dev_protect_page(pfn, (u8*)dev_table);
 
     dev = dev_locate();
-    dev_load_map(dev, (u32)dev_table);
+    dev_load_map(dev, (u32)((u64)dev_table));
     dev_flush_cache(dev);
 
-    /* Switch to our nice big stack */
-    load_stack((u8*)lz_base + LZ_PAGE_TABLES_OFFSET + LZ_PAGE_TABLES_SIZE);
+    /*
+     * Switch to our nice big stack which starts at the page behind the
+     * landing zone and of course grows down.
+     */
+    load_stack((u8*)lz_base);
 
     /* Do the SHA1 of the Trenchboot Loader image */
     tl_image_base = (u8*)lz_base - LZ_SECOND_STAGE_STACK_SIZE -
