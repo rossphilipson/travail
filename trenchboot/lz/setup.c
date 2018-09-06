@@ -16,6 +16,7 @@ void setup2(void);
 void setup(void *_lz_base)
 {
     void *dev_table;
+    void **second_stack;
     u64 pfn, end_pfn;
     u32 dev;
 
@@ -58,7 +59,8 @@ void setup(void *_lz_base)
      * Switch to our nice big stack which starts at the page behind the
      * landing zone and of course grows down.
      */
-    load_stack((u8*)lz_base);
+    second_stack = lz_base;
+    load_stack(*second_stack);
 
     /* Call secondary setup on new stack */
     setup2();
