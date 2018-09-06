@@ -9,14 +9,13 @@
 static __text void *lz_base;
 static __text lz_header_t *lz_header;
 static __text void *zero_page;
-static __text void *dev_table;
 static __text SHA1_CONTEXT sha1ctx;
-static __text u32 *code32_start;
-static __text void *pm_kernel_entry;
-static __text void *tl_image_base;
+
+void setup2(void);
 
 void setup(void *_lz_base)
 {
+    void *dev_table;
     u64 pfn, end_pfn;
     u32 dev;
 
@@ -28,10 +27,7 @@ void setup(void *_lz_base)
      * TrenchBoot stub.
      */
 
-    /*
-     * Store all stack variables used after the stack switch in text section as
-     * globals or they will be lost on the old stack.
-     */
+    /* Store the lz_base for all to use */
     lz_base = _lz_base;
 
     /* The LZ header setup by the bootloader */
@@ -40,10 +36,11 @@ void setup(void *_lz_base)
     /* The Zero Page with the boot_params and legacy header */
     zero_page = (u8*)(u64)lz_header->zero_page_addr;
 
-    /* Pointer to global dev_table bitmap for DEV protection */
+    /* DEV CODE */
+
+    /* Pointer to dev_table bitmap for DEV protection */
     dev_table = (u8*)lz_base + LZ_DEV_TABLE_OFFSET;
 
-    /* DEV CODE */
     pfn = PAGE_PFN(zero_page);
     end_pfn = PAGE_PFN(PAGE_DOWN((u8*)lz_base + 0x10000));
 
@@ -62,6 +59,19 @@ void setup(void *_lz_base)
      * landing zone and of course grows down.
      */
     load_stack((u8*)lz_base);
+
+    /* Call secondary setup on new stack */
+    setup2();
+
+    /* Should never get here */
+    die();
+}
+
+void setup2(void)
+{
+    void *tl_image_base;
+    u32 *code32_start;
+    void *pm_kernel_entry;
 
     /* Do the SHA1 of the Trenchboot Loader image */
     tl_image_base = (u8*)lz_base - LZ_SECOND_STAGE_STACK_SIZE -
