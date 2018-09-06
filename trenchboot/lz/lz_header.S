@@ -62,6 +62,14 @@ _entry:
     addl $(entry64 - _entry), %eax
     movl %eax, (%ecx)
 
+    /* Zero out all page table pages so there are no surprises */
+    cld /* just in case */
+    movl %ebx, %edi
+    addl $(LZ_PAGE_TABLES_OFFSET), %edi
+    xorl %eax, %eax
+    movl $(LZ_PAGE_TABLES_SIZE/4), %ecx
+    rep stosl
+
     /* First page is the PML4 table with one PDP entry */
     movl %ebx, %eax
     addl $(LZ_PAGE_TABLES_OFFSET), %eax
