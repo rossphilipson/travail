@@ -83,10 +83,64 @@ in various:
 -- Protected Mode Kernel --
 
 This is the bulk of the kernel. It comes in two logical parts:
- - The protected mode uncompressed entry point code at the beginning
+1. The protected mode uncompressed entry point code at the beginning
    of the image. These start at arch/x86/boot/compressed/head_32/64.S
- - The compressed payload (piggy) that the uncompress part decompresses
+2. The compressed payload (piggy) that the uncompressed part (#1) decompresses
    and relocates.
 
-The #2 method of booting from the list above enters at startup_32 in
-protected mode.
+#1 part is basically the code in arch/x86/boot/compressed. The #2 method of
+booting from the list above enters at startup_32 in protected mode with the
+Boot Params address in %esi.
+
+-- EFI --
+
+As noted above (methods #3 and #4) are two ways of booting Linux as an EFI
+binary.
+
+#3 is the more straight forward approach. Again in the code in
+arch/x86/boot/compressed/head_32/64.S, there are EFI entry points called
+efi32_stub_entry and efi64_stub_entry. These entry points are setup in the
+handover_offset of the Real-mode Kernel Header. See the "EFI HANDOVER PROTOCOL"
+section in the link above for details. Note a 64b kernel can be entered through
+either the 32b and 64b entry pointsi. The Linux kernel can be enntered by a
+loader that understands the EFI Handover Protocol.
+
+#4 is mutch more of a kludge. Basically part of the Boot Params area (starting
+at offset 0x82) has enough of a PE header to trick EFI into thing this is a
+PE COFF binary so it will attempt to load it. The entry point efi_pe_entry
+is writtne into the PE header at the proper offset (commented w/
+AddressOfEntryPoint). The Linux kernel can be entered directly by the EFI
+Boot Manager code.
+
+-- Build Tool --
+
+The build tool mentioned above that is built from arch/x86/boot/tools/build.c
+is used to fixup Real-Mode Kernel Header that is built into
+arch/x86/boot/setup.bin and the Protected Mode Kernel binary which is
+arch/x86/boot/compressed/vmlinux.bin. Both files are read as well as
+arch/x86/boot/zoffset.h. The latter file is parsed to find the entry
+point offsets. The EFI entry points discussed above are written into
+setup.bin as well as some other values. The checksum is updated in vmlinux.bin
+and then both are mashed together and written out as bzImage.
+
+Some particulars:
+ - update_pecoff_text() writes the efi_pe_entry value into [pe_header + 0x1c]
+   (where pe_header is the offset of the PE header at 0x82 mentioned above).
+ - efi_stub_entry_update() writes the efiXX_stub_entry value into offset
+   0x268, the handover_offset.
+
+-- GRUB --
+
+Just a little bit on GRUB, specifically the Linux loader and the 32b relocator.
+The Linux loader is in grub/grub-core/loader/i386/linux.c. This function
+grub_cmd_linux() is called when a "kernel" entry is found in grub.cfg. This
+routine does all the setup and then registers the callbacks to do the boot
+here:
+
+grub_loader_set (grub_linux_boot, grub_linux_unload,
+                 0 /* set noreturn=0 in order to avoid grub_console_fini() */);
+
+When Linux is booted, grub_linux_boot() is called. It does further setup and
+calls grub_relocator32_boot(). This routine is in the relocator code in
+grub/grub-core/loader/i386/relocator.c and uses grub_relocator32_start
+in grub/grub-core/loader/i386/relocator32.S to do the final launch.
