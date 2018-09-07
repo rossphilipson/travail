@@ -1,0 +1,92 @@
+---- Linux Kernel Boot ----
+
+The Linux boot process is rather complicated and has a lot of lagacy baggage
+that it carries around. This is an attempt to collect some of that process
+in one place. Note this is only concerned with x86 platforms.
+
+First consider there are 4 ways of booting a Linux kernel:
+
+1. Starting directly from real mode and jumping to the real mode boot sector.
+2. Jumping to the 32b entry point(s) names startup_32 from a boot loader.
+3. Jumping to the EFI stub code using the EFI Handover Protocol.
+4. Mocking up a PE header and allowing EFI firmware to treat Linux as an
+   EFI bootable image.
+
+For Trenchboot purposes, we are primarily concerned with #2. A section later
+on will give a few more details about #3 and #4.
+
+-- Layout --
+
+The Linux kernel starts out as the bzImage. This file has several section and
+they are placed in different areas of memory. Consider the following memory
+map fron the TBOOT project - it gives a pretty good view of the recommended
+layout:
+
+        |  Protected-mode kernel    |  The kernel protected-mode code.
+100000  +---------------------------+
+        |  I/O memory hole          |
+0A0000  +---------------------------+
+        |  Reserved for BIOS        |  Do not use.  Reserved for BIOS EBDA.
+099100  +---------------------------+
+        |  cmdline                  |
+099000  +---------------------------+
+        |  Stack/heap               |  For use by the kernel real-mode code.
+098000  +---------------------------+
+        |  Kernel setup             |  The kernel real-mode code.
+090200  +---------------------------+
+        |  Kernel boot sector       |  The kernel legacy boot sector.
+090000  +---------------------------+
+        |  Boot loader              |  <- Boot sector entry point 0000:7C00
+001000  +---------------------------+
+        |  Reserved for MBR/BIOS    |
+000800  +---------------------------+
+        |  Typically used by MBR    |
+000600  +---------------------------+
+        |  BIOS use only            |
+000000  +---------------------------+
+
+The first 64K of the bzImage is called the real mode boot sector and is copied
+to 0x90000 (called Kernel boot sector here). The Boot loader is the real
+mode entry point that jumps to the boot sector. The main part of the 32b or 64b
+kernel is loaded at 0x100000 - The Protected-mode kernel. This is the bulk of
+the bzImage.
+
+-- Real Mode Boot Sector --
+
+This area, also called the Zero Page is a strange item. I consists of what is
+the Real-mode Kernel Header, a pile of other parameters call the Boot Params
+(of which the Real-mode Header is part of) and 16b code. The following shows
+this (look for **** THE REAL-MODE KERNEL HEADER):
+
+https://www.kernel.org/doc/Documentation/x86/boot.txt
+
+Everything from 0x1F1 to 0x200 (512 byte boundary) is the original header. At
+512 bytes is where the Boot loader jump would take you. To allow extending the
+header, the 2 byte jump field at 0x200 was added. This jumps over the header
+extensions which offficially start at 0x200 and go to 0x268 as can be seen.
+All the area before the header contains the Boot Params.
+
+The code that forms the boot sector is in arch/x86/boot/head.S where the Real-
+mode Kernel Header is laid out. The reset of the Boot Params are defined in
+arch/x86/include/uapi/asm/bootparam.h. Their current status is discussed here:
+
+https://github.com/torvalds/linux/blob/master/Documentation/x86/zero-page.txt
+
+The values for the Boot Params and Real-mode Header are used regardless of
+which of the modes of entry discussed above are used. The values are populated
+in various:
+ - Hard coded
+ - Written by the boot loader program (for our purposes GRUB)
+ - Written at build time by the utility program arch/x86/boot/tools/build
+ - Written by code in the protected mode or EFI entry points.
+
+-- Protected Mode Kernel --
+
+This is the bulk of the kernel. It comes in two logical parts:
+ - The protected mode uncompressed entry point code at the beginning
+   of the image. These start at arch/x86/boot/compressed/head_32/64.S
+ - The compressed payload (piggy) that the uncompress part decompresses
+   and relocates.
+
+The #2 method of booting from the list above enters at startup_32 in
+protected mode.
