@@ -1,23 +1,25 @@
-From 3c1d76e588119e2f2c7e756a7da8b65541af6133 Mon Sep 17 00:00:00 2001
+From 45c83625d16ac0d8411e1abbd24bc652136241b8 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                      |  7 +++++++
+ arch/x86/Kconfig                      |  7 ++++
  arch/x86/boot/Makefile                |  2 +-
- arch/x86/boot/compressed/Makefile     |  2 ++
- arch/x86/boot/compressed/head_32.S    | 21 +++++++++++++++++++++
- arch/x86/boot/compressed/head_64.S    | 35 +++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/trenchboot.c |  2 ++
- arch/x86/boot/compressed/trenchboot.h |  7 +++++++
- 7 files changed, 75 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/Makefile     |  2 +
+ arch/x86/boot/compressed/head_32.S    | 21 ++++++++++
+ arch/x86/boot/compressed/head_64.S    | 21 ++++++++++
+ arch/x86/boot/compressed/tb_stub.S    | 75 +++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/trenchboot.c |  1 +
+ arch/x86/boot/compressed/trenchboot.h |  7 ++++
+ 8 files changed, 135 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/trenchboot.c
  create mode 100644 arch/x86/boot/compressed/trenchboot.h
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1aa4dd3b5687..83f32df62d41 100644
+index 1aa4dd3..83f32df 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1959,6 +1959,13 @@ config EFI_MIXED
@@ -35,7 +37,7 @@ index 1aa4dd3b5687..83f32df62d41 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae9cc40..56340994d8c0 100644
+index 9b5adae..5634099 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -48,20 +50,20 @@ index 9b5adae9cc40..56340994d8c0 100644
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 169c2feda14a..8d481598eb61 100644
+index 169c2fe..9f4e9b5 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -89,6 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/trenchboot.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/trenchboot.o $(obj)/tb_stub.o
 +
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/head_32.S b/arch/x86/boot/compressed/head_32.S
-index 37380c0d5999..8eeed60052f0 100644
+index 37380c0..2c83d9c 100644
 --- a/arch/x86/boot/compressed/head_32.S
 +++ b/arch/x86/boot/compressed/head_32.S
 @@ -208,6 +208,27 @@ fail:
@@ -70,39 +72,6 @@ index 37380c0d5999..8eeed60052f0 100644
  
 +#ifdef CONFIG_TRENCHBOOT_STUB
 +ENTRY(tb_stub_entry)
-+
-+	/*
-+	 * On entry, %ebx has the entry offset. Put offset from beginning
-+         * in %ecx to calculate offsets.
-+         *
-+	 * Set up the stack. Use the boot stack which will get recycled
-+	 * later in startup_32
-+	 */
-+	movl	%ebx, %ecx
-+	subl	$(tb_stub_entry - startup_32), %ecx
-+	leal	boot_stack_end(%ecx), %esp
-+
-+
-+	movl	BP_code32_start(%esi), %eax
-+	leal	startup_32(%eax), %eax
-+	jmp	*%eax
-+ENDPROC(tb_stub_entry)
-+#endif
-+
- 	.text
- relocated:
- 
-diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..155f1800e88e 100644
---- a/arch/x86/boot/compressed/head_64.S
-+++ b/arch/x86/boot/compressed/head_64.S
-@@ -248,6 +248,33 @@ ENTRY(efi32_stub_entry)
- ENDPROC(efi32_stub_entry)
- #endif
- 
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+ENTRY(tb_stub_entry)
-+
 +	/*
 +	 * On entry, %ebx has the entry offset. Put offset from beginning
 +         * in %ebp to calculate offsets.
@@ -110,30 +79,127 @@ index 64037895b085..155f1800e88e 100644
 +	movl	%ebx, %ebp
 +	subl	$(tb_stub_entry - startup_32), %ebp
 +
-+	/* On entry, only %cs is known good */
-+	addl	%ebp, (tb_gdt + 2)(%ebp)
-+	lgdt	tb_gdt(%ebp)
++	/*
++	 * Set up the stack. Use the boot stack which will get recycled
++	 * later in startup_32
++	 */
++	leal	boot_stack_end(%ebp), %esp
++
++	/* More room to work in tb_stub in the text section */
++	jmp	tb_stub
++
++ENDPROC(tb_stub_entry)
++#endif
++
+ 	.text
+ relocated:
+ 
+diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
+index 6403789..42d5775 100644
+--- a/arch/x86/boot/compressed/head_64.S
++++ b/arch/x86/boot/compressed/head_64.S
+@@ -248,6 +248,27 @@ ENTRY(efi32_stub_entry)
+ ENDPROC(efi32_stub_entry)
+ #endif
+ 
++#ifdef CONFIG_TRENCHBOOT_STUB
++ENTRY(tb_stub_entry)
++	/*
++	 * On entry, %ebx has the entry offset. Put offset from beginning
++         * in %ebp to calculate offsets.
++	 */
++	movl	%ebx, %ebp
++	subl	$(tb_stub_entry - startup_32), %ebp
 +
 +	/*
 +	 * Set up the stack. Use the boot stack which will get recycled
 +	 * later in startup_32
 +	 */
-+	leal	boot_stack_end(%ecx), %esp
++	leal	boot_stack_end(%ebp), %esp
 +
++	/* More room to work in tb_stub in the text section */
++	jmp	tb_stub
 +
-+	movl	BP_code32_start(%esi), %eax
-+	leal	startup_32(%eax), %eax
-+	jmp	*%eax
 +ENDPROC(tb_stub_entry)
 +#endif
 +
  	.code64
  	.org 0x200
  ENTRY(startup_64)
-@@ -659,6 +686,14 @@ gdt:
- 	.quad   0x0000000000000000	/* TS continued */
- gdt_end:
- 
+diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
+new file mode 100644
+index 0000000..3175cc6
+--- /dev/null
++++ b/arch/x86/boot/compressed/tb_stub.S
+@@ -0,0 +1,75 @@
++	.code32
++	.text
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <asm/segment.h>
++#include <asm/boot.h>
++#include <asm/msr.h>
++#include <asm/processor-flags.h>
++#include <asm/asm-offsets.h>
++#include <asm/bootparam.h>
++
++#define __TB32_CS 0x0008
++#define __TB32_DS 0x0010
++#define CPU_AMD   1
++#define CPU_INTEL 2
++
++	.code32
++ENTRY(tb_stub)
++	cld
++
++	/*
++	 * %ebp has old base address from head_BITS.S. Need to figure out
++	 * where we are now. Already have a stack so use a call.
++	 */
++	call	1f
++1:	popl	%ebp
++	subl	$1b, %ebp
++
++	/* On entry, only %cs is known good */
++	addl	%ebp, (tb_gdt + 2)(%ebp)
++	lgdt	tb_gdt(%ebp)
++
++	movl	$(__TB32_DS), %eax
++	movl	%eax, %ds
++	movl	%eax, %es
++	movl	%eax, %fs
++	movl	%eax, %gs
++	movl	%eax, %ss
++
++	leal	.Ltb_cs(%ebp), %eax
++	pushl	$(__TB32_CS)
++	pushl	%eax
++	lret
++
++.Ltb_cs:
++	/* Assume CPU is AMD to start */
++	movl	$(CPU_AMD), %edi
++
++	/* Now see if it is Intel */
++	movl	$0x0, %eax
++	cpuid
++	cmpl	$0x756e6547, %ebx # GenuineIntel?
++	jnz	.Lcpu_check_done
++	cmpl	$0x49656e69, %edx
++	jnz	.Lcpu_check_done
++	cmpl	$0x6c65746e, %ecx
++	jnz	.Lcpu_check_done
++	movl	$(CPU_INTEL), %edi
++
++.Lcpu_check_done:
++	/* TODO now that we know what CPU it is, enable SMI etc */
++
++	/* Done, jump to normal 32b pm entry */
++	movl	BP_code32_start(%esi), %eax
++	leal	startup_32(%eax), %eax
++	jmp	*%eax
++ENDPROC(tb_stub)
++
 +tb_gdt:
 +	.word	tb_gdt_end - tb_gdt
 +	.long	tb_gdt
@@ -141,21 +207,16 @@ index 64037895b085..155f1800e88e 100644
 +	.quad	0x00cf9a000000ffff	/* __TB32_CS */
 +	.quad	0x00cf92000000ffff	/* __TB32_DS */
 +tb_gdt_end:
-+
- #ifdef CONFIG_EFI_STUB
- efi_config:
- 	.quad	0
 diff --git a/arch/x86/boot/compressed/trenchboot.c b/arch/x86/boot/compressed/trenchboot.c
 new file mode 100644
-index 000000000000..cfec84f1f27f
+index 0000000..7bcac04
 --- /dev/null
 +++ b/arch/x86/boot/compressed/trenchboot.c
-@@ -0,0 +1,2 @@
+@@ -0,0 +1 @@
 +#include "trenchboot.h"
-+
 diff --git a/arch/x86/boot/compressed/trenchboot.h b/arch/x86/boot/compressed/trenchboot.h
 new file mode 100644
-index 000000000000..16605c99ff35
+index 0000000..16605c9
 --- /dev/null
 +++ b/arch/x86/boot/compressed/trenchboot.h
 @@ -0,0 +1,7 @@
@@ -167,5 +228,5 @@ index 000000000000..16605c99ff35
 +
 +#endif /* BOOT_COMPRESSED_TRENCHBOOT_H */
 -- 
-2.13.6
+2.1.4
 
