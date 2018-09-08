@@ -1,4 +1,4 @@
-From b7a2220f8358fd192acb0221a9dfa274f4e1ee22 Mon Sep 17 00:00:00 2001
+From 9e6ccf22decb28cbe2881722af4986a880749273 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -167,7 +167,7 @@ index 0000000..372513d
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..43bdf40
+index 0000000..7ab44a9
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,116 @@
@@ -201,11 +201,11 @@ index 0000000..43bdf40
 +	lgdt	tb_gdt(%ebp)
 +
 +	movl	$(__TB32_DS), %eax
-+	movl	%eax, %ds
-+	movl	%eax, %es
-+	movl	%eax, %fs
-+	movl	%eax, %gs
-+	movl	%eax, %ss
++	movw	%ax, %ds
++	movw	%ax, %es
++	movw	%ax, %fs
++	movw	%ax, %gs
++	movw	%ax, %ss
 +
 +	leal	.Ltb_cs(%ebp), %eax
 +	pushl	$(__TB32_CS)
@@ -228,9 +228,9 @@ index 0000000..43bdf40
 +	movl	$(CPU_INTEL), %edi
 +
 +.Lcpu_check_done:
-+	/* Now that we know what CPU it is, enable SMI etc */
++	/* Now that we know what CPU it is, do vendor specific operations */
 +	cmpl	$(CPU_AMD), %edi
-+	jnz	.Ldo_amd
++	jz	.Ldo_amd
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
 +	xorl	%ebx, %ebx
@@ -254,8 +254,8 @@ index 0000000..43bdf40
 +
 +.Ldo_amd:
 +	/*
-+	 * Enable global interrupts including SMI and NMI, then disable
-+	 * all others.
++	 * Enable global interrupts including SMI and NMI (GIF), then disable
++	 * all other maskable interrupts.
 +	 */
 +	stgi
 +	cli
@@ -267,7 +267,7 @@ index 0000000..43bdf40
 +	orl	$(X86_CR4_MCE), %eax
 +	movl	%eax, %cr4
 +
-+	/* Call the main routine to do the rest */
++	/* TODO Call the main routine to do the rest? */
 +	pushl	%edi
 +	pushl	%esi
 +	call	tb_main
