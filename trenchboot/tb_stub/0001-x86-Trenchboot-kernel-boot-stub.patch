@@ -1,4 +1,4 @@
-From 5e5237709e2f797a1e325a45214fa65f0e59656a Mon Sep 17 00:00:00 2001
+From b7a2220f8358fd192acb0221a9dfa274f4e1ee22 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -10,10 +10,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_main.c |  28 ++++++++++
- arch/x86/boot/compressed/tb_stub.S | 110 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_main.c |  33 +++++++++++
+ arch/x86/boot/compressed/tb_stub.S | 116 +++++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/tb_stub.h |  24 ++++++++
- 8 files changed, 214 insertions(+), 1 deletion(-)
+ 8 files changed, 225 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
@@ -128,10 +128,10 @@ index 6403789..42d5775 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 0000000..7770709
+index 0000000..372513d
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,33 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -144,28 +144,33 @@ index 0000000..7770709
 +
 +uint32_t tb_main(uint32_t esi, uint32_t cpu_vendor)
 +{
++	/*
 +	uint64_t txt_heap;
 +	uint64_t bios_data_size;
 +	struct os_mle_data *os_mle;
 +
-+	/* On Intel, the zero page address is passed in the TXT heap */
 +	if (cpu_vendor == CPU_INTEL) {
-+		/* Volatile MMIO read */
++		 Volatile MMIO read 
 +		txt_heap = *(volatile uint64_t *)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + TXT_REG_HEAP_BASE);
 +		bios_data_size = *(uint64_t *)txt_heap;
 +		os_mle = (struct os_mle_data*)((uint8_t*)txt_heap + bios_data_size);
 +		esi = os_mle->zero_page_addr;
-+	}
-+	/* On AMD it is put in %esi by the Landing Zone, just return it */
++	}*/
++
++	/*
++	 * TODO
++	 * TODO do we even need this? perhaps we have done enough to kick of the kernel
++	 * TODO
++	 */
 +
 +	return esi;
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..b200007
+index 0000000..43bdf40
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,116 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -240,6 +245,11 @@ index 0000000..b200007
 +	iret
 +.Lunmask_nmi:
 +
++	/* On Intel, the zero page address is passed in the TXT heap */
++	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
++	movl	TXT_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
++	addl	%ecx, %eax /* skip over BIOS data to OS-MLE data */
++	movl	(%eax), %esi /* read zero page addr into %esi */
 +	jmp	.Ldone_intel
 +
 +.Ldo_amd:
@@ -249,6 +259,7 @@ index 0000000..b200007
 +	 */
 +	stgi
 +	cli
++	/* On AMD %esi is set up by the Landing Zone, just go on */
 +
 +.Ldone_intel:
 +	/* Enable MCE */
