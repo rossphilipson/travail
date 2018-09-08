@@ -1,22 +1,22 @@
-From 66156dd28bf7375bb406d59951399908c7ea5bbe Mon Sep 17 00:00:00 2001
+From 9587ce623d86047bf2f2da625bc774f11b74702c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                      |   7 +++
- arch/x86/boot/Makefile                |   2 +-
- arch/x86/boot/compressed/Makefile     |   2 +
- arch/x86/boot/compressed/head_32.S    |  21 +++++++
- arch/x86/boot/compressed/head_64.S    |  21 +++++++
- arch/x86/boot/compressed/tb_stub.S    | 109 ++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/trenchboot.c |   1 +
- arch/x86/boot/compressed/trenchboot.h |   7 +++
- 8 files changed, 169 insertions(+), 1 deletion(-)
+ arch/x86/Kconfig                   |   7 +++
+ arch/x86/boot/Makefile             |   2 +-
+ arch/x86/boot/compressed/Makefile  |   2 +
+ arch/x86/boot/compressed/head_32.S |  21 +++++++
+ arch/x86/boot/compressed/head_64.S |  21 +++++++
+ arch/x86/boot/compressed/tb_main.c |  15 +++++
+ arch/x86/boot/compressed/tb_stub.S | 110 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.h |  13 +++++
+ 8 files changed, 190 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
- create mode 100644 arch/x86/boot/compressed/trenchboot.c
- create mode 100644 arch/x86/boot/compressed/trenchboot.h
+ create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
 index 1aa4dd3..83f32df 100644
@@ -50,14 +50,14 @@ index 9b5adae..5634099 100644
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 169c2fe..9f4e9b5 100644
+index 169c2fe..95bf662 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -89,6 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/trenchboot.o $(obj)/tb_stub.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_main.o $(obj)/tb_stub.o
 +
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
@@ -126,12 +126,33 @@ index 6403789..42d5775 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
+diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
+new file mode 100644
+index 0000000..2ad7640
+--- /dev/null
++++ b/arch/x86/boot/compressed/tb_main.c
+@@ -0,0 +1,15 @@
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <asm/segment.h>
++#include <asm/boot.h>
++#include <asm/msr.h>
++#include <asm/processor-flags.h>
++#include <asm/asm-offsets.h>
++#include <asm/bootparam.h>
++#include "tb_stub.h"
++
++uint32_t tb_main(uint32_t esi, uint32_t cpu_vendor)
++{
++
++	return esi;
++}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..8f39c5b
+index 0000000..b200007
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,110 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -142,16 +163,11 @@ index 0000000..8f39c5b
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
 +#include <asm/bootparam.h>
-+
-+#define __TB32_CS 0x0008
-+#define __TB32_DS 0x0010
-+#define CPU_AMD   1
-+#define CPU_INTEL 2
-+
-+#define X86_GETSEC_SMCTRL 7
++#include "tb_stub.h"
 +
 +	.code32
 +ENTRY(tb_stub)
++	cli
 +	cld
 +
 +	/*
@@ -216,8 +232,7 @@ index 0000000..8f39c5b
 +.Ldo_amd:
 +	/*
 +	 * Enable global interrupts including SMI and NMI, then disable
-+	 * others. Note that on AMD, %esi already points to the zero page
-+	 * and boot params so nothing more to do.
++	 * all others.
 +	 */
 +	stgi
 +	cli
@@ -227,6 +242,13 @@ index 0000000..8f39c5b
 +	movl	%cr4, %eax
 +	orl	$(X86_CR4_MCE), %eax
 +	movl	%eax, %cr4
++
++	/* Call the main routine to do the rest */
++	pushl	%edi
++	pushl	%esi
++	call	tb_main
++	movl	%eax, %esi
++	addl	$8, %esp
 +
 +	/* Done, jump to normal 32b pm entry */
 +	movl	BP_code32_start(%esi), %eax
@@ -241,24 +263,23 @@ index 0000000..8f39c5b
 +	.quad	0x00cf9a000000ffff	/* __TB32_CS */
 +	.quad	0x00cf92000000ffff	/* __TB32_DS */
 +tb_gdt_end:
-diff --git a/arch/x86/boot/compressed/trenchboot.c b/arch/x86/boot/compressed/trenchboot.c
+diff --git a/arch/x86/boot/compressed/tb_stub.h b/arch/x86/boot/compressed/tb_stub.h
 new file mode 100644
-index 0000000..7bcac04
+index 0000000..0b2ff89
 --- /dev/null
-+++ b/arch/x86/boot/compressed/trenchboot.c
-@@ -0,0 +1 @@
-+#include "trenchboot.h"
-diff --git a/arch/x86/boot/compressed/trenchboot.h b/arch/x86/boot/compressed/trenchboot.h
-new file mode 100644
-index 0000000..16605c9
---- /dev/null
-+++ b/arch/x86/boot/compressed/trenchboot.h
-@@ -0,0 +1,7 @@
++++ b/arch/x86/boot/compressed/tb_stub.h
+@@ -0,0 +1,13 @@
 +#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
 +#define BOOT_COMPRESSED_TRENCHEBOOT_H
 +
 +#define __TB32_CS 0x0008
 +#define __TB32_DS 0x0010
++
++#define CPU_AMD   1
++#define CPU_INTEL 2
++
++#define X86_GETSEC_SMCTRL 7
++
 +
 +#endif /* BOOT_COMPRESSED_TRENCHBOOT_H */
 -- 
