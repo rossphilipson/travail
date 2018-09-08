@@ -1,19 +1,19 @@
-From 45c83625d16ac0d8411e1abbd24bc652136241b8 Mon Sep 17 00:00:00 2001
+From 66156dd28bf7375bb406d59951399908c7ea5bbe Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                      |  7 ++++
- arch/x86/boot/Makefile                |  2 +-
- arch/x86/boot/compressed/Makefile     |  2 +
- arch/x86/boot/compressed/head_32.S    | 21 ++++++++++
- arch/x86/boot/compressed/head_64.S    | 21 ++++++++++
- arch/x86/boot/compressed/tb_stub.S    | 75 +++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/trenchboot.c |  1 +
- arch/x86/boot/compressed/trenchboot.h |  7 ++++
- 8 files changed, 135 insertions(+), 1 deletion(-)
+ arch/x86/Kconfig                      |   7 +++
+ arch/x86/boot/Makefile                |   2 +-
+ arch/x86/boot/compressed/Makefile     |   2 +
+ arch/x86/boot/compressed/head_32.S    |  21 +++++++
+ arch/x86/boot/compressed/head_64.S    |  21 +++++++
+ arch/x86/boot/compressed/tb_stub.S    | 109 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/trenchboot.c |   1 +
+ arch/x86/boot/compressed/trenchboot.h |   7 +++
+ 8 files changed, 169 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/trenchboot.c
  create mode 100644 arch/x86/boot/compressed/trenchboot.h
@@ -128,10 +128,10 @@ index 6403789..42d5775 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..3175cc6
+index 0000000..8f39c5b
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,109 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -147,6 +147,8 @@ index 0000000..3175cc6
 +#define __TB32_DS 0x0010
 +#define CPU_AMD   1
 +#define CPU_INTEL 2
++
++#define X86_GETSEC_SMCTRL 7
 +
 +	.code32
 +ENTRY(tb_stub)
@@ -192,7 +194,39 @@ index 0000000..3175cc6
 +	movl	$(CPU_INTEL), %edi
 +
 +.Lcpu_check_done:
-+	/* TODO now that we know what CPU it is, enable SMI etc */
++	/* Now that we know what CPU it is, enable SMI etc */
++	cmpl	$(CPU_AMD), %edi
++	jnz	.Ldo_amd
++
++	/* Enable SMI with GETSET[SMCTRL] */
++	xorl	%ebx, %ebx
++	movl	$(X86_GETSEC_SMCTRL), %eax
++	.byte 	0x0f, 0x37 /* GETSEC opcode */
++
++	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
++	leal	.Lunmask_nmi(%ebp), %eax
++	pushfl
++	pushl	$(__TB32_CS)
++	pushl	%eax
++	iret
++.Lunmask_nmi:
++
++	jmp	.Ldone_intel
++
++.Ldo_amd:
++	/*
++	 * Enable global interrupts including SMI and NMI, then disable
++	 * others. Note that on AMD, %esi already points to the zero page
++	 * and boot params so nothing more to do.
++	 */
++	stgi
++	cli
++
++.Ldone_intel:
++	/* Enable MCE */
++	movl	%cr4, %eax
++	orl	$(X86_CR4_MCE), %eax
++	movl	%eax, %cr4
 +
 +	/* Done, jump to normal 32b pm entry */
 +	movl	BP_code32_start(%esi), %eax
