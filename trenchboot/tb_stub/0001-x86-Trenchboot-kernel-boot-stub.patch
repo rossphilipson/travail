@@ -1,4 +1,4 @@
-From 9e6ccf22decb28cbe2881722af4986a880749273 Mon Sep 17 00:00:00 2001
+From b9ad27b0f88d393970a840883ba832441cac70af Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -10,16 +10,16 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_main.c |  33 +++++++++++
- arch/x86/boot/compressed/tb_stub.S | 116 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/tb_stub.h |  24 ++++++++
- 8 files changed, 225 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/tb_main.c |  33 ++++++++++
+ arch/x86/boot/compressed/tb_stub.S | 124 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.h |  24 +++++++
+ 8 files changed, 233 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1aa4dd3..83f32df 100644
+index 1aa4dd3b5687..83f32df62d41 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1959,6 +1959,13 @@ config EFI_MIXED
@@ -37,7 +37,7 @@ index 1aa4dd3..83f32df 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae..5634099 100644
+index 9b5adae9cc40..56340994d8c0 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -50,7 +50,7 @@ index 9b5adae..5634099 100644
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 169c2fe..95bf662 100644
+index 169c2feda14a..95bf662b7c7f 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -89,6 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -63,7 +63,7 @@ index 169c2fe..95bf662 100644
  # can place it anywhere in memory and it will still run. However, since
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/head_32.S b/arch/x86/boot/compressed/head_32.S
-index 37380c0..2c83d9c 100644
+index 37380c0d5999..2c83d9c99aff 100644
 --- a/arch/x86/boot/compressed/head_32.S
 +++ b/arch/x86/boot/compressed/head_32.S
 @@ -208,6 +208,27 @@ fail:
@@ -95,7 +95,7 @@ index 37380c0..2c83d9c 100644
  relocated:
  
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 6403789..42d5775 100644
+index 64037895b085..42d57750faf9 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,27 @@ ENTRY(efi32_stub_entry)
@@ -128,7 +128,7 @@ index 6403789..42d5775 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 0000000..372513d
+index 000000000000..372513daa5a2
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
 @@ -0,0 +1,33 @@
@@ -167,10 +167,10 @@ index 0000000..372513d
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..7ab44a9
+index 000000000000..dc3a6f5c4c28
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,124 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -213,6 +213,14 @@ index 0000000..7ab44a9
 +	lret
 +
 +.Ltb_cs:
++	/* Before going any further, make sure this is the BSP */
++	movl	$(MSR_IA32_APICBASE), %ecx
++	rdmsr
++	testl	$(MSR_IA32_APICBASE_BSP), %eax
++	jnz	.Lbsp_ok
++	ud2
++
++.Lbsp_ok:
 +	/* Assume CPU is AMD to start */
 +	movl	$(CPU_AMD), %edi
 +
@@ -243,8 +251,8 @@ index 0000000..7ab44a9
 +	pushl	$(__TB32_CS)
 +	pushl	%eax
 +	iret
-+.Lunmask_nmi:
 +
++.Lunmask_nmi:
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
 +	movl	TXT_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
@@ -289,7 +297,7 @@ index 0000000..7ab44a9
 +tb_gdt_end:
 diff --git a/arch/x86/boot/compressed/tb_stub.h b/arch/x86/boot/compressed/tb_stub.h
 new file mode 100644
-index 0000000..9eef6b1
+index 000000000000..9eef6b1b39c8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.h
 @@ -0,0 +1,24 @@
@@ -318,5 +326,5 @@ index 0000000..9eef6b1
 +
 +#endif /* BOOT_COMPRESSED_TRENCHBOOT_H */
 -- 
-2.1.4
+2.13.6
 
