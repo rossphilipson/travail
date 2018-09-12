@@ -1,12 +1,21 @@
-Some Notes:
--------------------------------------
+General Notes:
+---------------------------------------------------------------------
 
 Big questions:
- - What about the shared page?
- - What about S3 hooks?
- - What are we passing in the OS-MLE data?
- - How to handle and measure cmdlines for other boot modules?
- - What post launch things need to be checked for SKINIT
+ - What boot params do we need to deal with in tb_stub?
+ - Memory map - pass as e820 in boot params (looks like EFI
+   stub stuff just turns mem map into e820 on EFI boot)?
+ - How/where to handle and measure cmdlines for other boot modules?
+ - How to pass other modules to IL?
+ - Where to measure other modules?
+ - What to do about Runtime Services (not really booting EFI)?
+ - TXT: What about the shared page?
+ - TXT: What about S3 hooks?
+ - TXT: What are we passing in the OS-MLE data?
+ - SKINIT: What post launch things need to be checked?
+
+TXT Specific:
+---------------------------------------------------------------------
 
 boot.S:
 --------------------
@@ -91,4 +100,9 @@ remove_txt_modules():
   My guess is that the GRUB bits will figure out what ACM to use
     and this routine is meamingless because it is about the MBI
 
+txt_protect_mem_regions():
+  Involves updating e820.
+
+verify_modules():
+  This will happen whenever we measure the othre modules.
 
