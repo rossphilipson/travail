@@ -1,0 +1,94 @@
+Some Notes:
+-------------------------------------
+
+Big questions:
+ - What about the shared page?
+ - What about S3 hooks?
+ - What are we passing in the OS-MLE data?
+ - How to handle and measure cmdlines for other boot modules?
+ - What post launch things need to be checked for SKINIT
+
+boot.S:
+--------------------
+  Taken care of in the tb_stub code.
+
+begin_launch():
+--------------------
+
+tboot_parse_cmdline():
+  What to do with the command lines from GRUB. The TBOOT one gets put in the MLE
+  and measured by TXT.
+
+get_tboot_call_racm_check():
+  Dunno?
+
+if ( !(rdmsr(MSR_APICBASE) & APICBASE_BSP) )
+  Taken care of in tb_stub
+
+copy_e820_map():
+  To use and adjust. Not sure?
+
+tpm_detect()
+  I think this has already been done in the GRUB TB code
+
+verify_IA32_se_svn_status()
+  TXT only. Not sure where it should happen.
+
+set_policy():
+apply_policy(err):
+  TXT only. Do we do anything with the VL policy?
+
+launch_racm():
+  Dunno. Seems like this is pre-launch only since it never returns.
+
+supports_txt():
+  The GRUB bits must have done that.
+
+txt_display_errors():
+  I would guess this is something we can do later in the IL kernel
+  once logging is operational.
+
+verify_platform():
+  The GRUB bits must have done that.
+
+verify_loader_context():
+  Not sure how other modules are going to be passed to IL.
+
+post_launch():
+--------------------
+
+txt_post_launch():
+  txt_post_launch_verify_platform():
+    Verify heap seems like something we can do later
+    Verify MTRRs. What to do about passig MTRRs?
+    Verify PMRs seems like something we can do later
+
+  Clear error regs
+
+  txt_wakeup_cpus():
+    I believe we will do this very differently in the SMP bringup code
+      without putting APs in mini guests.
+
+  Restore MSR_IA32_MISC_ENABLE
+  restore_mtrrs():
+    With both of these we may have to find the right place in the kernel
+      code to do this.
+
+  apply_policy():
+    I suspect our policy handling will be very different and not happen
+      here.
+
+  TXTCR_CMD_SECRETS
+    Have to read about, not sure when to do it.
+
+  TXTCR_CMD_OPEN_LOCALITY1
+    Have to read about, not sure when to do it.
+
+save_vtd_dmar_table():
+  Not sure why this is done along with restore_vtd_dmar_table()
+
+remove_txt_modules():
+  My guess is that the GRUB bits will figure out what ACM to use
+    and this routine is meamingless because it is about the MBI
+
+
