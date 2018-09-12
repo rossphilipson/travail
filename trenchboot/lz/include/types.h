@@ -12,16 +12,20 @@ typedef short			s16;
 typedef int			s32;
 typedef long long		s64;
 
+typedef unsigned long          uintptr_t;
+
+typedef unsigned long	size_t;
+typedef long		ssize_t;
+
+#define NULL 0
+
 #define min(x,y) ({ \
-	typeof(x) _x = (x);	\
-	typeof(y) _y = (y);	\
-	(void) (&_x == &_y);	\
-	_x < _y ? _x : _y; })
+	x < y ? x : y; })
 
 #define max(x,y) ({ \
-	typeof(x) _x = (x);	\
-	typeof(y) _y = (y);	\
-	(void) (&_x == &_y);	\
-	_x > _y ? _x : _y; })
+	x > y ? x : y; })
 
+#define be32_to_cpu(x) ( \
+	((x) >> 24) | (((x) & 0x00FF0000) >> 8) | \
+	(((x) & 0x0000FF00) << 8) | ((x) << 24))
 #endif /* __TYPES_H__ */
