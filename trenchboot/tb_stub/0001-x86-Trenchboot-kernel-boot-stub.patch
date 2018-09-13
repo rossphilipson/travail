@@ -1,4 +1,4 @@
-From b9ad27b0f88d393970a840883ba832441cac70af Mon Sep 17 00:00:00 2001
+From 16448b728eb7f5adef5c3eae56133e7a0110994c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -10,11 +10,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_main.c |  33 ++++++++++
- arch/x86/boot/compressed/tb_stub.S | 124 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/tb_stub.h |  24 +++++++
- 8 files changed, 233 insertions(+), 1 deletion(-)
- create mode 100644 arch/x86/boot/compressed/tb_main.c
+ arch/x86/boot/compressed/tb_stub.S | 117 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.h |  24 ++++++++
+ 7 files changed, 193 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
@@ -50,14 +48,14 @@ index 9b5adae9cc40..56340994d8c0 100644
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 169c2feda14a..95bf662b7c7f 100644
+index 169c2feda14a..e836406c50a4 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -89,6 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_main.o $(obj)/tb_stub.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_stub.o
 +
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
@@ -126,51 +124,12 @@ index 64037895b085..42d57750faf9 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
-diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
-new file mode 100644
-index 000000000000..372513daa5a2
---- /dev/null
-+++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,33 @@
-+#include <linux/init.h>
-+#include <linux/linkage.h>
-+#include <asm/segment.h>
-+#include <asm/boot.h>
-+#include <asm/msr.h>
-+#include <asm/processor-flags.h>
-+#include <asm/asm-offsets.h>
-+#include <asm/bootparam.h>
-+#include "tb_stub.h"
-+
-+uint32_t tb_main(uint32_t esi, uint32_t cpu_vendor)
-+{
-+	/*
-+	uint64_t txt_heap;
-+	uint64_t bios_data_size;
-+	struct os_mle_data *os_mle;
-+
-+	if (cpu_vendor == CPU_INTEL) {
-+		 Volatile MMIO read 
-+		txt_heap = *(volatile uint64_t *)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + TXT_REG_HEAP_BASE);
-+		bios_data_size = *(uint64_t *)txt_heap;
-+		os_mle = (struct os_mle_data*)((uint8_t*)txt_heap + bios_data_size);
-+		esi = os_mle->zero_page_addr;
-+	}*/
-+
-+	/*
-+	 * TODO
-+	 * TODO do we even need this? perhaps we have done enough to kick of the kernel
-+	 * TODO
-+	 */
-+
-+	return esi;
-+}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..dc3a6f5c4c28
+index 000000000000..130dbabf3e27
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,117 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -274,13 +233,6 @@ index 000000000000..dc3a6f5c4c28
 +	movl	%cr4, %eax
 +	orl	$(X86_CR4_MCE), %eax
 +	movl	%eax, %cr4
-+
-+	/* TODO Call the main routine to do the rest? */
-+	pushl	%edi
-+	pushl	%esi
-+	call	tb_main
-+	movl	%eax, %esi
-+	addl	$8, %esp
 +
 +	/* Done, jump to normal 32b pm entry */
 +	movl	BP_code32_start(%esi), %eax
