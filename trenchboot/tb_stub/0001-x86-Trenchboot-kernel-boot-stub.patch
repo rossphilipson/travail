@@ -1,4 +1,4 @@
-From 16448b728eb7f5adef5c3eae56133e7a0110994c Mon Sep 17 00:00:00 2001
+From 68b9f96922eb60ed4ee004f7e4443041f6975465 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -10,9 +10,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_stub.S | 117 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/tb_stub.h |  24 ++++++++
- 7 files changed, 193 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/tb_stub.S | 122 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.h |  28 +++++++++
+ 7 files changed, 202 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
@@ -126,10 +126,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..130dbabf3e27
+index 000000000000..6eb6e2ea7d9a
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,122 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -214,9 +214,14 @@ index 000000000000..130dbabf3e27
 +.Lunmask_nmi:
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
-+	movl	TXT_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
++	movl	TXTCR_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
 +	addl	%ecx, %eax /* skip over BIOS data to OS-MLE data */
 +	movl	(%eax), %esi /* read zero page addr into %esi */
++
++	/* Clear the TXT error registers for a clean start of day */
++	movl	$(TXT_PRIV_CONFIG_REGS_BASE), %eax /* TXT MMIO priv regs */
++	movl	$0x0, TXTCR_ERRORCODE(%eax)
++	movl	$0xffffffff, TXTCR_ESTS(%eax)
 +	jmp	.Ldone_intel
 +
 +.Ldo_amd:
@@ -249,10 +254,10 @@ index 000000000000..130dbabf3e27
 +tb_gdt_end:
 diff --git a/arch/x86/boot/compressed/tb_stub.h b/arch/x86/boot/compressed/tb_stub.h
 new file mode 100644
-index 000000000000..9eef6b1b39c8
+index 000000000000..bb2ffda39d79
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,28 @@
 +#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
 +#define BOOT_COMPRESSED_TRENCHEBOOT_H
 +
@@ -264,8 +269,12 @@ index 000000000000..9eef6b1b39c8
 +
 +#define X86_GETSEC_SMCTRL        7
 +
-+#define TXT_PUB_CONFIG_REGS_BASE 0xfed30000
-+#define TXT_REG_HEAP_BASE        0x0300
++#define TXT_PUB_CONFIG_REGS_BASE  0xfed30000
++#define TXT_PRIV_CONFIG_REGS_BASE 0xfed20000
++#define TXTCR_STS                 0x0000
++#define TXTCR_ESTS                0x0008
++#define TXTCR_ERRORCODE           0x0030
++#define TXTCR_REG_HEAP_BASE       0x0300
 +
 +#ifndef __ASSEMBLY__
 +
