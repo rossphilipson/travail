@@ -71,7 +71,6 @@ void setup(void *_lz_base)
 
 void setup2(void)
 {
-    void *tl_image_base;
     u32 *code32_start;
     u32 *data, size;
     void *pm_kernel_entry;
@@ -90,7 +89,7 @@ void setup2(void)
 
     /* extend TB Loader command line into PCR18 */
     data = (u32*)(uintptr_t)*((u8*)zero_page + BP_CMD_LINE_PTR);
-    size = (uintptr_t)((u8*)zero_page + BP_CMDLINE_SIZE);
+    size = (uintptr_t)*((u8*)zero_page + BP_CMDLINE_SIZE);
     sha1sum(&sha1ctx, data, size);
     tpm_extend(18, sha1ctx.buf, extend_result);
 
