@@ -19,9 +19,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
 #include <types.h>
 #include <be_byteshift.h>
+#include <mem.h>
 #include <tpm.h>
+
 /* Internal error of TPM command library */
 #define TPM_LIB_ERROR	((u32)~0u)
 /* Useful constants */
