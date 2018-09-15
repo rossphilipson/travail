@@ -99,6 +99,7 @@ void setup2(void)
 	    ((u32*)code32_start - (u32*)zero_page);
     tpm_extend(17, sha1ctx.buf, extend_result);
 
+    tis_close(2);
     /* End of the line, off to the protected mode entry into the kernel */
     lz_exit(pm_kernel_entry, zero_page, lz_base);
 
