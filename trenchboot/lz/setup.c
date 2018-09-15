@@ -73,17 +73,31 @@ void setup2(void)
 {
     void *tl_image_base;
     u32 *code32_start;
+    u32 *data, size;
     void *pm_kernel_entry;
-
-    /* Do the SHA1 of the Trenchboot Loader image */
-    tl_image_base = (u8*)lz_base - LZ_SECOND_STAGE_STACK_SIZE -
-                    PAGE_UP(lz_header->trenchboot_loader_size);
-    sha1sum(&sha1ctx, tl_image_base, lz_header->trenchboot_loader_size);
-
-    /* TODO extend TPM PCRs */
+    u8 extend_result[SHA1_TOTAL_BYTES];
 
     code32_start = (u32*)((u8*)zero_page + BP_CODE32_START);
     pm_kernel_entry = (void*)((u64)(*code32_start));
+
+    tis_open(2);
+
+    /* extend zero page into PCR18 */
+    data = zero_page;
+    size = PAGE_SIZE;
+    sha1sum(&sha1ctx, data, size);
+    tpm_extend(18, sha1ctx.buf, extend_result);
+
+    /* extend TB Loader command line into PCR18 */
+    data = (u32*)((u8*)zero_page + BP_CMD_LINE_PTR);
+    size = (uintptr_t)((u8*)zero_page + BP_CMDLINE_SIZE);
+    tpm_extend(18, sha1ctx.buf, extend_result);
+
+    /* extend TB Loader code segment into PCR17 */
+    data = code32_start;
+    size = lz_header->trenchboot_loader_size -
+	    ((u32*)code32_start - (u32*)zero_page);
+    tpm_extend(17, sha1ctx.buf, extend_result);
 
     /* End of the line, off to the protected mode entry into the kernel */
     lz_exit(pm_kernel_entry, zero_page, lz_base);
