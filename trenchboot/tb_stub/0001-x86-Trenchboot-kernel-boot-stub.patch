@@ -1,4 +1,4 @@
-From 68b9f96922eb60ed4ee004f7e4443041f6975465 Mon Sep 17 00:00:00 2001
+From 675212f14251f6d6d8a4578e82d7f9b1c210fef4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 7 Sep 2018 16:47:22 -0400
 Subject: [PATCH] x86: Trenchboot kernel boot stub
@@ -10,9 +10,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_stub.S | 122 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.S | 123 +++++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/tb_stub.h |  28 +++++++++
- 7 files changed, 202 insertions(+), 1 deletion(-)
+ 7 files changed, 203 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
@@ -126,10 +126,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..6eb6e2ea7d9a
+index 000000000000..1040095c9327
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -226,11 +226,12 @@ index 000000000000..6eb6e2ea7d9a
 +
 +.Ldo_amd:
 +	/*
-+	 * Enable global interrupts including SMI and NMI (GIF), then disable
-+	 * all other maskable interrupts.
++	 * Disable maskable interrups in EFLAGS then enable global interrupts
++	 * including SMI and NMI (GIF).
 +	 */
-+	stgi
 +	cli
++	stgi
++
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
 +
 +.Ldone_intel:
