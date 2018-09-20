@@ -14,6 +14,37 @@ Big questions:
  - TXT: What are we passing in the OS-MLE data?
  - SKINIT: What post launch things need to be checked?
 
+Stages:
+---------------------------------------------------------------------
+
+This seems like the stages of Trenchboot in the IL starting with the
+earliest:
+
+0. Built time:
+  - Built tool reads ZO_tb_stub_entry from zoffsets.h
+  - Writes to our BP location (at 0x0cc)
+
+1. TB stub early:
+  - Early assembly entry code in "compressed" to setup basics
+  - May need a early C module to frob e820 before we let the kernel loose
+    on the map.
+
+2. TB stub late:
+  - Later chunk of code in "kernel" to do other needed tasks.
+  - Probably the place to setup logging.
+  - Need to figure out what other ops that TBOOT did go here.
+  - Need to figure out what comparable ops for SKINIT go here.
+
+3. TB SMP bringup:
+  - Will happen when the kernel runs the smpboot.c code.
+  - May happen before #2.
+
+4. Main security environment:
+  - This is the code in u-root.
+  - All policy handling here.
+  - Customizable security operations.
+  - Module handling and kexec next kernel.
+
 TXT Specific:
 ---------------------------------------------------------------------
 
@@ -26,7 +57,11 @@ begin_launch():
 
 tboot_parse_cmdline():
   What to do with the command lines from GRUB. The TBOOT one gets put in the MLE
-  and measured by TXT.
+    and measured by TXT.
+  For TXT, the IL cmdline will be part of the MLE so it gets measured.
+  For SKINIT, the LZ measures it. Same PCR in both cases?
+  The cmdlines will be in the MB2 struct that TB is handed. Probably measured in
+    u-root.
 
 get_tboot_call_racm_check():
   No RACMs exist. Put a TODO to add future support if neeed.
@@ -69,7 +104,7 @@ post_launch():
 txt_post_launch():
   txt_post_launch_verify_platform():
     Verify heap seems like something we can do later
-    Verify MTRRs. What to do about passig MTRRs?
+    Verify MTRRs. What to do about passig MTRRs? See below...
     Verify PMRs seems like something we can do later
       Leave these as a TODO for now.
 
@@ -102,7 +137,36 @@ remove_txt_modules():
 
 txt_protect_mem_regions():
   Involves updating e820. Needs consideration.
+  May have to do this very early before kernel gets at the e820
+  Presumably the bootparams can be munged in place.
 
 verify_modules():
   This will happen when we measure the other modules in u-root
+
+/* verify that tboot is in valid RAM (i.e. E820_RAM) */
+  Do this early - see txt_protect_mem_regions
+
+/* protect ourselves, MLE page table, and MLE/kernel shared page */
+  Do this early - see txt_protect_mem_regions
+
+TBOOT_LOG_TARGET_MEMORY
+  Need to figure out logging
+
+replace_e820_map()
+  Does not make sense for us
+
+print_e820_map()
+  Need to figure out logging
+
+verify_all_modules()
+  Modules and policy handled in u-root
+
+verify_all_nvindices()
+  Seems this could be deferred to later, possibly in u-root
+
+seal_pre_k_state()
+  Policy handled in u-root
+
+_tboot_shared
+  This will look very different to us
 
