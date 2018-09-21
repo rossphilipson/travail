@@ -1,52 +1,19 @@
-From 675212f14251f6d6d8a4578e82d7f9b1c210fef4 Mon Sep 17 00:00:00 2001
+From d61575c761a1abf1b4bad75caba2e0c852e856fe Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Fri, 7 Sep 2018 16:47:22 -0400
-Subject: [PATCH] x86: Trenchboot kernel boot stub
+Date: Fri, 21 Sep 2018 10:24:56 -0400
+Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                   |   7 +++
- arch/x86/boot/Makefile             |   2 +-
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_32.S |  21 +++++++
  arch/x86/boot/compressed/head_64.S |  21 +++++++
  arch/x86/boot/compressed/tb_stub.S | 123 +++++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/tb_stub.h |  28 +++++++++
- 7 files changed, 203 insertions(+), 1 deletion(-)
+ 5 files changed, 195 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1aa4dd3b5687..83f32df62d41 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -1959,6 +1959,13 @@ config EFI_MIXED
- 
- 	   If unsure, say N.
- 
-+config TRENCHBOOT_STUB
-+       bool "Trenchboot stub support"
-+       select RELOCATABLE
-+       ---help---
-+          This kernel feature allows a bzImage to be loaded directly
-+	  through Intel TXT or AMD SKINIT measured launch.
-+
- config SECCOMP
- 	def_bool y
- 	prompt "Enable seccomp to safely compute untrusted bytecode"
-diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae9cc40..56340994d8c0 100644
---- a/arch/x86/boot/Makefile
-+++ b/arch/x86/boot/Makefile
-@@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
- 
- SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
- 
--sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
-+sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|tb_stub_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
- 
- quiet_cmd_zoffset = ZOFFSET $@
-       cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
 index 169c2feda14a..e836406c50a4 100644
 --- a/arch/x86/boot/compressed/Makefile

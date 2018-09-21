@@ -1,0 +1,121 @@
+From 1f40826cc8c064726b492acbf23c574988a118cf Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 21 Sep 2018 10:22:12 -0400
+Subject: [PATCH 1/2] x86: Trenchboot Kconfig and build tool changes
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/Kconfig                      |  7 +++++++
+ arch/x86/boot/Makefile                |  2 +-
+ arch/x86/boot/tools/build.c           | 16 ++++++++++++++++
+ arch/x86/include/uapi/asm/bootparam.h |  8 +++++++-
+ 4 files changed, 31 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 1aa4dd3b5687..83f32df62d41 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -1959,6 +1959,13 @@ config EFI_MIXED
+ 
+ 	   If unsure, say N.
+ 
++config TRENCHBOOT_STUB
++       bool "Trenchboot stub support"
++       select RELOCATABLE
++       ---help---
++          This kernel feature allows a bzImage to be loaded directly
++	  through Intel TXT or AMD SKINIT measured launch.
++
+ config SECCOMP
+ 	def_bool y
+ 	prompt "Enable seccomp to safely compute untrusted bytecode"
+diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
+index 9b5adae9cc40..56340994d8c0 100644
+--- a/arch/x86/boot/Makefile
++++ b/arch/x86/boot/Makefile
+@@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
+ 
+ SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
+ 
+-sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
++sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|tb_stub_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
+ 
+ quiet_cmd_zoffset = ZOFFSET $@
+       cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
+diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
+index d4e6cd4577e5..63d2668746f3 100644
+--- a/arch/x86/boot/tools/build.c
++++ b/arch/x86/boot/tools/build.c
+@@ -56,6 +56,7 @@ u8 buf[SETUP_SECT_MAX*512];
+ unsigned long efi32_stub_entry;
+ unsigned long efi64_stub_entry;
+ unsigned long efi_pe_entry;
++unsigned long tb_stub_entry;
+ unsigned long startup_64;
+ 
+ /*----------------------------------------------------------------------*/
+@@ -288,6 +289,18 @@ static inline int reserve_pecoff_reloc_section(int c)
+ }
+ #endif /* CONFIG_EFI_STUB */
+ 
++#ifdef CONFIG_TRENCHBOOT_STUB
++
++static void trenchboot_stub_entry_update(void)
++{
++	put_unaligned_le32(tb_stub_entry, &buf[0xcc]);
++}
++
++#else
++
++static void trenchboot_stub_entry_update(void) {}
++
++#endif /* CONFIG_TRENCHBOOT_STUB */
+ 
+ /*
+  * Parse zoffset.h and find the entry points. We could just #include zoffset.h
+@@ -320,6 +333,7 @@ static void parse_zoffset(char *fname)
+ 		PARSE_ZOFS(p, efi32_stub_entry);
+ 		PARSE_ZOFS(p, efi64_stub_entry);
+ 		PARSE_ZOFS(p, efi_pe_entry);
++		PARSE_ZOFS(p, tb_stub_entry);
+ 		PARSE_ZOFS(p, startup_64);
+ 
+ 		p = strchr(p, '\n');
+@@ -402,6 +416,8 @@ int main(int argc, char ** argv)
+ 
+ 	efi_stub_entry_update();
+ 
++	trenchboot_stub_entry_update();
++
+ 	crc = partial_crc32(buf, i, crc);
+ 	if (fwrite(buf, 1, i, dest) != i)
+ 		die("Writing setup failed");
+diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
+index a06cbf019744..e1e3a58c1f7d 100644
+--- a/arch/x86/include/uapi/asm/bootparam.h
++++ b/arch/x86/include/uapi/asm/bootparam.h
+@@ -112,6 +112,11 @@ struct efi_info {
+ 	__u32 efi_memmap_hi;
+ };
+ 
++struct trenchboot_info {
++	__u32 tb_entry;
++	__u32 tb_xbi;
++} __attribute__((packed));
++
+ /*
+  * This is the maximum number of entries in struct boot_params::e820_table
+  * (the zeropage), which is part of the x86 boot protocol ABI:
+@@ -163,7 +168,8 @@ struct boot_params {
+ 	__u32 ext_ramdisk_image;			/* 0x0c0 */
+ 	__u32 ext_ramdisk_size;				/* 0x0c4 */
+ 	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
+-	__u8  _pad4[116];				/* 0x0cc */
++	struct trenchboot_info trenchboot_info;		/* 0x0cc */
++	__u8  _pad4[108];				/* 0x0d4 */
+ 	struct edid_info edid_info;			/* 0x140 */
+ 	struct efi_info efi_info;			/* 0x1c0 */
+ 	__u32 alt_mem_k;				/* 0x1e0 */
+-- 
+2.13.6
+
