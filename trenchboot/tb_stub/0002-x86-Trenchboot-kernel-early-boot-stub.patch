@@ -1,4 +1,4 @@
-From d61575c761a1abf1b4bad75caba2e0c852e856fe Mon Sep 17 00:00:00 2001
+From 3735c317ba3d9350344c6c1d4e6f404c516e727f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
@@ -6,11 +6,11 @@ Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +
- arch/x86/boot/compressed/head_32.S |  21 +++++++
- arch/x86/boot/compressed/head_64.S |  21 +++++++
- arch/x86/boot/compressed/tb_stub.S | 123 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/tb_stub.h |  28 +++++++++
- 5 files changed, 195 insertions(+)
+ arch/x86/boot/compressed/head_32.S |  21 ++++++
+ arch/x86/boot/compressed/head_64.S |  21 ++++++
+ arch/x86/boot/compressed/tb_stub.S | 134 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.h |  34 ++++++++++
+ 5 files changed, 212 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
@@ -93,10 +93,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..1040095c9327
+index 000000000000..a176f53127a4
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,134 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -121,6 +121,9 @@ index 000000000000..1040095c9327
 +	call	1f
 +1:	popl	%ebp
 +	subl	$1b, %ebp
++
++	/* TB flag indicates TB entry mode */
++	andl	$(TB_FLAG_ACTIVE), tb_control_flags(%ebp)
 +
 +	/* On entry, only %cs is known good */
 +	addl	%ebp, (tb_gdt + 2)(%ebp)
@@ -189,6 +192,9 @@ index 000000000000..1040095c9327
 +	movl	$(TXT_PRIV_CONFIG_REGS_BASE), %eax /* TXT MMIO priv regs */
 +	movl	$0x0, TXTCR_ERRORCODE(%eax)
 +	movl	$0xffffffff, TXTCR_ESTS(%eax)
++
++	andl	$(TB_FLAG_INTEL), tb_control_flags(%ebp)
++
 +	jmp	.Ldone_intel
 +
 +.Ldo_amd:
@@ -200,6 +206,7 @@ index 000000000000..1040095c9327
 +	stgi
 +
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
++	andl	$(TB_FLAG_AMD), tb_control_flags(%ebp)
 +
 +.Ldone_intel:
 +	/* Enable MCE */
@@ -213,6 +220,7 @@ index 000000000000..1040095c9327
 +	jmp	*%eax
 +ENDPROC(tb_stub)
 +
++	.data
 +tb_gdt:
 +	.word	tb_gdt_end - tb_gdt
 +	.long	tb_gdt
@@ -220,12 +228,15 @@ index 000000000000..1040095c9327
 +	.quad	0x00cf9a000000ffff	/* __TB32_CS */
 +	.quad	0x00cf92000000ffff	/* __TB32_DS */
 +tb_gdt_end:
++
++ENTRY(tb_control_flags)
++	.long	0
 diff --git a/arch/x86/boot/compressed/tb_stub.h b/arch/x86/boot/compressed/tb_stub.h
 new file mode 100644
-index 000000000000..bb2ffda39d79
+index 000000000000..f1f1ecf16556
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,34 @@
 +#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
 +#define BOOT_COMPRESSED_TRENCHEBOOT_H
 +
@@ -244,12 +255,18 @@ index 000000000000..bb2ffda39d79
 +#define TXTCR_ERRORCODE           0x0030
 +#define TXTCR_REG_HEAP_BASE       0x0300
 +
++#define TB_FLAG_ACTIVE	0x00000001
++#define TB_FLAG_AMD	0x00000002
++#define TB_FLAG_INTEL	0x00000004
++
 +#ifndef __ASSEMBLY__
 +
 +struct os_mle_data {
 +	uint32_t zero_page_addr;
 +	/* TODO more to define later, may move to a common Trenchboot header */
 +} __attribute__((packed));
++
++extern uint32_t tb_control_flags;
 +
 +#endif
 +
