@@ -32,6 +32,7 @@ earliest:
 2. TB stub late:
   - Later chunk of code in "kernel" to do other needed tasks.
   - Probably the place to setup logging.
+  - May be where the PMRs and DEV changes happen.
   - Need to figure out what other ops that TBOOT did go here.
   - Need to figure out what comparable ops for SKINIT go here.
 
