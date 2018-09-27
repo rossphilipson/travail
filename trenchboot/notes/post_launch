@@ -20,7 +20,7 @@ Stages:
 This seems like the stages of Trenchboot in the IL starting with the
 earliest:
 
-0. Built time:
+0. Build time:
   - Built tool reads ZO_tb_stub_entry from zoffsets.h
   - Writes to our BP location (at 0x0cc)
 
@@ -46,7 +46,18 @@ earliest:
   - Customizable security operations.
   - Module handling and kexec next kernel.
 
-TXT Specific:
+Kernel Config:
+---------------------------------------------------------------------
+
+We have control over the way the IL kernel is built.
+  - Most drivers, files systems, other modules etc, can be removed.
+  - Assume CONFIG_64BIT and CONFIG_X86_64
+  - Assume CONFIG_RANDOMIZE_BASE (KASLR) is not set
+  - This implies CONFIG_X86_NEED_RELOCS and CONFIG_RANDOMIZE_MEMORY not set.
+  - Have control over CONFIG_PHYSICAL_START and CONFIG_PHYSICAL_ALIGN to set
+    where the actual kernel ends up.
+
+TXT/TBOOT Specific:
 ---------------------------------------------------------------------
 
 boot.S:
@@ -171,3 +182,61 @@ seal_pre_k_state()
 _tboot_shared
   This will look very different to us
 
+Linux AP Startup
+---------------------------------------------------------------------
+
+kernel/smpboot.c
+  do_boot_cpu()
+    wakeup_cpu_via_init_nmi()
+      wakeup_secondary_cpu_via_init()
+        - INIT/SIPI/SIPI done here
+        - start_eip is real_mode_header->trampoline_start
+        - real_mode_header->trampoline_start is in the relocated rmpiggy
+
+realmode/init.c
+  setup_real_mode()
+    - copies rmpiggy to an addr < 1M
+    - routine fixes up rmpiggy with relocs
+    - rmpiggy has 16b entry point + trasition to 32b and 64b
+    - code is in realmode/rm/trampoline_64.S
+
+Intel TXT AP Startup
+---------------------------------------------------------------------
+
+There are two ways that APs can be started after GETSECC[SENTER] returns:
+  - The SINIT put the APs in an MWAIT. The MONITOR address is returned in
+    the SINIT-MLE heap area in RlpWakeupAddr.
+  - The SINIT put the APs in a state where GETSEC[WAKEUP] must be called to
+    start the APs.
+
+init_txt_heap()
+  - Informs vi the MLE header the SINIT which of the methods above are supported
+    by the MLE. In general both should be supported.
+  - Selects the method by setting the bit in the OS-SINIT Capabilities field
+    (e.g. os_sinit_data->capabilities.rlp_wake_monitor = 1) based on what the
+    given SINIT module capabilities say is supported.
+
+txt_wakeup_cpus()
+  - Sets up the MLE join structure with information needed by TXT to wake up the
+    APs including the entry point _txt_wakeup().
+  - The MLE join structure is set via TXTCR_MLE_JOIN.
+  - The function tests which one to use as was set in the OS-SINIT Capabilities
+    set pre-launch. This will be either:
+     - *((uint32_t *)(unsigned long)(sinit_mle_data->rlp_wakeup_addr)) = 0x01;
+     - __getsec_wakeup()
+
+The AP state upon resuming is similar to that of the BSP post launch. The TXT
+spec and SDM describe this state.
+
+AMD SKINIT AP Startup
+---------------------------------------------------------------------
+
+The AMD System Developer's manual describes the state of the APs post
+launch.
+  - SKINIT asserts INIT on all the APs.
+  - The wakeup code must de-assert INIT and do the SIPI/SIPI sequence.
+  - The startup vector is 16 bit real mode code like a normal INIT/SIPI/SIPI
+    startup.
+  - The startup code must STGI up front.
+  - If there is any other state that needs restoring, the startup code
+    would do that.
