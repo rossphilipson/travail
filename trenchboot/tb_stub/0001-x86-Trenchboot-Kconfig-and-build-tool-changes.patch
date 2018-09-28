@@ -1,4 +1,4 @@
-From 1f40826cc8c064726b492acbf23c574988a118cf Mon Sep 17 00:00:00 2001
+From 2a96afa30168cbba5cda91be2ea7548b60decc78 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/2] x86: Trenchboot Kconfig and build tool changes
@@ -12,7 +12,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  4 files changed, 31 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1aa4dd3b5687..83f32df62d41 100644
+index 1aa4dd3b5687..7f2b4cef90aa 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1959,6 +1959,13 @@ config EFI_MIXED
@@ -20,10 +20,10 @@ index 1aa4dd3b5687..83f32df62d41 100644
  	   If unsure, say N.
  
 +config TRENCHBOOT_STUB
-+       bool "Trenchboot stub support"
-+       select RELOCATABLE
-+       ---help---
-+          This kernel feature allows a bzImage to be loaded directly
++	bool "Trenchboot stub support"
++	depends on X86_64
++	---help---
++	  This kernel feature allows a bzImage to be loaded directly
 +	  through Intel TXT or AMD SKINIT measured launch.
 +
  config SECCOMP

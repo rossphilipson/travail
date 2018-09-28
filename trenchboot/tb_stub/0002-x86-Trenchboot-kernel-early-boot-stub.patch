@@ -1,4 +1,4 @@
-From 3735c317ba3d9350344c6c1d4e6f404c516e727f Mon Sep 17 00:00:00 2001
+From 38abd96c099ee4085793e78eff2f39bc323133da Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
@@ -6,11 +6,10 @@ Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +
- arch/x86/boot/compressed/head_32.S |  21 ++++++
  arch/x86/boot/compressed/head_64.S |  21 ++++++
  arch/x86/boot/compressed/tb_stub.S | 134 +++++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/tb_stub.h |  34 ++++++++++
- 5 files changed, 212 insertions(+)
+ 4 files changed, 191 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/boot/compressed/tb_stub.h
 
@@ -27,38 +26,6 @@ index 169c2feda14a..e836406c50a4 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
  # it is executed as-is without any ELF relocation processing performed
-diff --git a/arch/x86/boot/compressed/head_32.S b/arch/x86/boot/compressed/head_32.S
-index 37380c0d5999..2c83d9c99aff 100644
---- a/arch/x86/boot/compressed/head_32.S
-+++ b/arch/x86/boot/compressed/head_32.S
-@@ -208,6 +208,27 @@ fail:
- ENDPROC(efi32_stub_entry)
- #endif
- 
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+ENTRY(tb_stub_entry)
-+	/*
-+	 * On entry, %ebx has the entry offset. Put offset from beginning
-+         * in %ebp to calculate offsets.
-+	 */
-+	movl	%ebx, %ebp
-+	subl	$(tb_stub_entry - startup_32), %ebp
-+
-+	/*
-+	 * Set up the stack. Use the boot stack which will get recycled
-+	 * later in startup_32
-+	 */
-+	leal	boot_stack_end(%ebp), %esp
-+
-+	/* More room to work in tb_stub in the text section */
-+	jmp	tb_stub
-+
-+ENDPROC(tb_stub_entry)
-+#endif
-+
- 	.text
- relocated:
- 
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
 index 64037895b085..42d57750faf9 100644
 --- a/arch/x86/boot/compressed/head_64.S
