@@ -1,0 +1,82 @@
+From 6164b1b64aa6c5d4b4efa8de5e1e02690b361b86 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 2 Oct 2018 14:41:49 -0400
+Subject: [PATCH 3/3] x86: Trenchboot SMP bringup support
+
+Note the AP bringup is very different becuase SKINIT and the ACM leave
+the APs in very different states post launch.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/kernel/smpboot.c            | 11 +++++++++++
+ arch/x86/realmode/init.c             |  1 +
+ arch/x86/realmode/rm/trampoline_64.S |  5 +++++
+ 3 files changed, 17 insertions(+)
+
+diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
+index f02ecaf97904..9416c5157cca 100644
+--- a/arch/x86/kernel/smpboot.c
++++ b/arch/x86/kernel/smpboot.c
+@@ -81,6 +81,7 @@
+ #include <asm/cpu_device_id.h>
+ #include <asm/spec-ctrl.h>
+ #include <asm/hw_irq.h>
++#include <asm/trenchboot.h>
+ 
+ /* representing HT siblings of each logical CPU */
+ DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
+@@ -740,6 +741,14 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
+ 		apic_read(APIC_ESR);
+ 	}
+ 
++	/*
++	 * Only here after a measured launch via SKINIT on AMD. SKINIT
++	 * returns with INIT asserted on all the APs so do not send
++	 * INIT here. The rest would be the normal SIPI process and then
++	 * starting the AP in the realmode blob code.
++	 */
++#ifdef CONFIG_TRENCHBOOT_STUB
++
+ 	pr_debug("Asserting INIT\n");
+ 
+ 	/*
+@@ -756,6 +765,8 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
+ 
+ 	udelay(init_udelay);
+ 
++#endif
++
+ 	pr_debug("Deasserting INIT\n");
+ 
+ 	/* Target chip */
+diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
+index d10105825d57..57b96505d4c1 100644
+--- a/arch/x86/realmode/init.c
++++ b/arch/x86/realmode/init.c
+@@ -43,6 +43,7 @@ void __init reserve_real_mode(void)
+ 
+ 	memblock_reserve(mem, size);
+ 	set_real_mode_mem(mem, size);
++	/* TODO DEV protect this region */
+ }
+ 
+ static void __init setup_real_mode(void)
+diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
+index 24bb7598774e..1983361632d8 100644
+--- a/arch/x86/realmode/rm/trampoline_64.S
++++ b/arch/x86/realmode/rm/trampoline_64.S
+@@ -42,6 +42,11 @@ ENTRY(trampoline_start)
+ 	cli			# We should be safe anyway
+ 	wbinvd
+ 
++	# Only here in RM code on AMD platforms post SKINIT launch
++#ifdef CONFIG_TRENCHBOOT_STUB
++	stgi
++#endif
++
+ 	LJMPW_RM(1f)
+ 1:
+ 	mov	%cs, %ax	# Code and data in the same place
+-- 
+2.13.6
+
