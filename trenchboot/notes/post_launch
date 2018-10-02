@@ -56,6 +56,7 @@ We have control over the way the IL kernel is built.
   - This implies CONFIG_X86_NEED_RELOCS and CONFIG_RANDOMIZE_MEMORY not set.
   - Have control over CONFIG_PHYSICAL_START and CONFIG_PHYSICAL_ALIGN to set
     where the actual kernel ends up.
+  - Disable CONFIG_HOTPLUG_CPU and CONFIG_ACPI_HOTPLUG_CPU.
 
 TXT/TBOOT Specific:
 ---------------------------------------------------------------------
