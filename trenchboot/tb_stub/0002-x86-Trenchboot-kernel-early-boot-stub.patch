@@ -1,4 +1,4 @@
-From 38abd96c099ee4085793e78eff2f39bc323133da Mon Sep 17 00:00:00 2001
+From e65373431a1db410983fcfe927a5157ee9e2b9a6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/2] x86: Trenchboot kernel early boot stub
@@ -8,10 +8,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_64.S |  21 ++++++
  arch/x86/boot/compressed/tb_stub.S | 134 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/tb_stub.h |  34 ++++++++++
+ arch/x86/include/asm/trenchboot.h  |  34 ++++++++++
  4 files changed, 191 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
- create mode 100644 arch/x86/boot/compressed/tb_stub.h
+ create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
 index 169c2feda14a..e836406c50a4 100644
@@ -60,7 +60,7 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..a176f53127a4
+index 000000000000..b2c31c7257dd
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,134 @@
@@ -74,7 +74,7 @@ index 000000000000..a176f53127a4
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
 +#include <asm/bootparam.h>
-+#include "tb_stub.h"
++#include <asm/trenchboot.h>
 +
 +	.code32
 +ENTRY(tb_stub)
@@ -198,11 +198,11 @@ index 000000000000..a176f53127a4
 +
 +ENTRY(tb_control_flags)
 +	.long	0
-diff --git a/arch/x86/boot/compressed/tb_stub.h b/arch/x86/boot/compressed/tb_stub.h
+diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
 index 000000000000..f1f1ecf16556
 --- /dev/null
-+++ b/arch/x86/boot/compressed/tb_stub.h
++++ b/arch/x86/include/asm/trenchboot.h
 @@ -0,0 +1,34 @@
 +#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
 +#define BOOT_COMPRESSED_TRENCHEBOOT_H
