@@ -1,4 +1,4 @@
-From 5cc1ccbaa2a1b363c612528561d815dc6ed715b0 Mon Sep 17 00:00:00 2001
+From 563276c080187e9873976d0fc61bba5874014e07 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/3] x86: Trenchboot SMP bringup support
@@ -14,7 +14,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  3 files changed, 49 insertions(+)
 
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..ed30d6537325 100644
+index f02ecaf97904..651f6f4d1c17 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -83,16 +83,16 @@ index f02ecaf97904..ed30d6537325 100644
 +	 * not active.
 +	 */
 +	BUG_ON(cpu == 0);
-+	BUG_ON(!(tb_control_flags & TB_FLAG_ACTIVE));
++	BUG_ON(!(boot_params.trenchboot_info.tb_flags & TB_FLAG_ACTIVE));
 +
 +	/*
 +	 * Custom APIC driver configuration is not currently supported on AMD
 +	 * and on Intel the startup is totally different.
 +	 */
-+	if (tb_control_flags & TB_FLAG_AMD)
++	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_AMD)
 +		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
 +						     cpu0_nmi_registered);
-+	else if (tb_control_flags & TB_FLAG_INTEL)
++	else if (boot_params.trenchboot_info.tb_flags & TB_FLAG_INTEL)
 +		boot_error = wakeup_cpu_via_intel_txt(cpu);
 +	else
 +		BUG();
