@@ -57,9 +57,9 @@ _entry:
     movl %eax, (%ecx)
 
     movl %ebx, %ecx
-    addl $(jump64 - _entry + 1), %ecx
+    addl $(.Ljump64 - _entry + 1), %ecx
     movl %ebx, %eax
-    addl $(entry64 - _entry), %eax
+    addl $(.Lentry64 - _entry), %eax
     movl %eax, (%ecx)
 
     /* Zero out all page table pages so there are no surprises */
@@ -145,14 +145,14 @@ _entry:
     addl $(gdt_desc64 - _entry), %ebx
     lgdt (%ebx)
 
-jump64:
+.Ljump64:
     .byte 0xea       /* far jmp op */
     .long 0x00000000 /* offset (fixed up) */
     .word CS_SEL64   /* 64b code segment selector */
 
 .code64
 
-entry64:
+.Lentry64:
     /* Load data segment regs */
     movw $DS_SEL64, %ax
     movw %ax, %ds
@@ -221,7 +221,7 @@ lz_exit:
     /* Setup target to ret to compat mode */
     movq %rdx, %rdi
     addq $LZ_DATA_SECTION_SIZE, %rdi
-    addq $(entry_compat - _entry), %rdi
+    addq $(.Lentry_compat - _entry), %rdi
     xorq %rcx, %rcx
     movl %edi, %ecx
 
@@ -232,7 +232,7 @@ lz_exit:
 
 .code32
 
-entry_compat:
+.Lentry_compat:
     /* Now in IA-32e compatibility mode, next stop is protected mode */
     /* Load 32b data segment in the segment regs */
     movw $DS_SEL32, %ax
@@ -253,7 +253,7 @@ entry_compat:
     andl $(~(1 << EFER_LME)), %eax
     wrmsr
 
-entry32:
+.Lentry32:
     /* Now in protected mode, make things look like TXT post launch */
     pushfl
     popl %eax
