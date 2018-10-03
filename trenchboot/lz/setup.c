@@ -4,6 +4,8 @@
 #include <boot.h>
 #include <pci.h>
 #include <dev.h>
+#include <tpm.h>
+#include <tis.h>
 #include <sha1sum.h>
 
 static __text void *lz_base;

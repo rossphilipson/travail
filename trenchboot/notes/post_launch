@@ -32,13 +32,14 @@ earliest:
 2. TB stub late:
   - Later chunk of code in "kernel" to do other needed tasks.
   - Probably the place to setup logging.
-  - May be where the PMRs and DEV changes happen.
   - Need to figure out what other ops that TBOOT did go here.
+    * Valideate TXT heap and PMRs here
   - Need to figure out what comparable ops for SKINIT go here.
+  - Pull in DEV map or PRM for expanded piggy end.
 
 3. TB SMP bringup:
   - Will happen when the kernel runs the smpboot.c code.
-  - May happen before #2.
+  - DEV protect rmpiggy in init.c
 
 4. Main security environment:
   - This is the code in u-root.
@@ -91,6 +92,7 @@ tpm_detect():
 
 verify_IA32_se_svn_status():
   TXT only. Not sure where it should happen?
+  It seems it is really a prelaunch check and we don't really care.
 
 set_policy():
 apply_policy(err):
@@ -137,10 +139,10 @@ txt_post_launch():
     See above note on policy.
 
   TXTCR_CMD_SECRETS
-    Have to read about, not sure when to do it. Maybe tb_stub.
+    Do it in tb_stub.
 
   TXTCR_CMD_OPEN_LOCALITY1
-    Have to read about, not sure when to do it. Maybe tb_stub.
+    Do it in tb_stub.
 
 save_vtd_dmar_table():
   Not sure why this is done along with restore_vtd_dmar_table()

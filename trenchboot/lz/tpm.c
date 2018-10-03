@@ -24,6 +24,7 @@
 #include <be_byteshift.h>
 #include <mem.h>
 #include <tpm.h>
+#include <tis.h>
 
 /* Internal error of TPM command library */
 #define TPM_LIB_ERROR	((u32)~0u)
