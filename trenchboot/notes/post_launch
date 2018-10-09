@@ -26,8 +26,10 @@ earliest:
 
 1. TB stub early:
   - Early assembly entry code in "compressed" to setup basics
-  - May need a early C module to frob e820 before we let the kernel loose
-    on the map.
+  - Need an early C module to hash the zero page and update
+    the TPM before using the boot params.
+  - Try to use the sha1 kernel code via #includes
+  - Will need an early TPM driver.
 
 2. TB stub late:
   - Later chunk of code in "kernel" to do other needed tasks.
@@ -185,6 +187,30 @@ seal_pre_k_state()
 
 _tboot_shared
   This will look very different to us
+
+TBOOT PMR Usage
+---------------------------------------------------------------------
+
+TBOOT determines what memory it will try to cover with the PMRs. The
+information is passed to the ACM through the TXT heap. The ACM does the
+actual PMR configuring.
+
+TBOOT tries to cover as much physical RAM as possible. The high PMR covers
+all memory over 4Gb. The low PMR has some special logic to figure out how
+much memory under 4Gb it can cover.
+
+The routine get_ram_ranges() contains that logic. It starts by assuming it
+can cover all memory under 4Gb. It then looks for the first reserved memory
+area it encounters that is > g_min_ram. When that location is found it stops
+looking and that is the extent of what the low PMR maps. This is done because
+in some firmwares, covering certain reserved areas can cause hangs purportedly
+due to some USB controllers/devices.
+
+This is an example of what TBOOT might end up covering:
+
+TBOOT: highest min_ram (0x2000000) region found: base=0x100000, size=0x9cb3f000
+TBOOT: min_lo_ram: 0x0, max_lo_ram: 0x9cc3f000
+TBOOT: min_hi_ram: 0x100000000, max_hi_ram: 0x44e000000
 
 Linux AP Startup
 ---------------------------------------------------------------------
