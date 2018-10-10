@@ -1,33 +1,142 @@
-From 25aa0c0046921532036f25819d341549da0d1d3e Mon Sep 17 00:00:00 2001
+From c50ba208ffc45fc566e61efc96ebe1c76717e6e7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/boot/compressed/Makefile  |   2 +
- arch/x86/boot/compressed/head_64.S |  21 +++++
- arch/x86/boot/compressed/tb_main.c |  14 ++++
- arch/x86/boot/compressed/tb_stub.S | 166 +++++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/trenchboot.h  |  44 ++++++++++
- 5 files changed, 247 insertions(+)
+ arch/x86/boot/compressed/Makefile     |   3 +
+ arch/x86/boot/compressed/early_sha1.c |  98 ++++++++++++++++++++
+ arch/x86/boot/compressed/head_64.S    |  21 +++++
+ arch/x86/boot/compressed/tb_main.c    |  14 +++
+ arch/x86/boot/compressed/tb_stub.S    | 166 ++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/sha1.h           |  16 ++++
+ arch/x86/include/asm/trenchboot.h     |  47 ++++++++++
+ 7 files changed, 365 insertions(+)
+ create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
+ create mode 100644 arch/x86/include/asm/sha1.h
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 169c2feda14a..95bf662b7c7f 100644
+index 169c2feda14a..ba0234072136 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
-@@ -89,6 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
+@@ -89,6 +89,9 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_main.o $(obj)/tb_stub.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_main.o $(obj)/tb_stub.o \
++	$(obj)/early_sha1.o
 +
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
  # it is executed as-is without any ELF relocation processing performed
+diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
+new file mode 100644
+index 000000000000..d79918f18442
+--- /dev/null
++++ b/arch/x86/boot/compressed/early_sha1.c
+@@ -0,0 +1,98 @@
++/*
++ * TODO license
++ */
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <linux/string.h>
++#include <asm/sha1.h>
++#include <asm/boot.h>
++#include <asm/unaligned.h>
++
++#include "../../../../lib/sha1.c"
++
++static void early_sha1_block_fn(struct sha1_state *sst, u8 const *src,
++				int blocks)
++{
++	u32 temp[SHA_WORKSPACE_WORDS];
++
++	while (blocks--) {
++		sha_transform(sst->state, src, temp);
++		src += SHA1_BLOCK_SIZE;
++	}
++	memset(temp, 0, sizeof(temp));
++	wmb();
++}
++
++void early_sha1_init(struct sha1_state *sctx)
++{
++	sctx->state[0] = SHA1_H0;
++	sctx->state[1] = SHA1_H1;
++	sctx->state[2] = SHA1_H2;
++	sctx->state[3] = SHA1_H3;
++	sctx->state[4] = SHA1_H4;
++	sctx->count = 0;
++}
++
++void early_sha1_update(struct sha1_state *sctx,
++		       const u8 *data,
++		       unsigned int len)
++{
++	unsigned int partial = sctx->count % SHA1_BLOCK_SIZE;
++
++	sctx->count += len;
++
++	if (unlikely((partial + len) >= SHA1_BLOCK_SIZE)) {
++		int blocks;
++
++		if (partial) {
++			int p = SHA1_BLOCK_SIZE - partial;
++
++			memcpy(sctx->buffer + partial, data, p);
++			data += p;
++			len -= p;
++
++			early_sha1_block_fn(sctx, sctx->buffer, 1);
++		}
++
++		blocks = len / SHA1_BLOCK_SIZE;
++		len %= SHA1_BLOCK_SIZE;
++
++		if (blocks) {
++			early_sha1_block_fn(sctx, data, blocks);
++			data += blocks * SHA1_BLOCK_SIZE;
++		}
++		partial = 0;
++	}
++	if (len)
++		memcpy(sctx->buffer + partial, data, len);
++}
++
++void early_sha1_finalize(struct sha1_state *sctx)
++{
++	const int bit_offset = SHA1_BLOCK_SIZE - sizeof(__be64);
++	__be64 *bits = (__be64 *)(sctx->buffer + bit_offset);
++	unsigned int partial = sctx->count % SHA1_BLOCK_SIZE;
++
++	sctx->buffer[partial++] = 0x80;
++	if (partial > bit_offset) {
++		memset(sctx->buffer + partial, 0x0, SHA1_BLOCK_SIZE - partial);
++		partial = 0;
++
++		early_sha1_block_fn(sctx, sctx->buffer, 1);
++	}
++
++	memset(sctx->buffer + partial, 0x0, bit_offset - partial);
++	*bits = cpu_to_be64(sctx->count << 3);
++	early_sha1_block_fn(sctx, sctx->buffer, 1);
++}
++
++void early_sha1_finish(struct sha1_state *sctx, u8 *out)
++{
++	__be32 *digest = (__be32 *)out;
++	int i;
++
++	for (i = 0; i < SHA1_DIGEST_SIZE / sizeof(__be32); i++)
++		put_unaligned_be32(sctx->state[i], digest++);
++
++	*sctx = (struct sha1_state){};
++}
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
 index 64037895b085..42d57750faf9 100644
 --- a/arch/x86/boot/compressed/head_64.S
@@ -252,14 +361,39 @@ index 000000000000..e2c0dd8f8317
 +	 */
 +ENTRY(tb_flags)
 +	.long	0
+diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
+new file mode 100644
+index 000000000000..0fa4bcf8da40
+--- /dev/null
++++ b/arch/x86/include/asm/sha1.h
+@@ -0,0 +1,16 @@
++/*
++ * TODO license
++ */
++#ifndef _ASM_X86_SHA1_H
++#define _ASM_X86_SHA1_H
++
++#include <crypto/sha.h>
++
++void early_sha1_init(struct sha1_state *sctx);
++void early_sha1_update(struct sha1_state *sctx,
++		       const u8 *data,
++		       unsigned int len);
++void early_sha1_finalize(struct sha1_state *sctx);
++void early_sha1_finish(struct sha1_state *sctx, u8 *out);
++
++#endif /* _ASM_X86_SHA1_H */
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..b186f5d48c24
+index 000000000000..d5f073f479fc
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,44 @@
-+#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
-+#define BOOT_COMPRESSED_TRENCHEBOOT_H
+@@ -0,0 +1,47 @@
++/*
++ * TODO license
++ */
++#ifndef _ASM_X86_TRENCHBOOT_H
++#define _ASM_X86_TRENCHBOOT_H
 +
 +#define __TB32_CS 0x0008
 +#define __TB32_DS 0x0010
@@ -301,7 +435,7 @@ index 000000000000..b186f5d48c24
 +
 +#endif
 +
-+#endif /* BOOT_COMPRESSED_TRENCHBOOT_H */
++#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
 2.13.6
 
