@@ -141,10 +141,10 @@ txt_post_launch():
     See above note on policy.
 
   TXTCR_CMD_SECRETS
-    Do it in tb_stub.
+    Done in early tb_stub at end
 
   TXTCR_CMD_OPEN_LOCALITY1
-    Do it in tb_stub.
+    Done in early tb_stub at end + TXTCR_CMD_CLOSE_LOCALITY2
 
 save_vtd_dmar_table():
   Not sure why this is done along with restore_vtd_dmar_table()

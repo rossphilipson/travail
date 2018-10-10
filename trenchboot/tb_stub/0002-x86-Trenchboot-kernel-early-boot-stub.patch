@@ -1,4 +1,4 @@
-From 1ef29f247670286c9a965ac3e682d17bc2f9b8d5 Mon Sep 17 00:00:00 2001
+From ee43e95f73af82e63bc3e9551a3f7b9166ff423e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
@@ -7,10 +7,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_64.S |  21 +++++
- arch/x86/boot/compressed/tb_main.c |  15 ++++
- arch/x86/boot/compressed/tb_stub.S | 154 +++++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/trenchboot.h  |  38 +++++++++
- 5 files changed, 230 insertions(+)
+ arch/x86/boot/compressed/tb_main.c |  14 ++++
+ arch/x86/boot/compressed/tb_stub.S | 168 +++++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/trenchboot.h  |  44 ++++++++++
+ 5 files changed, 249 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
  create mode 100644 arch/x86/include/asm/trenchboot.h
@@ -62,10 +62,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..70ef33f58daa
+index 000000000000..f08fcd312322
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,14 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -80,13 +80,12 @@ index 000000000000..70ef33f58daa
 +{
 +	return 0;
 +}
-+
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..5fd7feb8ffb9
+index 000000000000..7fb55ccdaaf0
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,168 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -141,7 +140,7 @@ index 000000000000..5fd7feb8ffb9
 +
 +.Lbsp_ok:
 +	/* Assume CPU is AMD to start */
-+	movl	$(CPU_AMD), %edi
++	andl	$(CPU_AMD), %edi
 +
 +	/* Now see if it is Intel */
 +	movl	$0x0, %eax
@@ -152,11 +151,11 @@ index 000000000000..5fd7feb8ffb9
 +	jnz	.Lcpu_check_done
 +	cmpl	$0x6c65746e, %ecx
 +	jnz	.Lcpu_check_done
-+	movl	$(CPU_INTEL), %edi
++	andl	$(CPU_INTEL), %edi
 +
 +.Lcpu_check_done:
 +	/* Now that we know what CPU it is, do vendor specific operations */
-+	cmpl	$(CPU_AMD), %edi
++	testl	$(CPU_AMD), %edi
 +	jz	.Ldo_amd
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
@@ -165,13 +164,13 @@ index 000000000000..5fd7feb8ffb9
 +	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
 +	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
-+	leal	.Lunmask_nmi(%ebp), %eax
++	leal	.Lnmi_enabled(%ebp), %eax
 +	pushfl
 +	pushl	$(__TB32_CS)
 +	pushl	%eax
 +	iret
 +
-+.Lunmask_nmi:
++.Lnmi_enabled:
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
 +	movl	TXTCR_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
@@ -185,7 +184,7 @@ index 000000000000..5fd7feb8ffb9
 +
 +	andl	$(TB_FLAG_INTEL), tb_flags(%ebp)
 +
-+	jmp	.Ldone_intel
++	jmp	.Lcpu_setup_done
 +
 +.Ldo_amd:
 +	/*
@@ -198,7 +197,7 @@ index 000000000000..5fd7feb8ffb9
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
 +	andl	$(TB_FLAG_AMD), tb_flags(%ebp)
 +
-+.Ldone_intel:
++.Lcpu_setup_done:
 +	/* Enable MCE */
 +	movl	%cr4, %eax
 +	orl	$(X86_CR4_MCE), %eax
@@ -210,20 +209,34 @@ index 000000000000..5fd7feb8ffb9
 +	pushl	%eax
 +	call	tb_main
 +	testl	%eax, %eax
-+	je	.Lfailure_die
++	jz	.Lcontinue_startup
++	/* Something went wrong, die */
++	ud2
 +
++.Lcontinue_startup:
++	/* Cleanup stack, restore reg values */
++	popl	%eax
++	popl	%esi
++
++	/* Need to finalize TXT and TPM state here */
++	testl	$(TB_FLAG_INTEL), %eax
++	jz	.Lfinish_startup
++	movl	$(TXT_PRIV_CONFIG_REGS_BASE), %ecx
++	movl	$0x1, TXTCR_CMD_SECRETS(%ecx)
++	movl	TXTCR_E2STS(%ecx), %edx
++	movl	$0x1, TXTCR_CMD_OPEN_LOCALITY1(%ecx)
++	movl	TXTCR_E2STS(%ecx), %edx
++	movl	$0x1, TXTCR_CMD_CLOSE_LOCALITY2(%ecx)
++	movl	TXTCR_E2STS(%ecx), %edx
++
++.Lfinish_startup:
 +	/* Store flags in boot params for later use */
-+	movl	tb_flags(%ebp), %eax
 +	movl	%eax, (TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET)(%esi)
 +
 +	/* Done, jump to normal 32b pm entry */
 +	movl	BP_code32_start(%esi), %eax
 +	leal	startup_32(%eax), %eax
 +	jmp	*%eax
-+
-+	/* Something went wrong, die */
-+.Lfailure_die:
-+	ud2
 +ENDPROC(tb_stub)
 +
 +	.data
@@ -243,10 +256,10 @@ index 000000000000..5fd7feb8ffb9
 +	.long	0
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..6631a2a3a263
+index 000000000000..b186f5d48c24
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,44 @@
 +#ifndef BOOT_COMPRESSED_TRENCHBOOT_H
 +#define BOOT_COMPRESSED_TRENCHEBOOT_H
 +
@@ -260,10 +273,16 @@ index 000000000000..6631a2a3a263
 +
 +#define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
 +#define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
-+#define TXTCR_STS		0x0000
-+#define TXTCR_ESTS		0x0008
-+#define TXTCR_ERRORCODE		0x0030
-+#define TXTCR_REG_HEAP_BASE	0x0300
++#define TXTCR_STS			0x0000
++#define TXTCR_ESTS			0x0008
++#define TXTCR_ERRORCODE			0x0030
++#define TXTCR_REG_HEAP_BASE		0x0300
++#define TXTCR_CMD_OPEN_LOCALITY1	0x0380
++#define TXTCR_CMD_CLOSE_LOCALITY1	0x0388
++#define TXTCR_CMD_OPEN_LOCALITY2	0x0390
++#define TXTCR_CMD_CLOSE_LOCALITY2	0x0398
++#define TXTCR_CMD_SECRETS		0x08e0
++#define TXTCR_E2STS			0x08f0
 +
 +#define TRENCHBOOT_INFO_OFFSET	0x0cc
 +#define TB_FLAGS_OFFSET		0x4
