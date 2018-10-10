@@ -1,4 +1,4 @@
-From c50ba208ffc45fc566e61efc96ebe1c76717e6e7 Mon Sep 17 00:00:00 2001
+From 88facb9e8f666a4a196d1d4468b4c8b53abc01f2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
@@ -8,11 +8,11 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile     |   3 +
  arch/x86/boot/compressed/early_sha1.c |  98 ++++++++++++++++++++
  arch/x86/boot/compressed/head_64.S    |  21 +++++
- arch/x86/boot/compressed/tb_main.c    |  14 +++
+ arch/x86/boot/compressed/tb_main.c    |  40 ++++++++
  arch/x86/boot/compressed/tb_stub.S    | 166 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  16 ++++
- arch/x86/include/asm/trenchboot.h     |  47 ++++++++++
- 7 files changed, 365 insertions(+)
+ arch/x86/include/asm/trenchboot.h     |  50 ++++++++++
+ 7 files changed, 394 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
@@ -171,10 +171,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..f08fcd312322
+index 000000000000..9d30f183f954
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,40 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -182,11 +182,37 @@ index 000000000000..f08fcd312322
 +#include <asm/msr.h>
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
++#include <asm/sha1.h>
 +#include <asm/bootparam.h>
 +#include <asm/trenchboot.h>
 +
-+uint32_t tb_main(uint32_t tb_flags, void *bootparams)
++uint32_t tb_main(uint32_t tb_flags, u8 *bootparams)
 +{
++	struct sha1_state sctx = {0};
++	u8 sha1_hash[SHA1_DIGEST_SIZE];
++	unsigned int cmdline_len;
++
++	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
++
++	/* Hash the zero page/boot params */
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	/* TODO tpm_extend 18 */
++
++	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
++	cmdline_len = *((unsigned int*)(bootparams + BP_CMDLINE_SIZE));
++
++	/* Hash the command line */
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx,
++			  *((u8**)(bootparams + BP_CMD_LINE_PTR)),
++			  cmdline_len);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	/* TODO tpm_extend 18 */
++
 +	return 0;
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
@@ -385,10 +411,10 @@ index 000000000000..0fa4bcf8da40
 +#endif /* _ASM_X86_SHA1_H */
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..d5f073f479fc
+index 000000000000..fc656f676a56
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,50 @@
 +/*
 + * TODO license
 + */
@@ -419,6 +445,9 @@ index 000000000000..d5f073f479fc
 +#define TRENCHBOOT_INFO_OFFSET	0x0cc
 +#define TB_FLAGS_OFFSET		0x4
 +#define TB_XBI_OFFSET		0x8
++
++#define BP_CMD_LINE_PTR		0x228
++#define BP_CMDLINE_SIZE		0x238
 +
 +#define TB_FLAG_ACTIVE	0x00000001
 +#define TB_FLAG_AMD	0x00000002
