@@ -1,4 +1,4 @@
-From fc3015d64d4926e77e63c4d34778aadaaaea40d3 Mon Sep 17 00:00:00 2001
+From a74ada64a7fc9fca29c1789b45f2f25ea3920897 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
@@ -6,13 +6,13 @@ Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   3 +
- arch/x86/boot/compressed/early_sha1.c |  98 +++++++++++++++++++
- arch/x86/boot/compressed/head_64.S    |  21 +++++
- arch/x86/boot/compressed/tb_main.c    |  48 ++++++++++
- arch/x86/boot/compressed/tb_stub.S    | 172 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_sha1.c |  98 +++++++++++++++++++++++
+ arch/x86/boot/compressed/head_64.S    |  16 ++++
+ arch/x86/boot/compressed/tb_main.c    |  50 ++++++++++++
+ arch/x86/boot/compressed/tb_stub.S    | 146 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  16 ++++
- arch/x86/include/asm/trenchboot.h     |  70 ++++++++++++++
- 7 files changed, 428 insertions(+)
+ arch/x86/include/asm/trenchboot.h     |  70 ++++++++++++++++
+ 7 files changed, 399 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
@@ -138,27 +138,22 @@ index 000000000000..d79918f18442
 +	*sctx = (struct sha1_state){};
 +}
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..42d57750faf9 100644
+index 64037895b085..687ad217bcc3 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
-@@ -248,6 +248,27 @@ ENTRY(efi32_stub_entry)
+@@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
  ENDPROC(efi32_stub_entry)
  #endif
  
 +#ifdef CONFIG_TRENCHBOOT_STUB
 +ENTRY(tb_stub_entry)
 +	/*
-+	 * On entry, %ebx has the entry offset. Put offset from beginning
-+         * in %ebp to calculate offsets.
++	 * On entry, %ebx has the entry abs offset to tb_stub_entry. To
++	 * find the beginning of where we are loaded, sub off from the
++	 * beginning.
 +	 */
 +	movl	%ebx, %ebp
 +	subl	$(tb_stub_entry - startup_32), %ebp
-+
-+	/*
-+	 * Set up the stack. Use the boot stack which will get recycled
-+	 * later in startup_32
-+	 */
-+	leal	boot_stack_end(%ebp), %esp
 +
 +	/* More room to work in tb_stub in the text section */
 +	jmp	tb_stub
@@ -171,10 +166,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..2019aeab15d8
+index 000000000000..2a1e08139b12
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,50 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -220,15 +215,17 @@ index 000000000000..2019aeab15d8
 +	if (tb_flags & TB_FLAG_INTEL)
 +	{
 +		txt_write_priv_reg(TXTCR_CMD_SECRETS, 0x1);
++		(void)txt_read_priv_reg(TXTCR_E2STS);
 +		txt_write_priv_reg(TXTCR_CMD_OPEN_LOCALITY1, 0x1);
++		(void)txt_read_priv_reg(TXTCR_E2STS);
 +	}
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..a4d2313b08f4
+index 000000000000..e858d13c3bfb
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,146 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -246,13 +243,8 @@ index 000000000000..a4d2313b08f4
 +	cli
 +	cld
 +
-+	/*
-+	 * %ebp has old base address from head_BITS.S. Need to figure out
-+	 * where we are now. Already have a stack so use a call.
-+	 */
-+	call	1f
-+1:	popl	%ebp
-+	subl	$1b, %ebp
++	/* On entry %ebp has the base address from head_64.S, load the stack */
++	leal	tb_stack_end(%ebp), %esp
 +
 +	/* TB flag indicates TB entry mode */
 +	andl	$(TB_FLAG_ACTIVE), tb_flags(%ebp)
@@ -274,6 +266,8 @@ index 000000000000..a4d2313b08f4
 +	lret
 +
 +.Ltb_cs:
++	addl	$8, %esp
++
 +	/* Before going any further, make sure this is the BSP */
 +	movl	$(MSR_IA32_APICBASE), %ecx
 +	rdmsr
@@ -314,6 +308,8 @@ index 000000000000..a4d2313b08f4
 +	iret
 +
 +.Lnmi_enabled:
++	addl	$12, %esp
++
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
 +	movl	TXTCR_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
@@ -346,31 +342,6 @@ index 000000000000..a4d2313b08f4
 +	orl	$(X86_CR4_MCE), %eax
 +	movl	%eax, %cr4
 +
-+	/* Call helper to do the hashing of the boot params */
-+	movl	tb_flags(%ebp), %eax
-+	pushl	%esi
-+	pushl	%eax
-+	call	tb_main
-+	testl	%eax, %eax
-+	jz	.Lcontinue_startup
-+	/* Something went wrong, die */
-+	ud2
-+
-+.Lcontinue_startup:
-+	/* Cleanup stack, restore reg values */
-+	popl	%eax
-+	popl	%esi
-+
-+	/* Need to finalize TXT and TPM state here */
-+	testl	$(TB_FLAG_INTEL), %eax
-+	jz	.Lfinish_startup
-+	movl	$(TXT_PRIV_CONFIG_REGS_BASE), %ecx
-+	movl	$0x1, TXTCR_CMD_SECRETS(%ecx)
-+	movl	TXTCR_E2STS(%ecx), %edx
-+	movl	$0x1, TXTCR_CMD_OPEN_LOCALITY1(%ecx)
-+	movl	TXTCR_E2STS(%ecx), %edx
-+
-+.Lfinish_startup:
 +	/* Store flags in boot params for later use */
 +	movl	%eax, (TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET)(%esi)
 +
