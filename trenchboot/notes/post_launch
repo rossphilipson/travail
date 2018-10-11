@@ -27,7 +27,8 @@ earliest:
 1. TB stub early:
   - Early assembly entry code in "compressed" to setup basics
   - Need an early C module to hash the zero page and update
-    the TPM before using the boot params.
+    the TPM before using the boot params. This is called from
+    the slightly later 64b code.
   - Try to use the sha1 kernel code via #includes
   - Will need an early TPM driver.
 
@@ -61,6 +62,8 @@ We have control over the way the IL kernel is built.
     where the actual kernel ends up.
   - Disable CONFIG_HOTPLUG_CPU and CONFIG_ACPI_HOTPLUG_CPU.
     https://launchpadlibrarian.net/374105894/0001-UBUNTU-Config-azure-CONFIG_HOTPLUG_CPU-n.patch
+  - Possibly have more control over setting BP_kernel_alignment and BP_init_size
+    in the early tb_stub
 
 TXT/TBOOT Specific:
 ---------------------------------------------------------------------
