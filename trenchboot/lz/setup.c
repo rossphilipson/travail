@@ -83,18 +83,6 @@ void setup2(void)
 
     tis_open(2);
 
-    /* extend zero page into PCR18 */
-    data = zero_page;
-    size = PAGE_SIZE;
-    sha1sum(&sha1ctx, data, size);
-    tpm_extend(18, sha1ctx.buf, extend_result);
-
-    /* extend TB Loader command line into PCR18 */
-    data = (u32*)(uintptr_t)*((u8*)zero_page + BP_CMD_LINE_PTR);
-    size = (uintptr_t)*((u8*)zero_page + BP_CMDLINE_SIZE);
-    sha1sum(&sha1ctx, data, size);
-    tpm_extend(18, sha1ctx.buf, extend_result);
-
     /* extend TB Loader code segment into PCR17 */
     data = (u32*)(uintptr_t)*code32_start;
     size = lz_header->trenchboot_loader_size;
