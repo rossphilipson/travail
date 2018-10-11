@@ -17,7 +17,7 @@ on will give a few more details about #3 and #4.
 
 -- Layout --
 
-The Linux kernel starts out as the bzImage. This file has several section and
+The Linux kernel starts out as the bzImage. This file has several sections and
 they are placed in different areas of memory. Consider the following memory
 map fron the TBOOT project - it gives a pretty good view of the recommended
 layout:
@@ -47,9 +47,12 @@ layout:
 
 The first 64K of the bzImage is called the real mode boot sector and is copied
 to 0x90000 (called Kernel boot sector here). The Boot loader is the real
-mode entry point that jumps to the boot sector. The main part of the 32b or 64b
-kernel is loaded at 0x100000 - The Protected-mode kernel. This is the bulk of
-the bzImage.
+mode entry point that jumps to the Kernel setup address.
+
+The Protected-mode kernel is loaded at 0x100000 and can be entered as in either
+32b or 64b modes. This is the uncompressed code that wraps the main Linux kernel
+compressed payload (called the piggy) and the payload itself. More on this in
+the section named Protected Mode Kernel below.
 
 -- Real Mode Boot Sector --
 
@@ -67,7 +70,7 @@ extensions which offficially start at 0x200 and go to 0x268 as can be seen.
 All the area before the header contains the Boot Params.
 
 The code that forms the boot sector is in arch/x86/boot/head.S where the Real-
-mode Kernel Header is laid out. The reset of the Boot Params are defined in
+mode Kernel Header is laid out. The rest of the Boot Params are defined in
 arch/x86/include/uapi/asm/bootparam.h. Their current status is discussed here:
 
 https://github.com/torvalds/linux/blob/master/Documentation/x86/zero-page.txt
@@ -80,16 +83,19 @@ in various:
  - Written at build time by the utility program arch/x86/boot/tools/build
  - Written by code in the protected mode or EFI entry points.
 
+The real mode code does a bunch of legacy setup and then jumps to the
+Protected-mode kernel which is method #1 above,
+
 -- Protected Mode Kernel --
 
 This is the bulk of the kernel. It comes in two logical parts:
 1. The protected mode uncompressed entry point code at the beginning
    of the image. These start at arch/x86/boot/compressed/head_32/64.S
-2. The compressed payload (piggy) that the uncompressed part (#1) decompresses
-   and relocates.
+2. The compressed payload (piggy) that the uncompressed part
+   decompresses and runs.
 
 #1 part is basically the code in arch/x86/boot/compressed. The #2 method of
-booting from the list above enters at startup_32 in protected mode with the
+booting from the list above enters at startup_32/64 in protected mode with the
 Boot Params address in %esi.
 
 -- EFI --
@@ -144,3 +150,179 @@ When Linux is booted, grub_linux_boot() is called. It does further setup and
 calls grub_relocator32_boot(). This routine is in the relocator code in
 grub/grub-core/loader/i386/relocator.c and uses grub_relocator32_start
 in grub/grub-core/loader/i386/relocator32.S to do the final launch.
+
+-- Protected Mode Kernel Details --
+
+The earlier section covered the main kernel binary at a high level. This is
+a deeper dive into what really happens starting with startup_32/64. Some
+specific numbers and assumptions from a specific build of the kernel will
+be used just to illustrate how it all progresses.
+
+So some assumption:
+ - The kernel is started via startup_64 in boot/compressed/head_64.S.
+ - The initial address of startup_32 is 0x100000 or 1M, the default.
+ - KASLR is not enabled so the kernel will be loaded at its preferred
+   address.
+ - The boot loader did not relocate the kernel from the default location.
+ - The defaults are 16M location and alignment:
+    CONFIG_PHYSICAL_START=0x1000000
+    CONFIG_PHYSICAL_ALIGN=0x1000000
+
+To start, a look at the linker file is very useful to understand the layout
+of the kernel binary. It is not that big so the whole thing is presented here:
+
+OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(startup_64)
+SECTIONS
+{
+ . = 0;
+ .head.text : {
+  _head = . ;
+  KEEP(*(.head.text))
+  _ehead = . ;
+ }
+ .rodata..compressed : {
+  *(.rodata..compressed)
+ }
+ .text : {
+  _text = .;
+  *(.text)
+  *(.text.*)
+  _etext = . ;
+ }
+ .rodata : {
+  _rodata = . ;
+  *(.rodata)
+  *(.rodata.*)
+  _erodata = . ;
+ }
+ .got : {
+  _got = .;
+  KEEP(*(.got.plt))
+  KEEP(*(.got))
+  _egot = .;
+ }
+ .data : {
+  _data = . ;
+  *(.data)
+  *(.data.*)
+  _edata = . ;
+ }
+ . = ALIGN((1 << (6)));
+ .bss : {
+  _bss = . ;
+  *(.bss)
+  *(.bss.*)
+  *(COMMON)
+  . = ALIGN(8);
+  _ebss = .;
+ }
+ . = ALIGN((1 << 12));
+ .pgtable : {
+  _pgtable = . ;
+  *(.pgtable)
+  _epgtable = . ;
+ }
+ . = ALIGN((1 << 12));
+ _end = .;
+}
+
+A breakdown of the important sections for this discussion. Note the order of
+what is where, that is important:
+
+ - .head.text: This is where the code in head_64.S lives
+ - .rodata..compressed: This contains the compressed main kernel payload. For
+    this build, that blob is about 5M.
+ - .text: The main text section that contains the rest of the code under
+    boot/compressed including the decompression code.
+ - .bss: The BSS which is close to the end of the image with only .pgtable
+    after it.
+
+Finally there is the global symbol _end that is the absolute end of the entire
+image.
+
+Moving onward, the first interesting block of code is this:
+
+	/* Start with the delta to where the kernel will run at. */
+#ifdef CONFIG_RELOCATABLE
+        leaq    startup_32(%rip) /* - $startup_32 */, %rbp
+        movl    BP_kernel_alignment(%rsi), %eax
+        decl    %eax
+        addq    %rax, %rbp
+        notq    %rax
+        andq    %rax, %rbp
+        cmpq    $LOAD_PHYSICAL_ADDR, %rbp
+        jge     1f
+#endif
+        movq    $LOAD_PHYSICAL_ADDR, %rbp
+1:
+
+Here, %rbp is being loaded with address where the entire kernel will be loaded
+and decompressed in place. The assumption is that the value is
+LOAD_PHYSICAL_ADDR and it is 16M. The boot loader could have forced a
+relocation by changing BP_kernel_alignment here. Just under this is:
+
+        /* Target address to relocate to for decompression */
+        movl    BP_init_size(%rsi), %ebx
+        subl    $_end, %ebx
+        addq    %rbp, %rbx
+
+        /* Set up the stack */
+        leaq    boot_stack_end(%rbx), %rsp
+
+Now things start getting interesting. For this specific build the value of
+BP_init_size is 0x17f9000 which is about 25M. This is the size needed for the
+entire kernel image to be copied to and decompressed in place.
+
+Following the math, %ebx first gets set to a value 25M minus the size of the
+kernel image which is about 5.2M (mote most of that is the payload, the extre
+.2M is all the uncompressed code and othre sections in the image). Remember
+that _end is effectively the length of the kernel image. Then %rbp is added to
+that offset in %rbx putting it that many bytes into the target address for the
+kernel in %rbp.
+
+The stack is in .bss but the above code loads the stack relative to %rbx. That
+is because the entire kernel image is going to be relocated to %rbx. That
+happens here:
+
+/*
+ * Copy the compressed kernel to the end of our buffer
+ * where decompression in place becomes safe.
+ */
+        pushq   %rsi
+        leaq    (_bss-8)(%rip), %rsi
+        leaq    (_bss-8)(%rbx), %rdi
+        movq    $_bss /* - $startup_32 */, %rcx
+        shrq    $3, %rcx
+        std
+        rep     movsq
+        cld
+        popq    %rsi
+
+This copies (backwards) everything in the current kernel image starting from the
+.bss section back to startup_32 (the beginning at 0x100000) to the new location
+at the end of the kernel target area. It does not copy the .bss section because
+it is already being used (e.g. %rsp was set to use the stack area there).
+
+Next the code jumps off to the relocated code:
+
+/*
+ * Jump to the relocated address.
+ */
+        leaq    relocated(%rbx), %rax
+        jmp     *%rax
+
+And finally it does the in place decompression and the final jump to the main
+kernel (which is at 0x1000000).
+
+A picture of the layout, not to scale:
+
+                Kernel decompressed here...                 .head.text piggy  .text   ...   .bss  .pgtable
+     |-----------------------------------------------------|----------|------|------|------|-----|---------|
+ 0x1000000                                            startup_32                   |                     _end
+target area (%rbp)                                relocated image (%rbx)           |
+     ^                                                                             |
+     |                                                                             |
+     +-----------------------------------------------------------------------------+
+       Decompression and final jmp from the uncompressed code to the real kernel
