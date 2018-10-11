@@ -277,7 +277,7 @@ entire kernel image to be copied to and decompressed in place.
 
 Following the math, %ebx first gets set to a value 25M minus the size of the
 kernel image which is about 5.2M (mote most of that is the payload, the extre
-.2M is all the uncompressed code and othre sections in the image). Remember
+.2M is all the uncompressed code and other sections in the image). Remember
 that _end is effectively the length of the kernel image. Then %rbp is added to
 that offset in %rbx putting it that many bytes into the target address for the
 kernel in %rbp.
@@ -302,8 +302,8 @@ happens here:
 
 This copies (backwards) everything in the current kernel image starting from the
 .bss section back to startup_32 (the beginning at 0x100000) to the new location
-at the end of the kernel target area. It does not copy the .bss section because
-it is already being used (e.g. %rsp was set to use the stack area there).
+at the end of the kernel target area (%rbx). It does not copy the .bss section
+because it is already being used (e.g. %rsp was set to use the stack area there).
 
 Next the code jumps off to the relocated code:
 

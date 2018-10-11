@@ -1,4 +1,4 @@
-From 88facb9e8f666a4a196d1d4468b4c8b53abc01f2 Mon Sep 17 00:00:00 2001
+From fc3015d64d4926e77e63c4d34778aadaaaea40d3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
@@ -6,13 +6,13 @@ Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   3 +
- arch/x86/boot/compressed/early_sha1.c |  98 ++++++++++++++++++++
+ arch/x86/boot/compressed/early_sha1.c |  98 +++++++++++++++++++
  arch/x86/boot/compressed/head_64.S    |  21 +++++
- arch/x86/boot/compressed/tb_main.c    |  40 ++++++++
- arch/x86/boot/compressed/tb_stub.S    | 166 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_main.c    |  48 ++++++++++
+ arch/x86/boot/compressed/tb_stub.S    | 172 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  16 ++++
- arch/x86/include/asm/trenchboot.h     |  50 ++++++++++
- 7 files changed, 394 insertions(+)
+ arch/x86/include/asm/trenchboot.h     |  70 ++++++++++++++
+ 7 files changed, 428 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
@@ -171,10 +171,10 @@ index 64037895b085..42d57750faf9 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..9d30f183f954
+index 000000000000..2019aeab15d8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,48 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -186,11 +186,13 @@ index 000000000000..9d30f183f954
 +#include <asm/bootparam.h>
 +#include <asm/trenchboot.h>
 +
-+uint32_t tb_main(uint32_t tb_flags, u8 *bootparams)
++void tb_main(u8 *bootparams)
 +{
 +	struct sha1_state sctx = {0};
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
-+	unsigned int cmdline_len;
++	u32 cmdline_len;
++	u64 cmdline_addr;
++	u32 tb_flags;
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +
@@ -202,25 +204,31 @@ index 000000000000..9d30f183f954
 +	/* TODO tpm_extend 18 */
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+	cmdline_len = *((unsigned int*)(bootparams + BP_CMDLINE_SIZE));
++	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
++	cmdline_addr = *((u32*)(bootparams + BP_CMD_LINE_PTR));
 +
 +	/* Hash the command line */
 +	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx,
-+			  *((u8**)(bootparams + BP_CMD_LINE_PTR)),
-+			  cmdline_len);
++	early_sha1_update(&sctx, (u8*)cmdline_addr, cmdline_len);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	/* TODO tpm_extend 18 */
 +
-+	return 0;
++	/* On Intel, have to handle TPM localities via TXT */
++	tb_flags = *((u32*)(bootparams +
++		    TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET));
++	if (tb_flags & TB_FLAG_INTEL)
++	{
++		txt_write_priv_reg(TXTCR_CMD_SECRETS, 0x1);
++		txt_write_priv_reg(TXTCR_CMD_OPEN_LOCALITY1, 0x1);
++	}
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..e2c0dd8f8317
+index 000000000000..a4d2313b08f4
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,172 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -385,8 +393,14 @@ index 000000000000..e2c0dd8f8317
 +	 * Temporary storage for flags until they can be loaded into
 +	 * boot params making them available to the real kernel.
 +	 */
-+ENTRY(tb_flags)
++tb_flags:
 +	.long	0
++
++	/* Small stack to work with */
++	.balign 4
++tb_stack:
++	.fill 32, 1, 0
++tb_stack_end:
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
 index 000000000000..0fa4bcf8da40
@@ -411,10 +425,10 @@ index 000000000000..0fa4bcf8da40
 +#endif /* _ASM_X86_SHA1_H */
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..fc656f676a56
+index 000000000000..771253e63c0f
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,70 @@
 +/*
 + * TODO license
 + */
@@ -461,6 +475,26 @@ index 000000000000..fc656f676a56
 +} __attribute__((packed));
 +
 +extern uint32_t tb_control_flags;
++
++static inline u64 txt_read_pub_reg(u32 reg)
++{
++    return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
++}
++
++static inline u64 txt_read_priv_reg(u32 reg)
++{
++    return *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg);
++}
++
++static inline void txt_write_pub_reg(u32 reg, u64 val)
++{
++    *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg) = val;
++}
++
++static inline void txt_write_priv_reg(u32 reg, u64 val)
++{
++    *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
++}
 +
 +#endif
 +
