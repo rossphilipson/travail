@@ -43,6 +43,9 @@ earliest:
 3. TB SMP bringup:
   - Will happen when the kernel runs the smpboot.c code.
   - DEV protect rmpiggy in init.c
+    * SKINIT AP startup will vector to realmode code in relocated rmpiggy
+  - Low PMR wil cover relocated rmpiggy
+    * TXT AP startup will attempt to vectore to startup_32 in relocated rmpiggy
 
 4. Main security environment:
   - This is the code in u-root.
