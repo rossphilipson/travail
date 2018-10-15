@@ -1,4 +1,4 @@
-From 563276c080187e9873976d0fc61bba5874014e07 Mon Sep 17 00:00:00 2001
+From 778a7b198997e4d83948fb6473bc33208a83c384 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/3] x86: Trenchboot SMP bringup support
@@ -8,13 +8,29 @@ the APs in very different states post launch.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
+ arch/x86/include/asm/realmode.h      |  3 +++
  arch/x86/kernel/smpboot.c            | 43 ++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/init.c             |  1 +
- arch/x86/realmode/rm/trampoline_64.S |  5 +++++
- 3 files changed, 49 insertions(+)
+ arch/x86/realmode/rm/header.S        |  3 +++
+ arch/x86/realmode/rm/trampoline_64.S |  8 +++++++
+ 5 files changed, 58 insertions(+)
 
+diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
+index 63b3393bd98e..6cff50705736 100644
+--- a/arch/x86/include/asm/realmode.h
++++ b/arch/x86/include/asm/realmode.h
+@@ -32,6 +32,9 @@ struct real_mode_header {
+ #endif
+ 	/* APM/BIOS reboot */
+ 	u32	machine_real_restart_asm;
++#ifdef CONFIG_TRENCHBOOT_STUB
++	u32	trampoline_start32;
++#endif
+ #ifdef CONFIG_X86_64
+ 	u32	machine_real_restart_seg;
+ #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..651f6f4d1c17 100644
+index f02ecaf97904..a82c30ce0ecc 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -114,8 +130,22 @@ index d10105825d57..57b96505d4c1 100644
  }
  
  static void __init setup_real_mode(void)
+diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
+index 30b0d30d861a..39b3410e922a 100644
+--- a/arch/x86/realmode/rm/header.S
++++ b/arch/x86/realmode/rm/header.S
+@@ -31,6 +31,9 @@ GLOBAL(real_mode_header)
+ #endif
+ 	/* APM/BIOS reboot */
+ 	.long	pa_machine_real_restart_asm
++#ifdef CONFIG_TRENCHBOOT_STUB
++	.long	pa_trampoline_start32
++#endif
+ #ifdef CONFIG_X86_64
+ 	.long	__KERNEL32_CS
+ #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..1983361632d8 100644
+index 24bb7598774e..681e8ba9e394 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -42,6 +42,11 @@ ENTRY(trampoline_start)
@@ -130,6 +160,16 @@ index 24bb7598774e..1983361632d8 100644
  	LJMPW_RM(1f)
  1:
  	mov	%cs, %ax	# Code and data in the same place
+@@ -86,6 +91,9 @@ no_longmode:
+ 	.section ".text32","ax"
+ 	.code32
+ 	.balign 4
++#ifdef CONFIG_TRENCHBOOT_STUB
++ENTRY(trampoline_start32)
++#endif
+ ENTRY(startup_32)
+ 	movl	%edx, %ss
+ 	addl	$pa_real_mode_base, %esp
 -- 
 2.13.6
 
