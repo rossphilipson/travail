@@ -89,10 +89,10 @@ index f02ecaf97904..651f6f4d1c17 100644
 +	 * Custom APIC driver configuration is not currently supported on AMD
 +	 * and on Intel the startup is totally different.
 +	 */
-+	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_AMD)
++	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_SKINIT)
 +		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
 +						     cpu0_nmi_registered);
-+	else if (boot_params.trenchboot_info.tb_flags & TB_FLAG_INTEL)
++	else if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_TXT)
 +		boot_error = wakeup_cpu_via_intel_txt(cpu);
 +	else
 +		BUG();

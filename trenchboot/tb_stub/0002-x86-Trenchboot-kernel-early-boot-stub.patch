@@ -236,7 +236,7 @@ index 000000000000..2a1e08139b12
 +	/* On Intel, have to handle TPM localities via TXT */
 +	tb_flags = *((u32*)(bootparams +
 +		    TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET));
-+	if (tb_flags & TB_FLAG_INTEL)
++	if (tb_flags & TB_FLAG_ARCH_TXT)
 +	{
 +		txt_write_priv_reg(TXTCR_CMD_SECRETS, 0x1);
 +		(void)txt_read_priv_reg(TXTCR_E2STS);
@@ -345,7 +345,7 @@ index 000000000000..a22d43c95f3d
 +	movl	$0x0, TXTCR_ERRORCODE(%eax)
 +	movl	$0xffffffff, TXTCR_ESTS(%eax)
 +
-+	andl	$(TB_FLAG_INTEL), tb_flags(%ebp)
++	andl	$(TB_FLAG_ARCH_TXT), tb_flags(%ebp)
 +
 +	jmp	.Lcpu_setup_done
 +
@@ -358,7 +358,7 @@ index 000000000000..a22d43c95f3d
 +	stgi
 +
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
-+	andl	$(TB_FLAG_AMD), tb_flags(%ebp)
++	andl	$(TB_FLAG_ARCH_SKINIT), tb_flags(%ebp)
 +
 +.Lcpu_setup_done:
 +	/* Enable MCE */
@@ -461,9 +461,9 @@ index 000000000000..771253e63c0f
 +#define BP_CMD_LINE_PTR		0x228
 +#define BP_CMDLINE_SIZE		0x238
 +
-+#define TB_FLAG_ACTIVE	0x00000001
-+#define TB_FLAG_AMD	0x00000002
-+#define TB_FLAG_INTEL	0x00000004
++#define TB_FLAG_ACTIVE		0x00000001
++#define TB_FLAG_ARCH_SKINIT	0x00000002
++#define TB_FLAG_ARCH_TXT	0x00000004
 +
 +#ifndef __ASSEMBLY__
 +
