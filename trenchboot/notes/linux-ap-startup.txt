@@ -1,3 +1,19 @@
+---- Linux AP Startup ----
+
+-- Relocs File --
+
+The relocs files are binary file created by the relocs tool that is built under
+arch/x86/tools and used at Linux build time. In particular it creates the file
+realmode.relocs off of the realmode.elf binary. As an example, this will create
+that file:
+
+$ ./relocs --realmode ../realmode/rm/realmode.elf > realmode.relocs
+
+This is an example from a build of 4.18. The format is a series of 32b
+integers. The first is the number of 16b segment relocations followed by the
+series of these values. After that series there is the number of 32b linear
+relocations followed by the series of these values.
+
 00000000  04 00 00 00 09 10 00 00  ae 11 00 00 d5 11 00 00  |................| <-- 4 16b segment relocs (offset 0)
 00000010  00 12 00 00 1b 00 00 00  00 00 00 00 04 00 00 00  |................| <-- 1b 32b linear relocs (offset 0x15)
 00000020  08 00 00 00 0c 00 00 00  10 00 00 00 14 00 00 00  |................|
@@ -9,3 +25,27 @@
 00000080  c7 1e 00 00                                       |....|
 00000084
 
+The code in arch/x86/readmode/init.c (mentioned above) fixes up the final
+rmpiggy at runtime before relocating the image to its final location < 1M.
+The new relocation base address is added to the value at each relocation.
+
+An example of a 16b segment update, take the reloc at 0x14. It update this
+code:
+
+    1006:	ea 0b 10 00 00 8c c8 	ljmp   $0xc88c,$0x100b
+
+It fixes up the ljmp code segment argument by adding the new base to
+0xc88c (note this is 16b code so all offsets can be manipulated/fixed
+up by playing with the code seqment value).
+
+An example of a 32b linear update, take the reloc at 0x70. It update this
+code:
+
+    1e83:	ea e0 1e 00 00 10 00 	ljmp   $0x10,$0x1ee0
+
+It fixes up the ljmp linear address argument by adding the new base to
+0x1ee0 (note this is 32 bit code so the code segment selector does not
+change).
+
+A final note, the relocs from 0x18 to 0x38 are updating the data values in
+the realmode header defined in arch/x86/realmode/rm/head.S.
