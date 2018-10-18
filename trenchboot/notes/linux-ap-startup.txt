@@ -108,8 +108,16 @@ code:
     1006:	ea 0b 10 00 00 8c c8 	ljmp   $0xc88c,$0x100b
 
 It fixes up the ljmp code segment argument by setting it to the new segment
-value which is the new base >> 4 (note this is 16b code so all offsets can be
-manipulated/fixed up by changing with the code seqment value).
+value which is the new base >> 4. Note this is 16b code so all offsets can be
+manipulated/fixed up by changing with the code seqment value. To see this
+consider the lines shortly after the jump:
+
+        lidtl   tr_idt  # load idt with 0, 0
+        lgdtl   tr_gdt  # load gdt with whatever is appropriate
+
+Since the jump loaded %cs with the new segment and all the other segment
+registers got this value, the offsets to tr_idt and tr_gdt are just the
+image offsets w/o fixups.
 
 An example of a 32b linear update, take the reloc at 0x70. It updates this
 code:
@@ -117,8 +125,8 @@ code:
     1e83:	ea e0 1e 00 00 10 00 	ljmp   $0x10,$0x1ee0
 
 It fixes up the ljmp linear address argument by adding the new base to
-0x1ee0 (note this is 32 bit code so the code segment selector does not
-change).
+0x1ee0. Note this is 32 bit code so the code segment selector does not
+change.
 
 The reloc tool for real mode also recognizes all symbols starting with pa_
 and fixes those up as well by adding the new base value to them. These are
