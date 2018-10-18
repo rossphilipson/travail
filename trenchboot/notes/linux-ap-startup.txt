@@ -1,5 +1,59 @@
 ---- Linux AP Startup ----
 
+On Intel and AMD systems with standard integrated APICs, APs are started using
+the INIT-SIPI-SIPI sequence. In the Linux 4.18 kernel, the code to do the AP
+startup is in arch/x86/kernel/smpboot.c. The sequence of calls is as follows:
+
+do_boot_cpu()
+  wakeup_cpu_via_init_nmi()
+    wakeup_secondary_cpu_via_init()
+
+The startup sequence is done by sending INIT and SIPI IPIs to the specific AP's
+LAPIC through the BSP's LAPIC. There is a quick summary at this link
+(see AP startup, Sending IPIs):
+
+https://wiki.osdev.org/Symmetric_Multiprocessing#AP_startup
+
+More detailed information can be found in the Intel and AMD manuals. The main
+thing to note is that the SIPI startup vector is a page frame number for a
+page below 1M and the AP will start in real mode. This means the kernel must
+provide a 16b trampoline in low memory to be able to do the AP startup. Enter
+the real mode piggy or rmpiggy as it is called in code.
+
+-- Real Mode Piggy --
+
+The code that is compiled into the rmpiggy image is under arch/x86/realmode/rm.
+The following is the anatomy of the rmpiggy assuming the kernel is built as
+x86_64.
+
+The main trampoline code is in trampoline_64.S. Execution starts at the symbol
+trampoline_start in 16b real mode. It real mode code does the minimum to setup
+for a jump to protected mode at startup_32. The protected mode code does the
+minimum to setup for a jump to long mode evenutally getting to 64 bit mode at
+startup_64. Finally this code jumps back to the main kernel through the value
+in tr_start in the trampoline header.
+
+The trampoline header is located at the end of trampoline_64.S and contains
+values setup by the support code (see below). There are several values there
+used in the trampoline code including the final jump out of the trampoline via
+tr_start which is set to secondary_startup_64 in the main kernel.
+
+The rmpiggy also contains the real mode header in header.S. This header
+contains offsets to locations in the rmpiggy image and is fixed up by the
+support code before the rmpiggy is relocated to its home in low memory. The
+file arch/x86/include/asm/realmode.h contains a C definition of this header
+structure and is used to point to the real mode header after relocation. The
+primary fields of interest for this discussion are:
+
+  trampoline_start: The 16b entry point passed as the startup vector for SIPI
+  trampoline_header: The location of the this header that the support code sets up
+
+-- Real Mode Piggy Support Code --
+
+The code that is compiled into the rmpiggy is under arch/x86/realmode/rm. The
+code that packages the rmpiggy at build time and handles the rmpiggy at runtime
+is under arch/x86/realmode.
+
 -- Relocs File --
 
 The relocs files are binary file created by the reloc tool that is built under
@@ -15,7 +69,7 @@ series of those values. After that series there is the number of 32b linear
 relocations followed by the series of those values.
 
 00000000  04 00 00 00 09 10 00 00  ae 11 00 00 d5 11 00 00  |................| <-- 4 16b segment relocs (offset 0)
-00000010  00 12 00 00 1b 00 00 00  00 00 00 00 04 00 00 00  |................| <-- 1b 32b linear relocs (offset 0x15)
+00000010  00 12 00 00 1b 00 00 00  00 00 00 00 04 00 00 00  |................| <-- 1b 32b linear relocs (offset 0x14)
 00000020  08 00 00 00 0c 00 00 00  10 00 00 00 14 00 00 00  |................|
 00000030  18 00 00 00 1c 00 00 00  20 00 00 00 32 00 00 00  |........ ...2...|
 00000040  72 00 00 00 7a 00 00 00  92 00 00 00 9a 00 00 00  |r...z...........|
@@ -47,5 +101,16 @@ It fixes up the ljmp linear address argument by adding the new base to
 0x1ee0 (note this is 32 bit code so the code segment selector does not
 change).
 
+The reloc tool for real mode also recognizes all symbols starting with pa_
+and fixes those up as well. These are generally global data and the pa_
+symbol is associated with its non-pa_ counterpart in the linker script
+realmode.lds for example:
+
+        ljmpl   $__KERNEL_CS, $pa_startup_64
+
+The symbol pa_startup_64 was fixed up to locate startup_64 for the jump
+to 64 bit mode.
+
 A final note, the relocs from 0x18 to 0x38 are updating the data values in
-the realmode header discused previously in these notes.
+the realmode header discused previously in these notes, all of which have
+pa_ symbol counterparts.
