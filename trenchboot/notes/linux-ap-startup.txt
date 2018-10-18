@@ -23,7 +23,7 @@ More detailed information can be found in the Intel and AMD manuals. The main
 thing to note is that the SIPI startup vector is a page frame number for a
 page below 1M and the AP will start in real mode. This means the kernel must
 provide a 16b trampoline in low memory to be able to do the AP startup. Enter
-the real mode piggy or rmpiggy as it is called in code.
+the real mode piggy or rmpiggy as it is called.
 
 -- Real Mode Piggy --
 
@@ -32,9 +32,9 @@ The following is the anatomy of the rmpiggy assuming the kernel is built as
 x86_64.
 
 The main trampoline code is in trampoline_64.S. Execution starts at the symbol
-trampoline_start in 16b real mode. It real mode code does the minimum to setup
+trampoline_start in 16b real mode. The real mode code does the minimum to setup
 for a jump to protected mode at startup_32. The protected mode code does the
-minimum to setup for a jump to long mode evenutally getting to 64 bit mode at
+minimum to setup for a jump to long mode eventually getting to 64 bit mode at
 startup_64. Finally this code jumps back to the main kernel through the value
 in tr_start in the trampoline header.
 
@@ -61,7 +61,7 @@ realmode.elf) and realmode.relocs.
 The code that packages the rmpiggy at build time and handles the rmpiggy at
 runtime is under arch/x86/realmode.
 
-The file rmpiggy.S pulls the rmpiggy image and relocs files into the .init.data
+The file rmpiggy.S pulls the rmpiggy image and relocs file into the .init.data
 section of the kernel image at build time. The code in init.c, which is built
 into the kernel itself, loads the rmpiggy located at the symbol real_mode_blob.
 This blob/image is copied to a location in low memory < 1M. It then fixes up
@@ -99,17 +99,17 @@ relocations followed by the series of those values.
 00000084
 
 The code in arch/x86/readmode/init.c (mentioned above) fixes up the rmpiggy
-binary blob at runtime before relocating the image to its final location < 1M.
-The new relocation base address is added to the value at each relocation.
+at runtime after relocating the image to its final location < 1M. The new
+relocation base address is used to adjust each relocation.
 
 An example of a 16b segment update, take the reloc at 0x4. It updates this
 code:
 
     1006:	ea 0b 10 00 00 8c c8 	ljmp   $0xc88c,$0x100b
 
-It fixes up the ljmp code segment argument by adding the new base to
-0xc88c (note this is 16b code so all offsets can be manipulated/fixed
-up by playing with the code seqment value).
+It fixes up the ljmp code segment argument by setting it to the new segment
+value which is the new base >> 4 (note this is 16b code so all offsets can be
+manipulated/fixed up by changing with the code seqment value).
 
 An example of a 32b linear update, take the reloc at 0x70. It updates this
 code:
@@ -121,9 +121,9 @@ It fixes up the ljmp linear address argument by adding the new base to
 change).
 
 The reloc tool for real mode also recognizes all symbols starting with pa_
-and fixes those up as well. These are generally global data and the pa_
-symbol is associated with its non-pa_ counterpart in the linker script
-realmode.lds for example:
+and fixes those up as well by adding the new base value to them. These are
+generally global data and the pa_ symbol is associated with its non-pa_
+counterpart in the linker script realmode.lds for example:
 
         ljmpl   $__KERNEL_CS, $pa_startup_64
 
