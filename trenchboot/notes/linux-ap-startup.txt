@@ -14,6 +14,11 @@ LAPIC through the BSP's LAPIC. There is a quick summary at this link
 
 https://wiki.osdev.org/Symmetric_Multiprocessing#AP_startup
 
+And the SIPI step can be seen in the kernel code here:
+
+                apic_icr_write(APIC_DM_STARTUP | (start_eip >> 12),
+                               phys_apicid);
+
 More detailed information can be found in the Intel and AMD manuals. The main
 thing to note is that the SIPI startup vector is a page frame number for a
 page below 1M and the AP will start in real mode. This means the kernel must
@@ -48,11 +53,25 @@ primary fields of interest for this discussion are:
   trampoline_start: The 16b entry point passed as the startup vector for SIPI
   trampoline_header: The location of the this header that the support code sets up
 
+The final output is the rmpiggy image in realmode.bin (which is objcopy'd from
+realmode.elf) and realmode.relocs.
+
 -- Real Mode Piggy Support Code --
 
-The code that is compiled into the rmpiggy is under arch/x86/realmode/rm. The
-code that packages the rmpiggy at build time and handles the rmpiggy at runtime
-is under arch/x86/realmode.
+The code that packages the rmpiggy at build time and handles the rmpiggy at
+runtime is under arch/x86/realmode.
+
+The file rmpiggy.S pulls the rmpiggy image and relocs files into the .init.data
+section of the kernel image at build time. The code in init.c, which is built
+into the kernel itself, loads the rmpiggy located at the symbol real_mode_blob.
+This blob/image is copied to a location in low memory < 1M. It then fixes up
+the segments and addresses in the relocated rmpiggy image to match the
+location where it now resides (see Relocs File below). The final stage is to
+update the trampoline header in the relocated rmpiggy. All of this happens at
+early kernel init time.
+
+The smpboot.c code later finds the trampoline entry point by fetching the
+trampoline_start from the real mode header in the relocated rmpiggy.
 
 -- Relocs File --
 
