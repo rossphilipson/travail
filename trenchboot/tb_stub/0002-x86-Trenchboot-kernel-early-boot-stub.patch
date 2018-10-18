@@ -249,7 +249,7 @@ new file mode 100644
 index 000000000000..c98462c3fa66
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,151 @@
 +	.code32
 +	.text
 +#include <linux/init.h>
@@ -379,6 +379,7 @@ index 000000000000..c98462c3fa66
 +ENDPROC(tb_stub)
 +
 +	.data
++	.balign 16
 +tb_gdt:
 +	.word	tb_gdt_end - tb_gdt
 +	.long	tb_gdt
@@ -391,6 +392,7 @@ index 000000000000..c98462c3fa66
 +	 * Temporary storage for flags until they can be loaded into
 +	 * boot params making them available to the real kernel.
 +	 */
++	.balign 4
 +tb_flags:
 +	.long	0
 +
