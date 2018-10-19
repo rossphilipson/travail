@@ -1,4 +1,4 @@
-From dbb362413dee379a5884045794ce454df93a2f5e Mon Sep 17 00:00:00 2001
+From b82be58e936566485044b055602203462a7ebbaa Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/5] x86: Trenchboot SMP bringup support
@@ -9,12 +9,12 @@ the APs in very different states post launch.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/include/asm/trenchboot.h    | 83 +++++++++++++++++++++++++++++++++++-
- arch/x86/kernel/smpboot.c            | 46 ++++++++++++++++++++
+ arch/x86/include/asm/trenchboot.h    | 92 +++++++++++++++++++++++++++++++++++-
+ arch/x86/kernel/smpboot.c            | 46 ++++++++++++++++++
  arch/x86/realmode/init.c             |  1 +
  arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 64 +++++++++++++++++++++++++++
- 6 files changed, 199 insertions(+), 1 deletion(-)
+ arch/x86/realmode/rm/trampoline_64.S | 64 +++++++++++++++++++++++++
+ 6 files changed, 207 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..260ae182b953 100644
@@ -31,7 +31,7 @@ index 63b3393bd98e..260ae182b953 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-index 7fe016300be7..3bfdabbd89ec 100644
+index 7fe016300be7..097751e17a02 100644
 --- a/arch/x86/include/asm/trenchboot.h
 +++ b/arch/x86/include/asm/trenchboot.h
 @@ -11,6 +11,7 @@
@@ -52,36 +52,44 @@ index 7fe016300be7..3bfdabbd89ec 100644
  #define TRENCHBOOT_INFO_OFFSET	0x0cc
  #define TB_FLAGS_OFFSET		0x4
  #define TB_XBI_OFFSET		0x8
-@@ -38,11 +42,27 @@
+@@ -38,11 +42,34 @@
  
  #ifndef __ASSEMBLY__
  
 -struct os_mle_data {
+-	uint32_t zero_page_addr;
 +struct txt_bios_data {
-+	uint8_t undef[36];
++	uint8_t		undef[36];
 +} __attribute__((packed));
 +
 +struct txt_os_mle_data {
- 	uint32_t zero_page_addr;
++	uint32_t	zero_page_addr;
  	/* TODO more to define later, may move to a common Trenchboot header */
  } __attribute__((packed));
  
 +struct txt_os_sinit_data {
-+	uint8_t undef1[80];
-+	uint32_t capabilities;
-+	uint8_t undef2[16];
++	uint8_t		undef1[80];
++	uint32_t	capabilities;
++	uint8_t		undef2[16];
 +} __attribute__((packed));
 +
 +struct txt_sinit_mle_data {
-+	uint8_t undef1[120];
-+	uint32_t rlp_wakeup_addr;
-+	uint8_t undef2[24];
++	uint8_t		undef1[120];
++	uint32_t	rlp_wakeup_addr;
++	uint8_t		undef2[24];
++} __attribute__((packed));
++
++struct txt_mle_join {
++	uint32_t	gdt_limit;
++	uint32_t	gdt_base;
++	uint32_t	seg_sel;               /* cs (ds, es, ss are seg_sel+8) */
++	uint32_t	entry_point;           /* phys addr */
 +} __attribute__((packed));
 +
  static inline u64 txt_read_pub_reg(u32 reg)
  {
  	return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
-@@ -63,6 +83,67 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
+@@ -63,6 +90,67 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
  	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
  }
  
