@@ -46,6 +46,7 @@ earliest:
     * SKINIT AP startup will vector to realmode code in relocated rmpiggy
   - Low PMR wil cover relocated rmpiggy
     * TXT AP startup will attempt to vectore to startup_32 in relocated rmpiggy
+  - Need to deal with resetting MSR_APICBASE on Intel (not sure where to do it)
 
 4. Main security environment:
   - This is the code in u-root.
@@ -260,6 +261,19 @@ txt_wakeup_cpus()
     set pre-launch. This will be either:
      - *((uint32_t *)(unsigned long)(sinit_mle_data->rlp_wakeup_addr)) = 0x01;
      - __getsec_wakeup()
+
+_txt_wakeup:
+  - The wakup vector in boot.S
+  - Does usual stuff like setting up stacks, enable MCE
+  - Jumps to txt_cpu_wakeup()
+
+txt_cpu_wakeup()
+  - Restors the LAPIC base
+  - Enables SMI, doesn't bother to enable NMI
+  - Restore MTRRs
+  - Do one of:
+    * Wait in miniguest
+    * Wait using MWAIT
 
 The AP state upon resuming is similar to that of the BSP post launch. The TXT
 spec and SDM describe this state.

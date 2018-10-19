@@ -1,4 +1,4 @@
-From fd4ba875529f78c9d4359e3b2a511cdb051a1082 Mon Sep 17 00:00:00 2001
+From 20168d5ba4bd72573e59513bda760147f83787a0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/5] x86: Trenchboot kernel early boot stub
@@ -11,8 +11,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/tb_main.c    |  50 ++++++++++++
  arch/x86/boot/compressed/tb_stub.S    | 147 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  16 ++++
- arch/x86/include/asm/trenchboot.h     |  70 ++++++++++++++++
- 7 files changed, 417 insertions(+)
+ arch/x86/include/asm/trenchboot.h     |  68 ++++++++++++++++
+ 7 files changed, 415 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
@@ -421,18 +421,18 @@ index 000000000000..0fa4bcf8da40
 +#endif /* _ASM_X86_SHA1_H */
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..915aefc33c51
+index 000000000000..7fe016300be7
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,68 @@
 +/*
 + * TODO license
 + */
 +#ifndef _ASM_X86_TRENCHBOOT_H
 +#define _ASM_X86_TRENCHBOOT_H
 +
-+#define __TB32_CS 0x0008
-+#define __TB32_DS 0x0010
++#define __TB32_CS	0x0008
++#define __TB32_DS	0x0010
 +
 +#define CPU_AMD			1
 +#define CPU_INTEL		2
@@ -470,26 +470,24 @@ index 000000000000..915aefc33c51
 +	/* TODO more to define later, may move to a common Trenchboot header */
 +} __attribute__((packed));
 +
-+extern uint32_t tb_control_flags;
-+
 +static inline u64 txt_read_pub_reg(u32 reg)
 +{
-+    return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
++	return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
 +}
 +
 +static inline u64 txt_read_priv_reg(u32 reg)
 +{
-+    return *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg);
++	return *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg);
 +}
 +
 +static inline void txt_write_pub_reg(u32 reg, u64 val)
 +{
-+    *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg) = val;
++	*(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg) = val;
 +}
 +
 +static inline void txt_write_priv_reg(u32 reg, u64 val)
 +{
-+    *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
++	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
 +}
 +
 +#endif
