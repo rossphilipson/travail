@@ -1,18 +1,18 @@
-From 2c98c154f7af597cb0616adc96d2ce32b47df1aa Mon Sep 17 00:00:00 2001
+From fd4ba875529f78c9d4359e3b2a511cdb051a1082 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
-Subject: [PATCH 2/3] x86: Trenchboot kernel early boot stub
+Subject: [PATCH 2/5] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   3 +
- arch/x86/boot/compressed/early_sha1.c |  98 ++++++++++++++++++++++
+ arch/x86/boot/compressed/early_sha1.c |  98 +++++++++++++++++++++++
  arch/x86/boot/compressed/head_64.S    |  33 ++++++++
  arch/x86/boot/compressed/tb_main.c    |  50 ++++++++++++
- arch/x86/boot/compressed/tb_stub.S    | 149 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/tb_stub.S    | 147 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  16 ++++
  arch/x86/include/asm/trenchboot.h     |  70 ++++++++++++++++
- 7 files changed, 419 insertions(+)
+ 7 files changed, 417 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
@@ -246,16 +246,14 @@ index 000000000000..ed4ff21ca5d8
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..c98462c3fa66
+index 000000000000..87513c6086db
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,147 @@
 +	.code32
 +	.text
-+#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
-+#include <asm/boot.h>
 +#include <asm/msr.h>
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
@@ -373,9 +371,7 @@ index 000000000000..c98462c3fa66
 +	andb	$~(KEEP_SEGMENTS), BP_loadflags(%esi)
 +
 +	/* Done, jump to normal 32b pm entry */
-+	movl	BP_code32_start(%esi), %eax
-+	leal	startup_32(%eax), %eax
-+	jmp	*%eax
++	jmp	startup_32
 +ENDPROC(tb_stub)
 +
 +	.data
