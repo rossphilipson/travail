@@ -1,0 +1,44 @@
+From c716ced91e98a8e1186cb8846f71130c5a4ea804 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Fri, 19 Oct 2018 09:03:49 -0400
+Subject: [PATCH 5/5] x86: TrenchBoot AMD SMP DEV support
+
+AMD's DEV is a per AP capability. This will apply the current DEV map for each
+AP as it is brought online.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+---
+ arch/x86/realmode/init.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
+index 57b96505d4c1..4fbff4532c2b 100644
+--- a/arch/x86/realmode/init.c
++++ b/arch/x86/realmode/init.c
+@@ -9,6 +9,10 @@
+ #include <asm/realmode.h>
+ #include <asm/tlbflush.h>
+ 
++#ifdef CONFIG_AMD_DEV
++#include <asm/amd_dev.h>
++#endif
++
+ struct real_mode_header *real_mode_header;
+ u32 *trampoline_cr4_features;
+ 
+@@ -42,8 +46,11 @@ void __init reserve_real_mode(void)
+ 	}
+ 
+ 	memblock_reserve(mem, size);
++#ifdef CONFIG_AMD_DEV
++	/* DEV protect this region before use*/
++	amd_dev_protect_pages(0, mem, size, 0);
++#endif
+ 	set_real_mode_mem(mem, size);
+-	/* TODO DEV protect this region */
+ }
+ 
+ static void __init setup_real_mode(void)
+-- 
+2.19.0
+
