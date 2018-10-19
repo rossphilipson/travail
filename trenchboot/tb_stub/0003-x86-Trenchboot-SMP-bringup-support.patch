@@ -1,4 +1,4 @@
-From 0917bb13f5e34ddb2d54dffe05f5bded45cc7fc9 Mon Sep 17 00:00:00 2001
+From ca8adc0d67827426925cd0726a19c448f1023ee2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/5] x86: Trenchboot SMP bringup support
@@ -9,16 +9,14 @@ the APs in very different states post launch.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/kernel/smpboot.c            | 50 ++++++++++++++++++++++++++
- arch/x86/kernel/tb_trampoline_32.S   | 70 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/smpboot.c            | 46 ++++++++++++++++++++++++++
  arch/x86/realmode/init.c             |  1 +
  arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S |  8 +++++
- 6 files changed, 135 insertions(+)
- create mode 100644 arch/x86/kernel/tb_trampoline_32.S
+ arch/x86/realmode/rm/trampoline_64.S | 64 ++++++++++++++++++++++++++++++++++++
+ 5 files changed, 117 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393bd98e..6cff50705736 100644
+index 63b3393bd98e..260ae182b953 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
 @@ -32,6 +32,9 @@ struct real_mode_header {
@@ -26,13 +24,13 @@ index 63b3393bd98e..6cff50705736 100644
  	/* APM/BIOS reboot */
  	u32	machine_real_restart_asm;
 +#ifdef CONFIG_TRENCHBOOT_STUB
-+	u32	trampoline_start32;
++	u32	tb_trampoline_start32;
 +#endif
  #ifdef CONFIG_X86_64
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..61031dcb18d6 100644
+index f02ecaf97904..93c595a83b63 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -67,19 +65,15 @@ index f02ecaf97904..61031dcb18d6 100644
  	pr_debug("Deasserting INIT\n");
  
  	/* Target chip */
-@@ -885,6 +896,19 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
+@@ -885,6 +896,15 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
  	return NMI_DONE;
  }
  
 +#ifdef CONFIG_TRENCHBOOT_STUB
 +
-+unsigned int start32_ip;
-+
 +static int
 +wakeup_cpu_via_intel_txt(int cpu)
 +{
-+	start32_ip = real_mode_header->trampoline_start32;
-+
 +	return 0;
 +}
 +#endif
@@ -87,7 +81,7 @@ index f02ecaf97904..61031dcb18d6 100644
  /*
   * Wake up AP by INIT, INIT, STARTUP sequence.
   *
-@@ -1010,6 +1034,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1030,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -96,7 +90,7 @@ index f02ecaf97904..61031dcb18d6 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1022,6 +1048,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1022,6 +1044,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
  
@@ -127,82 +121,6 @@ index f02ecaf97904..61031dcb18d6 100644
  	if (!boot_error) {
  		/*
  		 * Wait 10s total for first sign of life from AP
-diff --git a/arch/x86/kernel/tb_trampoline_32.S b/arch/x86/kernel/tb_trampoline_32.S
-new file mode 100644
-index 000000000000..a37bfa165d74
---- /dev/null
-+++ b/arch/x86/kernel/tb_trampoline_32.S
-@@ -0,0 +1,70 @@
-+	.code32
-+	.text
-+#include <linux/linkage.h>
-+#include <asm/page_types.h>
-+#include <asm/msr.h>
-+#include <asm/segment.h>
-+#include <asm/processor-flags.h>
-+#include <asm/realmode.h>
-+#include <asm/trenchboot.h>
-+
-+	.code32
-+ENTRY(tb_trampoline_start)
-+	/*
-+	 * On entry:
-+	 *  - Protected mode
-+	 *  - Paging disabled
-+	 *  - %ebx has linear address of tb_trampoline_start
-+	 *  - Only %cs is valid
-+	 * For the rest of the state of the world, see the Intel TXT manual
-+	 */
-+	cli
-+	cld
-+
-+	leal	tb_tr_stack_end(%ebx), %esp
-+
-+	addl	%ebx, (tb_tr_gdt + 2)(%ebx)
-+	lgdt	tb_tr_gdt(%ebx)
-+	lidt	tb_tr_idt(%ebx)
-+
-+	movl	$(__KERNEL_DS), %eax
-+	movw	%ax, %ds
-+	movw	%ax, %es
-+	movw	%ax, %fs
-+	movw	%ax, %gs
-+	movw	%ax, %ss
-+
-+	leal	.Ltb_tr_cs(%ebx), %eax
-+	pushl	$(__KERNEL32_CS)
-+	pushl	%eax
-+	lret
-+
-+.Ltb_tr_cs:
-+	addl	$8, %esp
-+
-+	leal	start32_ip(%ebx), %eax
-+	jmp	*%eax
-+
-+ENDPROC(tb_trampoline_start)
-+
-+	.balign	16
-+	.globl tb_tr_gdt
-+tb_tr_gdt:
-+	.short	tb_tr_gdt_end - tb_tr_gdt - 1	# gdt limit
-+	.long	tb_tr_gdt
-+	.short	0
-+	.quad	0x00cf9b000000ffff	# __KERNEL32_CS
-+	.quad	0x00af9b000000ffff	# __KERNEL_CS
-+	.quad	0x00cf93000000ffff	# __KERNEL_DS
-+tb_tr_gdt_end:
-+
-+	.balign	16
-+	.globl tb_tr_idt
-+tb_tr_idt:
-+	.fill 1, 6, 0
-+
-+	/* Small stack to work with */
-+	.balign 4
-+tb_tr_stack:
-+	.fill 32, 1, 0
-+tb_tr_stack_end:
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
 index d10105825d57..57b96505d4c1 100644
 --- a/arch/x86/realmode/init.c
@@ -216,7 +134,7 @@ index d10105825d57..57b96505d4c1 100644
  
  static void __init setup_real_mode(void)
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30d861a..39b3410e922a 100644
+index 30b0d30d861a..07b304553404 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
 @@ -31,6 +31,9 @@ GLOBAL(real_mode_header)
@@ -224,16 +142,26 @@ index 30b0d30d861a..39b3410e922a 100644
  	/* APM/BIOS reboot */
  	.long	pa_machine_real_restart_asm
 +#ifdef CONFIG_TRENCHBOOT_STUB
-+	.long	pa_trampoline_start32
++	.long	pa_tb_trampoline_start32
 +#endif
  #ifdef CONFIG_X86_64
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..681e8ba9e394 100644
+index 24bb7598774e..4e7083250165 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
-@@ -42,6 +42,11 @@ ENTRY(trampoline_start)
+@@ -32,6 +32,9 @@
+ #include <asm/segment.h>
+ #include <asm/processor-flags.h>
+ #include <asm/realmode.h>
++#ifdef CONFIG_TRENCHBOOT_STUB
++#include <asm/trenchboot.h>
++#endif
+ #include "realmode.h"
+ 
+ 	.text
+@@ -42,6 +45,11 @@ ENTRY(trampoline_start)
  	cli			# We should be safe anyway
  	wbinvd
  
@@ -245,13 +173,66 @@ index 24bb7598774e..681e8ba9e394 100644
  	LJMPW_RM(1f)
  1:
  	mov	%cs, %ax	# Code and data in the same place
-@@ -86,6 +91,9 @@ no_longmode:
+@@ -86,6 +94,62 @@ no_longmode:
  	.section ".text32","ax"
  	.code32
  	.balign 4
 +#ifdef CONFIG_TRENCHBOOT_STUB
-+ENTRY(trampoline_start32)
++ENTRY(tb_trampoline_start32)
++	/*
++	 * Entry vectro for AP startup from TXT. On entry:
++	 *  - Protected mode
++	 *  - Paging disabled
++	 *  - %ebx has linear address of tb_trampoline_start
++	 *  - Only %cs is valid
++	 *  - MCE/SMI/NMI are all disabled
++	 * For the rest of the state of the world, see the Intel TXT manual
++	 */
++	cli
++	cld
++
++	lgdt	tr_gdt(%ebx)
++	lidt	tr_idt(%ebx)
++
++	/* Going to use the real mode stack since it is there */
++	movl	$pa_rm_stack_end, %esp
++
++	/* Enable MCE */
++	movl	%cr4, %eax
++	orl	$(X86_CR4_MCE), %eax
++	movl	%eax, %cr4
++
++	/* Enable SMI with GETSET[SMCTRL] */
++	pushl	%ebx
++	xorl	%ebx, %ebx
++	movl	$(X86_GETSEC_SMCTRL), %eax
++	.byte 	0x0f, 0x37 /* GETSEC opcode */
++	popl	%ebx
++
++	/* Enable NMI using an IRET-to-self */
++	leal	.Lnmi_enabled(%ebx), %eax
++	pushfl
++	pushl	$(__KERNEL32_CS)
++	pushl	%eax
++	iret
++
++.Lnmi_enabled:
++	addl	$12, %esp
++
++	movw	$__KERNEL_DS, %dx	# Data segment descriptor
++
++	/*
++	 * This may seem a little odd but this is what %esp would have had in
++	 * it on the jmp from real mode because all real mode fixups were done
++	 * via the code segment.
++	 */
++	movl	$rm_stack_end, %esp
++
++	/* Jump to where the 16b code would have jumped */
++	ljmpl	$__KERNEL32_CS, $pa_startup_32
 +#endif
++
++	.balign 4
  ENTRY(startup_32)
  	movl	%edx, %ss
  	addl	$pa_real_mode_base, %esp
