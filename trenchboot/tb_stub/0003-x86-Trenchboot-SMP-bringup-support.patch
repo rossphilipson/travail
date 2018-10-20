@@ -1,4 +1,4 @@
-From b82be58e936566485044b055602203462a7ebbaa Mon Sep 17 00:00:00 2001
+From c7bfb3ec694bf5c2229b75205e67a75dc99d4e7d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/5] x86: Trenchboot SMP bringup support
@@ -13,11 +13,11 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/kernel/smpboot.c            | 46 ++++++++++++++++++
  arch/x86/realmode/init.c             |  1 +
  arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 64 +++++++++++++++++++++++++
- 6 files changed, 207 insertions(+), 2 deletions(-)
+ arch/x86/realmode/rm/trampoline_64.S | 72 ++++++++++++++++++++++++++++
+ 6 files changed, 215 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393bd98e..260ae182b953 100644
+index 63b3393..260ae18 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
 @@ -32,6 +32,9 @@ struct real_mode_header {
@@ -31,7 +31,7 @@ index 63b3393bd98e..260ae182b953 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-index 7fe016300be7..097751e17a02 100644
+index 7fe0163..097751e 100644
 --- a/arch/x86/include/asm/trenchboot.h
 +++ b/arch/x86/include/asm/trenchboot.h
 @@ -11,6 +11,7 @@
@@ -158,7 +158,7 @@ index 7fe016300be7..097751e17a02 100644
  
  #endif /* _ASM_X86_TRENCHBOOT_H */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..93c595a83b63 100644
+index f02ecaf..93c595a 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -250,7 +250,7 @@ index f02ecaf97904..93c595a83b63 100644
  		/*
  		 * Wait 10s total for first sign of life from AP
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d10105825d57..57b96505d4c1 100644
+index d101058..57b9650 100644
 --- a/arch/x86/realmode/init.c
 +++ b/arch/x86/realmode/init.c
 @@ -43,6 +43,7 @@ void __init reserve_real_mode(void)
@@ -262,7 +262,7 @@ index d10105825d57..57b96505d4c1 100644
  
  static void __init setup_real_mode(void)
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30d861a..07b304553404 100644
+index 30b0d30..07b3045 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
 @@ -31,6 +31,9 @@ GLOBAL(real_mode_header)
@@ -276,7 +276,7 @@ index 30b0d30d861a..07b304553404 100644
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..4e7083250165 100644
+index 24bb759..7ee2870 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,9 @@
@@ -301,7 +301,7 @@ index 24bb7598774e..4e7083250165 100644
  	LJMPW_RM(1f)
  1:
  	mov	%cs, %ax	# Code and data in the same place
-@@ -86,6 +94,62 @@ no_longmode:
+@@ -86,6 +94,70 @@ no_longmode:
  	.section ".text32","ax"
  	.code32
  	.balign 4
@@ -319,11 +319,19 @@ index 24bb7598774e..4e7083250165 100644
 +	cli
 +	cld
 +
++	/*
++	 * The %ebx provided is not terribly useful since it is the physical
++	 * address of tb_trampoline_start and not the base of the image.
++	 * Use pa_real_mode_base, which is fixed up, to get a run time
++	 * base register to use for offsets to location.
++	 */
++	movl	$pa_real_mode_base, %ebx
++
 +	lgdt	tr_gdt(%ebx)
 +	lidt	tr_idt(%ebx)
 +
 +	/* Going to use the real mode stack since it is there */
-+	movl	$pa_rm_stack_end, %esp
++	movl	rm_stack_end(%ebx), %esp
 +
 +	/* Enable MCE */
 +	movl	%cr4, %eax
@@ -365,5 +373,5 @@ index 24bb7598774e..4e7083250165 100644
  	movl	%edx, %ss
  	addl	$pa_real_mode_base, %esp
 -- 
-2.13.6
+2.1.4
 
