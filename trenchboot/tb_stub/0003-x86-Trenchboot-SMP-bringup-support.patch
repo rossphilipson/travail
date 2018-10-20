@@ -1,4 +1,4 @@
-From c7bfb3ec694bf5c2229b75205e67a75dc99d4e7d Mon Sep 17 00:00:00 2001
+From dd1efc2aa99ec6608421bf907acbda34ed6a0ac1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 3/5] x86: Trenchboot SMP bringup support
@@ -8,33 +8,35 @@ the APs in very different states post launch.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/include/asm/trenchboot.h    | 92 +++++++++++++++++++++++++++++++++++-
- arch/x86/kernel/smpboot.c            | 46 ++++++++++++++++++
+ arch/x86/include/asm/realmode.h      |  5 ++
+ arch/x86/include/asm/trenchboot.h    | 93 +++++++++++++++++++++++++++++++++++-
+ arch/x86/kernel/smpboot.c            | 67 ++++++++++++++++++++++++++
  arch/x86/realmode/init.c             |  1 +
- arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 72 ++++++++++++++++++++++++++++
- 6 files changed, 215 insertions(+), 2 deletions(-)
+ arch/x86/realmode/rm/header.S        |  5 ++
+ arch/x86/realmode/rm/trampoline_64.S | 73 ++++++++++++++++++++++++++++
+ 6 files changed, 242 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393..260ae18 100644
+index 63b3393..d3839bc 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
-@@ -32,6 +32,9 @@ struct real_mode_header {
+@@ -32,6 +32,11 @@ struct real_mode_header {
  #endif
  	/* APM/BIOS reboot */
  	u32	machine_real_restart_asm;
 +#ifdef CONFIG_TRENCHBOOT_STUB
 +	u32	tb_trampoline_start32;
++	u32	tr_gdt;
++	u32	tr_gdt_end;
 +#endif
  #ifdef CONFIG_X86_64
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-index 7fe0163..097751e 100644
+index 7fe0163..a6877e3 100644
 --- a/arch/x86/include/asm/trenchboot.h
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -11,6 +11,7 @@
+@@ -11,12 +11,14 @@
  #define CPU_INTEL		2
  
  #define X86_GETSEC_SMCTRL	7
@@ -42,17 +44,24 @@ index 7fe0163..097751e 100644
  
  #define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
  #define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
-@@ -25,6 +26,9 @@
+ #define TXTCR_STS			0x0000
+ #define TXTCR_ESTS			0x0008
+ #define TXTCR_ERRORCODE			0x0030
++#define TXTCR_MLE_JOIN			0x0290
+ #define TXTCR_REG_HEAP_BASE		0x0300
+ #define TXTCR_CMD_OPEN_LOCALITY1	0x0380
+ #define TXTCR_CMD_CLOSE_LOCALITY1	0x0388
+@@ -25,6 +27,9 @@
  #define TXTCR_CMD_SECRETS		0x08e0
  #define TXTCR_E2STS			0x08f0
  
 +#define TXT_CAP_RLP_WAKE_GETSEC		0x0000001
-+#define TXT_CAP_RLP_WAKE_MONITOOR	0x0000002
++#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
 +
  #define TRENCHBOOT_INFO_OFFSET	0x0cc
  #define TB_FLAGS_OFFSET		0x4
  #define TB_XBI_OFFSET		0x8
-@@ -38,11 +42,34 @@
+@@ -38,11 +43,34 @@
  
  #ifndef __ASSEMBLY__
  
@@ -89,7 +98,7 @@ index 7fe0163..097751e 100644
  static inline u64 txt_read_pub_reg(u32 reg)
  {
  	return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
-@@ -63,6 +90,67 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
+@@ -63,6 +91,67 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
  	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
  }
  
@@ -140,10 +149,10 @@ index 7fe0163..097751e 100644
 +				txt_os_sinit_data_size());
 +}
 +
-+static inline struct sinit_mle_data *txt_sinit_mle_data_start(void)
++static inline struct txt_sinit_mle_data *txt_sinit_mle_data_start(void)
 +{
 +	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return (struct sinit_mle_data*)(heap + txt_bios_data_size() +
++	return (struct txt_sinit_mle_data*)(heap + txt_bios_data_size() +
 +				txt_os_mle_data_size() +
 +				txt_os_sinit_data_size() +
 +				sizeof(uint64_t));
@@ -158,7 +167,7 @@ index 7fe0163..097751e 100644
  
  #endif /* _ASM_X86_TRENCHBOOT_H */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf..93c595a 100644
+index f02ecaf..7eb7bc9 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -193,15 +202,36 @@ index f02ecaf..93c595a 100644
  	pr_debug("Deasserting INIT\n");
  
  	/* Target chip */
-@@ -885,6 +896,15 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
+@@ -885,6 +896,36 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
  	return NMI_DONE;
  }
  
 +#ifdef CONFIG_TRENCHBOOT_STUB
-+
 +static int
 +wakeup_cpu_via_intel_txt(int cpu)
 +{
++	struct txt_mle_join mle_join = {0};
++	struct txt_os_sinit_data *os_sinit_data;
++	struct txt_sinit_mle_data *sinit_mle_data;
++
++	/* Get start IP and GDT info from rmpiggy to use in TXT AP startup */
++	mle_join.entry_point = real_mode_header->tb_trampoline_start32;
++	mle_join.seg_sel = __KERNEL32_CS;
++	mle_join.gdt_base = real_mode_header->tr_gdt;
++	mle_join.gdt_base = real_mode_header->tr_gdt -
++			    real_mode_header->tr_gdt - 1;
++	txt_write_priv_reg(TXTCR_MLE_JOIN, (uint64_t)(unsigned long)&mle_join);
++
++	/* Fish around in the TXT heap for capabilities/AP startup values */
++	os_sinit_data = txt_os_sinit_data_start();
++	sinit_mle_data = txt_sinit_mle_data_start();
++
++	/* Usa appropriate startup mechanism specified by the capabilities */
++	if (os_sinit_data->capabilities & TXT_CAP_RLP_WAKE_MONITOR)
++		*((uint32_t *)(unsigned long)(sinit_mle_data->rlp_wakeup_addr)) = 0x01;
++	else
++		txt_getsec_wakeup();
++
 +	return 0;
 +}
 +#endif
@@ -209,7 +239,7 @@ index f02ecaf..93c595a 100644
  /*
   * Wake up AP by INIT, INIT, STARTUP sequence.
   *
-@@ -1010,6 +1030,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1051,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -218,7 +248,7 @@ index f02ecaf..93c595a 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1022,6 +1044,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1022,6 +1065,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
  
@@ -262,34 +292,34 @@ index d101058..57b9650 100644
  
  static void __init setup_real_mode(void)
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30..07b3045 100644
+index 30b0d30..679bb8c 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
-@@ -31,6 +31,9 @@ GLOBAL(real_mode_header)
+@@ -31,6 +31,11 @@ GLOBAL(real_mode_header)
  #endif
  	/* APM/BIOS reboot */
  	.long	pa_machine_real_restart_asm
 +#ifdef CONFIG_TRENCHBOOT_STUB
 +	.long	pa_tb_trampoline_start32
++	.long	pa_tr_gdt
++	.long	pa_tr_gdt_end
 +#endif
  #ifdef CONFIG_X86_64
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb759..7ee2870 100644
+index 24bb759..8606c40 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
-@@ -32,6 +32,9 @@
+@@ -32,6 +32,7 @@
  #include <asm/segment.h>
  #include <asm/processor-flags.h>
  #include <asm/realmode.h>
-+#ifdef CONFIG_TRENCHBOOT_STUB
 +#include <asm/trenchboot.h>
-+#endif
  #include "realmode.h"
  
  	.text
-@@ -42,6 +45,11 @@ ENTRY(trampoline_start)
+@@ -42,6 +43,11 @@ ENTRY(trampoline_start)
  	cli			# We should be safe anyway
  	wbinvd
  
@@ -301,7 +331,7 @@ index 24bb759..7ee2870 100644
  	LJMPW_RM(1f)
  1:
  	mov	%cs, %ax	# Code and data in the same place
-@@ -86,6 +94,70 @@ no_longmode:
+@@ -86,6 +92,70 @@ no_longmode:
  	.section ".text32","ax"
  	.code32
  	.balign 4
@@ -372,6 +402,16 @@ index 24bb759..7ee2870 100644
  ENTRY(startup_32)
  	movl	%edx, %ss
  	addl	$pa_real_mode_base, %esp
+@@ -160,6 +230,9 @@ tr_gdt:
+ 	.quad	0x00cf9b000000ffff	# __KERNEL32_CS
+ 	.quad	0x00af9b000000ffff	# __KERNEL_CS
+ 	.quad	0x00cf93000000ffff	# __KERNEL_DS
++#ifdef CONFIG_TRENCHBOOT_STUB
++	.globl tr_gdt_end
++#endif
+ tr_gdt_end:
+ 
+ 	.bss
 -- 
 2.1.4
 
