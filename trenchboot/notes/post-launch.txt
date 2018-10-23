@@ -1,18 +1,35 @@
 General Notes:
 ---------------------------------------------------------------------
 
-Big questions:
+Questions:
  - What boot params do we need to deal with in tb_stub?
- - Memory map - pass as e820 in boot params (looks like EFI
-   stub stuff just turns mem map into e820 on EFI boot)?
+   * TODO
+ - Memory map - pass as e820 in boot params (looks like EFI stub stuff just
+   turns mem map into e820 on EFI boot)?
+   * The GRUB loaders will have to setup the e820 using the final EFI memmap.
  - How/where to handle and measure cmdlines for other boot modules?
+   * This will happen in the IL security environment before next stages are
+     booted.
+   * Using the concept of a custom XBI passed by the GRUB loader that has
+     all the information for booting the real OS.
  - How to pass other modules to IL?
+   * This will be done in the custom XBI.
  - Where to measure other modules?
+   * This will be done in the IL security environment.
  - What to do about Runtime Services (not really booting EFI)?
+   * TODO
  - TXT: What about the shared page?
+   * TODO (probably just goes away).
  - TXT: What about S3 hooks?
+   * TODO (kicking this can down the road for now).
  - TXT: What are we passing in the OS-MLE data?
+   * TODO (this will become known as we go).
  - SKINIT: What post launch things need to be checked?
+ - TXT: Restoring the LAPIC address, do we need to do this?
+   * TODO (so far it looks painful and hacky to do).
+ - NMI: Perhaps delaying enabling until after the IDT is in place?
+   * TODO (need to discuss this).
+   * TODO (how to deal with when using STGI)?
 
 Stages:
 ---------------------------------------------------------------------

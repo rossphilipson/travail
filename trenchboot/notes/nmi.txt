@@ -1,0 +1,76 @@
+---- NMI Notes ----
+
+-- NMI Toggle --
+
+Mainly about enabling/disabling them. In general NMIs can be toggled on and off
+using the MSB in the CMOS/RTC port:
+
+void nmi_enable()
+{
+    outb(0x70, inb(0x70) & 0x7F);
+}
+
+void nmi_disable()
+{
+    outb(0x70, inb(0x70) | 0x80);
+}
+
+Note this can be seen in the Linux kernel in arch/x86/kernel/reboot.c where it
+is disabled and the shutdown status is set:
+
+machine_real_restart()
+  CMOS_WRITE(0x00, 0x8f);
+
+Just to tie it together:
+
+#define RTC_PORT(x)     (0x70 + (x))
+...
+#define CMOS_WRITE(val, addr) rtc_cmos_write(val, addr)
+...
+void rtc_cmos_write(unsigned char val, unsigned char addr)
+{
+        lock_cmos_prefix(addr);
+        outb(addr, RTC_PORT(0));
+        outb(val, RTC_PORT(1));
+        lock_cmos_suffix(addr);
+}
+
+Also doing any IRET will re-enable NMIs on a CPU. For example an IRET-to-self
+can be used to achieve this:
+
+	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
+	leal	.Lnmi_enabled(%ebp), %eax
+	pushfl
+	pushl	$(__TB32_CS)
+	pushl	%eax
+	iret
+
+.Lnmi_enabled:
+	addl	$12, %esp
+
+-- PORTS.A --
+
+Here is Ralf Brown's notes on the CMOS/RTC port (partial):
+
+----------P0070007F--------------------------
+PORT 0070-007F - CMOS RAM/RTC (REAL TIME CLOCK)
+Note:	the real-time clock may be either a discrete MC146814, MC146818, or
+	  an emulation thereof built into the motherboard chipset
+SeeAlso: PORT 00A0h"XT"
+
+0070  -W  CMOS RAM index register port (ISA, EISA)
+		 bit 7	= 1  NMI disabled from reaching CPU
+			= 0  NMI enabled
+		 bit 6-0     CMOS RAM index
+			(64 bytes in early systems, now usually 128 bytes)
+	Note:	any write to PORT 0070h should be followed by an action to
+		  PORT 0071h or the RTC wil be left in an unknown state.
+0071  RW  CMOS RAM data port (ISA, EISA) (see #P0409)
+
+(Table P0409)
+Values for Real-Time Clock register number (see also CMOS.LST):
+ 00h-0Dh clock registers
+ 0Eh	diagnostics status byte
+ 0Fh	shutdown status byte
+ 10h	diskette drive type for A: and B:
+...
