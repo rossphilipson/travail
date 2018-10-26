@@ -1,26 +1,26 @@
-From 08f3d497b4564e15a3df7c92a864077401cfdb68 Mon Sep 17 00:00:00 2001
+From 787bdbbb9c21c1e5c715cd8f7597404a811266ca Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
-Subject: [PATCH 4/5] x86: add support for AMD DEV capability
+Subject: [PATCH 6/7] x86: add support for AMD DEV capability
 
 AMD provides the Device Exclusion Vector as part of the AMD-V specification that
 allows page level memory access to HyperTransport buses.
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/Kconfig               |   5 +
- arch/x86/include/asm/amd_dev.h |  50 ++++++++++
+ arch/x86/Kconfig               |   5 ++
+ arch/x86/include/asm/amd_dev.h |  50 +++++++++++++
  arch/x86/kernel/Makefile       |   2 +
- arch/x86/kernel/amd_dev.c      | 161 +++++++++++++++++++++++++++++++++
- 4 files changed, 218 insertions(+)
+ arch/x86/kernel/amd_dev.c      | 159 +++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 216 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 83b4892e0b15..1b5a91d51726 100644
+index 7f2b4cef90aa..62f2f9396d26 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1956,6 +1956,7 @@ config EFI_MIXED
+@@ -1962,6 +1962,7 @@ config EFI_MIXED
  config TRENCHBOOT_STUB
  	bool "Trenchboot stub support"
  	depends on X86_64
@@ -28,7 +28,7 @@ index 83b4892e0b15..1b5a91d51726 100644
  	---help---
  	  This kernel feature allows a bzImage to be loaded directly
  	  through Intel TXT or AMD SKINIT measured launch.
-@@ -2827,6 +2828,10 @@ config AMD_NB
+@@ -2833,6 +2834,10 @@ config AMD_NB
  	def_bool y
  	depends on CPU_SUP_AMD && PCI
  
@@ -96,10 +96,10 @@ index 000000000000..46bd09968bac
 +
 +#endif /* _ASM_X86_AMD_DEV_H */
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 8824d01c0c35..f71af7755c06 100644
+index 45d567867ff2..b19dbe8dffd9 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
-@@ -110,6 +110,8 @@ obj-$(CONFIG_APB_TIMER)		+= apb_timer.o
+@@ -111,6 +111,8 @@ obj-$(CONFIG_APB_TIMER)		+= apb_timer.o
  obj-$(CONFIG_AMD_NB)		+= amd_nb.o
  obj-$(CONFIG_DEBUG_NMI_SELFTEST) += nmi_selftest.o
  
@@ -110,10 +110,10 @@ index 8824d01c0c35..f71af7755c06 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 000000000000..907b3568fc1e
+index 000000000000..726383ac5bb1
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,159 @@
 +#include <linux/types.h>
 +#include <linux/init.h>
 +#include <linux/errno.h>
@@ -140,13 +140,12 @@ index 000000000000..907b3568fc1e
 +static void dev_write(u8 func, u8 index, u32 val)
 +{
 +	u32 dev_op = (func << 8) | (index);
-+	u32 data;
 +
 +	write_pci_config(DEV_PCI_BUS, DEV_PCI_DEVICE, DEV_PCI_FUNCTION,
 +			DEV_PCI_OP, dev_op);
 +
 +	write_pci_config(DEV_PCI_BUS, DEV_PCI_DEVICE, DEV_PCI_FUNCTION,
-+			DEV_PCI_DATA, data);
++			DEV_PCI_DATA, val);
 +}
 +
 +u32 amd_dev_locate(void)
@@ -241,7 +240,6 @@ index 000000000000..907b3568fc1e
 +{
 +	u32 dev_map;
 +	u32 pfn, end_pfn;
-+	u8 bit_vector;
 +	int err;
 +
 +	if (boot_cpu_data.x86_vendor != X86_VENDOR_AMD)
@@ -263,9 +261,9 @@ index 000000000000..907b3568fc1e
 +	/* TODO: check end_pfn is not ouside of range of DEV map */
 +
 +	/* build protection bitmap */
-+	for (;pfn++; pfn <= end_pfn) {
++	for ( ; pfn <= end_pfn; pfn++) {
 +		u32 byte, bit;
-+		u8 *bit_vector = (u8*) dev_map;
++		u8 *bit_vector = (u8*)(u64)dev_map;
 +
 +		byte= pfn / 8;
 +		bit= pfn & 7;
@@ -276,5 +274,5 @@ index 000000000000..907b3568fc1e
 +	return err;
 +}
 -- 
-2.19.0
+2.13.6
 
