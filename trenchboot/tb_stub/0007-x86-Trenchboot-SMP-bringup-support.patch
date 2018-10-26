@@ -1,7 +1,7 @@
-From b37b9a1a634d062f5fb32dea21e2e5bdac034dc4 Mon Sep 17 00:00:00 2001
+From 81dafee9d3f5f5083663695fd4fe75c0996e4794 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
-Subject: [PATCH 3/5] x86: Trenchboot SMP bringup support
+Subject: [PATCH 7/7] x86: Trenchboot SMP bringup support
 
 Note the AP bringup is very different becuase SKINIT and the ACM leave
 the APs in very different states post launch.
@@ -11,10 +11,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/include/asm/realmode.h      |  5 ++
  arch/x86/include/asm/trenchboot.h    | 93 +++++++++++++++++++++++++++++++++++-
  arch/x86/kernel/smpboot.c            | 67 ++++++++++++++++++++++++++
- arch/x86/realmode/init.c             |  1 +
+ arch/x86/realmode/init.c             |  8 ++++
  arch/x86/realmode/rm/header.S        |  5 ++
  arch/x86/realmode/rm/trampoline_64.S | 68 ++++++++++++++++++++++++++
- 6 files changed, 237 insertions(+), 2 deletions(-)
+ 6 files changed, 244 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..d3839bc371a5 100644
@@ -33,7 +33,7 @@ index 63b3393bd98e..d3839bc371a5 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-index 7fe016300be7..a6877e3edcb3 100644
+index 8d50d9c66a2c..1172ddf82108 100644
 --- a/arch/x86/include/asm/trenchboot.h
 +++ b/arch/x86/include/asm/trenchboot.h
 @@ -11,12 +11,14 @@
@@ -163,9 +163,9 @@ index 7fe016300be7..a6877e3edcb3 100644
 +	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a"(X86_GETSEC_WAKEUP));
 +}
 +
- #endif
+ void trenchboot_setup(void);
  
- #endif /* _ASM_X86_TRENCHBOOT_H */
+ #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
 index f02ecaf97904..7eb7bc9a1486 100644
 --- a/arch/x86/kernel/smpboot.c
@@ -280,17 +280,31 @@ index f02ecaf97904..7eb7bc9a1486 100644
  		/*
  		 * Wait 10s total for first sign of life from AP
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d10105825d57..57b96505d4c1 100644
+index d10105825d57..4fbff4532c2b 100644
 --- a/arch/x86/realmode/init.c
 +++ b/arch/x86/realmode/init.c
-@@ -43,6 +43,7 @@ void __init reserve_real_mode(void)
+@@ -9,6 +9,10 @@
+ #include <asm/realmode.h>
+ #include <asm/tlbflush.h>
+ 
++#ifdef CONFIG_AMD_DEV
++#include <asm/amd_dev.h>
++#endif
++
+ struct real_mode_header *real_mode_header;
+ u32 *trampoline_cr4_features;
+ 
+@@ -42,6 +46,10 @@ void __init reserve_real_mode(void)
+ 	}
  
  	memblock_reserve(mem, size);
++#ifdef CONFIG_AMD_DEV
++	/* DEV protect this region before use*/
++	amd_dev_protect_pages(0, mem, size, 0);
++#endif
  	set_real_mode_mem(mem, size);
-+	/* TODO DEV protect this region */
  }
  
- static void __init setup_real_mode(void)
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
 index 30b0d30d861a..679bb8c217f3 100644
 --- a/arch/x86/realmode/rm/header.S
