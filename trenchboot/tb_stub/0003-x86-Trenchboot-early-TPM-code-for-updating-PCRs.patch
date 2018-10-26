@@ -1,0 +1,84 @@
+From be47afd3b6bafa498ed3f3db472459ad35804289 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 26 Oct 2018 15:13:01 -0400
+Subject: [PATCH 3/7] x86: Trenchboot early TPM code for updating PCRs
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/compressed/Makefile    |  3 ++-
+ arch/x86/boot/compressed/early_tpm.c | 30 ++++++++++++++++++++++++++++++
+ arch/x86/include/asm/tpm.h           | 11 +++++++++++
+ 3 files changed, 43 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/early_tpm.c
+ create mode 100644 arch/x86/include/asm/tpm.h
+
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index a7332b0cc19c..a3290c812537 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -89,7 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
+ 	$(objtree)/drivers/firmware/efi/libstub/lib.a
+ vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
+ 
+-vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o \
++	$(obj)/early_tpm.o
+ 
+ # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
+ # can place it anywhere in memory and it will still run. However, since
+diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
+new file mode 100644
+index 000000000000..e5049b7e934f
+--- /dev/null
++++ b/arch/x86/boot/compressed/early_tpm.c
+@@ -0,0 +1,30 @@
++/*
++ * TODO license
++ */
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <linux/string.h>
++#include <asm/tpm.h>
++#include <asm/boot.h>
++#include <asm/unaligned.h>
++
++/*
++ * TODO this is just stub code and a placeholder patch for the early TPM
++ * support for updating the PCRs for the zero page and command line hashes
++ * in the TB stub code.
++ */
++
++u32 tpm_extend(u32 index, const void *in_digest, void *out_digest)
++{
++	return 0;
++}
++
++int tis_open(u8 locality)
++{
++	return 0;
++}
++
++int tis_close(u8 locality)
++{
++	return 0;
++}
+diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
+new file mode 100644
+index 000000000000..ab3fe9d00023
+--- /dev/null
++++ b/arch/x86/include/asm/tpm.h
+@@ -0,0 +1,11 @@
++/*
++ * TODO license
++ */
++#ifndef _ASM_X86_TPM_H
++#define _ASM_X86_TPM_H
++
++u32 tpm_extend(u32 index, const void *in_digest, void *out_digest);
++int tis_open(u8 locality);
++int tis_close(u8 locality);
++
++#endif /* _ASM_X86_TPM_H */
+-- 
+2.13.6
+
