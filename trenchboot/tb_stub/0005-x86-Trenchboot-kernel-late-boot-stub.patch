@@ -1,0 +1,83 @@
+From 3d3841d02287e7f45223ceecec971a3b2a343d58 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 26 Oct 2018 16:13:03 -0400
+Subject: [PATCH 5/7] x86: Trenchboot kernel late boot stub
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/include/asm/trenchboot.h |  2 ++
+ arch/x86/kernel/Makefile          |  1 +
+ arch/x86/kernel/setup.c           |  3 +++
+ arch/x86/kernel/trenchboot.c      | 14 ++++++++++++++
+ 4 files changed, 20 insertions(+)
+ create mode 100644 arch/x86/kernel/trenchboot.c
+
+diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
+index 7fe016300be7..8d50d9c66a2c 100644
+--- a/arch/x86/include/asm/trenchboot.h
++++ b/arch/x86/include/asm/trenchboot.h
+@@ -63,6 +63,8 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
+ 	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
+ }
+ 
++void trenchboot_setup(void);
++
+ #endif
+ 
+ #endif /* _ASM_X86_TRENCHBOOT_H */
+diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
+index 8824d01c0c35..45d567867ff2 100644
+--- a/arch/x86/kernel/Makefile
++++ b/arch/x86/kernel/Makefile
+@@ -70,6 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
+ obj-$(CONFIG_IA32_EMULATION)	+= tls.o
+ obj-y				+= step.o
+ obj-$(CONFIG_INTEL_TXT)		+= tboot.o
++obj-$(CONFIG_TRENCHBOOT_STUB)	+= trenchboot.o
+ obj-$(CONFIG_ISA_DMA_API)	+= i8237.o
+ obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
+ obj-y				+= cpu/
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 74b4472ba0a6..f7f88878d85a 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -117,6 +117,7 @@
+ #include <asm/microcode.h>
+ #include <asm/kaslr.h>
+ #include <asm/unwind.h>
++#include <asm/trenchboot.h>
+ 
+ /*
+  * max_low_pfn_mapped: highest direct mapped pfn under 4GB
+@@ -1225,6 +1226,8 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	tboot_probe();
+ 
++	trenchboot_setup();
++
+ 	map_vsyscall();
+ 
+ 	generic_apic_probe();
+diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
+new file mode 100644
+index 000000000000..eedb8c52c30e
+--- /dev/null
++++ b/arch/x86/kernel/trenchboot.c
+@@ -0,0 +1,14 @@
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <asm/segment.h>
++#include <asm/boot.h>
++#include <asm/msr.h>
++#include <asm/processor-flags.h>
++#include <asm/asm-offsets.h>
++#include <asm/bootparam.h>
++#include <asm/trenchboot.h>
++
++void trenchboot_setup(void)
++{
++	/* TODO stub code for TB late stub, see notes */
++}
+-- 
+2.13.6
+
