@@ -307,3 +307,33 @@ launch.
   - The startup code must STGI up front.
   - If there is any other state that needs restoring, the startup code
     would do that.
+
+MCE Kernel Enabling
+---------------------------------------------------------------------
+Below shows the paths that end up enabling MCEs on all CPUs when the BSP
+or APs are ready. Therefore the MCE enabling is not needed in the tb_stub.
+
+On the BSP, MCE enabled sometime during main.c:start_kernel() doing all
+the kernel startup work:
+
+x86_64_start_kernel()
+  x86_64_start_reservations()
+    main.c:start_kernel()
+      check_bugs()
+        identify_boot_cpu()
+          mcheck_cpu_init()
+            __mcheck_cpu_init_generic()
+              cr4_set_bits(X86_CR4_MCE);
+
+For APs, the pointer to the start_secondary() function is set in the global
+initial_code which is where the code in kernel/head_64.S:secondary_startup_64()
+ ends up jumping.
+
+do_boot_cpu()
+  initial_code = start_secondary()
+    smp_callin()
+      smp_store_cpu_info()
+        identify_secondary_cpu()
+          mcheck_cpu_init()
+            __mcheck_cpu_init_generic()
+              cr4_set_bits(X86_CR4_MCE);
