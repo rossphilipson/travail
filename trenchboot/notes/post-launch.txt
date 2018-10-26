@@ -30,6 +30,8 @@ Questions:
  - NMI: Perhaps delaying enabling until after the IDT is in place?
    * TODO (need to discuss this).
    * TODO (how to deal with when using STGI)?
+ - MCE: Was enabled in TBOOT early on.
+   * The kernel takes care of is (see section below). Do nothing.
 
 Stages:
 ---------------------------------------------------------------------

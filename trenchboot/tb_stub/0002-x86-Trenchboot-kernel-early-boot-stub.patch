@@ -1,4 +1,4 @@
-From 20168d5ba4bd72573e59513bda760147f83787a0 Mon Sep 17 00:00:00 2001
+From 4861a916402db07f48a34162fb03509ca062bcce Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:24:56 -0400
 Subject: [PATCH 2/5] x86: Trenchboot kernel early boot stub
@@ -246,7 +246,7 @@ index 000000000000..ed4ff21ca5d8
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..87513c6086db
+index 000000000000..8960442beafb
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,147 @@
@@ -359,10 +359,10 @@ index 000000000000..87513c6086db
 +	andl	$(TB_FLAG_ARCH_SKINIT), tb_flags(%ebp)
 +
 +.Lcpu_setup_done:
-+	/* Enable MCE */
-+	movl	%cr4, %eax
-+	orl	$(X86_CR4_MCE), %eax
-+	movl	%eax, %cr4
++	/*
++	 * Don't enable MCE at this point as TBOOT did. The kernel will enable
++	 * it on the BSP later when it is ready.
++	 */
 +
 +	/* Store flags in boot params for later use */
 +	movl	%eax, (TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET)(%esi)
