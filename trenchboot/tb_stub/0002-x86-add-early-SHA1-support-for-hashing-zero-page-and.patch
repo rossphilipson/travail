@@ -1,8 +1,8 @@
-From c2ee96311a336622e7f45af10ba49fadfb43dff6 Mon Sep 17 00:00:00 2001
+From ad6e35142d55be66e8325c1697cc640b8f588bd3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
-Subject: [PATCH 2/7] x86: Trenchboot early SHA1 support for hashing zero page
- and command line
+Subject: [PATCH 2/7] x86: add early SHA1 support for hashing zero page and
+ command line
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---

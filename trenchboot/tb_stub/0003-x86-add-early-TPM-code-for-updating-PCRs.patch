@@ -1,7 +1,7 @@
-From be47afd3b6bafa498ed3f3db472459ad35804289 Mon Sep 17 00:00:00 2001
+From eec9a2bc952a38251556c9da05901b3af5343407 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
-Subject: [PATCH 3/7] x86: Trenchboot early TPM code for updating PCRs
+Subject: [PATCH 3/7] x86: add early TPM code for updating PCRs
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
