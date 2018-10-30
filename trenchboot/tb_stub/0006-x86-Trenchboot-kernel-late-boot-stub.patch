@@ -1,30 +1,16 @@
-From 3d3841d02287e7f45223ceecec971a3b2a343d58 Mon Sep 17 00:00:00 2001
+From 89631a1a0a18ee788c7a1840eb1bfd6cc4fc6306 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
-Subject: [PATCH 5/7] x86: Trenchboot kernel late boot stub
+Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h |  2 ++
- arch/x86/kernel/Makefile          |  1 +
- arch/x86/kernel/setup.c           |  3 +++
- arch/x86/kernel/trenchboot.c      | 14 ++++++++++++++
- 4 files changed, 20 insertions(+)
+ arch/x86/kernel/Makefile     |  1 +
+ arch/x86/kernel/setup.c      |  3 +++
+ arch/x86/kernel/trenchboot.c | 14 ++++++++++++++
+ 3 files changed, 18 insertions(+)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
-diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-index 7fe016300be7..8d50d9c66a2c 100644
---- a/arch/x86/include/asm/trenchboot.h
-+++ b/arch/x86/include/asm/trenchboot.h
-@@ -63,6 +63,8 @@ static inline void txt_write_priv_reg(u32 reg, u64 val)
- 	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
- }
- 
-+void trenchboot_setup(void);
-+
- #endif
- 
- #endif /* _ASM_X86_TRENCHBOOT_H */
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
 index 8824d01c0c35..45d567867ff2 100644
 --- a/arch/x86/kernel/Makefile

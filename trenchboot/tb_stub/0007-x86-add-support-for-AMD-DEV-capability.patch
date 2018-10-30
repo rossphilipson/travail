@@ -1,7 +1,7 @@
-From 787bdbbb9c21c1e5c715cd8f7597404a811266ca Mon Sep 17 00:00:00 2001
+From 7dddb59d388b2e86abed85568d1b40b94916fefd Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
-Subject: [PATCH 6/7] x86: add support for AMD DEV capability
+Subject: [PATCH 7/8] x86: add support for AMD DEV capability
 
 AMD provides the Device Exclusion Vector as part of the AMD-V specification that
 allows page level memory access to HyperTransport buses.

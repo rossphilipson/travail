@@ -1,7 +1,7 @@
-From 9516950e1fd41d39c3d736608c0db2b3f540da99 Mon Sep 17 00:00:00 2001
+From 2f1c5680c14a5f376ff9f072a681aa0d37a8e2c9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
-Subject: [PATCH 4/7] x86: Trenchboot kernel early boot stub
+Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -9,11 +9,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/head_64.S |  33 +++++++++
  arch/x86/boot/compressed/tb_main.c |  56 ++++++++++++++
  arch/x86/boot/compressed/tb_stub.S | 147 +++++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/trenchboot.h  |  68 +++++++++++++++++
- 5 files changed, 305 insertions(+), 1 deletion(-)
+ 4 files changed, 237 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
- create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
 index a3290c812537..400ec159b981 100644
@@ -294,80 +292,6 @@ index 000000000000..8960442beafb
 +tb_stack:
 +	.fill 32, 1, 0
 +tb_stack_end:
-diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
-new file mode 100644
-index 000000000000..7fe016300be7
---- /dev/null
-+++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,68 @@
-+/*
-+ * TODO license
-+ */
-+#ifndef _ASM_X86_TRENCHBOOT_H
-+#define _ASM_X86_TRENCHBOOT_H
-+
-+#define __TB32_CS	0x0008
-+#define __TB32_DS	0x0010
-+
-+#define CPU_AMD			1
-+#define CPU_INTEL		2
-+
-+#define X86_GETSEC_SMCTRL	7
-+
-+#define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
-+#define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
-+#define TXTCR_STS			0x0000
-+#define TXTCR_ESTS			0x0008
-+#define TXTCR_ERRORCODE			0x0030
-+#define TXTCR_REG_HEAP_BASE		0x0300
-+#define TXTCR_CMD_OPEN_LOCALITY1	0x0380
-+#define TXTCR_CMD_CLOSE_LOCALITY1	0x0388
-+#define TXTCR_CMD_OPEN_LOCALITY2	0x0390
-+#define TXTCR_CMD_CLOSE_LOCALITY2	0x0398
-+#define TXTCR_CMD_SECRETS		0x08e0
-+#define TXTCR_E2STS			0x08f0
-+
-+#define TRENCHBOOT_INFO_OFFSET	0x0cc
-+#define TB_FLAGS_OFFSET		0x4
-+#define TB_XBI_OFFSET		0x8
-+
-+#define BP_CMD_LINE_PTR		0x228
-+#define BP_CMDLINE_SIZE		0x238
-+
-+#define TB_FLAG_ACTIVE		0x00000001
-+#define TB_FLAG_ARCH_SKINIT	0x00000002
-+#define TB_FLAG_ARCH_TXT	0x00000004
-+
-+#ifndef __ASSEMBLY__
-+
-+struct os_mle_data {
-+	uint32_t zero_page_addr;
-+	/* TODO more to define later, may move to a common Trenchboot header */
-+} __attribute__((packed));
-+
-+static inline u64 txt_read_pub_reg(u32 reg)
-+{
-+	return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
-+}
-+
-+static inline u64 txt_read_priv_reg(u32 reg)
-+{
-+	return *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg);
-+}
-+
-+static inline void txt_write_pub_reg(u32 reg, u64 val)
-+{
-+	*(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg) = val;
-+}
-+
-+static inline void txt_write_priv_reg(u32 reg, u64 val)
-+{
-+	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
-+}
-+
-+#endif
-+
-+#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
 2.13.6
 
