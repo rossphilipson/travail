@@ -1,4 +1,4 @@
-From f99d89a28ccb533fcc765092774c6436f992c28f Mon Sep 17 00:00:00 2001
+From de09a8e57e3cffb7baf056e3d80d776266e5ed43 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/Kconfig                      |  7 +++++++
  arch/x86/boot/Makefile                |  2 +-
  arch/x86/boot/tools/build.c           | 16 ++++++++++++++++
- arch/x86/include/uapi/asm/bootparam.h | 10 +++++++++-
- 4 files changed, 33 insertions(+), 2 deletions(-)
+ arch/x86/include/uapi/asm/bootparam.h | 11 ++++++++++-
+ 4 files changed, 34 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
 index 1aa4dd3b5687..7f2b4cef90aa 100644
@@ -91,16 +91,17 @@ index d4e6cd4577e5..63d2668746f3 100644
  	if (fwrite(buf, 1, i, dest) != i)
  		die("Writing setup failed");
 diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
-index a06cbf019744..0b941075208f 100644
+index a06cbf019744..3f06346971f9 100644
 --- a/arch/x86/include/uapi/asm/bootparam.h
 +++ b/arch/x86/include/uapi/asm/bootparam.h
-@@ -112,6 +112,13 @@ struct efi_info {
+@@ -112,6 +112,14 @@ struct efi_info {
  	__u32 efi_memmap_hi;
  };
  
 +struct trenchboot_info {
 +	__u32 tb_entry; /* Field updated by boot build tool */
 +	__u32 tb_flags;
++	__u32 tb_min_ram;
 +	__u32 tb_dev_map;
 +	__u32 tb_xbi;
 +} __attribute__((packed));
@@ -108,13 +109,13 @@ index a06cbf019744..0b941075208f 100644
  /*
   * This is the maximum number of entries in struct boot_params::e820_table
   * (the zeropage), which is part of the x86 boot protocol ABI:
-@@ -163,7 +170,8 @@ struct boot_params {
+@@ -163,7 +171,8 @@ struct boot_params {
  	__u32 ext_ramdisk_image;			/* 0x0c0 */
  	__u32 ext_ramdisk_size;				/* 0x0c4 */
  	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
 -	__u8  _pad4[116];				/* 0x0cc */
 +	struct trenchboot_info trenchboot_info;		/* 0x0cc */
-+	__u8  _pad4[100];				/* 0x0dc*/
++	__u8  _pad4[96];				/* 0x0e0*/
  	struct edid_info edid_info;			/* 0x140 */
  	struct efi_info efi_info;			/* 0x1c0 */
  	__u32 alt_mem_k;				/* 0x1e0 */
