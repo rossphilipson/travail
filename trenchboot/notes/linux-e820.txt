@@ -1,0 +1,61 @@
+---- Linux E820 ----
+
+For posterity, te e820 is the legacy BIOS memory map returned by this int15
+BIOS call:
+
+INT 15 - newer BIOSes - GET SYSTEM MEMORY MAP
+        AX = E820h
+        EAX = 0000E820h
+        EDX = 534D4150h ('SMAP')
+        EBX = continuation value or 00000000h to start at beginning of map
+        ECX = size of buffer for result, in bytes (should be >= 20 bytes)
+        ES:DI -> buffer for result (see #00581)
+
+But it continues to be used as a convenient table of memory ranges with
+associated types.
+
+---- Boot Params ----
+
+The e820 is passed to the kernel via the boot params on the zero page:
+
+1E8/001	ALL	e820_entries	Number of entries in e820_table (below)
+...
+2D0/A00	ALL	e820_table	E820 memory map table
+				(array of struct e820_entry)
+
+This table is of fixed lenght and can be populated in three basic ways:
+
+1. During a legacy real-mode boot, int15 BIOS calls would fetch the e820
+   and populate the table. This is in the code in arch/x86/boot.
+2. Setup by a boot loader like GRUB prior to launching into the protected
+   mode kernel entry point.
+3. Setup by the EFI stub code translates the EFI map into the e820 (see below).
+
+-- E820 Setup --
+
+The kernel reads the e820 out of the boot params into tables in kernel
+memory in e820__memory_setup() out of the main kernel setup routine
+setup_arch(). This function uses a default routine called
+e820__memory_setup_default() to handle the generic loading the e820 tables
+from the boot params.
+
+This default can be overriden e.g. for virtualization environments where
+memory setup needs to be handled separately.
+
+-- EFI E820 Setup --
+
+The EFI stub code in arch/x86/boot/compressed/eboot.c handles the EFI to e820
+translation. When EBS is performed, the final EFI system map is returned. This
+map is handled in exit_boot_func(). This routine updates the EFI specific
+boot param fields. The routine setup_e820 does the conversion, storing the
+translated values in the e820 map in the boot params.
+
+As noted, the e820 table in the boot params is of a fixed size. If the EFI
+system map presents more entries than can be held, it uses the e820ext table.
+This tabls is allocated in as extended boot param setup data of type
+SETUP_E820_EXT and passed to the kernel (see add_e820ext()).
+
+The e820ext table is processed out of setup_arch() as well after the primary
+e820 is processed. This occurs in parse_setup_data() calling
+e820__memory_setup_extended(). This routine extends the base e820 table that
+was built in kernel memory.
