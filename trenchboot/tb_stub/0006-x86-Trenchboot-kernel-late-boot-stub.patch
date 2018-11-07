@@ -1,4 +1,4 @@
-From 0869a6bac4bef2479e33a9a0cea792a1a664a516 Mon Sep 17 00:00:00 2001
+From 1724f8e6019627dd308329121ce117026ac62730 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
@@ -6,9 +6,9 @@ Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile     |  1 +
- arch/x86/kernel/setup.c      |  3 +++
+ arch/x86/kernel/setup.c      |  5 +++++
  arch/x86/kernel/trenchboot.c | 39 +++++++++++++++++++++++++++++++++++++++
- 3 files changed, 43 insertions(+)
+ 3 files changed, 45 insertions(+)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -24,7 +24,7 @@ index 8824d01..45d5678 100644
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index 74b4472..f7f8887 100644
+index 74b4472..895d251 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
 @@ -117,6 +117,7 @@
@@ -35,18 +35,20 @@ index 74b4472..f7f8887 100644
  
  /*
   * max_low_pfn_mapped: highest direct mapped pfn under 4GB
-@@ -1225,6 +1226,8 @@ void __init setup_arch(char **cmdline_p)
+@@ -1225,6 +1226,10 @@ void __init setup_arch(char **cmdline_p)
  
  	tboot_probe();
  
-+	trenchboot_setup();
++#ifdef CONFIG_TRENCHBOOT_STUB
++	tb_setup();
++#endif
 +
  	map_vsyscall();
  
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
 new file mode 100644
-index 0000000..e7b335c
+index 0000000..73f1282
 --- /dev/null
 +++ b/arch/x86/kernel/trenchboot.c
 @@ -0,0 +1,39 @@
@@ -77,7 +79,7 @@ index 0000000..e7b335c
 +	/* TODO validate the DEV tables and devices */
 +}
 +
-+void trenchboot_setup(void)
++void tb_setup(void)
 +{
 +	BUG_ON(!(boot_params.trenchboot_info.tb_flags & TB_FLAG_ACTIVE));
 +

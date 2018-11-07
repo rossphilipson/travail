@@ -1,4 +1,4 @@
-From cfbd58fec89e90547659a9d45fef20d07d50e00a Mon Sep 17 00:00:00 2001
+From 3257568ca54c6a4851e4d9faca93400c8a49b853 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
@@ -11,7 +11,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 0000000..e2b5e5c
+index 0000000..8fdea93
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
 @@ -0,0 +1,177 @@
@@ -187,7 +187,7 @@ index 0000000..e2b5e5c
 +	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a"(X86_GETSEC_WAKEUP));
 +}
 +
-+void trenchboot_setup(void);
++void tb_setup(void);
 +
 +#endif
 +
