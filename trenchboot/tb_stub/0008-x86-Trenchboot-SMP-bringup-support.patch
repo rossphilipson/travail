@@ -1,4 +1,4 @@
-From 3051c74a717d12e15078c25a9022d896268162be Mon Sep 17 00:00:00 2001
+From 1b9a9ce0b9c73db5d539232ba23df99eecb6936f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -9,11 +9,11 @@ the APs in very different states post launch.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  5 +++
- arch/x86/kernel/smpboot.c            | 78 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/smpboot.c            | 80 ++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/init.c             |  8 ++++
  arch/x86/realmode/rm/header.S        |  5 +++
- arch/x86/realmode/rm/trampoline_64.S | 68 +++++++++++++++++++++++++++++++
- 5 files changed, 164 insertions(+)
+ arch/x86/realmode/rm/trampoline_64.S | 68 ++++++++++++++++++++++++++++++
+ 5 files changed, 166 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393..d3839bc 100644
@@ -32,7 +32,7 @@ index 63b3393..d3839bc 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf..fe0d775 100644
+index f02ecaf..7ffec70 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -67,7 +67,7 @@ index f02ecaf..fe0d775 100644
  	pr_debug("Deasserting INIT\n");
  
  	/* Target chip */
-@@ -885,6 +896,47 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
+@@ -885,6 +896,49 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
  	return NMI_DONE;
  }
  
@@ -108,6 +108,8 @@ index f02ecaf..fe0d775 100644
 +	else
 +		txt_getsec_wakeup();
 +
++	txt_put_heap(heap);
++
 +	return 0;
 +}
 +#endif
@@ -115,7 +117,7 @@ index f02ecaf..fe0d775 100644
  /*
   * Wake up AP by INIT, INIT, STARTUP sequence.
   *
-@@ -1010,6 +1062,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1064,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -124,7 +126,7 @@ index f02ecaf..fe0d775 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1022,6 +1076,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1022,6 +1078,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
  
