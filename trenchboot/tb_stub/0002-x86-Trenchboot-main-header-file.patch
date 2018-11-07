@@ -1,20 +1,20 @@
-From be5b4f7367e75c146c870e876144d458d088022c Mon Sep 17 00:00:00 2001
+From cfbd58fec89e90547659a9d45fef20d07d50e00a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 159 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 159 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 177 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 177 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..1172ddf82108
+index 0000000..e2b5e5c
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,177 @@
 +/*
 + * TODO license
 + */
@@ -32,11 +32,15 @@ index 000000000000..1172ddf82108
 +
 +#define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
 +#define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
++#define TXT_NR_CONFIG_PAGES     ((TXT_PUB_CONFIG_REGS_BASE - \
++				  TXT_PRIV_CONFIG_REGS_BASE) >> PAGE_SHIFT)
++
 +#define TXTCR_STS			0x0000
 +#define TXTCR_ESTS			0x0008
 +#define TXTCR_ERRORCODE			0x0030
 +#define TXTCR_MLE_JOIN			0x0290
-+#define TXTCR_REG_HEAP_BASE		0x0300
++#define TXTCR_HEAP_BASE			0x0300
++#define TXTCR_HEAP_SIZE			0x0308
 +#define TXTCR_CMD_OPEN_LOCALITY1	0x0380
 +#define TXTCR_CMD_CLOSE_LOCALITY1	0x0388
 +#define TXTCR_CMD_OPEN_LOCALITY2	0x0390
@@ -46,6 +50,10 @@ index 000000000000..1172ddf82108
 +
 +#define TXT_CAP_RLP_WAKE_GETSEC		0x0000001
 +#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
++
++#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
++#define TXT_OS_SINIT_CAPABILITIES	0x50
++#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +
 +#define TRENCHBOOT_INFO_OFFSET	0x0cc
 +#define TB_FLAGS_OFFSET		0x4
@@ -60,27 +68,6 @@ index 000000000000..1172ddf82108
 +
 +#ifndef __ASSEMBLY__
 +
-+struct txt_bios_data {
-+	uint8_t		undef[36];
-+} __attribute__((packed));
-+
-+struct txt_os_mle_data {
-+	uint32_t	zero_page_addr;
-+	/* TODO more to define later, may move to a common Trenchboot header */
-+} __attribute__((packed));
-+
-+struct txt_os_sinit_data {
-+	uint8_t		undef1[80];
-+	uint32_t	capabilities;
-+	uint8_t		undef2[16];
-+} __attribute__((packed));
-+
-+struct txt_sinit_mle_data {
-+	uint8_t		undef1[120];
-+	uint32_t	rlp_wakeup_addr;
-+	uint8_t		undef2[24];
-+} __attribute__((packed));
-+
 +struct txt_mle_join {
 +	uint32_t	gdt_limit;
 +	uint32_t	gdt_base;
@@ -88,80 +75,111 @@ index 000000000000..1172ddf82108
 +	uint32_t	entry_point;           /* phys addr */
 +} __attribute__((packed));
 +
-+static inline u64 txt_read_pub_reg(u32 reg)
++#include <asm/io.h>
++
++static inline u64 txt_read_reg(u32 reg, int pub)
 +{
-+	return *(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg);
++	u64 val = ~0ULL;
++	void __iomem *addr;
++
++	addr = ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE : TXT_PRIV_CONFIG_REGS_BASE),
++			TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	if (!addr)
++		return val;
++
++	memcpy_fromio(&val, addr + reg, sizeof(u64));
++
++	iounmap(addr);
++	return val;
 +}
 +
-+static inline u64 txt_read_priv_reg(u32 reg)
++static inline void txt_write_reg(u32 reg, u64 val, int pub)
 +{
-+	return *(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg);
++	void __iomem *addr;
++
++	addr = ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE : TXT_PRIV_CONFIG_REGS_BASE),
++			TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	if (addr)
++	{
++		memcpy_toio(addr + reg, &val, sizeof(u64));
++		iounmap(addr);
++	}
 +}
 +
-+static inline void txt_write_pub_reg(u32 reg, u64 val)
++static inline void __iomem *txt_get_heap(void)
 +{
-+	*(volatile u64*)(unsigned long)(TXT_PUB_CONFIG_REGS_BASE + reg) = val;
++	u64 base, size;
++
++	base = txt_read_reg(TXTCR_HEAP_BASE, 0);
++	size = txt_read_reg(TXTCR_HEAP_SIZE, 0);
++	if ((base == ~0ULL)||(size == ~0ULL))
++		return NULL;
++
++	return ioremap(base, size);
 +}
 +
-+static inline void txt_write_priv_reg(u32 reg, u64 val)
++static inline void txt_put_heap(void __iomem *heap)
 +{
-+	*(volatile u64*)(unsigned long)(TXT_PRIV_CONFIG_REGS_BASE + reg) = val;
++	if (heap)
++		iounmap(heap);
 +}
 +
-+static inline uint64_t txt_bios_data_size(void)
++static inline u64 txt_bios_data_size(void __iomem *heap)
 +{
-+	void *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return *(uint64_t *)heap;
++	u64 val;
++
++	memcpy_fromio(&val, heap, sizeof(u64));
++	return val;
 +}
 +
-+static inline struct txt_bios_data *txt_bios_data_start(void)
++static inline void __iomem *txt_bios_data_start(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return (struct txt_bios_data*)(heap + sizeof(uint64_t));
++	return heap + sizeof(u64);
 +}
 +
-+static inline uint64_t txt_os_mle_data_size(void)
++static inline u64 txt_os_mle_data_size(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return *(uint64_t *)(heap + txt_bios_data_size());
++	u64 val;
++
++	memcpy_fromio(&val, heap + txt_bios_data_size(heap), sizeof(u64));
++	return val;
 +}
 +
-+static inline struct txt_os_mle_data *txt_os_mle_data_start(void)
++static inline void __iomem *txt_os_mle_data_start(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return (struct txt_os_mle_data*)(heap + txt_bios_data_size() +
-+					sizeof(uint64_t));
++	return heap + txt_bios_data_size(heap) + sizeof(u64);
 +}
 +
-+static inline uint64_t txt_os_sinit_data_size(void)
++static inline u64 txt_os_sinit_data_size(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return *(uint64_t *)(heap + txt_bios_data_size() +
-+				txt_os_mle_data_size());
++	u64 val;
++
++	memcpy_fromio(&val, heap + txt_bios_data_size(heap) +
++			txt_os_mle_data_size(heap), sizeof(u64));
++	return val;
 +}
 +
-+static inline struct txt_os_sinit_data *txt_os_sinit_data_start(void)
++static inline void __iomem *txt_os_sinit_data_start(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return (struct txt_os_sinit_data*)(heap + txt_bios_data_size() +
-+				txt_os_mle_data_size() + sizeof(uint64_t));
++	return heap + txt_bios_data_size(heap) +
++		txt_os_mle_data_size(heap) + sizeof(u64);
 +}
 +
-+static inline uint64_t txt_sinit_mle_data_size(void)
++static inline u64 txt_sinit_mle_data_size(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return *(uint64_t *)(heap + txt_bios_data_size() +
-+				txt_os_mle_data_size() +
-+				txt_os_sinit_data_size());
++	u64 val;
++
++	memcpy_fromio(&val, heap + txt_bios_data_size(heap) +
++			txt_os_mle_data_size(heap) +
++			txt_os_sinit_data_size(heap), sizeof(u64));
++	return val;
 +}
 +
-+static inline struct txt_sinit_mle_data *txt_sinit_mle_data_start(void)
++static inline void __iomem *txt_sinit_mle_data_start(void __iomem *heap)
 +{
-+	uint8_t *heap = (void*)txt_read_pub_reg(TXTCR_REG_HEAP_BASE);
-+	return (struct txt_sinit_mle_data*)(heap + txt_bios_data_size() +
-+				txt_os_mle_data_size() +
-+				txt_os_sinit_data_size() +
-+				sizeof(uint64_t));
++	return heap + txt_bios_data_size(heap) +
++		txt_os_mle_data_size(heap) +
++		txt_sinit_mle_data_size(heap) + sizeof(u64);
 +}
 +
 +static inline void txt_getsec_wakeup(void)
@@ -175,5 +193,5 @@ index 000000000000..1172ddf82108
 +
 +#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
-2.13.6
+2.1.4
 

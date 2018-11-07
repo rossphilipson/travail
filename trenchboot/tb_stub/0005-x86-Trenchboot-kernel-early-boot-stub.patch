@@ -1,4 +1,4 @@
-From 2f1c5680c14a5f376ff9f072a681aa0d37a8e2c9 Mon Sep 17 00:00:00 2001
+From 54dc57114fc95736e00fcfe5986c71aab53043f5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,14 +7,14 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 +++++++++
- arch/x86/boot/compressed/tb_main.c |  56 ++++++++++++++
+ arch/x86/boot/compressed/tb_main.c |  45 ++++++++++++
  arch/x86/boot/compressed/tb_stub.S | 147 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 237 insertions(+), 1 deletion(-)
+ 4 files changed, 226 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index a3290c812537..400ec159b981 100644
+index a3290c8..400ec15 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -90,7 +90,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -27,7 +27,7 @@ index a3290c812537..400ec159b981 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..f7bc3d7f7cfc 100644
+index 6403789..f7bc3d7 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -79,10 +79,10 @@ index 64037895b085..f7bc3d7f7cfc 100644
   */
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..45ee5668b810
+index 0000000..d8b34ba
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,45 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -127,21 +127,10 @@ index 000000000000..45ee5668b810
 +	tpm_extend(18, sha1_hash, extend_result);
 +
 +	tis_close(2);
-+
-+	/* On Intel, have to handle TPM localities via TXT */
-+	tb_flags = *((u32*)(bootparams +
-+		    TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET));
-+	if (tb_flags & TB_FLAG_ARCH_TXT)
-+	{
-+		txt_write_priv_reg(TXTCR_CMD_SECRETS, 0x1);
-+		(void)txt_read_priv_reg(TXTCR_E2STS);
-+		txt_write_priv_reg(TXTCR_CMD_OPEN_LOCALITY1, 0x1);
-+		(void)txt_read_priv_reg(TXTCR_E2STS);
-+	}
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..8960442beafb
+index 0000000..3e47b27
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,147 @@
@@ -229,7 +218,7 @@ index 000000000000..8960442beafb
 +
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
-+	movl	TXTCR_REG_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
++	movl	TXTCR_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
 +	addl	%ecx, %eax /* skip over BIOS data to OS-MLE data */
 +	movl	(%eax), %esi /* read zero page addr into %esi */
 +
@@ -293,5 +282,5 @@ index 000000000000..8960442beafb
 +	.fill 32, 1, 0
 +tb_stack_end:
 -- 
-2.13.6
+2.1.4
 
