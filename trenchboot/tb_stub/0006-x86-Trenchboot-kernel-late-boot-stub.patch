@@ -1,4 +1,4 @@
-From 1724f8e6019627dd308329121ce117026ac62730 Mon Sep 17 00:00:00 2001
+From 9159cab3fea92741891c855cbe4c83147303aaad Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
@@ -6,13 +6,14 @@ Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile     |  1 +
- arch/x86/kernel/setup.c      |  5 +++++
- arch/x86/kernel/trenchboot.c | 39 +++++++++++++++++++++++++++++++++++++++
- 3 files changed, 45 insertions(+)
+ arch/x86/kernel/setup.c      |  5 ++++
+ arch/x86/kernel/trenchboot.c | 64 ++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c         |  5 ++++
+ 4 files changed, 75 insertions(+)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 8824d01..45d5678 100644
+index 8824d01c0c35..45d567867ff2 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
 @@ -70,6 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
@@ -24,7 +25,7 @@ index 8824d01..45d5678 100644
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index 74b4472..895d251 100644
+index 74b4472ba0a6..895d2512fb74 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
 @@ -117,6 +117,7 @@
@@ -48,10 +49,10 @@ index 74b4472..895d251 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
 new file mode 100644
-index 0000000..73f1282
+index 000000000000..048d958901f3
 --- /dev/null
 +++ b/arch/x86/kernel/trenchboot.c
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,64 @@
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -62,6 +63,31 @@ index 0000000..73f1282
 +#include <asm/bootparam.h>
 +#include <asm/setup.h>
 +#include <asm/trenchboot.h>
++
++struct acpi_table_header *tb_get_dmar_table(struct acpi_table_header *dmar)
++{
++	void __iomem *heap;
++	void __iomem *sinit_mle_data;
++	u32 dmar_offset;
++
++	heap = txt_get_heap();
++	if (unlikely(!heap))
++	{
++		/* TODO add TPM infor log entry */
++		return dmar;
++	}
++
++	sinit_mle_data = txt_sinit_mle_data_start(heap);
++	dmar_offset = readl(sinit_mle_data + TXT_SINIT_MLE_DMAR_TABLE_OFFSET);
++
++	/*
++	 * Note this is not really the way things should be done with
++	 * ioremapped memory but the simplest thing to do is to leave the
++	 * heap mapped and return a pointer to the DMAR.
++	 */
++
++	return (struct acpi_table_header*)(sinit_mle_data + dmar_offset);
++}
 +
 +void tb_setup_intel(void)
 +{
@@ -91,6 +117,30 @@ index 0000000..73f1282
 +		BUG();
 +
 +}
+diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
+index d9c748b6f9e4..723efdf04b49 100644
+--- a/drivers/iommu/dmar.c
++++ b/drivers/iommu/dmar.c
+@@ -41,6 +41,7 @@
+ #include <linux/iommu.h>
+ #include <asm/irq_remapping.h>
+ #include <asm/iommu_table.h>
++#include <asm/trenchboot.h>
+ 
+ #include "irq_remapping.h"
+ 
+@@ -632,7 +633,11 @@ parse_dmar_table(void)
+ 	 * ACPI tables may not be DMA protected by tboot, so use DMAR copy
+ 	 * SINIT saved in SinitMleData in TXT heap (which is DMA protected)
+ 	 */
++#ifdef CONFIG_TRENCHBOOT_STUB
++	dmar_tbl = tb_get_dmar_table(dmar_tbl);
++#else
+ 	dmar_tbl = tboot_get_dmar_table(dmar_tbl);
++#endif
+ 
+ 	dmar = (struct acpi_table_dmar *)dmar_tbl;
+ 	if (!dmar)
 -- 
-2.1.4
+2.13.6
 

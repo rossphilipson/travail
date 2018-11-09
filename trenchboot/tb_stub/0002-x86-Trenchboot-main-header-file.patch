@@ -1,20 +1,20 @@
-From 3257568ca54c6a4851e4d9faca93400c8a49b853 Mon Sep 17 00:00:00 2001
+From 13b0cfcf72d64389e24268ef0bb5c13888b3151c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 177 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 177 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 180 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 180 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 0000000..8fdea93
+index 000000000000..a3d964744cca
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,180 @@
 +/*
 + * TODO license
 + */
@@ -54,6 +54,8 @@ index 0000000..8fdea93
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
++#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
++#define TXT_SINIT_MLE_DMAR_TABLE_OFFSET	0x8c
 +
 +#define TRENCHBOOT_INFO_OFFSET	0x0cc
 +#define TB_FLAGS_OFFSET		0x4
@@ -188,10 +190,11 @@ index 0000000..8fdea93
 +}
 +
 +void tb_setup(void);
++struct acpi_table_header *tb_get_dmar_table(struct acpi_table_header *dmar);
 +
 +#endif
 +
 +#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
-2.1.4
+2.13.6
 
