@@ -1,4 +1,4 @@
-From 54dc57114fc95736e00fcfe5986c71aab53043f5 Mon Sep 17 00:00:00 2001
+From 372720a5e0f697aaa492d179416909766979c8ce Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -14,10 +14,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index a3290c8..400ec15 100644
+index 47a18fbeb5a2..ff4329e6b52c 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
-@@ -90,7 +90,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
+@@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
  vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o \
@@ -27,7 +27,7 @@ index a3290c8..400ec15 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 6403789..f7bc3d7 100644
+index 64037895b085..f7bc3d7f7cfc 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -79,7 +79,7 @@ index 6403789..f7bc3d7 100644
   */
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 0000000..d8b34ba
+index 000000000000..d8b34baead72
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
 @@ -0,0 +1,45 @@
@@ -130,7 +130,7 @@ index 0000000..d8b34ba
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..3e47b27
+index 000000000000..3e47b27c7434
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,147 @@
@@ -282,5 +282,5 @@ index 0000000..3e47b27
 +	.fill 32, 1, 0
 +tb_stack_end:
 -- 
-2.1.4
+2.11.0
 

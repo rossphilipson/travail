@@ -1,4 +1,4 @@
-From 4f7967f766557175f526c6b31a3fabdc78672989 Mon Sep 17 00:00:00 2001
+From 83423f7bdaeb7270b43a29203009c773552fa8ab Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes
@@ -12,10 +12,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  4 files changed, 34 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1aa4dd3..7f2b4ce 100644
+index 1a0be022f91d..83b4892e0b15 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1959,6 +1959,13 @@ config EFI_MIXED
+@@ -1953,6 +1953,13 @@ config EFI_MIXED
  
  	   If unsure, say N.
  
@@ -30,7 +30,7 @@ index 1aa4dd3..7f2b4ce 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae..5634099 100644
+index 9b5adae9cc40..56340994d8c0 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -43,7 +43,7 @@ index 9b5adae..5634099 100644
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
-index d4e6cd4..63d2668 100644
+index d4e6cd4577e5..63d2668746f3 100644
 --- a/arch/x86/boot/tools/build.c
 +++ b/arch/x86/boot/tools/build.c
 @@ -56,6 +56,7 @@ u8 buf[SETUP_SECT_MAX*512];
@@ -91,7 +91,7 @@ index d4e6cd4..63d2668 100644
  	if (fwrite(buf, 1, i, dest) != i)
  		die("Writing setup failed");
 diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
-index a06cbf0..3f06346 100644
+index a06cbf019744..3f06346971f9 100644
 --- a/arch/x86/include/uapi/asm/bootparam.h
 +++ b/arch/x86/include/uapi/asm/bootparam.h
 @@ -112,6 +112,14 @@ struct efi_info {
@@ -120,5 +120,5 @@ index a06cbf0..3f06346 100644
  	struct efi_info efi_info;			/* 0x1c0 */
  	__u32 alt_mem_k;				/* 0x1e0 */
 -- 
-2.1.4
+2.11.0
 

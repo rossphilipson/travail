@@ -1,4 +1,4 @@
-From 1b9a9ce0b9c73db5d539232ba23df99eecb6936f Mon Sep 17 00:00:00 2001
+From bcf528a923ac3b58da8ff9b30269dfe38d51a632 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -10,13 +10,12 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  5 +++
  arch/x86/kernel/smpboot.c            | 80 ++++++++++++++++++++++++++++++++++++
- arch/x86/realmode/init.c             |  8 ++++
  arch/x86/realmode/rm/header.S        |  5 +++
  arch/x86/realmode/rm/trampoline_64.S | 68 ++++++++++++++++++++++++++++++
- 5 files changed, 166 insertions(+)
+ 4 files changed, 158 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393..d3839bc 100644
+index 63b3393bd98e..d3839bc371a5 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
 @@ -32,6 +32,11 @@ struct real_mode_header {
@@ -32,7 +31,7 @@ index 63b3393..d3839bc 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf..7ffec70 100644
+index f02ecaf97904..7ffec7054753 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -157,34 +156,8 @@ index f02ecaf..7ffec70 100644
  	if (!boot_error) {
  		/*
  		 * Wait 10s total for first sign of life from AP
-diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d101058..4fbff45 100644
---- a/arch/x86/realmode/init.c
-+++ b/arch/x86/realmode/init.c
-@@ -9,6 +9,10 @@
- #include <asm/realmode.h>
- #include <asm/tlbflush.h>
- 
-+#ifdef CONFIG_AMD_DEV
-+#include <asm/amd_dev.h>
-+#endif
-+
- struct real_mode_header *real_mode_header;
- u32 *trampoline_cr4_features;
- 
-@@ -42,6 +46,10 @@ void __init reserve_real_mode(void)
- 	}
- 
- 	memblock_reserve(mem, size);
-+#ifdef CONFIG_AMD_DEV
-+	/* DEV protect this region before use*/
-+	amd_dev_protect_pages(0, mem, size, 0);
-+#endif
- 	set_real_mode_mem(mem, size);
- }
- 
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30..679bb8c 100644
+index 30b0d30d861a..679bb8c217f3 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
 @@ -31,6 +31,11 @@ GLOBAL(real_mode_header)
@@ -200,7 +173,7 @@ index 30b0d30..679bb8c 100644
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb759..05c5ff1 100644
+index 24bb7598774e..05c5ff1e15a5 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,7 @@
@@ -300,5 +273,5 @@ index 24bb759..05c5ff1 100644
  
  	.bss
 -- 
-2.1.4
+2.11.0
 

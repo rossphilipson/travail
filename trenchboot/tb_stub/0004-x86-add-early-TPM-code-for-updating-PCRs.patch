@@ -1,4 +1,4 @@
-From 52c86ad2c785b8c8542ce92da8800fbce6b93156 Mon Sep 17 00:00:00 2001
+From 1cda48454df023260bd19f017ea837c4911f3fe6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -13,10 +13,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 arch/x86/include/asm/tpm.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index a7332b0..a3290c8 100644
+index 3038ddf2cd76..47a18fbeb5a2 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
-@@ -89,7 +89,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
+@@ -90,7 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
@@ -28,7 +28,7 @@ index a7332b0..a3290c8 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 0000000..e5049b7
+index 000000000000..e5049b7e934f
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
 @@ -0,0 +1,30 @@
@@ -64,7 +64,7 @@ index 0000000..e5049b7
 +}
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 0000000..ab3fe9d
+index 000000000000..ab3fe9d00023
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
 @@ -0,0 +1,11 @@
@@ -80,5 +80,5 @@ index 0000000..ab3fe9d
 +
 +#endif /* _ASM_X86_TPM_H */
 -- 
-2.1.4
+2.11.0
 
