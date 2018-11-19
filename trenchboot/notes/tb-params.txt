@@ -26,7 +26,9 @@ where the EFI map is turned into the GRUB map after EBS.
 
 -- Trenchboot Bootparams --
 
-The folloing specific Trenchboot values need to be setup in the boot params:
+The following specific Trenchboot values need to be setup in the boot params
+(the trenchboot_info struct layout can be seen in
+arch/x86/include/uapi/asm/bootparam.h):
 
 tb_entry: This is actually filled in by the build tool at IL kernel build time
           and is read by GRUB to know where the protected mode Trenchboot stub
@@ -46,14 +48,18 @@ The other values are used elsewhere, e.g. the landing zone fills in tb_dev_map.
 -- TXT Heap Params --
 
 The TXT heap has an area called the OS to MLE data structure that is used to
-pass values from pre to post launch. There is only one that GRUB must set:
+pass values from pre to post launch. The offsets are defined in
+arch/x86/include/asm/trenchboot.h. These are the fields:
 
 zero_page_addr: 32 bit address of the zero page in low memory.
+
+msb_key_hash: TODO Daniel has to fill this in.
 
 -- LZ Header --
 
 The LZ header is offset 4 bytes in the landing zone. It has the following
-fields that GRUB must setup:
+fields that GRUB must setup (the type lz_header_t defines the fields in
+lz/include/boot.h):
 
 trenchboot_loader_size: The total size of the IL used to hash the IL into
                         PCR 17 in the LZ.
