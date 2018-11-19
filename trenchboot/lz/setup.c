@@ -19,6 +19,7 @@ void setup(void *_lz_base)
 {
     void *dev_table;
     void **second_stack;
+    u32 *tb_dev_map;
     u64 pfn, end_pfn;
     u32 dev;
 
@@ -56,6 +57,10 @@ void setup(void *_lz_base)
     dev = dev_locate();
     dev_load_map(dev, (u32)((u64)dev_table));
     dev_flush_cache(dev);
+
+    /* Set the DEV address for the TB stub to use */
+    tb_dev_map = (u32*)((u8*)zero_page + BP_TB_DEV_MAP);
+    *tb_dev_map = (u32)((u64)dev_table);
 
     /*
      * Switch to our nice big stack which starts at the page behind the

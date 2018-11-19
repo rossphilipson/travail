@@ -28,6 +28,7 @@
 #define __text          __attribute__ ((__section__ (".text#")))
 
 /* Boot Params */
+#define BP_TB_DEV_MAP    0x0d8
 #define BP_CODE32_START  0x214
 #define BP_CMD_LINE_PTR  0x228
 #define BP_CMDLINE_SIZE  0x238
