@@ -1,0 +1,63 @@
+---- Trenchboot Parameters ----
+
+This is a listing of the various parameters that the GRUB loader will need to
+setup in a number of places for the post launch environment and the IL kernel.
+
+-- Linux Bootparams --
+
+Also known as the zero page. The code in grub-core/loader/i386/linux.c is
+primarily used to set these up. They are defined in include/grub/i386/linux.h
+by:
+
+struct linux_kernel_params
+
+This must match the boot params defined in the kernel including adding the new
+Trenchboot params (see below). Note the e820 memory map is populated here as
+well.
+
+TODO: It is not clear yet how to share this code since Trenchboot will need to
+do all the same things and more.
+
+TODO: It is not clear how the system memory map which from EFI which could be
+bigger is handled in the fixed size e820. The EFI stub code in the kernel uses
+the boot param setup_data to handle the overflow but GRUB does not seem to use
+it. The file grub-core/efiemu/mm.c may have the answer - it looks like it is
+where the EFI map is turned into the GRUB map after EBS.
+
+-- Trenchboot Bootparams --
+
+The folloing specific Trenchboot values need to be setup in the boot params:
+
+tb_entry: This is actually filled in by the build tool at IL kernel build time
+          and is read by GRUB to know where the protected mode Trenchboot stub
+          entry point location is. GRUB uses this to calculate code32_start.
+
+tb_min_ram: Special value for setting up the low PMR - much like the one in
+            TBOOT.
+
+tb_flags: Currently there are none that are settable by GRUB so it should just
+          be zeroed.
+
+tb_xbi: The extended multiboot 2 structure that is passed to the IL kernel
+        containing all boot information for starting the real kernel.
+
+The other values are used elsewhere, e.g. the landing zone fills in tb_dev_map.
+
+-- TXT Heap Params --
+
+The TXT heap has an area called the OS to MLE data structure that is used to
+pass values from pre to post launch. There is only one that GRUB must set:
+
+zero_page_addr: 32 bit address of the zero page in low memory.
+
+-- LZ Header --
+
+The LZ header is offset 4 bytes in the landing zone. It has the following
+fields that GRUB must setup:
+
+trenchboot_loader_size: The total size of the IL used to hash the IL into
+                        PCR 17 in the LZ.
+
+zero_page_addr:  32 bit address of the zero page in low memory.
+
+msb_key_hash: TODO Daniel has to fill this in.
