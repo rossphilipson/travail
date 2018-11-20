@@ -1,4 +1,4 @@
-From cf479b844e1b72722ff4af927598e021e20970f1 Mon Sep 17 00:00:00 2001
+From 4421a0a10182599e9c26982203fa3681ed1f13ad Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
@@ -142,5 +142,5 @@ index d9c748b6f9e4..723efdf04b49 100644
  	dmar = (struct acpi_table_dmar *)dmar_tbl;
  	if (!dmar)
 -- 
-2.11.0
+2.13.6
 
