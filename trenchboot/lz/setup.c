@@ -17,87 +17,87 @@ void setup2(void);
 
 void setup(void *_lz_base)
 {
-    void *dev_table;
-    void **second_stack;
-    u32 *tb_dev_map;
-    u64 pfn, end_pfn;
-    u32 dev;
+	void *dev_table;
+	void **second_stack;
+	u32 *tb_dev_map;
+	u64 pfn, end_pfn;
+	u32 dev;
 
-    /*
-     * Now in 64b mode, paging is setup. This is the launching point. We can
-     * now do what we want. First order of business is to setup
-     * DEV to cover memory from the start of bzImage to the end of the LZ "kernel".
-     * At the end, trampoline to the PM entry point which will include the
-     * TrenchBoot stub.
-     */
+	/*
+	 * Now in 64b mode, paging is setup. This is the launching point. We can
+	 * now do what we want. First order of business is to setup
+	 * DEV to cover memory from the start of bzImage to the end of the LZ
+	 * "kernel". At the end, trampoline to the PM entry point which will
+	 * include the TrenchBoot stub.
+	 */
 
-    /* Store the lz_base for all to use */
-    lz_base = _lz_base;
+	/* Store the lz_base for all to use */
+	lz_base = _lz_base;
 
-    /* The LZ header setup by the bootloader */
-    lz_header = (lz_header_t*)((u8*)lz_base + sizeof(sl_header_t));
+	/* The LZ header setup by the bootloader */
+	lz_header = (lz_header_t*)((u8*)lz_base + sizeof(sl_header_t));
 
-    /* The Zero Page with the boot_params and legacy header */
-    zero_page = (u8*)(u64)lz_header->zero_page_addr;
+	/* The Zero Page with the boot_params and legacy header */
+	zero_page = (u8*)(u64)lz_header->zero_page_addr;
 
-    /* DEV CODE */
+	/* DEV CODE */
 
-    /* Pointer to dev_table bitmap for DEV protection */
-    dev_table = (u8*)lz_base + LZ_DEV_TABLE_OFFSET;
+	/* Pointer to dev_table bitmap for DEV protection */
+	dev_table = (u8*)lz_base + LZ_DEV_TABLE_OFFSET;
 
-    pfn = PAGE_PFN(zero_page);
-    end_pfn = PAGE_PFN(PAGE_DOWN((u8*)lz_base + 0x10000));
+	pfn = PAGE_PFN(zero_page);
+	end_pfn = PAGE_PFN(PAGE_DOWN((u8*)lz_base + 0x10000));
 
-    /* TODO: check end_pfn is not ouside of range of DEV map */
+	/* TODO: check end_pfn is not ouside of range of DEV map */
 
-    /* build protection bitmap */
-    for (;pfn++; pfn <= end_pfn)
-        dev_protect_page(pfn, (u8*)dev_table);
+	/* build protection bitmap */
+	for (;pfn++; pfn <= end_pfn)
+		dev_protect_page(pfn, (u8*)dev_table);
 
-    dev = dev_locate();
-    dev_load_map(dev, (u32)((u64)dev_table));
-    dev_flush_cache(dev);
+	dev = dev_locate();
+	dev_load_map(dev, (u32)((u64)dev_table));
+	dev_flush_cache(dev);
 
-    /* Set the DEV address for the TB stub to use */
-    tb_dev_map = (u32*)((u8*)zero_page + BP_TB_DEV_MAP);
-    *tb_dev_map = (u32)((u64)dev_table);
+	/* Set the DEV address for the TB stub to use */
+	tb_dev_map = (u32*)((u8*)zero_page + BP_TB_DEV_MAP);
+	*tb_dev_map = (u32)((u64)dev_table);
 
-    /*
-     * Switch to our nice big stack which starts at the page behind the
-     * landing zone and of course grows down.
-     */
-    second_stack = lz_base;
-    load_stack(*second_stack);
+	/*
+	 * Switch to our nice big stack which starts at the page behind the
+	 * landing zone and of course grows down.
+	 */
+	second_stack = lz_base;
+	load_stack(*second_stack);
 
-    /* Call secondary setup on new stack */
-    setup2();
+	/* Call secondary setup on new stack */
+	setup2();
 
-    /* Should never get here */
-    die();
+	/* Should never get here */
+	die();
 }
 
 void setup2(void)
 {
-    u32 *code32_start;
-    u32 *data, size;
-    void *pm_kernel_entry;
-    u8 extend_result[SHA1_TOTAL_BYTES];
+	u32 *code32_start;
+	u32 *data, size;
+	void *pm_kernel_entry;
+	u8 extend_result[SHA1_TOTAL_BYTES];
 
-    code32_start = (u32*)((u8*)zero_page + BP_CODE32_START);
-    pm_kernel_entry = (void*)((u64)(*code32_start));
+	code32_start = (u32*)((u8*)zero_page + BP_CODE32_START);
+	pm_kernel_entry = (void*)((u64)(*code32_start));
 
-    tis_open(2);
+	tis_open(2);
 
-    /* extend TB Loader code segment into PCR17 */
-    data = (u32*)(uintptr_t)*code32_start;
-    size = lz_header->trenchboot_loader_size;
-    sha1sum(&sha1ctx, data, size);
-    tpm_extend(17, sha1ctx.buf, extend_result);
+	/* extend TB Loader code segment into PCR17 */
+	data = (u32*)(uintptr_t)*code32_start;
+	size = lz_header->trenchboot_loader_size;
+	sha1sum(&sha1ctx, data, size);
+	tpm_extend(17, sha1ctx.buf, extend_result);
 
-    tis_close(2);
-    /* End of the line, off to the protected mode entry into the kernel */
-    lz_exit(pm_kernel_entry, zero_page, lz_base);
+	tis_close(2);
+	/* End of the line, off to the protected mode entry into the kernel */
+	lz_exit(pm_kernel_entry, zero_page, lz_base);
 
-    /* Should never get here */
-    die();
+	/* Should never get here */
+	die();
 }

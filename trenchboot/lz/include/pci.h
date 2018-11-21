@@ -30,10 +30,10 @@
 
 
 int pci_conf1_read(unsigned int seg, unsigned int bus,
-                   unsigned int devfn, int reg, int len, u32 *value);
+		   unsigned int devfn, int reg, int len, u32 *value);
 
 
 int pci_conf1_write(unsigned int seg, unsigned int bus,
-                    unsigned int devfn, int reg, int len, u32 value);
+		    unsigned int devfn, int reg, int len, u32 value);
 
 #endif /* __PCI_H__ */

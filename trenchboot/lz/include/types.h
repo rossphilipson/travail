@@ -12,7 +12,7 @@ typedef short			s16;
 typedef int			s32;
 typedef long long		s64;
 
-typedef unsigned long          uintptr_t;
+typedef unsigned long	uintptr_t;
 
 typedef unsigned long	size_t;
 typedef long		ssize_t;

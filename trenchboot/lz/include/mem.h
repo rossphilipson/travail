@@ -16,12 +16,12 @@ static inline void *memcpy(void *dst, const void *src, size_t count)
 
 static inline void *memset(void *s, int c, u32 n)
 {
-    char *buf = (char*)s;
+	char *buf = (char*)s;
 
-    for ( ; n--; )
-        *buf++ = c;
+	for ( ; n--; )
+		*buf++ = c;
 
-    return buf;
+	return buf;
 }
 
 #endif /* __MEM_H__ */

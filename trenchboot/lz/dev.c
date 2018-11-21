@@ -19,7 +19,8 @@ u32 dev_locate(void)
 
 	pci_cap_ptr &= 0xFF;
 
-	while(pci_cap_ptr != 0) {
+	while (pci_cap_ptr != 0)
+	{
 		pci_conf1_read(0, DEV_PCI_BUS,
 				PCI_DEVFN(DEV_PCI_DEVICE,DEV_PCI_FUNCTION),
 				pci_cap_ptr,
@@ -34,7 +35,7 @@ u32 dev_locate(void)
 				1, &pci_cap_ptr);
 	}
 
-        if(INVALID_CAP(pci_cap_ptr))
+        if (INVALID_CAP(pci_cap_ptr))
                 return 0;
 
 	return pci_cap_ptr;
@@ -76,12 +77,12 @@ u32 dev_load_map(u32 dev, u32 dev_bitmap_paddr)
 
 	dev_write(dev, DEV_BASE_LO, 0, dev_base_lo);
 
-
 	/* invalidate all other domains */
 	dev_base_lo &= !DEV_BASE_LO_VALID_MASK;
 	dev_base_lo &= !DEV_BASE_LO_ADDR_MASK;
 
-	for (i = 1; i < DEV_CAP_MAPS(dev_cap); i++){
+	for (i = 1; i < DEV_CAP_MAPS(dev_cap); i++)
+	{
 		dev_write(dev, DEV_BASE_HI, i, 0);
 		dev_write(dev, DEV_BASE_LO, i, dev_base_lo);
 	}
