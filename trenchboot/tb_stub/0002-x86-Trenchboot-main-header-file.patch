@@ -1,23 +1,36 @@
-From 42a22be7ff2aebb7196c091fa76c2df6efecf040 Mon Sep 17 00:00:00 2001
+From ea15fb0a8dd576948a5e4be07a85858f4166baed Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 181 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 181 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 194 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 194 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..03a03506cd53
+index 000000000000..f59181995db2
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,194 @@
 +/*
-+ * TODO license
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#ifndef _ASM_X86_TRENCHBOOT_H
 +#define _ASM_X86_TRENCHBOOT_H
 +

@@ -1,4 +1,4 @@
-From c3f669fa0bff8f57791678e53701213f80e554cd Mon Sep 17 00:00:00 2001
+From a266366f037d2b8ddc30e5ca0445c853d9b8d3b1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -6,10 +6,10 @@ Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  33 +++++++++
- arch/x86/boot/compressed/tb_main.c |  45 ++++++++++++
- arch/x86/boot/compressed/tb_stub.S | 147 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 226 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/head_64.S |  33 ++++++++
+ arch/x86/boot/compressed/tb_main.c |  61 ++++++++++++++
+ arch/x86/boot/compressed/tb_stub.S | 163 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 258 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
@@ -79,10 +79,26 @@ index 64037895b085..f7bc3d7f7cfc 100644
   */
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..d8b34baead72
+index 000000000000..86adb2db118a
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,61 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -130,10 +146,26 @@ index 000000000000..d8b34baead72
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..3e47b27c7434
+index 000000000000..0df7920d050b
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,163 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
 +	.code32
 +	.text
 +#include <linux/linkage.h>

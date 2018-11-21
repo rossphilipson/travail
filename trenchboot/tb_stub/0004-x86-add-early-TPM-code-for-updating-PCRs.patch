@@ -1,4 +1,4 @@
-From b1c85a730a368fc514b2c4f0a9a441dde0e10df8 Mon Sep 17 00:00:00 2001
+From 956a1bac3ccdaf67cef4e21ddff7ba64cb5cf278 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -6,9 +6,9 @@ Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |  3 ++-
- arch/x86/boot/compressed/early_tpm.c | 30 ++++++++++++++++++++++++++++++
- arch/x86/include/asm/tpm.h           | 11 +++++++++++
- 3 files changed, 43 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/early_tpm.c | 43 ++++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/tpm.h           | 24 ++++++++++++++++++++
+ 3 files changed, 69 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/include/asm/tpm.h
 
@@ -28,13 +28,26 @@ index 3038ddf2cd76..47a18fbeb5a2 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..e5049b7e934f
+index 000000000000..dd3bb803be87
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,43 @@
 +/*
-+ * TODO license
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <linux/string.h>
@@ -64,13 +77,26 @@ index 000000000000..e5049b7e934f
 +}
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..ab3fe9d00023
+index 000000000000..3d53a434f29a
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,24 @@
 +/*
-+ * TODO license
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#ifndef _ASM_X86_TPM_H
 +#define _ASM_X86_TPM_H
 +
