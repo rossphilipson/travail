@@ -1,76 +1,133 @@
 /*
- * Copyright (c) 2013 The Chromium OS Authors.
+ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
  *
- * See file CREDITS for list of people who contributed to this
- * project.
+ * The definitions in this header are extracted from the Trusted Computing
+ * Group's "TPM Main Specification", Parts 1-3.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
  */
-#ifndef __TPM_H
-#define __TPM_H
-/*
-#include <tis.h>
-*/
+
+#ifndef _TPM_H
+#define _TPM_H
+
 #include <types.h>
-/*
- * Here is a partial implementation of TPM commands.  Please consult TCG Main
- * Specification for definitions of TPM commands.
- */
-enum tpm_startup_type {
-	TPM_ST_CLEAR		= 0x0001,
-	TPM_ST_STATE		= 0x0002,
-	TPM_ST_DEACTIVATED	= 0x0003,
+
+/* Section 2.2.3 */
+#define TPM_AUTH_DATA_USAGE uint8_t
+#define TPM_PAYLOAD_TYPE uint8_t
+#define TPM_VERSION_BYTE uint8_t
+#define TPM_TAG uint16_t
+#define TPM_PROTOCOL_ID uint16_t
+#define TPM_STARTUP_TYPE uint16_t
+#define TPM_ENC_SCHEME uint16_t
+#define TPM_SIG_SCHEME uint16_t
+#define TPM_MIGRATE_SCHEME uint16_t
+#define TPM_PHYSICAL_PRESENCE uint16_t
+#define TPM_ENTITY_TYPE uint16_t
+#define TPM_KEY_USAGE uint16_t
+#define TPM_EK_TYPE uint16_t
+#define TPM_STRUCTURE_TAG uint16_t
+#define TPM_PLATFORM_SPECIFIC uint16_t
+#define TPM_COMMAND_CODE uint32_t
+#define TPM_CAPABILITY_AREA uint32_t
+#define TPM_KEY_FLAGS uint32_t
+#define TPM_ALGORITHM_ID uint32_t
+#define TPM_MODIFIER_INDICATOR uint32_t
+#define TPM_ACTUAL_COUNT uint32_t
+#define TPM_TRANSPORT_ATTRIBUTES uint32_t
+#define TPM_AUTHHANDLE uint32_t
+#define TPM_DIRINDEX uint32_t
+#define TPM_KEY_HANDLE uint32_t
+#define TPM_PCRINDEX uint32_t
+#define TPM_RESULT uint32_t
+#define TPM_RESOURCE_TYPE uint32_t
+#define TPM_KEY_CONTROL uint32_t
+#define TPM_NV_INDEX uint32_t The
+#define TPM_FAMILY_ID uint32_t
+#define TPM_FAMILY_VERIFICATION uint32_t
+#define TPM_STARTUP_EFFECTS uint32_t
+#define TPM_SYM_MODE uint32_t
+#define TPM_FAMILY_FLAGS uint32_t
+#define TPM_DELEGATE_INDEX uint32_t
+#define TPM_CMK_DELEGATE uint32_t
+#define TPM_COUNT_ID uint32_t
+#define TPM_REDIT_COMMAND uint32_t
+#define TPM_TRANSHANDLE uint32_t
+#define TPM_HANDLE uint32_t
+#define TPM_FAMILY_OPERATION uint32_t 
+
+/* Section 6 */
+#define TPM_TAG_RQU_COMMAND		0x00C1
+#define TPM_TAG_RQU_AUTH1_COMMAND	0x00C2
+#define TPM_TAG_RQU_AUTH2_COMMAND	0x00C3
+#define TPM_TAG_RSP_COMMAND		0x00C4
+#define TPM_TAG_RSP_AUTH1_COMMAND	0x00C5
+#define TPM_TAG_RSP_AUTH2_COMMAND	0x00C6
+
+/* Section 16 */
+#define TPM_SUCCESS 0x0
+
+/* Section 17 */
+#define TPM_ORD_EXTEND			0x00000014
+
+#define SHA1_DIGEST_SIZE 20
+
+/* Section 5.4 */
+struct tpm_sha1_digest {
+	uint8_t digest[SHA1_DIGEST_SIZE];
 };
-enum tpm_physical_presence {
-	TPM_PHYSICAL_PRESENCE_HW_DISABLE	= 0x0200,
-	TPM_PHYSICAL_PRESENCE_CMD_DISABLE	= 0x0100,
-	TPM_PHYSICAL_PRESENCE_LIFETIME_LOCK	= 0x0080,
-	TPM_PHYSICAL_PRESENCE_HW_ENABLE		= 0x0040,
-	TPM_PHYSICAL_PRESENCE_CMD_ENABLE	= 0x0020,
-	TPM_PHYSICAL_PRESENCE_NOTPRESENT	= 0x0010,
-	TPM_PHYSICAL_PRESENCE_PRESENT		= 0x0008,
-	TPM_PHYSICAL_PRESENCE_LOCK		= 0x0004,
+struct tpm_digest {
+	TPM_PCRINDEX pcr;
+	union {
+		struct tpm_sha1_digest sha1;
+	} digest;
 };
-enum tpm_nv_index {
-	TPM_NV_INDEX_LOCK	= 0xffffffff,
-	TPM_NV_INDEX_0		= 0x00000000,
-	TPM_NV_INDEX_DIR	= 0x10000001,
+
+#define TPM_DIGEST		struct tpm_digest
+#define TPM_CHOSENID_HASH	TPM_DIGEST
+#define TPM_COMPOSITE_HASH	TPM_DIGEST
+#define TPM_DIRVALUE		TPM_DIGEST
+#define TPM_HMAC		TPM_DIGEST
+#define TPM_PCRVALUE		TPM_DIGEST
+#define TPM_AUDITDIGEST		TPM_DIGEST
+#define TPM_DAA_TPM_SEED	TPM_DIGEST
+#define TPM_DAA_CONTEXT_SEED	TPM_DIGEST
+
+struct tpm_extend_cmd {
+	TPM_COMMAND_CODE ordinal;
+	TPM_PCRINDEX pcr_num;
+	TPM_DIGEST digest;
 };
-/**
- * Initialize TPM device.  It must be called before any TPM commands.
- *
- * @return 0 on success, non-0 on error.
- */
-u32 tpm_init(void);
-/**
- * Issue a TPM_Startup command.
- *
- * @param mode		TPM startup mode
- * @return return code of the operation
- */
-u32 tpm_startup(enum tpm_startup_type mode);
-/**
- * Issue a TPM_Extend command.
- *
- * @param index		index of the PCR
- * @param in_digest	160-bit value representing the event to be
- *			recorded
- * @param out_digest	160-bit PCR value after execution of the
- *			command
- * @return return code of the operation
- */
-u32 tpm_extend(u32 index, const void *in_digest, void *out_digest);
-#endif /* __TPM_H */
+
+struct tpm_extend_resp {
+	TPM_COMMAND_CODE ordinal;
+	TPM_PCRVALUE digest;
+};
+
+struct tpm_cmd_buf {
+	TPM_TAG tag;
+	uint32_t size;
+	TPM_RESULT result;
+	union {
+		struct tpm_extend_cmd extend;
+	} cmd;
+};
+
+struct tpm_resp_buf {
+	TPM_TAG tag;
+	uint32_t size;
+	TPM_RESULT result;
+	union {
+		struct tpm_extend_resp extend;
+	} resp;
+};
+
+/* TPM Interface Specification functions */
+uint8_t tis_request_locality(uint8_t l);
+uint8_t tis_init(void);
+size_t tis_send(struct tpm_cmd_buf *buf);
+size_t tis_recv(struct tpm_resp_buf *buf);
+
+/* TPM Commands */
+uint8_t tpm_pcr_extend(struct tpm_digest *d);
+
+#endif

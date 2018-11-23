@@ -18,10 +18,10 @@
 #include <types.h>
 #include <config.h>
 #include <boot.h>
+#include <mem.h>
 #include <pci.h>
 #include <dev.h>
 #include <tpm.h>
-#include <tis.h>
 #include <sha1sum.h>
 
 static __text void *lz_base;
@@ -97,20 +97,24 @@ void setup2(void)
 	u32 *code32_start;
 	u32 *data, size;
 	void *pm_kernel_entry;
-	u8 extend_result[SHA1_TOTAL_BYTES];
+	TPM_DIGEST tpm_digest;
 
 	code32_start = (u32*)((u8*)zero_page + BP_CODE32_START);
 	pm_kernel_entry = (void*)((u64)(*code32_start));
 
-	tis_open(2);
+	tis_init();
+	tis_request_locality(2);
 
 	/* extend TB Loader code segment into PCR17 */
 	data = (u32*)(uintptr_t)*code32_start;
 	size = lz_header->trenchboot_loader_size;
 	sha1sum(&sha1ctx, data, size);
-	tpm_extend(17, sha1ctx.buf, extend_result);
 
-	tis_close(2);
+	tpm_digest.pcr = 17;
+	memcpy(&(tpm_digest.digest), &(sha1ctx.buf), sizeof(SHA1_DIGEST_SIZE));
+	tpm_pcr_extend(&tpm_digest);
+
+	//tis_close(2);
 	/* End of the line, off to the protected mode entry into the kernel */
 	lz_exit(pm_kernel_entry, zero_page, lz_base);
 
