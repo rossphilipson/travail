@@ -6,7 +6,8 @@
  *
  */
 
-#include "tpm.h"
+#include <mem.h>
+#include <tpm.h>
 
 uint8_t tpm_pcr_extend(struct tpm_digest *d)
 {
@@ -15,15 +16,15 @@ uint8_t tpm_pcr_extend(struct tpm_digest *d)
 	struct tpm_resp_buf resp;
 
 	send.tag = TPM_TAG_RQU_COMMAND;
-	send.size = sizeof(tpm_extend_cmd) + 6;
-	send.cmd.extend.ordinal = TPM_ORD_Extend;
+	send.size = sizeof(struct tpm_extend_cmd) + 6;
+	send.cmd.extend.ordinal = TPM_ORD_EXTEND;
 	send.cmd.extend.pcr_num = d->pcr;
-	send.cmd.extend.digest = d->digest.sha1.val;
+	memcpy(&(send.cmd.extend.digest), &(d->digest), sizeof(TPM_DIGEST));
 
 	if (send.size != tis_send(&send))
 		return 0;
 
-	bytes = sizeof(tpm_extend_resp) + 10;
+	bytes = sizeof(struct tpm_extend_resp) + 10;
 	if (bytes != tis_recv(&resp))
 		return 0;
 

@@ -9,6 +9,8 @@
 #ifndef _TPM_H
 #define _TPM_H
 
+#include <types.h>
+
 /* Section 2.2.3 */
 #define TPM_AUTH_DATA_USAGE uint8_t
 #define TPM_PAYLOAD_TYPE uint8_t
@@ -64,16 +66,42 @@
 /* Section 16 */
 #define TPM_SUCCESS 0x0
 
+/* Section 17 */
+#define TPM_ORD_EXTEND			0x00000014
+
+#define SHA1_DIGEST_SIZE 20
+
+/* Section 5.4 */
+struct tpm_sha1_digest {
+	uint8_t digest[SHA1_DIGEST_SIZE];
+};
+struct tpm_digest {
+	TPM_PCRINDEX pcr;
+	union {
+		struct tpm_sha1_digest sha1;
+	} digest;
+};
+
+#define TPM_DIGEST		struct tpm_digest
+#define TPM_CHOSENID_HASH	TPM_DIGEST
+#define TPM_COMPOSITE_HASH	TPM_DIGEST
+#define TPM_DIRVALUE		TPM_DIGEST
+#define TPM_HMAC		TPM_DIGEST
+#define TPM_PCRVALUE		TPM_DIGEST
+#define TPM_AUDITDIGEST		TPM_DIGEST
+#define TPM_DAA_TPM_SEED	TPM_DIGEST
+#define TPM_DAA_CONTEXT_SEED	TPM_DIGEST
+
 struct tpm_extend_cmd {
 	TPM_COMMAND_CODE ordinal;
 	TPM_PCRINDEX pcr_num;
 	TPM_DIGEST digest;
-}
+};
 
 struct tpm_extend_resp {
 	TPM_COMMAND_CODE ordinal;
 	TPM_PCRVALUE digest;
-}
+};
 
 struct tpm_cmd_buf {
 	TPM_TAG tag;
@@ -82,23 +110,16 @@ struct tpm_cmd_buf {
 	union {
 		struct tpm_extend_cmd extend;
 	} cmd;
-}
+};
 
 struct tpm_resp_buf {
-	PM_TAG tag;
+	TPM_TAG tag;
 	uint32_t size;
+	TPM_RESULT result;
 	union {
 		struct tpm_extend_resp extend;
-		uint8_t paylaod[0];
 	} resp;
-}
-
-struct tpm_digest {
-	TPM_PCRINDEX pcr;
-	union {
-		struct tpm_sha1_digest sha1;
-	} digest;
-}
+};
 
 /* TPM Interface Specification functions */
 uint8_t tis_request_locality(uint8_t l);

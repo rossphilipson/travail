@@ -6,7 +6,8 @@
  *
  */
 
-#include "tpm.h"
+#include <boot.h>
+#include <tpm.h>
 
 #define MMIO_BASE			0xFED40000
 #define MAX_LOCALITY			4
@@ -30,46 +31,46 @@
 static uint8_t locality = NO_LOCALITY;
 
 struct io_ops {
-	uint8_t read8(uint16_t field);
-	void write8(unsigned char *val, uint16_t field);
-	uint32_t read32(uint16_t field);
-	void write32(unsigned char *val, uint16_t field);
-	void delay(void);
-}
+	uint8_t (*read8)(uint16_t field);
+	void (*write8)(unsigned char val, uint16_t field);
+	uint32_t (*read32)(uint16_t field);
+	void (*write32)(unsigned int val, uint16_t field);
+	void (*delay)(void);
+};
 
 /* abstract io calls for easy porting */
 static struct io_ops io = {
-	.read8 = inb;
-	.write8 = outb;
-	.read32 = inl;
-	.write32 = outl;
-	.delay = io_delay;
-}
+	.read8 = inb,
+	.write8 = outb,
+	.read32 = inl,
+	.write32 = outl,
+	.delay = io_delay,
+};
 
 static uint8_t read8(uint32_t field)
 {
-	uint32_t mmio_addr = MMIOBASE | field;
+	uint32_t mmio_addr = MMIO_BASE | field;
 
 	return io.read8(mmio_addr);
 }
 
-static void write8(unsigned char *val, uint32_t field)
+static void write8(unsigned char val, uint32_t field)
 {
-	uint32_t mmio_addr = MMIOBASE | field;
+	uint32_t mmio_addr = MMIO_BASE | field;
 
 	return io.write8(val, mmio_addr);
 }
 
 static uint32_t read32(uint32_t field)
 {
-	uint32_t mmio_addr = MMIOBASE | field;
+	uint32_t mmio_addr = MMIO_BASE | field;
 
 	return io.read32(mmio_addr);
 }
 
-static void write32(unsigned char *val, uint32_t field)
+static void write32(unsigned int val, uint32_t field)
 {
-	uint32_t mmio_addr = MMIOBASE | field;
+	uint32_t mmio_addr = MMIO_BASE | field;
 
 	return io.write32(val, mmio_addr);
 }
@@ -96,7 +97,7 @@ uint8_t tis_request_locality(uint8_t l)
 
 	/* wait for locality to be granted */
 	if (read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
-		if (l >= 0 && l <= =MAX_LOCALITY)
+		if (l >= 0 && l <= MAX_LOCALITY)
 			locality = l;
 		else
 			locality = NO_LOCALITY;
@@ -113,7 +114,7 @@ uint8_t tis_init(void)
 	for (i=0; i<=MAX_LOCALITY; i++)
 		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
-	if (request_locality(0) < 0)
+	if (tis_request_locality(0) < 0)
 		return 0;
 
 	vendor = read32(DID_VID(0));
@@ -129,7 +130,7 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 	uint32_t burstcnt = 0;
 	uint32_t count = 0;
 
-	if (locality >= 0 && locality <= =MAX_LOCALITY)
+	if (locality >= 0 && locality <= MAX_LOCALITY)
 		return 0;
 
 	write8(STS_COMMAND_READY, STS(locality));
@@ -137,9 +138,9 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 	buf_ptr = (uint8_t *) buf;
 
 	/* send all but the last byte */
-	while (count < (buff->size - 1)) {
+	while (count < (buf->size - 1)) {
 		burstcnt = burst_wait();
-		for (; burstcnt > 0 && count < buff->size - 1; burstcnt--) {
+		for (; burstcnt > 0 && count < buf->size - 1; burstcnt--) {
 			write8(buf_ptr[count], DATA_FIFO(locality));
 			count++;
 		}
@@ -165,7 +166,7 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 	/* go and do it */
 	write8(STS_GO, STS(locality));
 
-	return len;
+	return (size_t)count;
 }
 
 static size_t recv_data(unsigned char *buf, size_t len)
@@ -181,7 +182,7 @@ static size_t recv_data(unsigned char *buf, size_t len)
 			== (STS_DATA_AVAIL | STS_VALID)
 			&& size < len) {
 		burstcnt = burst_wait();
-		for (; burstcnt > 0 && size < len; burstcnts--) {
+		for (; burstcnt > 0 && size < len; burstcnt--) {
 			*bufptr = read8(DATA_FIFO(locality));
 			bufptr++;
 			size++;
@@ -196,8 +197,10 @@ static size_t recv_data(unsigned char *buf, size_t len)
 size_t tis_recv(struct tpm_resp_buf *buf)
 {
 	uint32_t expected;
-	uint8_t status;
+	uint8_t status, *buf_ptr;
 	size_t size = 0;
+
+	buf_ptr = (uint8_t *)buf;
 
 	/* ensure that there is data available */
 	status = read8(STS(locality));
@@ -206,17 +209,21 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 		goto err;
 
 	/* read first 6 bytes, including tag and paramsize */
-	if ((size = recv_data(buf, 6)) < 6)
+	if ((size = recv_data(buf_ptr, 6)) < 6)
 		goto err;
+
+	buf_ptr += 6;
 
 	expected = be32_to_cpu(buf->size);
 	if (expected > sizeof(struct tpm_resp_buf))
 		goto err;
 
 	/* read all data, except last byte */
-	if ((size += recv_data(&(buf->resp.payload), exepected - 7))
+	if ((size += recv_data(buf_ptr, expected - 7))
 			< expected - 1)
 		goto err;
+
+	buf_ptr += expected - 7;
 
 	/* check for receive underflow */
 	status = read8(STS(locality));
@@ -225,7 +232,7 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 		goto err;
 
 	/* read last byte */
-	if ((size += recv_data(&(buf->resp.payload), 1)) != expected)
+	if ((size += recv_data(buf_ptr, 1)) != expected)
 		goto err;
 
 	/* make sure we read everything */
@@ -237,7 +244,7 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 
 	write8(STS_COMMAND_READY, STS(locality));
 
-	return expected;
+	return size;
 err:
 	return 0;
 }
