@@ -1,4 +1,4 @@
-From ec275cd4061671cf5b4b4fc32f787765531b8ffd Mon Sep 17 00:00:00 2001
+From 6ba6e26e688048afc3c3f305035b87b5225f2f35 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/8] x86: add support for AMD DEV capability
@@ -9,11 +9,11 @@ allows page level memory access to HyperTransport buses.
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/Kconfig               |   5 ++
- arch/x86/include/asm/amd_dev.h |  66 +++++++++++++++
+ arch/x86/include/asm/amd_dev.h |  50 +++++++++++++
  arch/x86/kernel/Makefile       |   2 +
- arch/x86/kernel/amd_dev.c      | 180 +++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/amd_dev.c      | 159 +++++++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/init.c       |  10 +++
- 5 files changed, 263 insertions(+)
+ 5 files changed, 226 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
@@ -42,26 +42,10 @@ index 83b4892e0b15..1b5a91d51726 100644
  config RAPIDIO
 diff --git a/arch/x86/include/asm/amd_dev.h b/arch/x86/include/asm/amd_dev.h
 new file mode 100644
-index 000000000000..29b06c864602
+index 000000000000..46bd09968bac
 --- /dev/null
 +++ b/arch/x86/include/asm/amd_dev.h
-@@ -0,0 +1,66 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ */
-+
+@@ -0,0 +1,50 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_AMD_DEV_H
 +#define _ASM_X86_AMD_DEV_H
@@ -127,26 +111,10 @@ index 45d567867ff2..b19dbe8dffd9 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 000000000000..c9b93b62b69f
+index 000000000000..726383ac5bb1
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
-@@ -0,0 +1,180 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ */
-+
+@@ -0,0 +1,159 @@
 +#include <linux/types.h>
 +#include <linux/init.h>
 +#include <linux/errno.h>
@@ -278,17 +246,13 @@ index 000000000000..c9b93b62b69f
 +	if (boot_cpu_data.x86_vendor != X86_VENDOR_AMD)
 +		return 0;
 +
-+	if (map == 0)
-+	{
++	if (map == 0) {
 +		dev_map = amd_dev_fetch_map(domain);
-+		if (dev_map == 0)
-+		{
++		if (dev_map == 0) {
 +			err = -ENODEV;
 +			goto out;
 +		}
-+	}
-+	else
-+	{
++	} else {
 +		dev_map = map;
 +	}
 +
@@ -298,8 +262,7 @@ index 000000000000..c9b93b62b69f
 +	/* TODO: check end_pfn is not ouside of range of DEV map */
 +
 +	/* build protection bitmap */
-+	for ( ; pfn <= end_pfn; pfn++)
-+	{
++	for ( ; pfn <= end_pfn; pfn++) {
 +		u32 byte, bit;
 +		u8 *bit_vector = (u8*)(u64)dev_map;
 +
@@ -340,5 +303,5 @@ index d10105825d57..3b8207c5d46b 100644
  }
  
 -- 
-2.13.6
+2.11.0
 

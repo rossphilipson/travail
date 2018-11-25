@@ -1,14 +1,15 @@
-From 956a1bac3ccdaf67cef4e21ddff7ba64cb5cf278 Mon Sep 17 00:00:00 2001
+From bca0630628228c75d7fc59f06fb696b1ddb99cb0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/boot/compressed/Makefile    |  3 ++-
- arch/x86/boot/compressed/early_tpm.c | 43 ++++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/tpm.h           | 24 ++++++++++++++++++++
- 3 files changed, 69 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/Makefile    |   3 +-
+ arch/x86/boot/compressed/early_tpm.c | 280 +++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/tpm.h           |  75 ++++++++++
+ include/linux/tpm_command.h          |   4 +
+ 4 files changed, 361 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/include/asm/tpm.h
 
@@ -28,83 +29,389 @@ index 3038ddf2cd76..47a18fbeb5a2 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..dd3bb803be87
+index 000000000000..c31c5d774dd6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,280 @@
 +/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
++ * The code in this file is based on the article "Writing a TPM Device Driver"
++ * published on http://ptgmedia.pearsoncmg.com.
 + *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
-+#include <linux/init.h>
-+#include <linux/linkage.h>
-+#include <linux/string.h>
++#include <linux/types.h>
++#include <linux/tpm_command.h>
 +#include <asm/tpm.h>
-+#include <asm/boot.h>
-+#include <asm/unaligned.h>
 +
-+/*
-+ * TODO this is just stub code and a placeholder patch for the early TPM
-+ * support for updating the PCRs for the zero page and command line hashes
-+ * in the TB stub code.
-+ */
++#include "../boot.h"
 +
-+u32 tpm_extend(u32 index, const void *in_digest, void *out_digest)
++/* TPM TIS interface */
++#define MMIO_BASE			0xFED40000
++#define MAX_LOCALITY			4
++/* macros to access registers at locality ’’l’’ */
++#define ACCESS(l)			(0x0000 | ((l) << 12))
++#define STS(l)				(0x0018 | ((l) << 12))
++#define DATA_FIFO(l)			(0x0024 | ((l) << 12))
++#define DID_VID(l)			(0x0F00 | ((l) << 12))
++/* access bits */
++#define ACCESS_ACTIVE_LOCALITY		0x20 /* (R)*/
++#define ACCESS_RELINQUISH_LOCALITY	0x20 /* (W) */
++#define ACCESS_REQUEST_USE		0x02 /* (W) */
++/* status bits */
++#define STS_VALID			0x80 /* (R) */
++#define STS_COMMAND_READY		0x40 /* (R) */
++#define STS_DATA_AVAIL			0x10 /* (R) */
++#define STS_DATA_EXPECT			0x08 /* (R) */
++#define STS_GO				0x20 /* (W) */
++
++#define NO_LOCALITY			0xFF
++static uint8_t locality = NO_LOCALITY;
++
++struct io_ops {
++	uint8_t (*read8)(uint16_t field);
++	void (*write8)(unsigned char val, uint16_t field);
++	uint32_t (*read32)(uint16_t field);
++	void (*write32)(unsigned int val, uint16_t field);
++	void (*delay)(void);
++};
++
++/* abstract io calls for easy porting */
++static struct io_ops io = {
++	.read8 = inb,
++	.write8 = outb,
++	.read32 = inl,
++	.write32 = outl,
++	.delay = io_delay,
++};
++
++static uint8_t read8(uint32_t field)
 +{
-+	return 0;
++	uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.read8(mmio_addr);
 +}
 +
-+int tis_open(u8 locality)
++static void write8(unsigned char val, uint32_t field)
 +{
-+	return 0;
++	uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.write8(val, mmio_addr);
 +}
 +
-+int tis_close(u8 locality)
++static uint32_t read32(uint32_t field)
 +{
++	uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.read32(mmio_addr);
++}
++
++static void write32(unsigned int val, uint32_t field)
++{
++	uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.write32(val, mmio_addr);
++}
++
++static uint32_t burst_wait(void)
++{
++	uint32_t count = 0;
++
++	while (count == 0) {
++		count = read8(STS(locality) + 1);
++		count += read8(STS(locality) + 2) << 8;
++
++		if (count == 0)
++			io.delay(); /* wait for FIFO to drain */
++	}
++
++	return count;
++}
++
++uint8_t tis_request_locality(uint8_t l)
++{
++	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
++	write8(ACCESS_REQUEST_USE, ACCESS(l));
++
++	/* wait for locality to be granted */
++	if (read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
++		if (l >= 0 && l <= MAX_LOCALITY)
++			locality = l;
++		else
++			locality = NO_LOCALITY;
++	}
++
++	return locality;
++}
++
++uint8_t tis_init(void)
++{
++	uint32_t vendor;
++	uint8_t i;
++
++	for (i=0; i<=MAX_LOCALITY; i++)
++		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
++
++	if (tis_request_locality(0) < 0)
++		return 0;
++
++	vendor = read32(DID_VID(0));
++	if ((vendor & 0xFFFF) == 0xFFFF)
++		return 0;
++
++	return 1;
++}
++
++size_t tis_send(struct tpm_cmd_buf *buf)
++{
++	uint8_t status, *buf_ptr;
++	uint32_t burstcnt = 0;
++	uint32_t count = 0;
++
++	if (locality >= 0 && locality <= MAX_LOCALITY)
++		return 0;
++
++	write8(STS_COMMAND_READY, STS(locality));
++
++	buf_ptr = (uint8_t *) buf;
++
++	/* send all but the last byte */
++	while (count < (buf->size - 1)) {
++		burstcnt = burst_wait();
++		for (; burstcnt > 0 && count < buf->size - 1; burstcnt--) {
++			write8(buf_ptr[count], DATA_FIFO(locality));
++			count++;
++		}
++
++		/* check for overflow */
++		for (status = 0; (status & STS_VALID) == 0; )
++			status = read8(STS(locality));
++
++		if ((status & STS_DATA_EXPECT) == 0)
++			return 0;
++	}
++
++	/* write last byte */
++	write8(buf_ptr[count], DATA_FIFO(locality));
++
++	/* make sure it stuck */
++	for (status = 0; (status & STS_VALID) == 0; )
++		status = read8(STS(locality));
++
++	if ((status & STS_DATA_EXPECT) != 0)
++		return 0;
++
++	/* go and do it */
++	write8(STS_GO, STS(locality));
++
++	return (size_t)count;
++}
++
++static size_t recv_data(unsigned char *buf, size_t len)
++{
++	size_t size = 0;
++	uint8_t status, *bufptr;
++	uint32_t burstcnt = 0;
++
++	bufptr = (uint8_t *)buf;
++
++	status = read8(STS(locality));
++	while ((status & (STS_DATA_AVAIL | STS_VALID))
++			== (STS_DATA_AVAIL | STS_VALID)
++			&& size < len) {
++		burstcnt = burst_wait();
++		for (; burstcnt > 0 && size < len; burstcnt--) {
++			*bufptr = read8(DATA_FIFO(locality));
++			bufptr++;
++			size++;
++		}
++
++		status = read8(STS(locality));
++	}
++
++	return size;
++}
++
++size_t tis_recv(struct tpm_resp_buf *buf)
++{
++	uint32_t expected;
++	uint8_t status, *buf_ptr;
++	size_t size = 0;
++
++	buf_ptr = (uint8_t *)buf;
++
++	/* ensure that there is data available */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			!= (STS_DATA_AVAIL | STS_VALID))
++		goto err;
++
++	/* read first 6 bytes, including tag and paramsize */
++	if ((size = recv_data(buf_ptr, 6)) < 6)
++		goto err;
++
++	buf_ptr += 6;
++
++	expected = be32_to_cpu(buf->size);
++	if (expected > sizeof(struct tpm_resp_buf))
++		goto err;
++
++	/* read all data, except last byte */
++	if ((size += recv_data(buf_ptr, expected - 7))
++			< expected - 1)
++		goto err;
++
++	buf_ptr += expected - 7;
++
++	/* check for receive underflow */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			!= (STS_DATA_AVAIL | STS_VALID))
++		goto err;
++
++	/* read last byte */
++	if ((size += recv_data(buf_ptr, 1)) != expected)
++		goto err;
++
++	/* make sure we read everything */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			== (STS_DATA_AVAIL | STS_VALID)) {
++		goto err;
++	}
++
++	write8(STS_COMMAND_READY, STS(locality));
++
++	return size;
++err:
 +	return 0;
++}
++/* End TIS interface */
++
++uint8_t tpm_pcr_extend(struct tpm_digest *d)
++{
++	size_t bytes;
++	struct tpm_cmd_buf send;
++	struct tpm_resp_buf resp;
++
++	send.tag = TPM_TAG_RQU_COMMAND;
++	send.size = sizeof(struct tpm_extend_cmd) + 6;
++	send.cmd.extend.ordinal = TPM_ORD_EXTEND;
++	send.cmd.extend.pcr_num = d->pcr;
++	memcpy(&(send.cmd.extend.digest), &(d->digest), sizeof(TPM_DIGEST));
++
++	if (send.size != tis_send(&send))
++		return 0;
++
++	bytes = sizeof(struct tpm_extend_resp) + 10;
++	if (bytes != tis_recv(&resp))
++		return 0;
++
++	if (resp.result != TPM_SUCCESS)
++		return 0;
++
++	return 1;
 +}
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..3d53a434f29a
+index 000000000000..e9db50972f7e
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,75 @@
 +/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
++ * The definitions in this header are extracted from the Trusted Computing
++ * Group's "TPM Main Specification", Parts 1-3.
 + *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
-+
 +#ifndef _ASM_X86_TPM_H
 +#define _ASM_X86_TPM_H
 +
-+u32 tpm_extend(u32 index, const void *in_digest, void *out_digest);
-+int tis_open(u8 locality);
-+int tis_close(u8 locality);
++#include <linux/types.h>
++
++#define SHA1_DIGEST_SIZE 20
++
++/* Section 2.2.3 */
++#define TPM_TAG uint16_t
++#define TPM_COMMAND_CODE uint32_t
++#define TPM_PCRINDEX uint32_t
++#define TPM_RESULT uint32_t
++/* End of Section 2.2.3 */
++
++/* Section 5.4 */
++struct tpm_sha1_digest {
++	uint8_t digest[SHA1_DIGEST_SIZE];
++};
++struct tpm_digest {
++	TPM_PCRINDEX pcr;
++	union {
++		struct tpm_sha1_digest sha1;
++	} digest;
++};
++
++#define TPM_DIGEST		struct tpm_digest
++#define TPM_PCRVALUE		TPM_DIGEST
++/* End Section 5.4 */
++
++struct tpm_extend_cmd {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRINDEX pcr_num;
++	TPM_DIGEST digest;
++};
++
++struct tpm_extend_resp {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRVALUE digest;
++};
++
++struct tpm_cmd_buf {
++	TPM_TAG tag;
++	uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_cmd extend;
++	} cmd;
++};
++
++struct tpm_resp_buf {
++	TPM_TAG tag;
++	uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_resp extend;
++	} resp;
++};
++
++/* TPM Interface Specification functions */
++uint8_t tis_request_locality(uint8_t l);
++uint8_t tis_init(void);
++size_t tis_send(struct tpm_cmd_buf *buf);
++size_t tis_recv(struct tpm_resp_buf *buf);
++
++/* TPM Commands */
++uint8_t tpm_pcr_extend(struct tpm_digest *d);
 +
 +#endif /* _ASM_X86_TPM_H */
+diff --git a/include/linux/tpm_command.h b/include/linux/tpm_command.h
+index f5c03e9c3913..159eaf27f56e 100644
+--- a/include/linux/tpm_command.h
++++ b/include/linux/tpm_command.h
+@@ -19,9 +19,13 @@
+ #define TPM_ORD_GETRANDOM               70
+ #define TPM_ORD_OSAP                    11
+ #define TPM_ORD_OIAP                    10
++#define TPM_ORD_EXTEND                  20
+ #define TPM_ORD_SEAL                    23
+ #define TPM_ORD_UNSEAL                  24
+ 
++/* Return codes */
++#define TPM_SUCCESS			0
++
+ /* Other constants */
+ #define SRKHANDLE                       0x40000000
+ #define TPM_NONCE_SIZE                  20
 -- 
-2.13.6
+2.11.0
 

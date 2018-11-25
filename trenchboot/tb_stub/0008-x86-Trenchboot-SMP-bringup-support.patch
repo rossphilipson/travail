@@ -1,4 +1,4 @@
-From 3e7dad2ba0090b3e17fc38aa19eeee4cb3690815 Mon Sep 17 00:00:00 2001
+From cc7bf0fc53f93c253699690737818e1144ffaf7c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -273,5 +273,5 @@ index 24bb7598774e..05c5ff1e15a5 100644
  
  	.bss
 -- 
-2.13.6
+2.11.0
 

@@ -1,36 +1,23 @@
-From ea15fb0a8dd576948a5e4be07a85858f4166baed Mon Sep 17 00:00:00 2001
+From 3cee06f5f5b20381b345e3dab3b2e222e1e2e9fe Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 194 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 194 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 180 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 180 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..f59181995db2
+index 000000000000..a3d964744cca
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,180 @@
 +/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ * TODO license
 + */
-+
 +#ifndef _ASM_X86_TRENCHBOOT_H
 +#define _ASM_X86_TRENCHBOOT_H
 +
@@ -65,7 +52,6 @@ index 000000000000..f59181995db2
 +#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
 +
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
-+#define TXT_OS_MLE_MSB_KEY_HASH		0x4  /* 20 bytes */
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -210,5 +196,5 @@ index 000000000000..f59181995db2
 +
 +#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
-2.13.6
+2.11.0
 
