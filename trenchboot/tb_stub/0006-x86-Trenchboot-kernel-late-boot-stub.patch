@@ -1,4 +1,4 @@
-From 32a09e717ad53f3bf17ea73019b23efd229ff724 Mon Sep 17 00:00:00 2001
+From 3ef4cd3e832f0d4ebffb44c70da93f9da46385ed Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
@@ -6,10 +6,10 @@ Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile     |  1 +
- arch/x86/kernel/setup.c      |  5 ++++
- arch/x86/kernel/trenchboot.c | 64 ++++++++++++++++++++++++++++++++++++++++++++
- drivers/iommu/dmar.c         |  5 ++++
- 4 files changed, 75 insertions(+)
+ arch/x86/kernel/setup.c      |  5 +++
+ arch/x86/kernel/trenchboot.c | 77 ++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c         |  5 +++
+ 4 files changed, 88 insertions(+)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -49,10 +49,25 @@ index b4866badb235..9feda4d81677 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
 new file mode 100644
-index 000000000000..048d958901f3
+index 000000000000..e84be15a7510
 --- /dev/null
 +++ b/arch/x86/kernel/trenchboot.c
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,77 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -71,8 +86,7 @@ index 000000000000..048d958901f3
 +	u32 dmar_offset;
 +
 +	heap = txt_get_heap();
-+	if (unlikely(!heap))
-+	{
++	if (unlikely(!heap)) {
 +		/* TODO add TPM infor log entry */
 +		return dmar;
 +	}
@@ -115,7 +129,6 @@ index 000000000000..048d958901f3
 +		tb_setup_amd();
 +	else
 +		BUG();
-+
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
 index d9c748b6f9e4..723efdf04b49 100644

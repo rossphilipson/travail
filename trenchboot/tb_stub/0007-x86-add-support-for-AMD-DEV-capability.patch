@@ -1,4 +1,4 @@
-From 93a3d230a6c0de3729974961369ac68ca7ac4fa7 Mon Sep 17 00:00:00 2001
+From 8645ed08e2dcbff3ba1527e8ea94cfff2e198fab Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/8] x86: add support for AMD DEV capability
@@ -9,11 +9,11 @@ allows page level memory access to HyperTransport buses.
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/Kconfig               |   5 ++
- arch/x86/include/asm/amd_dev.h |  50 +++++++++++++
+ arch/x86/include/asm/amd_dev.h |  65 +++++++++++++++
  arch/x86/kernel/Makefile       |   2 +
- arch/x86/kernel/amd_dev.c      | 159 +++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/amd_dev.c      | 174 +++++++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/init.c       |  10 +++
- 5 files changed, 226 insertions(+)
+ 5 files changed, 256 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
@@ -42,10 +42,25 @@ index 83b4892e0b15..1b5a91d51726 100644
  config RAPIDIO
 diff --git a/arch/x86/include/asm/amd_dev.h b/arch/x86/include/asm/amd_dev.h
 new file mode 100644
-index 000000000000..46bd09968bac
+index 000000000000..2001a7d841ee
 --- /dev/null
 +++ b/arch/x86/include/asm/amd_dev.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,65 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_AMD_DEV_H
 +#define _ASM_X86_AMD_DEV_H
@@ -111,10 +126,25 @@ index 45d567867ff2..b19dbe8dffd9 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 000000000000..726383ac5bb1
+index 000000000000..76b5c8c22e8f
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,174 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
 +#include <linux/types.h>
 +#include <linux/init.h>
 +#include <linux/errno.h>

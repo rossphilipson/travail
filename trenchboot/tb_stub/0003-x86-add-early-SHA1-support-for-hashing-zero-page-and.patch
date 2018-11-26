@@ -1,4 +1,4 @@
-From eb74a1b0d1f8636c499d684781c58a1159950fe6 Mon Sep 17 00:00:00 2001
+From 0f2541600d8657e4840ca3b68eba96207060221c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
@@ -6,10 +6,10 @@ Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/boot/compressed/Makefile     |  2 +
- arch/x86/boot/compressed/early_sha1.c | 98 +++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/sha1.h           | 16 ++++++
- 3 files changed, 116 insertions(+)
+ arch/x86/boot/compressed/Makefile     |   2 +
+ arch/x86/boot/compressed/early_sha1.c | 111 ++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/sha1.h           |  28 +++++++++
+ 3 files changed, 141 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/include/asm/sha1.h
 
@@ -28,12 +28,24 @@ index 466f66c8a7f8..3038ddf2cd76 100644
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..d79918f18442
+index 000000000000..71530ca425ec
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,111 @@
 +/*
-+ * TODO license
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +#include <linux/init.h>
 +#include <linux/linkage.h>
@@ -97,6 +109,7 @@ index 000000000000..d79918f18442
 +		}
 +		partial = 0;
 +	}
++
 +	if (len)
 +		memcpy(sctx->buffer + partial, data, len);
 +}
@@ -132,12 +145,24 @@ index 000000000000..d79918f18442
 +}
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
-index 000000000000..0fa4bcf8da40
+index 000000000000..2abea71ee344
 --- /dev/null
 +++ b/arch/x86/include/asm/sha1.h
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,28 @@
 +/*
-+ * TODO license
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +#ifndef _ASM_X86_SHA1_H
 +#define _ASM_X86_SHA1_H
