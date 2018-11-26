@@ -1,4 +1,4 @@
-From 5a804e8fd5bb0c344a314eefb98f3ef9c3befb91 Mon Sep 17 00:00:00 2001
+From 6722683b24cadfbf975b29c7370dbb728373f8e9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -79,7 +79,7 @@ index 64037895b085..f7bc3d7f7cfc 100644
   */
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 000000000000..952b63f37691
+index 000000000000..009872328154
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
 @@ -0,0 +1,51 @@
@@ -104,7 +104,7 @@ index 000000000000..952b63f37691
 +	u32 tb_flags;
 +	struct tpm_digest extend = {
 +		.pcr = 18,
-+	}
++	};
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +
@@ -116,8 +116,8 @@ index 000000000000..952b63f37691
 +	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(extend.digest, sha1_hash, SHA1_DIGEST_SIZE);
-+	tpm_extend(extend);
++	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
++	tpm_pcr_extend(&extend);
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
@@ -128,8 +128,8 @@ index 000000000000..952b63f37691
 +	early_sha1_update(&sctx, (u8*)cmdline_addr, cmdline_len);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(extend.digest, sha1_hash, SHA1_DIGEST_SIZE);
-+	tpm_extend(extend);
++	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
++	tpm_pcr_extend(&extend);
 +
 +	/* tis_init will ensure all localities are closed */
 +	tis_init();
@@ -288,5 +288,5 @@ index 000000000000..3e47b27c7434
 +	.fill 32, 1, 0
 +tb_stack_end:
 -- 
-2.11.0
+2.13.6
 

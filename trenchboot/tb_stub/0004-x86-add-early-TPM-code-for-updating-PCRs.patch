@@ -1,4 +1,4 @@
-From bca0630628228c75d7fc59f06fb696b1ddb99cb0 Mon Sep 17 00:00:00 2001
+From 0ebd68a8ea2b4ea3458621a0ca5c98a67de5666b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -6,10 +6,10 @@ Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |   3 +-
- arch/x86/boot/compressed/early_tpm.c | 280 +++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/tpm.h           |  75 ++++++++++
+ arch/x86/boot/compressed/early_tpm.c | 288 +++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/tpm.h           |  75 +++++++++
  include/linux/tpm_command.h          |   4 +
- 4 files changed, 361 insertions(+), 1 deletion(-)
+ 4 files changed, 369 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/include/asm/tpm.h
 
@@ -29,10 +29,10 @@ index 3038ddf2cd76..47a18fbeb5a2 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..c31c5d774dd6
+index 000000000000..fa6d2432c0dd
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,288 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -42,10 +42,12 @@ index 000000000000..c31c5d774dd6
 + */
 +
 +#include <linux/types.h>
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <asm/io.h>
++#include <asm/segment.h>
 +#include <linux/tpm_command.h>
 +#include <asm/tpm.h>
-+
-+#include "../boot.h"
 +
 +/* TPM TIS interface */
 +#define MMIO_BASE			0xFED40000
@@ -70,12 +72,18 @@ index 000000000000..c31c5d774dd6
 +static uint8_t locality = NO_LOCALITY;
 +
 +struct io_ops {
-+	uint8_t (*read8)(uint16_t field);
-+	void (*write8)(unsigned char val, uint16_t field);
-+	uint32_t (*read32)(uint16_t field);
-+	void (*write32)(unsigned int val, uint16_t field);
++	unsigned char (*read8)(int field);
++	void (*write8)(unsigned char val, int field);
++	unsigned int (*read32)(int field);
++	void (*write32)(unsigned int val, int field);
 +	void (*delay)(void);
 +};
++
++static inline void io_delay(void)
++{
++	/* This is the default delay type in native_io_delay */
++	asm volatile ("outb %al, $0x80");
++}
 +
 +/* abstract io calls for easy porting */
 +static struct io_ops io = {
@@ -413,5 +421,5 @@ index f5c03e9c3913..159eaf27f56e 100644
  #define SRKHANDLE                       0x40000000
  #define TPM_NONCE_SIZE                  20
 -- 
-2.11.0
+2.13.6
 
