@@ -54,22 +54,22 @@ The Protected-mode kernel is loaded at 0x100000 and can be entered as in either
 compressed payload (called the piggy) and the payload itself. More on this in
 the section named Protected Mode Kernel below.
 
--- Real Mode Boot Sector --
+-- Real Mode Boot Sector and Setup Code --
 
-This area, also called the Zero Page is a strange item. I consists of what is
-the Real-mode Kernel Header, a pile of other parameters call the Boot Params
-(of which the Real-mode Header is part of) and 16b code. The following shows
-this (look for **** THE REAL-MODE KERNEL HEADER):
+This area (also see Zero Page below) is a strange place. It consists of what is
+the Real-mode Kernel Header, a pile of other parameters called the Boot Params
+and 16b Setup Code. The first 512 bytes is officially called the Boot Sector.
+The following shows this (look for **** THE REAL-MODE KERNEL HEADER):
 
 https://www.kernel.org/doc/Documentation/x86/boot.txt
 
 Everything from 0x1F1 to 0x200 (512 byte boundary) is the original header. At
-512 bytes is where the Boot loader jump would take you. To allow extending the
+512 bytes is where the boot loader jump would take you. To allow extending the
 header, the 2 byte jump field at 0x200 was added. This jumps over the header
 extensions which offficially start at 0x200 and go to 0x268 as can be seen.
-All the area before the header contains the Boot Params.
+All the area before the header contains Boot Params.
 
-The code that forms the boot sector is in arch/x86/boot/head.S where the Real-
+The code that forms the Setup Code is in arch/x86/boot/head.S where the Real-
 mode Kernel Header is laid out. The rest of the Boot Params are defined in
 arch/x86/include/uapi/asm/bootparam.h. Their current status is discussed here:
 
@@ -77,14 +77,22 @@ https://github.com/torvalds/linux/blob/master/Documentation/x86/zero-page.txt
 
 The values for the Boot Params and Real-mode Header are used regardless of
 which of the modes of entry discussed above are used. The values are populated
-in various:
+in various ways:
  - Hard coded
  - Written by the boot loader program (for our purposes GRUB)
  - Written at build time by the utility program arch/x86/boot/tools/build
  - Written by code in the protected mode or EFI entry points.
 
-The real mode code does a bunch of legacy setup and then jumps to the
-Protected-mode kernel which is method #1 above,
+The real mode Setup Code does a bunch of legacy setup and then jumps to the
+Protected-mode kernel which is method #1 above. This would include BIOS calls
+to get the E820.
+
+Finally why is it called the Zero Page? The story is different when the Kernel
+is entered in one of the ways other than #1. The rest of the Zero Page is used
+in this case since the real mode code is useless. E.g the fixed size E820 is
+populated in this area at 0x2d0. Effectively data is splatted over the real
+mode code. The whole thing is officially padded out to one page - thus the
+Zero Page. This data in extra area is also considered part of the Boot Params.
 
 -- Protected Mode Kernel --
 
