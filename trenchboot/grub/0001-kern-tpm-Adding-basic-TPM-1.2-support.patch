@@ -1,0 +1,492 @@
+From 75e42f20e1e0e489d3da39d2a92b54acfc62086f Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 30 Nov 2018 14:03:36 -0500
+Subject: [PATCH] kern/tpm: Adding basic TPM 1.2 support
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+---
+ grub-core/Makefile.am       |   1 +
+ grub-core/Makefile.core.def |   2 +
+ grub-core/kern/tis.c        | 258 ++++++++++++++++++++++++++++++++++++++++++++
+ grub-core/kern/tpm.c        |  38 +++++++
+ include/grub/tpm.h          | 133 +++++++++++++++++++++++
+ 5 files changed, 432 insertions(+)
+ create mode 100644 grub-core/kern/tis.c
+ create mode 100644 grub-core/kern/tpm.c
+ create mode 100644 include/grub/tpm.h
+
+diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
+index f4ff62b76..5a8b3b8cc 100644
+--- a/grub-core/Makefile.am
++++ b/grub-core/Makefile.am
+@@ -99,6 +99,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
+ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
+ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tpm.h
+ endif
+ 
+ if COND_i386_efi
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index 2d75c4daf..d7f515c85 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -198,6 +198,8 @@ kernel = {
+ 
+   x86 = kern/i386/tsc.c;
+   x86 = kern/i386/tsc_pit.c;
++  x86 = kern/tpm.c;
++  x86 = kern/tis.c;
+   i386_efi = kern/i386/efi/tsc.c;
+   x86_64_efi = kern/i386/efi/tsc.c;
+   i386_efi = kern/i386/tsc_pmtimer.c;
+diff --git a/grub-core/kern/tis.c b/grub-core/kern/tis.c
+new file mode 100644
+index 000000000..ba504235d
+--- /dev/null
++++ b/grub-core/kern/tis.c
+@@ -0,0 +1,258 @@
++/*
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
++ *
++ * The code in this file is based on the article "Writing a TPM Device Driver"
++ * published on http://ptgmedia.pearsoncmg.com.
++ *
++ */
++
++#include <grub/cpu/io.h>
++#include <grub/mm.h>
++#include <grub/types.h>
++#include <grub/misc.h>
++#include <grub/tpm.h>
++
++#define MMIO_BASE			0xFED40000
++#define MAX_LOCALITY			4
++/* macros to access registers at locality ’’l’’ */
++#define ACCESS(l)			(0x0000 | ((l) << 12))
++#define STS(l)				(0x0018 | ((l) << 12))
++#define DATA_FIFO(l)			(0x0024 | ((l) << 12))
++#define DID_VID(l)			(0x0F00 | ((l) << 12))
++/* access bits */
++#define ACCESS_ACTIVE_LOCALITY		0x20 /* (R)*/
++#define ACCESS_RELINQUISH_LOCALITY	0x20 /* (W) */
++#define ACCESS_REQUEST_USE		0x02 /* (W) */
++/* status bits */
++#define STS_VALID			0x80 /* (R) */
++#define STS_COMMAND_READY		0x40 /* (R) */
++#define STS_DATA_AVAIL			0x10 /* (R) */
++#define STS_DATA_EXPECT			0x08 /* (R) */
++#define STS_GO				0x20 /* (W) */
++
++#define NO_LOCALITY			0xFF
++static grub_uint8_t locality = NO_LOCALITY;
++
++struct io_ops {
++	grub_uint8_t (*read8)(grub_uint16_t field);
++	void (*write8)(unsigned char val, grub_uint16_t field);
++	grub_uint32_t (*read32)(grub_uint16_t field);
++	void (*write32)(unsigned int val, grub_uint16_t field);
++	void (*delay)(void);
++};
++
++static inline void io_delay(void)
++{
++      asm volatile ("outb %al, $0x80");
++}
++
++/* abstract io calls for easy porting */
++static struct io_ops io = {
++	.read8 = grub_inb,
++	.write8 = grub_outb,
++	.read32 = grub_inl,
++	.write32 = grub_outl,
++	.delay = io_delay,
++};
++
++static grub_uint8_t read8(grub_uint32_t field)
++{
++	grub_uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.read8(mmio_addr);
++}
++
++static void write8(unsigned char val, grub_uint32_t field)
++{
++	grub_uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.write8(val, mmio_addr);
++}
++
++static grub_uint32_t read32(grub_uint32_t field)
++{
++	grub_uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.read32(mmio_addr);
++}
++
++/*static void write32(unsigned int val, grub_uint32_t field)
++{
++	grub_uint32_t mmio_addr = MMIO_BASE | field;
++
++	return io.write32(val, mmio_addr);
++}*/
++
++static grub_uint32_t burst_wait(void)
++{
++	grub_uint32_t count = 0;
++
++	while (count == 0) {
++		count = read8(STS(locality) + 1);
++		count += read8(STS(locality) + 2) << 8;
++
++		if (count == 0)
++			io.delay(); /* wait for FIFO to drain */
++	}
++
++	return count;
++}
++
++grub_uint8_t tis_request_locality(grub_uint8_t l)
++{
++	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
++	write8(ACCESS_REQUEST_USE, ACCESS(l));
++
++	/* wait for locality to be granted */
++	if (read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
++		if (l <= MAX_LOCALITY)
++			locality = l;
++		else
++			locality = NO_LOCALITY;
++	}
++
++	return locality;
++}
++
++grub_uint8_t tis_init(void)
++{
++	grub_uint32_t vendor;
++	grub_uint8_t i;
++
++	for (i=0; i<=MAX_LOCALITY; i++)
++		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
++
++	if (tis_request_locality(0) == NO_LOCALITY)
++		return 0;
++
++	vendor = read32(DID_VID(0));
++	if ((vendor & 0xFFFF) == 0xFFFF)
++		return 0;
++
++	return 1;
++}
++
++grub_size_t tis_send(struct tpm_cmd_buf *buf)
++{
++	grub_uint8_t status, *buf_ptr;
++	grub_uint32_t burstcnt = 0;
++	grub_uint32_t count = 0;
++
++	if (locality > MAX_LOCALITY)
++		return 0;
++
++	write8(STS_COMMAND_READY, STS(locality));
++
++	buf_ptr = (grub_uint8_t *) buf;
++
++	/* send all but the last byte */
++	while (count < (buf->size - 1)) {
++		burstcnt = burst_wait();
++		for (; burstcnt > 0 && count < buf->size - 1; burstcnt--) {
++			write8(buf_ptr[count], DATA_FIFO(locality));
++			count++;
++		}
++
++		/* check for overflow */
++		for (status = 0; (status & STS_VALID) == 0; )
++			status = read8(STS(locality));
++
++		if ((status & STS_DATA_EXPECT) == 0)
++			return 0;
++	}
++
++	/* write last byte */
++	write8(buf_ptr[count], DATA_FIFO(locality));
++
++	/* make sure it stuck */
++	for (status = 0; (status & STS_VALID) == 0; )
++		status = read8(STS(locality));
++
++	if ((status & STS_DATA_EXPECT) != 0)
++		return 0;
++
++	/* go and do it */
++	write8(STS_GO, STS(locality));
++
++	return (grub_size_t)count;
++}
++
++static grub_size_t recv_data(unsigned char *buf, grub_size_t len)
++{
++	grub_size_t size = 0;
++	grub_uint8_t status, *bufptr;
++	grub_uint32_t burstcnt = 0;
++
++	bufptr = (grub_uint8_t *)buf;
++
++	status = read8(STS(locality));
++	while ((status & (STS_DATA_AVAIL | STS_VALID))
++			== (STS_DATA_AVAIL | STS_VALID)
++			&& size < len) {
++		burstcnt = burst_wait();
++		for (; burstcnt > 0 && size < len; burstcnt--) {
++			*bufptr = read8(DATA_FIFO(locality));
++			bufptr++;
++			size++;
++		}
++
++		status = read8(STS(locality));
++	}
++
++	return size;
++}
++
++grub_size_t tis_recv(struct tpm_resp_buf *buf)
++{
++	grub_uint32_t expected;
++	grub_uint8_t status, *buf_ptr;
++	grub_size_t size = 0;
++
++	buf_ptr = (grub_uint8_t *)buf;
++
++	/* ensure that there is data available */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			!= (STS_DATA_AVAIL | STS_VALID))
++		goto err;
++
++	/* read first 6 bytes, including tag and paramsize */
++	if ((size = recv_data(buf_ptr, 6)) < 6)
++		goto err;
++
++	buf_ptr += 6;
++
++	expected = grub_be_to_cpu32(buf->size);
++	if (expected > sizeof(struct tpm_resp_buf))
++		goto err;
++
++	/* read all data, except last byte */
++	if ((size += recv_data(buf_ptr, expected - 7))
++			< expected - 1)
++		goto err;
++
++	buf_ptr += expected - 7;
++
++	/* check for receive underflow */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			!= (STS_DATA_AVAIL | STS_VALID))
++		goto err;
++
++	/* read last byte */
++	if ((size += recv_data(buf_ptr, 1)) != expected)
++		goto err;
++
++	/* make sure we read everything */
++	status = read8(STS(locality));
++	if ((status & (STS_DATA_AVAIL | STS_VALID))
++			== (STS_DATA_AVAIL | STS_VALID)) {
++		goto err;
++	}
++
++	write8(STS_COMMAND_READY, STS(locality));
++
++	return size;
++err:
++	return 0;
++}
+diff --git a/grub-core/kern/tpm.c b/grub-core/kern/tpm.c
+new file mode 100644
+index 000000000..e11e41e5b
+--- /dev/null
++++ b/grub-core/kern/tpm.c
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
++ *
++ * The definitions in this header are extracted from the Trusted Computing
++ * Group's "TPM Main Specification", Parts 1-3.
++ *
++ */
++
++#include <grub/cpu/io.h>
++#include <grub/mm.h>
++#include <grub/types.h>
++#include <grub/misc.h>
++#include <grub/tpm.h>
++
++grub_uint8_t tpm_pcr_extend(struct tpm_digest *d)
++{
++	grub_size_t bytes;
++	struct tpm_cmd_buf send;
++	struct tpm_resp_buf resp;
++
++	send.tag = TPM_TAG_RQU_COMMAND;
++	send.size = sizeof(struct tpm_extend_cmd) + 6;
++	send.cmd.extend.ordinal = TPM_ORD_EXTEND;
++	send.cmd.extend.pcr_num = d->pcr;
++	grub_memcpy(&(send.cmd.extend.digest), &(d->digest), sizeof(TPM_DIGEST));
++
++	if (send.size != tis_send(&send))
++		return 0;
++
++	bytes = sizeof(struct tpm_extend_resp) + 10;
++	if (bytes != tis_recv(&resp))
++		return 0;
++
++	if (resp.result != TPM_SUCCESS)
++		return 0;
++
++	return 1;
++}
+diff --git a/include/grub/tpm.h b/include/grub/tpm.h
+new file mode 100644
+index 000000000..b8b6dee49
+--- /dev/null
++++ b/include/grub/tpm.h
+@@ -0,0 +1,133 @@
++/*
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
++ *
++ * The definitions in this header are extracted from the Trusted Computing
++ * Group's "TPM Main Specification", Parts 1-3.
++ *
++ */
++
++#ifndef _TPM_H
++#define _TPM_H
++
++#include <grub/types.h>
++
++/* Section 2.2.3 */
++#define TPM_AUTH_DATA_USAGE grub_uint8_t
++#define TPM_PAYLOAD_TYPE grub_uint8_t
++#define TPM_VERSION_BYTE grub_uint8_t
++#define TPM_TAG grub_uint16_t
++#define TPM_PROTOCOL_ID grub_uint16_t
++#define TPM_STARTUP_TYPE grub_uint16_t
++#define TPM_ENC_SCHEME grub_uint16_t
++#define TPM_SIG_SCHEME grub_uint16_t
++#define TPM_MIGRATE_SCHEME grub_uint16_t
++#define TPM_PHYSICAL_PRESENCE grub_uint16_t
++#define TPM_ENTITY_TYPE grub_uint16_t
++#define TPM_KEY_USAGE grub_uint16_t
++#define TPM_EK_TYPE grub_uint16_t
++#define TPM_STRUCTURE_TAG grub_uint16_t
++#define TPM_PLATFORM_SPECIFIC grub_uint16_t
++#define TPM_COMMAND_CODE grub_uint32_t
++#define TPM_CAPABILITY_AREA grub_uint32_t
++#define TPM_KEY_FLAGS grub_uint32_t
++#define TPM_ALGORITHM_ID grub_uint32_t
++#define TPM_MODIFIER_INDICATOR grub_uint32_t
++#define TPM_ACTUAL_COUNT grub_uint32_t
++#define TPM_TRANSPORT_ATTRIBUTES grub_uint32_t
++#define TPM_AUTHHANDLE grub_uint32_t
++#define TPM_DIRINDEX grub_uint32_t
++#define TPM_KEY_HANDLE grub_uint32_t
++#define TPM_PCRINDEX grub_uint32_t
++#define TPM_RESULT grub_uint32_t
++#define TPM_RESOURCE_TYPE grub_uint32_t
++#define TPM_KEY_CONTROL grub_uint32_t
++#define TPM_NV_INDEX grub_uint32_t The
++#define TPM_FAMILY_ID grub_uint32_t
++#define TPM_FAMILY_VERIFICATION grub_uint32_t
++#define TPM_STARTUP_EFFECTS grub_uint32_t
++#define TPM_SYM_MODE grub_uint32_t
++#define TPM_FAMILY_FLAGS grub_uint32_t
++#define TPM_DELEGATE_INDEX grub_uint32_t
++#define TPM_CMK_DELEGATE grub_uint32_t
++#define TPM_COUNT_ID grub_uint32_t
++#define TPM_REDIT_COMMAND grub_uint32_t
++#define TPM_TRANSHANDLE grub_uint32_t
++#define TPM_HANDLE grub_uint32_t
++#define TPM_FAMILY_OPERATION grub_uint32_t 
++
++/* Section 6 */
++#define TPM_TAG_RQU_COMMAND		0x00C1
++#define TPM_TAG_RQU_AUTH1_COMMAND	0x00C2
++#define TPM_TAG_RQU_AUTH2_COMMAND	0x00C3
++#define TPM_TAG_RSP_COMMAND		0x00C4
++#define TPM_TAG_RSP_AUTH1_COMMAND	0x00C5
++#define TPM_TAG_RSP_AUTH2_COMMAND	0x00C6
++
++/* Section 16 */
++#define TPM_SUCCESS 0x0
++
++/* Section 17 */
++#define TPM_ORD_EXTEND			0x00000014
++
++#define SHA1_DIGEST_SIZE 20
++
++/* Section 5.4 */
++struct tpm_sha1_digest {
++	grub_uint8_t digest[SHA1_DIGEST_SIZE];
++};
++struct tpm_digest {
++	TPM_PCRINDEX pcr;
++	union {
++		struct tpm_sha1_digest sha1;
++	} digest;
++};
++
++#define TPM_DIGEST		struct tpm_digest
++#define TPM_CHOSENID_HASH	TPM_DIGEST
++#define TPM_COMPOSITE_HASH	TPM_DIGEST
++#define TPM_DIRVALUE		TPM_DIGEST
++#define TPM_HMAC		TPM_DIGEST
++#define TPM_PCRVALUE		TPM_DIGEST
++#define TPM_AUDITDIGEST		TPM_DIGEST
++#define TPM_DAA_TPM_SEED	TPM_DIGEST
++#define TPM_DAA_CONTEXT_SEED	TPM_DIGEST
++
++struct tpm_extend_cmd {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRINDEX pcr_num;
++	TPM_DIGEST digest;
++};
++
++struct tpm_extend_resp {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRVALUE digest;
++};
++
++struct tpm_cmd_buf {
++	TPM_TAG tag;
++	grub_uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_cmd extend;
++	} cmd;
++};
++
++struct tpm_resp_buf {
++	TPM_TAG tag;
++	grub_uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_resp extend;
++	} resp;
++};
++
++/* TPM Interface Specification functions */
++grub_uint8_t tis_request_locality(grub_uint8_t l);
++grub_uint8_t tis_init(void);
++grub_size_t tis_send(struct tpm_cmd_buf *buf);
++grub_size_t tis_recv(struct tpm_resp_buf *buf);
++
++/* TPM Commands */
++grub_uint8_t tpm_pcr_extend(struct tpm_digest *d);
++
++#endif
+-- 
+2.13.6
+
