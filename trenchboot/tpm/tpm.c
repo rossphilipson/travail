@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
  *
- * The definitions in this header are extracted from the Trusted Computing
- * Group's "TPM Main Specification", Parts 1-3.
+ * The code in this file is based on the article "Writing a TPM Device Driver"
+ * published on http://ptgmedia.pearsoncmg.com.
  *
  */
 
