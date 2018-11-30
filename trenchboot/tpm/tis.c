@@ -97,7 +97,7 @@ uint8_t tis_request_locality(uint8_t l)
 
 	/* wait for locality to be granted */
 	if (read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
-		if (l >= 0 && l <= MAX_LOCALITY)
+		if (l <= MAX_LOCALITY)
 			locality = l;
 		else
 			locality = NO_LOCALITY;
@@ -114,7 +114,7 @@ uint8_t tis_init(void)
 	for (i=0; i<=MAX_LOCALITY; i++)
 		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
-	if (tis_request_locality(0) < 0)
+	if (tis_request_locality(0) == NO_LOCALITY)
 		return 0;
 
 	vendor = read32(DID_VID(0));
@@ -130,7 +130,7 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 	uint32_t burstcnt = 0;
 	uint32_t count = 0;
 
-	if (locality >= 0 && locality <= MAX_LOCALITY)
+	if (locality > MAX_LOCALITY)
 		return 0;
 
 	write8(STS_COMMAND_READY, STS(locality));
