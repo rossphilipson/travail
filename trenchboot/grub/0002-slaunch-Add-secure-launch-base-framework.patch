@@ -1,0 +1,270 @@
+From c9ec374617fe697f1cab49cab30fd374d468d287 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Sat, 1 Dec 2018 12:27:12 -0500
+Subject: [PATCH 2/2] slaunch: Add secure launch base framework
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ grub-core/Makefile.am                  |  1 +
+ grub-core/Makefile.core.def            |  8 +++++
+ grub-core/loader/i386/linux.c          | 12 +++++++
+ grub-core/loader/i386/slaunch.c        | 57 ++++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c | 32 +++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c    | 32 +++++++++++++++++++
+ include/grub/slaunch.h                 | 27 ++++++++++++++++
+ 7 files changed, 169 insertions(+)
+ create mode 100644 grub-core/loader/i386/slaunch.c
+ create mode 100644 grub-core/loader/i386/slaunch_skinit.c
+ create mode 100644 grub-core/loader/i386/slaunch_txt.c
+ create mode 100644 include/grub/slaunch.h
+
+diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
+index 5a8b3b8cc..7d8508910 100644
+--- a/grub-core/Makefile.am
++++ b/grub-core/Makefile.am
+@@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
+ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tpm.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
+ endif
+ 
+ if COND_i386_efi
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index d7f515c85..e5ee48ebc 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -1730,6 +1730,14 @@ module = {
+ };
+ 
+ module = {
++  name = slaunch;
++  x86 = loader/i386/slaunch.c;
++  x86 = loader/i386/slaunch_txt.c;
++  x86 = loader/i386/slaunch_skinit.c;
++  enable = x86;
++};
++
++module = {
+   name = fdt;
+   efi = loader/efi/fdt.c;
+   common = lib/fdt.c;
+diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
+index c408b10d8..56c346ac4 100644
+--- a/grub-core/loader/i386/linux.c
++++ b/grub-core/loader/i386/linux.c
+@@ -34,6 +34,7 @@
+ #include <grub/i386/relocator.h>
+ #include <grub/i18n.h>
+ #include <grub/lib/cmdline.h>
++#include <grub/slaunch.h>
+ #include <grub/linux.h>
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -79,6 +80,7 @@ static grub_efi_uintn_t efi_mmap_size;
+ #else
+ static const grub_size_t efi_mmap_size = 0;
+ #endif
++static grub_err_t (*grub_slaunch_func) (struct linux_kernel_params*) = NULL;
+ 
+ /* FIXME */
+ #if 0
+@@ -95,6 +97,12 @@ static struct idt_descriptor idt_desc =
+   };
+ #endif
+ 
++void
++grub_linux_slaunch_set (grub_err_t (*sfunc) (struct linux_kernel_params*))
++{
++  grub_slaunch_func = sfunc;
++}
++
+ static inline grub_size_t
+ page_align (grub_size_t size)
+ {
+@@ -611,6 +619,10 @@ grub_linux_boot (void)
+   }
+ #endif
+ 
++  /* If a secondary loader was set for secure launch, call it here.  */
++  if (grub_slaunch_func)
++    return grub_slaunch_func(ctx.params);
++
+   /* FIXME.  */
+   /*  asm volatile ("lidt %0" : : "m" (idt_desc)); */
+   state.ebp = state.edi = state.ebx = 0;
+diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
+new file mode 100644
+index 000000000..241122b44
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch.c
+@@ -0,0 +1,57 @@
++/*
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
++ */
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/slaunch.h>
++
++static grub_dl_t my_mod;
++
++static grub_err_t
++grub_cmd_slaunch (grub_command_t cmd __attribute__ ((unused)),
++                int argc, char *argv[])
++{
++  if (argc == 0)
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("argument expected"));
++
++  if (grub_memcmp (argv[0], "txt", 3) == 0)
++    grub_linux_slaunch_set(grub_slaunch_boot_txt);
++  else if (grub_memcmp (argv[0], "skinit", 6) == 0)
++    grub_linux_slaunch_set(grub_slaunch_boot_skinit);
++  else
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_command_t cmd;
++
++GRUB_MOD_INIT(slaunch)
++{
++  cmd = grub_register_command ("slaunch", grub_cmd_slaunch,
++                               0, N_("Launch Secure Loader"));
++  my_mod = mod;
++}
++
++GRUB_MOD_FINI(slaunch)
++{
++    grub_unregister_command (cmd);
++}
++
++GRUB_MOD_LICENSE("GPLv3+");
+diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
+new file mode 100644
+index 000000000..9660f0d88
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch_skinit.c
+@@ -0,0 +1,32 @@
++/*
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
++ */
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/slaunch.h>
++
++grub_err_t
++grub_slaunch_boot_skinit (struct linux_kernel_params *params)
++{
++  params = params;
++
++  return GRUB_ERR_NONE;
++}
++
++GRUB_MOD_LICENSE("GPLv3+");
+diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
+new file mode 100644
+index 000000000..a103c15fc
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch_txt.c
+@@ -0,0 +1,32 @@
++/*
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
++ */
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/slaunch.h>
++
++grub_err_t
++grub_slaunch_boot_txt (struct linux_kernel_params *params)
++{
++  params = params;
++
++  return GRUB_ERR_NONE;
++}
++
++GRUB_MOD_LICENSE("GPLv3+");
+diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
+new file mode 100644
+index 000000000..b2a493448
+--- /dev/null
++++ b/include/grub/slaunch.h
+@@ -0,0 +1,27 @@
++/*
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
++ */
++
++#ifndef GRUB_SLAUNCH_H
++#define GRUB_SLAUNCH_H 1
++
++#include <grub/types.h>
++#include <grub/i386/linux.h>
++
++grub_err_t grub_slaunch_boot_txt (struct linux_kernel_params *params);
++grub_err_t grub_slaunch_boot_skinit (struct linux_kernel_params *params);
++
++void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct linux_kernel_params*));
++
++#endif
+-- 
+2.13.6
+
