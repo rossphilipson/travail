@@ -53,7 +53,7 @@
 #define TPM_REDIT_COMMAND uint32_t
 #define TPM_TRANSHANDLE uint32_t
 #define TPM_HANDLE uint32_t
-#define TPM_FAMILY_OPERATION uint32_t 
+#define TPM_FAMILY_OPERATION uint32_t
 
 /* Section 6 */
 #define TPM_TAG_RQU_COMMAND		0x00C1
