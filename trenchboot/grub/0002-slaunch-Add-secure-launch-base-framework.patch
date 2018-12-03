@@ -1,7 +1,7 @@
 From b9e93ebd83ffcb2b86559251d1e17283be6d751e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Sat, 1 Dec 2018 12:27:12 -0500
-Subject: [PATCH 2/2] slaunch: Add secure launch base framework
+Subject: [PATCH 2/3] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
