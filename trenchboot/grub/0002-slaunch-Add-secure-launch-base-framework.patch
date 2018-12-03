@@ -1,4 +1,4 @@
-From b9e93ebd83ffcb2b86559251d1e17283be6d751e Mon Sep 17 00:00:00 2001
+From 5034690fd7b18a4b7a4e501dce24381e36d27284 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Sat, 1 Dec 2018 12:27:12 -0500
 Subject: [PATCH 2/3] slaunch: Add secure launch base framework
@@ -7,12 +7,12 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am                  |  1 +
  grub-core/Makefile.core.def            |  8 +++++
- grub-core/loader/i386/linux.c          | 14 +++++++++
+ grub-core/loader/i386/linux.c          | 18 +++++++++++
  grub-core/loader/i386/slaunch.c        | 57 ++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c | 34 ++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c    | 34 ++++++++++++++++++++
- include/grub/slaunch.h                 | 30 ++++++++++++++++++
- 7 files changed, 178 insertions(+)
+ grub-core/loader/i386/slaunch_skinit.c | 32 +++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c    | 32 +++++++++++++++++++
+ include/grub/slaunch.h                 | 34 ++++++++++++++++++++
+ 7 files changed, 182 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
@@ -50,7 +50,7 @@ index d7f515c85..e5ee48ebc 100644
    efi = loader/efi/fdt.c;
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index c408b10d8..17470a095 100644
+index c408b10d8..95db949f1 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
@@ -65,18 +65,17 @@ index c408b10d8..17470a095 100644
  #else
  static const grub_size_t efi_mmap_size = 0;
  #endif
-+static grub_err_t (*grub_slaunch_func) (struct linux_kernel_params*,
-+					grub_addr_t real_mode_target) = NULL;
++static grub_err_t (*grub_slaunch_func) (struct grub_slaunch_params*) = NULL;
++static struct grub_slaunch_params slparams;
  
  /* FIXME */
  #if 0
-@@ -95,6 +98,13 @@ static struct idt_descriptor idt_desc =
+@@ -95,6 +98,12 @@ static struct idt_descriptor idt_desc =
    };
  #endif
  
 +void
-+grub_linux_slaunch_set (grub_err_t (*sfunc) (struct linux_kernel_params*,
-+					     grub_addr_t))
++grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*))
 +{
 +  grub_slaunch_func = sfunc;
 +}
@@ -84,13 +83,18 @@ index c408b10d8..17470a095 100644
  static inline grub_size_t
  page_align (grub_size_t size)
  {
-@@ -611,6 +621,10 @@ grub_linux_boot (void)
+@@ -611,6 +620,15 @@ grub_linux_boot (void)
    }
  #endif
  
 +  /* If a secondary loader was set for secure launch, call it here.  */
 +  if (grub_slaunch_func)
-+    return grub_slaunch_func(ctx.params, ctx.real_mode_target);
++    {
++      slparams.params = ctx.params;
++      slparams.real_mode_target = ctx.real_mode_target;
++      slparams.prot_mode_target = prot_mode_target;
++      return grub_slaunch_func(&slparams);
++    }
 +
    /* FIXME.  */
    /*  asm volatile ("lidt %0" : : "m" (idt_desc)); */
@@ -160,10 +164,10 @@ index 000000000..241122b44
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
-index 000000000..56df107c0
+index 000000000..449407054
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_skinit.c
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,32 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -188,11 +192,9 @@ index 000000000..56df107c0
 +#include <grub/slaunch.h>
 +
 +grub_err_t
-+grub_slaunch_boot_skinit (struct linux_kernel_params *params,
-+			  grub_addr_t real_mode_target)
++grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams)
 +{
-+  params = params;
-+  real_mode_target = real_mode_target;
++  slparams = slparams;
 +
 +  return GRUB_ERR_NONE;
 +}
@@ -200,10 +202,10 @@ index 000000000..56df107c0
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..a191b6643
+index 000000000..95525df0f
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,32 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -228,11 +230,9 @@ index 000000000..a191b6643
 +#include <grub/slaunch.h>
 +
 +grub_err_t
-+grub_slaunch_boot_txt (struct linux_kernel_params *params,
-+		       grub_addr_t real_mode_target)
++grub_slaunch_boot_txt (struct grub_slaunch_params *slparams)
 +{
-+  params = params;
-+  real_mode_target = real_mode_target;
++  slparams = slparams;
 +
 +  return GRUB_ERR_NONE;
 +}
@@ -240,10 +240,10 @@ index 000000000..a191b6643
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..e40cd953f
+index 000000000..a8f6a6bd1
 --- /dev/null
 +++ b/include/grub/slaunch.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,34 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -265,13 +265,17 @@ index 000000000..e40cd953f
 +#include <grub/types.h>
 +#include <grub/i386/linux.h>
 +
-+grub_err_t grub_slaunch_boot_txt (struct linux_kernel_params *params,
-+				  grub_addr_t real_mode_target);
-+grub_err_t grub_slaunch_boot_skinit (struct linux_kernel_params *params,
-+				     grub_addr_t real_mode_target);
++struct grub_slaunch_params
++{
++  struct linux_kernel_params *params;
++  grub_addr_t real_mode_target;
++  grub_addr_t prot_mode_target;
++};
 +
-+void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct linux_kernel_params*,
-+						  grub_addr_t));
++grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
++grub_err_t grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams);
++
++void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*));
 +
 +#endif
 -- 

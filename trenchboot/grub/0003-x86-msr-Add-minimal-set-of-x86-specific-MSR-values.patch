@@ -1,4 +1,4 @@
-From 37bd6a00179ad50eb557a3c7cb5bda853aa1645f Mon Sep 17 00:00:00 2001
+From 14c114747508c3349a65f4e7265c42b362978211 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Mon, 3 Dec 2018 12:14:22 -0500
 Subject: [PATCH 3/3] x86/msr: Add minimal set of x86 specific MSR values
