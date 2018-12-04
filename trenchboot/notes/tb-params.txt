@@ -34,6 +34,11 @@ tb_entry: This is actually filled in by the build tool at IL kernel build time
           and is read by GRUB to know where the protected mode Trenchboot stub
           entry point location is. GRUB uses this to calculate code32_start.
 
+tb_mle_hdr: This is actually filled in by the build tool at IL kernel build
+            time and is read by GRUB to know where the TXT MLE header within
+            the MLE. GRUB must fill in a number of values in this table (see
+            below).
+
 tb_lo_pmr_min: Special value for setting up the low PMR.
 
 tb_flags: Currently there are none that are settable by GRUB so it should just
@@ -66,3 +71,22 @@ trenchboot_loader_size: The total size of the IL used to hash the IL into
 zero_page_addr:  32 bit address of the zero page in low memory.
 
 msb_key_hash: TODO Daniel has to fill this in.
+
+-- MLE Header --
+
+During a TXT secure launch, several fields in the MLE header must be filled
+in. All values are 4 byte integers. These include:
+
+EntryPoint: At offset 24. Linear entry point of MLE.
+
+FirstValidPage: At offset 28. Starting linear address of (first valid
+                page of) MLE.
+MleStart: At offset 32. Offset within MLE binary file of first byte
+          of MLE, as specified in page table.
+
+MleEnd: At offset 36. Offset within MLE binary file of last byte
+        + 1 of MLE, as specified in page table.
+
+CmdlineStart: At offset 44. Starting linear address of command line.
+
+CmdlineEnd: At offset 48. Ending linear address of command line.
