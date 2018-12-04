@@ -1,4 +1,4 @@
-From 88cb8798a53032720f72aecb5ccab5d7fc1f6360 Mon Sep 17 00:00:00 2001
+From d31a3e3fa1d0afa3489b64e24f9832230505ccc8 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 30 Nov 2018 14:03:36 -0500
 Subject: [PATCH 1/3] kern/tpm: Adding basic TPM 1.2 support
@@ -16,7 +16,7 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  create mode 100644 include/grub/tpm.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index f4ff62b..5a8b3b8 100644
+index f4ff62b76..5a8b3b8cc 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -99,6 +99,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
@@ -28,7 +28,7 @@ index f4ff62b..5a8b3b8 100644
  
  if COND_i386_efi
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 2d75c4d..d7f515c 100644
+index 2d75c4daf..d7f515c85 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
 @@ -198,6 +198,8 @@ kernel = {
@@ -42,7 +42,7 @@ index 2d75c4d..d7f515c 100644
    i386_efi = kern/i386/tsc_pmtimer.c;
 diff --git a/grub-core/kern/tis.c b/grub-core/kern/tis.c
 new file mode 100644
-index 0000000..f34a072
+index 000000000..aa7fd124a
 --- /dev/null
 +++ b/grub-core/kern/tis.c
 @@ -0,0 +1,270 @@
@@ -158,7 +158,7 @@ index 0000000..f34a072
 +	return count;
 +}
 +
-+grub_uint8_t tis_request_locality(grub_uint8_t l)
++grub_uint8_t grub_tis_request_locality (grub_uint8_t l)
 +{
 +	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
 +	write8(ACCESS_REQUEST_USE, ACCESS(l));
@@ -174,7 +174,7 @@ index 0000000..f34a072
 +	return locality;
 +}
 +
-+grub_uint8_t tis_init(void)
++grub_uint8_t grub_tis_init (void)
 +{
 +	grub_uint32_t vendor;
 +	grub_uint8_t i;
@@ -182,7 +182,7 @@ index 0000000..f34a072
 +	for (i=0; i<=MAX_LOCALITY; i++)
 +		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 +
-+	if (tis_request_locality(0) == NO_LOCALITY)
++	if (grub_tis_request_locality(0) == NO_LOCALITY)
 +		return 0;
 +
 +	vendor = read32(DID_VID(0));
@@ -192,7 +192,7 @@ index 0000000..f34a072
 +	return 1;
 +}
 +
-+grub_size_t tis_send(struct tpm_cmd_buf *buf)
++grub_size_t grub_tis_send (struct tpm_cmd_buf *buf)
 +{
 +	grub_uint8_t status, *buf_ptr;
 +	grub_uint32_t burstcnt = 0;
@@ -237,7 +237,7 @@ index 0000000..f34a072
 +	return (grub_size_t)count;
 +}
 +
-+static grub_size_t recv_data(unsigned char *buf, grub_size_t len)
++static grub_size_t grub_recv_data (unsigned char *buf, grub_size_t len)
 +{
 +	grub_size_t size = 0;
 +	grub_uint8_t status, *bufptr;
@@ -262,7 +262,7 @@ index 0000000..f34a072
 +	return size;
 +}
 +
-+grub_size_t tis_recv(struct tpm_resp_buf *buf)
++grub_size_t grub_tis_recv (struct tpm_resp_buf *buf)
 +{
 +	grub_uint32_t expected;
 +	grub_uint8_t status, *buf_ptr;
@@ -277,7 +277,7 @@ index 0000000..f34a072
 +		goto err;
 +
 +	/* read first 6 bytes, including tag and paramsize */
-+	if ((size = recv_data(buf_ptr, 6)) < 6)
++	if ((size = grub_recv_data(buf_ptr, 6)) < 6)
 +		goto err;
 +
 +	buf_ptr += 6;
@@ -287,7 +287,7 @@ index 0000000..f34a072
 +		goto err;
 +
 +	/* read all data, except last byte */
-+	if ((size += recv_data(buf_ptr, expected - 7))
++	if ((size += grub_recv_data(buf_ptr, expected - 7))
 +			< expected - 1)
 +		goto err;
 +
@@ -300,7 +300,7 @@ index 0000000..f34a072
 +		goto err;
 +
 +	/* read last byte */
-+	if ((size += recv_data(buf_ptr, 1)) != expected)
++	if ((size += grub_recv_data(buf_ptr, 1)) != expected)
 +		goto err;
 +
 +	/* make sure we read everything */
@@ -318,7 +318,7 @@ index 0000000..f34a072
 +}
 diff --git a/grub-core/kern/tpm.c b/grub-core/kern/tpm.c
 new file mode 100644
-index 0000000..5032696
+index 000000000..d1ef83ca0
 --- /dev/null
 +++ b/grub-core/kern/tpm.c
 @@ -0,0 +1,50 @@
@@ -348,33 +348,33 @@ index 0000000..5032696
 +#include <grub/misc.h>
 +#include <grub/tpm.h>
 +
-+grub_uint8_t tpm_pcr_extend(struct tpm_digest *d)
++grub_uint8_t grub_tpm_pcr_extend (struct tpm_digest *d)
 +{
-+	grub_size_t bytes;
-+	struct tpm_cmd_buf send;
-+	struct tpm_resp_buf resp;
++  grub_size_t bytes;
++  struct tpm_cmd_buf send;
++  struct tpm_resp_buf resp;
 +
-+	send.tag = TPM_TAG_RQU_COMMAND;
-+	send.size = sizeof(struct tpm_extend_cmd) + 6;
-+	send.cmd.extend.ordinal = TPM_ORD_EXTEND;
-+	send.cmd.extend.pcr_num = d->pcr;
-+	grub_memcpy(&(send.cmd.extend.digest), &(d->digest), sizeof(TPM_DIGEST));
++  send.tag = TPM_TAG_RQU_COMMAND;
++  send.size = sizeof(struct tpm_extend_cmd) + 6;
++  send.cmd.extend.ordinal = TPM_ORD_EXTEND;
++  send.cmd.extend.pcr_num = d->pcr;
++  grub_memcpy(&(send.cmd.extend.digest), &(d->digest), sizeof(TPM_DIGEST));
 +
-+	if (send.size != tis_send(&send))
-+		return 0;
++  if (send.size != grub_tis_send(&send))
++    return 0;
 +
-+	bytes = sizeof(struct tpm_extend_resp) + 10;
-+	if (bytes != tis_recv(&resp))
-+		return 0;
++  bytes = sizeof(struct tpm_extend_resp) + 10;
++  if (bytes != grub_tis_recv(&resp))
++    return 0;
 +
-+	if (resp.result != TPM_SUCCESS)
-+		return 0;
++  if (resp.result != TPM_SUCCESS)
++    return 0;
 +
-+	return 1;
++  return 1;
 +}
 diff --git a/include/grub/tpm.h b/include/grub/tpm.h
 new file mode 100644
-index 0000000..61490d9
+index 000000000..9c3ab4b55
 --- /dev/null
 +++ b/include/grub/tpm.h
 @@ -0,0 +1,145 @@
@@ -514,15 +514,15 @@ index 0000000..61490d9
 +};
 +
 +/* TPM Interface Specification functions */
-+grub_uint8_t tis_request_locality(grub_uint8_t l);
-+grub_uint8_t tis_init(void);
-+grub_size_t tis_send(struct tpm_cmd_buf *buf);
-+grub_size_t tis_recv(struct tpm_resp_buf *buf);
++grub_uint8_t EXPORT_FUNC(grub_tis_request_locality) (grub_uint8_t l);
++grub_uint8_t EXPORT_FUNC(grub_tis_init) (void);
++grub_size_t EXPORT_FUNC(grub_tis_send) (struct tpm_cmd_buf *buf);
++grub_size_t EXPORT_FUNC(grub_tis_recv) (struct tpm_resp_buf *buf);
 +
 +/* TPM Commands */
-+grub_uint8_t tpm_pcr_extend(struct tpm_digest *d);
++grub_uint8_t EXPORT_FUNC(grub_tpm_pcr_extend) (struct tpm_digest *d);
 +
 +#endif
 -- 
-2.1.4
+2.13.6
 

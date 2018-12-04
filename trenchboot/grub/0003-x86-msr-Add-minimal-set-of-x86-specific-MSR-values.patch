@@ -1,20 +1,20 @@
-From 14c114747508c3349a65f4e7265c42b362978211 Mon Sep 17 00:00:00 2001
+From 56cc2aa3d320c818c510df8f4f7a9885f7998765 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Mon, 3 Dec 2018 12:14:22 -0500
 Subject: [PATCH 3/3] x86/msr: Add minimal set of x86 specific MSR values
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/msr.h | 50 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
+ include/grub/i386/msr.h | 53 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
  create mode 100644 include/grub/i386/msr.h
 
 diff --git a/include/grub/i386/msr.h b/include/grub/i386/msr.h
 new file mode 100644
-index 000000000..5c0057d64
+index 000000000..a7a95bf1f
 --- /dev/null
 +++ b/include/grub/i386/msr.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,53 @@
 +/*
 + * The definitions in this header are extracted from the Trusted Computing
 + * Group's "TPM Main Specification", Parts 1-3.
@@ -42,6 +42,9 @@ index 000000000..5c0057d64
 +#define GRUB_MSR_X86_APICBASE_BSP	(1<<8)
 +#define GRUB_MSR_X86_APICBASE_ENABLE	(1<<11)
 +#define GRUB_MSR_X86_APICBASE_BASE	(0xfffff<<12)
++
++#define GRUB_MSR_X86_FEATURE_CONTROL	0x0000003a
++#define GRUB_MSR_X86_ENABLE_VMX_IN_SMX	(1<<1)
 +
 +#define GRUB_MSR_X86_MCG_CAP		0x00000179
 +#define GRUB_MSR_MCG_BANKCNT_MASK	0xff      /* Number of banks  */

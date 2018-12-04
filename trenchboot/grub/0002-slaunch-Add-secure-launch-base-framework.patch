@@ -1,25 +1,25 @@
-From b34a485d845410ec99565b7d7a5fb7c9f1d03b24 Mon Sep 17 00:00:00 2001
+From 3b65bf6a96ce6a47cccca03b4ae4abdefae9940e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Sat, 1 Dec 2018 12:27:12 -0500
 Subject: [PATCH 2/3] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.am                  |  1 +
- grub-core/Makefile.core.def            |  8 +++
- grub-core/loader/i386/linux.c          | 18 +++++++
- grub-core/loader/i386/slaunch.c        | 97 ++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c | 32 +++++++++++
- grub-core/loader/i386/slaunch_txt.c    | 32 +++++++++++
- include/grub/slaunch.h                 | 76 ++++++++++++++++++++++++++
- 7 files changed, 264 insertions(+)
+ grub-core/Makefile.am                  |   1 +
+ grub-core/Makefile.core.def            |   8 +++
+ grub-core/loader/i386/linux.c          |  18 ++++++
+ grub-core/loader/i386/slaunch.c        | 107 +++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c |  32 ++++++++++
+ grub-core/loader/i386/slaunch_txt.c    |  32 ++++++++++
+ include/grub/slaunch.h                 |  76 +++++++++++++++++++++++
+ 7 files changed, 274 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 5a8b3b8..7d85089 100644
+index 5a8b3b8cc..7d8508910 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
@@ -31,7 +31,7 @@ index 5a8b3b8..7d85089 100644
  
  if COND_i386_efi
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index d7f515c..e5ee48e 100644
+index d7f515c85..e5ee48ebc 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
 @@ -1730,6 +1730,14 @@ module = {
@@ -50,7 +50,7 @@ index d7f515c..e5ee48e 100644
    efi = loader/efi/fdt.c;
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index c408b10..95db949 100644
+index c408b10d8..95db949f1 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
@@ -101,10 +101,10 @@ index c408b10..95db949 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 0000000..acba862
+index 000000000..39220f078
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,107 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -126,6 +126,7 @@ index 0000000..acba862
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
++#include <grub/tpm.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
 +#include <grub/slaunch.h>
@@ -148,6 +149,10 @@ index 0000000..acba862
 +  if (! (msr_value & GRUB_MSR_X86_APICBASE_BSP))
 +    return grub_error (GRUB_ERR_BAD_DEVICE, N_("secure launch must run on BSP"));
 +
++  /* Is the an active TPM with a valid vendor ID */
++  if (! grub_tis_init ())
++    return grub_error (GRUB_ERR_BAD_DEVICE, N_("no active TPM found on platform"));
++
 +  if (! grub_cpu_is_cpuid_supported ())
 +    return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("CPUID not supported"));
 +
@@ -162,6 +167,11 @@ index 0000000..acba862
 +      if (! (ecx & GRUB_VMX_CPUID_FEATURE) || ! (ecx & GRUB_SMX_CPUID_FEATURE) )
 +        return grub_error (GRUB_ERR_BAD_DEVICE,
 +			   N_("CPU does not support Intel TXT"));
++
++      msr_value = grub_rdmsr(GRUB_MSR_X86_FEATURE_CONTROL);
++      if (! (msr_value & GRUB_MSR_X86_ENABLE_VMX_IN_SMX))
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++			   N_("Intel TXT is not enabled"));
 +
 +      grub_linux_slaunch_set(grub_slaunch_boot_txt);
 +    }
@@ -204,7 +214,7 @@ index 0000000..acba862
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
-index 0000000..4494070
+index 000000000..449407054
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_skinit.c
 @@ -0,0 +1,32 @@
@@ -242,7 +252,7 @@ index 0000000..4494070
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 0000000..95525df
+index 000000000..95525df0f
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
 @@ -0,0 +1,32 @@
@@ -280,7 +290,7 @@ index 0000000..95525df
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 0000000..87ffe9e
+index 000000000..87ffe9e3b
 --- /dev/null
 +++ b/include/grub/slaunch.h
 @@ -0,0 +1,76 @@
@@ -361,5 +371,5 @@ index 0000000..87ffe9e
 +
 +#endif
 -- 
-2.1.4
+2.13.6
 
