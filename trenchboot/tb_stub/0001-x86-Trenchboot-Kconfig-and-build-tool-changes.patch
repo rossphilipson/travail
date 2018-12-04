@@ -1,4 +1,4 @@
-From 4aaf164f36af7a17ced9093349de42bf6b13a2fa Mon Sep 17 00:00:00 2001
+From e56566cd8a5cc4b164c4fe582db12252b69e6a96 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes
@@ -91,7 +91,7 @@ index d4e6cd4577e5..63d2668746f3 100644
  	if (fwrite(buf, 1, i, dest) != i)
  		die("Writing setup failed");
 diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
-index a06cbf019744..3f06346971f9 100644
+index a06cbf019744..627e5aa02dc8 100644
 --- a/arch/x86/include/uapi/asm/bootparam.h
 +++ b/arch/x86/include/uapi/asm/bootparam.h
 @@ -112,6 +112,14 @@ struct efi_info {
@@ -101,7 +101,7 @@ index a06cbf019744..3f06346971f9 100644
 +struct trenchboot_info {
 +	__u32 tb_entry; /* Field updated by boot build tool */
 +	__u32 tb_flags;
-+	__u32 tb_min_ram;
++	__u32 tb_lo_pmr_min;
 +	__u32 tb_dev_map;
 +	__u32 tb_xbi;
 +} __attribute__((packed));

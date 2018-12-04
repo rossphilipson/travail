@@ -34,8 +34,7 @@ tb_entry: This is actually filled in by the build tool at IL kernel build time
           and is read by GRUB to know where the protected mode Trenchboot stub
           entry point location is. GRUB uses this to calculate code32_start.
 
-tb_min_ram: Special value for setting up the low PMR - much like the one in
-            TBOOT.
+tb_lo_pmr_min: Special value for setting up the low PMR.
 
 tb_flags: Currently there are none that are settable by GRUB so it should just
           be zeroed.

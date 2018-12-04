@@ -1,4 +1,4 @@
-From 4412d034094d08112bb5598752697877b9a52a83 Mon Sep 17 00:00:00 2001
+From 6e9157994bbee4b95564924b9f5a79c80dc65bee Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -151,7 +151,7 @@ index 000000000000..aea58d23669e
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..09e035621a7d
+index 000000000000..ed95e81a7195
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,162 @@
@@ -280,7 +280,7 @@ index 000000000000..09e035621a7d
 +
 +.Lcpu_setup_done:
 +	/*
-+	 * Don't enable MCE at this point as TBOOT did. The kernel will enable
++	 * Don't enable MCE at this point. The kernel will enable
 +	 * it on the BSP later when it is ready.
 +	 */
 +

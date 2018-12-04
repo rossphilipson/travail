@@ -19,8 +19,7 @@ on will give a few more details about #3 and #4.
 
 The Linux kernel starts out as the bzImage. This file has several sections and
 they are placed in different areas of memory. Consider the following memory
-map fron the TBOOT project - it gives a pretty good view of the recommended
-layout:
+map - it gives a pretty good view of the recommended layout:
 
         |  Protected-mode kernel    |  The kernel protected-mode code.
 100000  +---------------------------+
