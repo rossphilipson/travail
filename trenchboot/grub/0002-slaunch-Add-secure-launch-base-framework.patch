@@ -1,4 +1,4 @@
-From 5034690fd7b18a4b7a4e501dce24381e36d27284 Mon Sep 17 00:00:00 2001
+From cfabba6e7944971875483bf2f591d2614f555bc3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Sat, 1 Dec 2018 12:27:12 -0500
 Subject: [PATCH 2/3] slaunch: Add secure launch base framework
@@ -6,20 +6,20 @@ Subject: [PATCH 2/3] slaunch: Add secure launch base framework
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am                  |  1 +
- grub-core/Makefile.core.def            |  8 +++++
- grub-core/loader/i386/linux.c          | 18 +++++++++++
- grub-core/loader/i386/slaunch.c        | 57 ++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c | 32 +++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c    | 32 +++++++++++++++++++
- include/grub/slaunch.h                 | 34 ++++++++++++++++++++
- 7 files changed, 182 insertions(+)
+ grub-core/Makefile.core.def            |  8 ++++
+ grub-core/loader/i386/linux.c          | 18 +++++++
+ grub-core/loader/i386/slaunch.c        | 87 ++++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c | 32 +++++++++++++
+ grub-core/loader/i386/slaunch_txt.c    | 32 +++++++++++++
+ include/grub/slaunch.h                 | 68 ++++++++++++++++++++++++++
+ 7 files changed, 246 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 5a8b3b8cc..7d8508910 100644
+index 5a8b3b8..7d85089 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
@@ -31,7 +31,7 @@ index 5a8b3b8cc..7d8508910 100644
  
  if COND_i386_efi
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index d7f515c85..e5ee48ebc 100644
+index d7f515c..e5ee48e 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
 @@ -1730,6 +1730,14 @@ module = {
@@ -50,7 +50,7 @@ index d7f515c85..e5ee48ebc 100644
    efi = loader/efi/fdt.c;
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index c408b10d8..95db949f1 100644
+index c408b10..95db949 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
@@ -101,10 +101,10 @@ index c408b10d8..95db949f1 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..241122b44
+index 0000000..c590b43
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,87 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -126,6 +126,8 @@ index 000000000..241122b44
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
++#include <grub/i386/cpuid.h>
++#include <grub/i386/msr.h>
 +#include <grub/slaunch.h>
 +
 +static grub_dl_t my_mod;
@@ -134,13 +136,41 @@ index 000000000..241122b44
 +grub_cmd_slaunch (grub_command_t cmd __attribute__ ((unused)),
 +                int argc, char *argv[])
 +{
++  grub_uint32_t manufacturer[3];
++  grub_uint32_t eax, edx, ebx, ecx;
++  grub_uint64_t msr_value;
++
 +  if (argc == 0)
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("argument expected"));
 +
++  if (! grub_cpu_is_cpuid_supported ())
++    return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("CPUID not supported"));
++
++  grub_cpuid (0, eax, manufacturer[0], manufacturer[2], manufacturer[1]);
++
 +  if (grub_memcmp (argv[0], "txt", 3) == 0)
-+    grub_linux_slaunch_set(grub_slaunch_boot_txt);
++    {
++      if (grub_memcmp (manufacturer, "GenuineIntel", 12) != 0)
++        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("Intel platform required for TXT"));
++
++      grub_linux_slaunch_set(grub_slaunch_boot_txt);
++    }
 +  else if (grub_memcmp (argv[0], "skinit", 6) == 0)
-+    grub_linux_slaunch_set(grub_slaunch_boot_skinit);
++    {
++      if (grub_memcmp (manufacturer, "AuthenticAMD", 12) != 0)
++        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("AMD platform required for SKINIT"));
++
++      grub_cpuid(GRUB_AMD_CPUID_FEATURES, eax, ebx, ecx, edx);
++      if ((ecx & GRUB_SVM_CPUID_FEATURE) == 0)
++        return grub_error (GRUB_ERR_BAD_DEVICE, N_("CPU does not support AMD SVM"));
++
++      /* Check whether SVM feature is disabled in BIOS */
++      msr_value = grub_rdmsr(GRUB_MSR_AMD64_VM_CR);
++      if (msr_value & GRUB_MSR_SVM_VM_CR_SVM_DISABLE)
++        return grub_error(GRUB_ERR_BAD_DEVICE, "BIOS has AMD SVM disabled");
++
++      grub_linux_slaunch_set(grub_slaunch_boot_skinit);
++    }
 +  else
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
 +
@@ -164,7 +194,7 @@ index 000000000..241122b44
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
-index 000000000..449407054
+index 0000000..4494070
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_skinit.c
 @@ -0,0 +1,32 @@
@@ -202,7 +232,7 @@ index 000000000..449407054
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..95525df0f
+index 0000000..95525df
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
 @@ -0,0 +1,32 @@
@@ -240,10 +270,10 @@ index 000000000..95525df0f
 +GRUB_MOD_LICENSE("GPLv3+");
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..a8f6a6bd1
+index 0000000..3a64845
 --- /dev/null
 +++ b/include/grub/slaunch.h
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,68 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -265,12 +295,46 @@ index 000000000..a8f6a6bd1
 +#include <grub/types.h>
 +#include <grub/i386/linux.h>
 +
++/* AMD  */
++#define GRUB_AMD_CPUID_FEATURES	0x80000001
++#define GRUB_SVM_CPUID_FEATURE	(1 << 2)
++#define GRUB_AMD_CPUID_FUNC	0x8000000a
++
 +struct grub_slaunch_params
 +{
 +  struct linux_kernel_params *params;
 +  grub_addr_t real_mode_target;
 +  grub_addr_t prot_mode_target;
 +};
++
++static inline grub_uint64_t
++grub_rdmsr(grub_uint32_t msr)
++{
++  grub_uint64_t val = 0;
++
++#ifdef __x86_64__
++  asm volatile("rdmsr" : "=A" (val) : "c" (msr));
++#else
++  grub_uint32_t low, high;
++  asm volatile("rdmsr"  : "=a" (low), "=d" (high) : "c" (msr));
++  val = ((low) | (grub_uint64_t)(high) << 32);
++#endif
++
++  return val;
++}
++
++static inline void
++grub_wrmsr(grub_uint32_t msr, grub_uint64_t val)
++{
++#ifdef __x86_64__
++  asm volatile("wrmsr" : "=A" (val) : "c" (msr));
++#else
++  grub_uint32_t low, high;
++  high = (grub_uint32_t) ((val & 0xFFFFFFFF00000000LL) >> 32);
++  low = (grub_uint32_t) (val & 0xFFFFFFFFLL);
++  asm volatile("wrmsr"  : "=a" (low), "=d" (high) : "c" (msr));
++#endif
++}
 +
 +grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
 +grub_err_t grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams);
@@ -279,5 +343,5 @@ index 000000000..a8f6a6bd1
 +
 +#endif
 -- 
-2.13.6
+2.1.4
 
