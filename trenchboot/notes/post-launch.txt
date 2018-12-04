@@ -6,7 +6,8 @@ Questions:
    * TODO
  - Memory map - pass as e820 in boot params (looks like EFI stub stuff just
    turns mem map into e820 on EFI boot)?
-   * The GRUB loaders will have to setup the e820 using the final EFI memmap.
+   * WRONG The GRUB loaders will have to setup the e820 using the final EFI memmap.
+   * Actually the EFI memmap is passed via boot params and Linux handles it.
  - How/where to handle and measure cmdlines for other boot modules?
    * This will happen in the IL security environment before next stages are
      booted.
@@ -14,8 +15,9 @@ Questions:
      all the information for booting the real OS.
  - How to pass other modules to IL?
    * This will be done in the custom XBI.
+   * Now called the IL Boot Protocol struct.
  - Where to measure other modules?
-   * This will be done in the IL security environment.
+   * This will be done in the IL security environment (u-root).
  - What to do about Runtime Services (not really booting EFI)?
    * TODO
  - TXT: What about the shared page?
@@ -23,15 +25,16 @@ Questions:
  - TXT: What about S3 hooks?
    * TODO (kicking this can down the road for now).
  - TXT: What are we passing in the OS-MLE data?
+   * Location of the Zero Page.
    * TODO (this will become known as we go).
  - SKINIT: What post launch things need to be checked?
  - TXT: Restoring the LAPIC address, do we need to do this?
    * TODO (so far it looks painful and hacky to do).
  - NMI: Perhaps delaying enabling until after the IDT is in place?
-   * TODO (need to discuss this).
-   * TODO (how to deal with when using STGI)?
- - MCE: Was enabled in TBOOT early on.
-   * The kernel takes care of is (see section below). Do nothing.
+   * If we get an NMI it is game over anyway. Just enable early as we are doing.
+   * STGI on BSP done in early tb_stub. STGI on APs done in rmpiggy TB stub
+ - MCE: Enabling.
+   * The kernel takes care of is, do nothing.
 
 Stages:
 ---------------------------------------------------------------------
@@ -53,11 +56,11 @@ earliest:
 
 2. TB stub late:
   - Later chunk of code in "kernel" to do other needed tasks.
-  - Probably the place to setup logging.
-  - Need to figure out what other ops that TBOOT did go here.
-    * Valideate TXT heap and PMRs here
+  - Need to figure out what needs validation:
+    * Valideate PMRs and DEV ranges here
+    * Not going to bother with TXT heap validation.
   - Need to figure out what comparable ops for SKINIT go here.
-  - Pull in DEV map or PRM for expanded piggy end.
+  - Pull in DEV map or PMR for expanded piggy end.
 
 3. TB SMP bringup:
   - Will happen when the kernel runs the smpboot.c code.
@@ -88,155 +91,66 @@ We have control over the way the IL kernel is built.
   - Possibly have more control over setting BP_kernel_alignment and BP_init_size
     in the early tb_stub
 
-TXT/TBOOT Specific:
+TXT Specific:
 ---------------------------------------------------------------------
 
-boot.S:
+Early asm:
 --------------------
   Taken care of in the tb_stub code.
-
-begin_launch():
---------------------
-
-tboot_parse_cmdline():
-  What to do with the command lines from GRUB. The TBOOT one gets put in the MLE
-    and measured by TXT.
-  For TXT, the IL cmdline will be part of the MLE so it gets measured.
-  For SKINIT, the LZ measures it. Same PCR in both cases?
-  The cmdlines will be in the MB2 struct that TB is handed. Probably measured in
-    u-root.
-
-get_tboot_call_racm_check():
-  No RACMs exist. Put a TODO to add future support if neeed.
-
-if ( !(rdmsr(MSR_APICBASE) & APICBASE_BSP) )
-  Taken care of in tb_stub
-
-copy_e820_map():
-  To use and adjust. We will handle this differently.
-
-tpm_detect():
-  Already been done in the GRUB TB code.
-
-verify_IA32_se_svn_status():
-  TXT only. Not sure where it should happen?
-  It seems it is really a prelaunch check and we don't really care.
-
-set_policy():
-apply_policy(err):
-  TXT only. u-root is effectively our VL policy.
-
-launch_racm():
-  No RACMs exist. Put a TODO to add future support if neeed.
-
-supports_txt():
-  The GRUB bits have done that.
-
-txt_display_errors():
-  This is something we can do later in the IL kernel
-    once logging is operational.
-
-verify_platform():
-  The GRUB bits have done that.
-
-verify_loader_context():
-  IL has its own plan to get module info etc.
-
-post_launch():
---------------------
-
-txt_post_launch():
-  txt_post_launch_verify_platform():
-    Verify heap seems like something we can do later
-    Verify MTRRs. What to do about passig MTRRs? See below...
-    Verify PMRs seems like something we can do later
-      Leave these as a TODO for now.
-
-  Clear error regs
-    Throw in tb_stub.
-
-  txt_wakeup_cpus():
-    I believe we will do this very differently in the SMP bringup code
-      without putting APs in mini guests.
-
-  Restore MSR_IA32_MISC_ENABLE
-  restore_mtrrs():
-    The kernel should set this stuff up correctly. Plan to do nothing around this.
-
-  apply_policy():
-    See above note on policy.
-
+  Enable NMIs
+  Clear TXT error regs
   TXTCR_CMD_SECRETS
-    Done in early tb_stub at end
-
   TXTCR_CMD_OPEN_LOCALITY1
-    Done in early tb_stub at end + TXTCR_CMD_CLOSE_LOCALITY2
 
-save_vtd_dmar_table():
-  Not sure why this is done along with restore_vtd_dmar_table()
+Post Launch
+--------------------
 
-remove_txt_modules():
-  My guess is that the GRUB bits will figure out what ACM to use
-    and this routine is meamingless because it is about the MBI
+Command Line:
+  What to do with the command lines from GRUB.
+  For TXT and SKINIT, the IL cmdline will be measured in tb_main early stub code
+  The cmdlines will be in the IL boot proto struct that TB is handed. Mmeasured in u-root.
 
-txt_protect_mem_regions():
-  Involves updating e820. Needs consideration.
-  May have to do this very early before kernel gets at the e820
-  Presumably the bootparams can be munged in place.
+RACM Handling:
+  No RACMs exist. Put a TODO to add future support if neeed.
 
-verify_modules():
-  This will happen when we measure the other modules in u-root
+BSP check:
+  Taken care of in tb_stub.
 
-/* verify that tboot is in valid RAM (i.e. E820_RAM) */
-  Do this early - see txt_protect_mem_regions
+E820:
+  Taken care of by GRUB and Linux kernel depending on EFE or legacy boot.
 
-/* protect ourselves, MLE page table, and MLE/kernel shared page */
-  Do this early - see txt_protect_mem_regions
+Policy:
+  u-root is effectively our VL policy.
 
-TBOOT_LOG_TARGET_MEMORY
-  Need to figure out logging
+Platform Modules:
+  IL has its own plan to get module info etc.
+  All other kernels and modules will be validated in u-root.
 
-replace_e820_map()
-  Does not make sense for us
+Validation:
+  Validate PMRs and DEV ranges
 
-print_e820_map()
-  Need to figure out logging
+AP Wakeup:
+  Wired into the smpboot and rmpiggy code.
 
-verify_all_modules()
-  Modules and policy handled in u-root
+TXTCR_CMD_CLOSE_LOCALITY2
 
-verify_all_nvindices()
-  Seems this could be deferred to later, possibly in u-root
-
-seal_pre_k_state()
-  Policy handled in u-root
-
-_tboot_shared
-  This will look very different to us
-
-TBOOT PMR Usage
+PMR Usage
 ---------------------------------------------------------------------
 
-TBOOT determines what memory it will try to cover with the PMRs. The
+TB will  determine what memory it will try to cover with the PMRs. The
 information is passed to the ACM through the TXT heap. The ACM does the
 actual PMR configuring.
 
-TBOOT tries to cover as much physical RAM as possible. The high PMR covers
+TB will to cover as much physical RAM as possible. The high PMR covers
 all memory over 4Gb. The low PMR has some special logic to figure out how
 much memory under 4Gb it can cover.
 
-The routine get_ram_ranges() contains that logic. It starts by assuming it
+TB need an algorith to cover this logic. It starts by assuming it
 can cover all memory under 4Gb. It then looks for the first reserved memory
-area it encounters that is > g_min_ram. When that location is found it stops
+area it encounters that is > lo_pmr_min_memory. When that location is found it stops
 looking and that is the extent of what the low PMR maps. This is done because
 in some firmwares, covering certain reserved areas can cause hangs purportedly
 due to some USB controllers/devices.
-
-This is an example of what TBOOT might end up covering:
-
-TBOOT: highest min_ram (0x2000000) region found: base=0x100000, size=0x9cb3f000
-TBOOT: min_lo_ram: 0x0, max_lo_ram: 0x9cc3f000
-TBOOT: min_hi_ram: 0x100000000, max_hi_ram: 0x44e000000
 
 Linux AP Startup
 ---------------------------------------------------------------------
@@ -264,35 +178,6 @@ There are two ways that APs can be started after GETSECC[SENTER] returns:
     the SINIT-MLE heap area in RlpWakeupAddr.
   - The SINIT put the APs in a state where GETSEC[WAKEUP] must be called to
     start the APs.
-
-init_txt_heap()
-  - Informs vi the MLE header the SINIT which of the methods above are supported
-    by the MLE. In general both should be supported.
-  - Selects the method by setting the bit in the OS-SINIT Capabilities field
-    (e.g. os_sinit_data->capabilities.rlp_wake_monitor = 1) based on what the
-    given SINIT module capabilities say is supported.
-
-txt_wakeup_cpus()
-  - Sets up the MLE join structure with information needed by TXT to wake up the
-    APs including the entry point _txt_wakeup().
-  - The MLE join structure is set via TXTCR_MLE_JOIN.
-  - The function tests which one to use as was set in the OS-SINIT Capabilities
-    set pre-launch. This will be either:
-     - *((uint32_t *)(unsigned long)(sinit_mle_data->rlp_wakeup_addr)) = 0x01;
-     - __getsec_wakeup()
-
-_txt_wakeup:
-  - The wakup vector in boot.S
-  - Does usual stuff like setting up stacks, enable MCE
-  - Jumps to txt_cpu_wakeup()
-
-txt_cpu_wakeup()
-  - Restors the LAPIC base
-  - Enables SMI, doesn't bother to enable NMI
-  - Restore MTRRs
-  - Do one of:
-    * Wait in miniguest
-    * Wait using MWAIT
 
 The AP state upon resuming is similar to that of the BSP post launch. The TXT
 spec and SDM describe this state.
