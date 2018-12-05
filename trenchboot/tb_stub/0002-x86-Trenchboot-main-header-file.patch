@@ -1,20 +1,20 @@
-From 680a5d6f14c33e3b22a17f23980c573d50356517 Mon Sep 17 00:00:00 2001
+From 4d3a802bc12e87b10c00a7313362adadba9d5bf7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 191 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 191 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 199 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 199 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..058f6c815ea1
+index 0000000..0a3b8355
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,199 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -96,14 +96,15 @@ index 000000000000..058f6c815ea1
 +	u64 val = ~0ULL;
 +	void __iomem *addr;
 +
-+	addr = ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE : TXT_PRIV_CONFIG_REGS_BASE),
-+			TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	addr = early_ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE :
++			      TXT_PRIV_CONFIG_REGS_BASE),
++			     TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +	if (!addr)
 +		return val;
 +
 +	memcpy_fromio(&val, addr + reg, sizeof(u64));
 +
-+	iounmap(addr);
++	early_iounmap(addr, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +	return val;
 +}
 +
@@ -111,11 +112,12 @@ index 000000000000..058f6c815ea1
 +{
 +	void __iomem *addr;
 +
-+	addr = ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE : TXT_PRIV_CONFIG_REGS_BASE),
-+			TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	addr = early_ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE :
++			      TXT_PRIV_CONFIG_REGS_BASE),
++			     TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +	if (addr) {
 +		memcpy_toio(addr + reg, &val, sizeof(u64));
-+		iounmap(addr);
++		early_iounmap(addr, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +	}
 +}
 +
@@ -128,13 +130,19 @@ index 000000000000..058f6c815ea1
 +	if ((base == ~0ULL)||(size == ~0ULL))
 +		return NULL;
 +
-+	return ioremap(base, size);
++	return early_ioremap(base, size);
 +}
 +
 +static inline void txt_put_heap(void __iomem *heap)
 +{
++	u64 size;
++
++	size = txt_read_reg(TXTCR_HEAP_SIZE, 0);
++	if (size == ~0ULL)
++		return;
++
 +	if (heap)
-+		iounmap(heap);
++		early_iounmap(heap, size);
 +}
 +
 +static inline u64 txt_bios_data_size(void __iomem *heap)
@@ -207,5 +215,5 @@ index 000000000000..058f6c815ea1
 +
 +#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
-2.13.6
+2.1.4
 

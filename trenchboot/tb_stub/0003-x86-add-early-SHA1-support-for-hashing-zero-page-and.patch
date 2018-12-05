@@ -1,4 +1,4 @@
-From 9e133e948e512a2290b2b4b3d95f7d8c4ecd3182 Mon Sep 17 00:00:00 2001
+From 731fc2955749994c16fe5c38e667db5dd18b07a3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
@@ -14,7 +14,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 arch/x86/include/asm/sha1.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 466f66c8a7f8..3038ddf2cd76 100644
+index 466f66c..3038ddf 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -90,6 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -28,7 +28,7 @@ index 466f66c8a7f8..3038ddf2cd76 100644
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..71530ca425ec
+index 0000000..71530ca
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
 @@ -0,0 +1,111 @@
@@ -145,7 +145,7 @@ index 000000000000..71530ca425ec
 +}
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
-index 000000000000..2abea71ee344
+index 0000000..2abea71
 --- /dev/null
 +++ b/arch/x86/include/asm/sha1.h
 @@ -0,0 +1,28 @@
@@ -178,5 +178,5 @@ index 000000000000..2abea71ee344
 +
 +#endif /* _ASM_X86_SHA1_H */
 -- 
-2.13.6
+2.1.4
 
