@@ -82,7 +82,7 @@ void setup(void *_lz_base)
 	 * Switch to our nice big stack which starts at the page behind the
 	 * landing zone and of course grows down.
 	 */
-	second_stack = lz_base;
+	second_stack = lz_base - LZ_SECOND_STAGE_STACK_OFFSET;
 	load_stack(*second_stack);
 
 	/* Call secondary setup on new stack */

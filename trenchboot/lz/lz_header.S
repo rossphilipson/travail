@@ -96,10 +96,11 @@ _entry:
 
 	/*
 	 * Second page is the PDP table with 1 PD entry. Need to figure out
-	 * which 1G range the LZ is in to determine what range to identity map.
+	 * which 1G range the IL is in to determine what range to identity map.
 	 */
-	movl	4(%ebx), %ecx
-	subl	%ecx, %ebx /* EBX now at start of LZ */
+	movl	4(%ebx), %ecx /* Get size of IL page aligned */
+	subl	$LZ_SECOND_STAGE_STACK_OFFSET, %ebx /* Skip stack page */
+	subl	%ecx, %ebx /* EBX now at start of IL */
 
 	addl	$PAGE_SIZE, %eax
 	movl	%eax, %ecx
