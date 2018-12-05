@@ -1,4 +1,4 @@
-From 9fed02ec0793f0f47da18f05fa81167383cfb4db Mon Sep 17 00:00:00 2001
+From b01c45449c3d7d50f0b0db34d4dcf3108995ff62 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -151,7 +151,7 @@ index 000000000000..aea58d23669e
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..32dc97a38c2d
+index 000000000000..fcb9bb6cbdc3
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,179 @@
@@ -188,7 +188,7 @@ index 000000000000..32dc97a38c2d
 +	.long	0xa2555c0f /* UUID2 */
 +	.long	0x42b651cb /* UUID3 */
 +	.long	0x00000034 /* MLE header size */
-+	.long	0x00020001 /* MLE version 2.1 */
++	.long	0x00020002 /* MLE version 2.2 */
 +	.long	0x00000000 /* Linear entry point of MLE */
 +	.long	0x00000000 /* First valid page of MLE */
 +	.long	0x00000000 /* Offset within binary of first byte of MLE */

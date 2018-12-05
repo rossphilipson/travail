@@ -77,16 +77,32 @@ msb_key_hash: TODO Daniel has to fill this in.
 During a TXT secure launch, several fields in the MLE header must be filled
 in. All values are 4 byte integers. These include:
 
-EntryPoint: At offset 24. Linear entry point of MLE.
+UUID: At offset 0. Hardcoded to specified value.
+
+HeaderLen: At offset 16. Length of header in bytes.  Hardcoded to specified
+           the length.
+
+Version: At offset 20. Version number of this structure. Hardcoded to
+         version 2.2 per the spec.
+
+EntryPoint: At offset 24. Linear (virt) entry point of MLE. Needs to be set.
 
 FirstValidPage: At offset 28. Starting linear address of (first valid
-                page of) MLE.
+                page of) MLE. First page is start of MLE so hardcoded to 0.
+
 MleStart: At offset 32. Offset within MLE binary file of first byte
-          of MLE, as specified in page table.
+          of MLE, as specified in page table. Beginning of vmlinuz binary
+          is the beginning of the MLE so hardcoded to 0.
 
 MleEnd: At offset 36. Offset within MLE binary file of last byte
-        + 1 of MLE, as specified in page table.
+        + 1 of MLE, as specified in page table. Needs to be set to vmlinuz
+        image size + 1.
 
-CmdlineStart: At offset 44. Starting linear address of command line.
+Capabilities: At offset 40. Bit vector of MLE-supported capabilities. Hardcoded
+              to the flags we want.
 
-CmdlineEnd: At offset 48. Ending linear address of command line.
+CmdlineStart: At offset 44. Starting linear address of command line. Not used,
+              hardcoded to 0 per the spec.
+
+CmdlineEnd: At offset 48. Ending linear address of command line. Not used,
+            hardcoded to 0 per the spec.
