@@ -94,35 +94,26 @@ _entry:
 	orl	$0x3, %ecx
 	movl	%ecx, (%eax)
 
-	/*
-	 * Second page is the PDP table with 1 PD entry. Need to figure out
-	 * which 1G range the IL is in to determine what range to identity map.
-	 */
-	movl	4(%ebx), %ecx /* Get size of IL page aligned */
-	subl	$LZ_SECOND_STAGE_STACK_OFFSET, %ebx /* Skip stack page */
-	subl	%ecx, %ebx /* EBX now at start of IL */
-
+	/* Second page is the PDP table with 4 PD entries */
 	addl	$PAGE_SIZE, %eax
 	movl	%eax, %ecx
-	addl	$PAGE_SIZE, %ecx
-	orl	$0x3, %ecx
 	xorl	%edx, %edx
-	movl	$GIGABYTE, %edi
 1:
-	cmpl	%ebx, %edi
-	jl	2f
-	addl	$GIGABYTE, %edi
-	addl	$8, %eax
-	jmp	1b
-2:
+	addl	$PAGE_SIZE, %ecx
+	cmpb	$4, %dl
+	jz	2f
+	orl	$0x3, %ecx
 	movl	%ecx, (%eax)
-	movl	%esi, %ebx
+	addl	$0x8, %eax
+	incb	%dl
+	jmp	1b
+2:      /* EAX Page 2 + 0x20 */
 
-	/* Third page is the PD that map 1G as 2M pages */
-	movl	%ebx, %eax
-	addl	$(LZ_PAGE_TABLES_OFFSET + 2*PAGE_SIZE), %eax
+	/* Next 4 pages are PDs that map all of mem < 4G as 2M pages */
+	addl	$(PAGE_SIZE - 0x20), %eax
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
+	xorl	%ebx, %ebx
 	addl	$0x83, %ecx
 1:
 	cmpw	$512, %dx
@@ -133,7 +124,14 @@ _entry:
 	incw	%dx
 	jmp	1b
 2:
-	/* Done setting up page tables */
+	cmpb	$3, %bl
+	jz	3f
+	incb	%bl
+	xorl	%edx, %edx
+	jmp	1b
+3:
+	/* Done setting up page tables, lower 4G all identity mapped */
+	movl	%esi, %ebx
 
 	/* Restore CR4, PAE must be enabled before IA-32e mode */
 	movl	%cr4, %ecx

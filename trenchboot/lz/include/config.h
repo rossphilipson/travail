@@ -42,11 +42,11 @@
  * |               |
  * |   LZ Code     |
  * |               |
- * | ------------- | EAX + 0xA000
+ * | ------------- | EAX + 0x7000
  * |     DEV       | [0x3000b]
  * |   Tables      |
- * | ------------- | EAX + 0xD000
- * |    Page       | [0x3000b]
+ * | ------------- | EAX + 0xA000
+ * |    Page       | [0x6000b]
  * |   Tables      |
  * +---------------+ EAX + 0x10000 (end of LZ)
  *
@@ -66,10 +66,10 @@
 
 #define LZ_DATA_SECTION_SIZE         (0x200)
 
-#define LZ_DEV_TABLE_OFFSET          (0xa000)
+#define LZ_DEV_TABLE_OFFSET          (0x7000)
 #define LZ_DEV_TABLE_SIZE            (0x3000)
 
-#define LZ_PAGE_TABLES_OFFSET        (0xd000)
-#define LZ_PAGE_TABLES_SIZE          (0x3000)
+#define LZ_PAGE_TABLES_OFFSET        (0xA000)
+#define LZ_PAGE_TABLES_SIZE          (0x6000)
 
 #endif /* __CONFIG_H__ */
