@@ -50,6 +50,14 @@ typedef struct __packed lz_header {
 	u8  msb_key_hash[20];
 } lz_header_t;
 
+#define ioread8(a)	(*(volatile uint8_t *)(a))
+#define ioread16(a)	(*(volatile uint16_t *)(a))
+#define ioread32(a)	(*(volatile uint32_t *)(a))
+
+#define iowrite8(a, d)	(*(volatile uint8_t *)(a) = (d))
+#define iowrite16(a, d)	(*(volatile uint16_t *)(a) = (d))
+#define iowrite32(a, d)	(*(volatile uint32_t *)(a) = (d))
+
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)
 {
