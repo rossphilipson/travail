@@ -35,6 +35,10 @@ Questions:
    * STGI on BSP done in early tb_stub. STGI on APs done in rmpiggy TB stub
  - MCE: Enabling.
    * The kernel takes care of is, do nothing.
+ - early_ioremap: some things to consider.
+   * Do we need to make more room in the early fixmap?
+   * Can we map less TXT reg pages?
+   * Should the SMP code use early or late remap?
 
 Stages:
 ---------------------------------------------------------------------
