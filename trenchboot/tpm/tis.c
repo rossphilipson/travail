@@ -30,49 +30,32 @@
 #define NO_LOCALITY			0xFF
 static uint8_t locality = NO_LOCALITY;
 
-struct io_ops {
-	uint8_t (*read8)(uint16_t field);
-	void (*write8)(unsigned char val, uint16_t field);
-	uint32_t (*read32)(uint16_t field);
-	void (*write32)(unsigned int val, uint16_t field);
-	void (*delay)(void);
-};
-
-/* abstract io calls for easy porting */
-static struct io_ops io = {
-	.read8 = inb,
-	.write8 = outb,
-	.read32 = inl,
-	.write32 = outl,
-	.delay = io_delay,
-};
-
 static uint8_t read8(uint32_t field)
 {
-	uint32_t mmio_addr = MMIO_BASE | field;
+	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
 
-	return io.read8(mmio_addr);
+	return ioread8(mmio_addr);
 }
 
 static void write8(unsigned char val, uint32_t field)
 {
-	uint32_t mmio_addr = MMIO_BASE | field;
+	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
 
-	return io.write8(val, mmio_addr);
+	iowrite8(val, mmio_addr);
 }
 
 static uint32_t read32(uint32_t field)
 {
-	uint32_t mmio_addr = MMIO_BASE | field;
+	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
 
-	return io.read32(mmio_addr);
+	return ioread32(mmio_addr);
 }
 
 static void write32(unsigned int val, uint32_t field)
 {
-	uint32_t mmio_addr = MMIO_BASE | field;
+	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
 
-	return io.write32(val, mmio_addr);
+	iowrite32(val, mmio_addr);
 }
 
 static uint32_t burst_wait(void)
@@ -84,7 +67,7 @@ static uint32_t burst_wait(void)
 		count += read8(STS(locality) + 2) << 8;
 
 		if (count == 0)
-			io.delay(); /* wait for FIFO to drain */
+			io_delay(); /* wait for FIFO to drain */
 	}
 
 	return count;
