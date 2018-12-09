@@ -77,11 +77,11 @@ int8_t tpm2_extend_pcr(uint32_t pcr, struct tpml_digest_values *digests)
 
 	cmd.handles = (uint32_t *)(cmd.raw + cmd.size);
 	*cmd.handles = cpu_to_be32(pcr);
-	cmd.size += sizeof(uint32_t);
+	cmd.header->size += sizeof(uint32_t);
 
 	cmd.auth = (struct tpmb *)(cmd.raw + cmd.size);
 	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
-	cmd.size += cmd.auth->size;
+	cmd.header->size += cmd.auth->size;
 	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 
 	cmd.params = (uint8_t *)(cmd.raw + cmd.size);
@@ -92,7 +92,7 @@ int8_t tpm2_extend_pcr(uint32_t pcr, struct tpml_digest_values *digests)
 		return -EINVAL;
 	}
 	memcpy(cmd.params, digests, size);
-	cmd.size = cpu_to_be16(cmd.size + size);
+	cmd.header->size = cpu_to_be16(cmd.header->size + size);
 
 	/* TODO: write the freaking send command */
 	ret = tpm2_send(&cmd);
