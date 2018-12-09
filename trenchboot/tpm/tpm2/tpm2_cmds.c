@@ -75,16 +75,16 @@ int8_t tpm2_extend_pcr(uint32_t pcr, struct tpml_digest_values *digests)
 	if (ret < 0)
 		return ret;
 
-	cmd.handles = (uint32_t *)(cmd.raw + cmd.size);
+	cmd.handles = (uint32_t *)(cmd.raw + cmd.header->size);
 	*cmd.handles = cpu_to_be32(pcr);
 	cmd.header->size += sizeof(uint32_t);
 
-	cmd.auth = (struct tpmb *)(cmd.raw + cmd.size);
+	cmd.auth = (struct tpmb *)(cmd.raw + cmd.header->size);
 	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
 	cmd.header->size += cmd.auth->size;
 	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 
-	cmd.params = (uint8_t *)(cmd.raw + cmd.size);
+	cmd.params = (uint8_t *)(cmd.raw + cmd.header->size);
 	size = convert_digest_list(digests);
 	if (size == 0) {
 		if (cmd.raw)
