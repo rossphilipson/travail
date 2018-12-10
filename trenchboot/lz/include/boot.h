@@ -50,54 +50,111 @@ typedef struct __packed lz_header {
 	u8  msb_key_hash[20];
 } lz_header_t;
 
-#define ioread8(a)	(*(volatile uint8_t *)(a))
-#define ioread16(a)	(*(volatile uint16_t *)(a))
-#define ioread32(a)	(*(volatile uint32_t *)(a))
+/* Fences */
+#define mb()		asm volatile("mfence" : : : "memory")
+#define rmb()		asm volatile("lfence" : : : "memory")
+#define wmb()		asm volatile("sfence" : : : "memory")
+#define barrier()	asm volatile("" : : : "memory")
 
-#define iowrite8(a, d)	(*(volatile uint8_t *)(a) = (d))
-#define iowrite16(a, d)	(*(volatile uint16_t *)(a) = (d))
-#define iowrite32(a, d)	(*(volatile uint32_t *)(a) = (d))
+/* MMIO Functions */
+static inline u8 ioread8(void *addr)
+{
+	u8 val;
+
+	barrier();
+	val = (*(volatile u8 *)(addr));
+	rmb();
+	return val;
+}
+
+static inline u16 ioread16(void *addr)
+{
+	u16 val;
+
+	barrier();
+	val = (*(volatile u16 *)(addr));
+	rmb();
+	return val;
+}
+
+static inline u32 ioread32(void *addr)
+{
+	u32 val;
+
+	barrier();
+	val = (*(volatile u32 *)(addr));
+	rmb();
+	return val;
+}
+
+static inline void iowrite8(void *addr, u8 val)
+{
+
+	barrier();
+	(*(volatile u8 *)(addr)) = val;
+	wmb();
+}
+
+static inline void iowrite16(void *addr, u16 val)
+{
+
+	barrier();
+	(*(volatile u16 *)(addr)) = val;
+	wmb();
+}
+
+static inline void iowrite32(void *addr, u32 val)
+{
+
+	barrier();
+	(*(volatile u32 *)(addr)) = val;
+	wmb();
+}
 
 /* Basic port I/O */
-static inline void outb(u8 v, u16 port)
-{
-	asm volatile("outb %0,%1" : : "a" (v), "dN" (port));
-}
-
 static inline u8 inb(u16 port)
 {
-	u8 v;
-	asm volatile("inb %1,%0" : "=a" (v) : "dN" (port));
-	return v;
-}
+	u8 val;
 
-static inline void outw(u16 v, u16 port)
-{
-	asm volatile("outw %0,%1" : : "a" (v), "dN" (port));
+	asm volatile("inb %1,%0" : "=a" (val) : "dN" (port));
+	return val;
 }
 
 static inline u16 inw(u16 port)
 {
-	u16 v;
-	asm volatile("inw %1,%0" : "=a" (v) : "dN" (port));
-	return v;
-}
+	u16 val;
 
-static inline void outl(u32 v, u16 port)
-{
-	asm volatile("outl %0,%1" : : "a" (v), "dN" (port));
+	asm volatile("inw %1,%0" : "=a" (val) : "dN" (port));
+	return val;
 }
 
 static inline u32 inl(u16 port)
 {
-	u32 v;
-	asm volatile("inl %1,%0" : "=a" (v) : "dN" (port));
-	return v;
+	u32 val;
+
+	asm volatile("inl %1,%0" : "=a" (val) : "dN" (port));
+	return val;
+}
+
+static inline void outb(u16 port, u8 val)
+{
+	asm volatile("outb %0,%1" : : "a" (val), "dN" (port));
+}
+
+static inline void outw(u16 port, u16 val)
+{
+	asm volatile("outw %0,%1" : : "a" (val), "dN" (port));
+}
+
+static inline void outl(u16 port, u32 val)
+{
+	asm volatile("outl %0,%1" : : "a" (val), "dN" (port));
 }
 
 static inline void io_delay(void)
 {
 	const u16 DELAY_PORT = 0x80;
+
 	asm volatile("outb %%al,%0" : : "dN" (DELAY_PORT));
 }
 
