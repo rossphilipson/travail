@@ -1,31 +1,32 @@
-From d4660e539bb7cdb863b3cda3cedcd4058c7412b4 Mon Sep 17 00:00:00 2001
+From bcb8d575df59ee09e146b3cbe373ca4866420bc4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Fri, 26 Oct 2018 16:13:03 -0400
+Date: Mon, 10 Dec 2018 16:02:06 -0500
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/kernel/Makefile     |  1 +
+ arch/x86/kernel/Makefile     |  2 +-
  arch/x86/kernel/setup.c      |  5 +++
  arch/x86/kernel/trenchboot.c | 92 ++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c         |  5 +++
- 4 files changed, 103 insertions(+)
+ 4 files changed, 103 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 8824d01..45d5678 100644
+index adb6e123fae1..e40951a1cafd 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
-@@ -70,6 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
+@@ -70,7 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
  obj-$(CONFIG_IA32_EMULATION)	+= tls.o
  obj-y				+= step.o
  obj-$(CONFIG_INTEL_TXT)		+= tboot.o
-+obj-$(CONFIG_TRENCHBOOT_STUB)	+= trenchboot.o
+-obj-$(CONFIG_TRENCHBOOT_STUB)	+= early_sha1.o early_tpm.o
++obj-$(CONFIG_TRENCHBOOT_STUB)	+= early_sha1.o early_tpm.o trenchboot.o
  obj-$(CONFIG_ISA_DMA_API)	+= i8237.o
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index b4866ba..9feda4d 100644
+index b4866badb235..9feda4d81677 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
 @@ -117,6 +117,7 @@
@@ -49,7 +50,7 @@ index b4866ba..9feda4d 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
 new file mode 100644
-index 0000000..dea9e1d
+index 000000000000..4c374045aa6a
 --- /dev/null
 +++ b/arch/x86/kernel/trenchboot.c
 @@ -0,0 +1,92 @@
@@ -80,7 +81,7 @@ index 0000000..dea9e1d
 +#include <asm/trenchboot.h>
 +
 +/* This should be plenty of room */
-+static u32 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
++static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
 +
 +struct acpi_table_header *tb_get_dmar_table(struct acpi_table_header *dmar)
 +{
@@ -146,7 +147,7 @@ index 0000000..dea9e1d
 +		BUG();
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
-index d9c748b..723efdf 100644
+index d9c748b6f9e4..723efdf04b49 100644
 --- a/drivers/iommu/dmar.c
 +++ b/drivers/iommu/dmar.c
 @@ -41,6 +41,7 @@
@@ -170,5 +171,5 @@ index d9c748b..723efdf 100644
  	dmar = (struct acpi_table_dmar *)dmar_tbl;
  	if (!dmar)
 -- 
-2.1.4
+2.13.6
 
