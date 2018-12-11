@@ -41,8 +41,8 @@ tb_mle_hdr: This is actually filled in by the build tool at IL kernel build
 
 tb_lo_pmr_min: Special value for setting up the low PMR.
 
-tb_flags: Currently there are none that are settable by GRUB so it should just
-          be zeroed.
+tb_flags: GRUB should set the late launch architecture and the active flag.
+
 
 tb_xbi: The extended multiboot 2 structure that is passed to the IL kernel
         containing all boot information for starting the real kernel.
