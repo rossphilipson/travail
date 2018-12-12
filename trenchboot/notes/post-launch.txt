@@ -47,19 +47,20 @@ This seems like the stages of Trenchboot in the IL starting with the
 earliest:
 
 0. Build time:
-  - Built tool reads ZO_tb_stub_entry from zoffsets.h
+  - Built tool reads ZO_tb_stub_entry and ZO_tb_mle_header from zoffsets.h
   - Writes to our BP location (at 0x0cc)
 
 1. TB stub early:
   - Early assembly entry code in "compressed" to setup basics
+  - This just gets us off the ground to startup_32
+
+2. TB stub late:
+  - Later chunk of code in "kernel" to do other needed tasks.
   - Need an early C module to hash the zero page and update
     the TPM before using the boot params. This is called from
     the slightly later 64b code.
   - Try to use the sha1 kernel code via #includes
   - Will need an early TPM driver.
-
-2. TB stub late:
-  - Later chunk of code in "kernel" to do other needed tasks.
   - Need to figure out what needs validation:
     * Valideate PMRs and DEV ranges here
     * Not going to bother with TXT heap validation.
@@ -68,6 +69,7 @@ earliest:
 
 3. TB SMP bringup:
   - Will happen when the kernel runs the smpboot.c code.
+  - Need to handle relocations in RM piggy.
   - DEV protect rmpiggy in init.c
     * SKINIT AP startup will vector to realmode code in relocated rmpiggy
   - Low PMR wil cover relocated rmpiggy
@@ -228,3 +230,14 @@ do_boot_cpu()
           mcheck_cpu_init()
             __mcheck_cpu_init_generic()
               cr4_set_bits(X86_CR4_MCE);
+
+Boot params and Command line
+---------------------------------------------------------------------
+
+The zero page is copied to the boot_params structure early in kernel/head64.c
+in copy_bootdata(). This is what is used by the kernel and what needs
+measuring. The structure is defined at the top of kernel/setup.c
+
+The command line is copies to a char buffer in kernel/head64.c also in
+copy_bootdata(). The boot_command_line buffer is a global fixed size buffer
+in init/main.c.
