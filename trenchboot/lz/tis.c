@@ -22,8 +22,9 @@
 #include <boot.h>
 #include <tpm.h>
 
-#define MMIO_BASE			0xFED40000
+#define MMIO_BASE			0xFED40000ULL
 #define MAX_LOCALITY			4
+
 /* macros to access registers at locality ’’l’’ */
 #define ACCESS(l)			(0x0000 | ((l) << 12))
 #define STS(l)				(0x0018 | ((l) << 12))
@@ -41,32 +42,33 @@
 #define STS_GO				0x20 /* (W) */
 
 #define NO_LOCALITY			0xFF
+
 static uint8_t locality = NO_LOCALITY;
 
 static uint8_t read8(uint32_t field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(MMIO_BASE | field);
 
 	return ioread8(mmio_addr);
 }
 
 static void write8(unsigned char val, uint32_t field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(MMIO_BASE | field);
 
 	iowrite8(mmio_addr, val);
 }
 
 static uint32_t read32(uint32_t field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(MMIO_BASE | field);
 
 	return ioread32(mmio_addr);
 }
 
 static void write32(unsigned int val, uint32_t field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(MMIO_BASE | field);
 
 	iowrite32(mmio_addr, val);
 }
