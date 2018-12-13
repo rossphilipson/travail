@@ -92,6 +92,8 @@ We have control over the way the IL kernel is built.
   - This implies CONFIG_X86_NEED_RELOCS and CONFIG_RANDOMIZE_MEMORY not set.
   - Have control over CONFIG_PHYSICAL_START and CONFIG_PHYSICAL_ALIGN to set
     where the actual kernel ends up.
+  - Disable CONFIG_EFI_STUB since we will never be entering though EFI stub.
+  - Avoid CONFIG_X86_5LEVEL since we depend on simple paging during early boot.
   - Disable CONFIG_HOTPLUG_CPU and CONFIG_ACPI_HOTPLUG_CPU.
     https://launchpadlibrarian.net/374105894/0001-UBUNTU-Config-azure-CONFIG_HOTPLUG_CPU-n.patch
   - Possibly have more control over setting BP_kernel_alignment and BP_init_size
