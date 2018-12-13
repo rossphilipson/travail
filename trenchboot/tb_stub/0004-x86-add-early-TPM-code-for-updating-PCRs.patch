@@ -1,118 +1,38 @@
-From 94c702ae59cf858dabffa48be5967af2227cbb5c Mon Sep 17 00:00:00 2001
+From e01e90d6b7467df026432d48515371197b33b081 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Mon, 10 Dec 2018 14:59:55 -0500
+Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/tpm.h  |  75 ++++++++++++
- arch/x86/kernel/Makefile    |   2 +-
- arch/x86/kernel/early_tpm.c | 289 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/tpm_command.h |   4 +
+ arch/x86/boot/compressed/Makefile    |   3 +-
+ arch/x86/boot/compressed/early_tpm.c | 288 +++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/tpm.h           |  75 +++++++++
+ include/linux/tpm_command.h          |   4 +
  4 files changed, 369 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/include/asm/tpm.h
- create mode 100644 arch/x86/kernel/early_tpm.c
 
-diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index 3038ddf..47a18fb 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -90,7 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
+ 	$(objtree)/drivers/firmware/efi/libstub/lib.a
+ vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
+ 
+-vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o
++vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o \
++	$(obj)/early_tpm.o
+ 
+ # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
+ # can place it anywhere in memory and it will still run. However, since
+diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..e9db50972f7e
+index 0000000..fa6d243
 --- /dev/null
-+++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,75 @@
-+/*
-+ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
-+ *
-+ * The definitions in this header are extracted from the Trusted Computing
-+ * Group's "TPM Main Specification", Parts 1-3.
-+ *
-+ */
-+#ifndef _ASM_X86_TPM_H
-+#define _ASM_X86_TPM_H
-+
-+#include <linux/types.h>
-+
-+#define SHA1_DIGEST_SIZE 20
-+
-+/* Section 2.2.3 */
-+#define TPM_TAG uint16_t
-+#define TPM_COMMAND_CODE uint32_t
-+#define TPM_PCRINDEX uint32_t
-+#define TPM_RESULT uint32_t
-+/* End of Section 2.2.3 */
-+
-+/* Section 5.4 */
-+struct tpm_sha1_digest {
-+	uint8_t digest[SHA1_DIGEST_SIZE];
-+};
-+struct tpm_digest {
-+	TPM_PCRINDEX pcr;
-+	union {
-+		struct tpm_sha1_digest sha1;
-+	} digest;
-+};
-+
-+#define TPM_DIGEST		struct tpm_digest
-+#define TPM_PCRVALUE		TPM_DIGEST
-+/* End Section 5.4 */
-+
-+struct tpm_extend_cmd {
-+	TPM_COMMAND_CODE ordinal;
-+	TPM_PCRINDEX pcr_num;
-+	TPM_DIGEST digest;
-+};
-+
-+struct tpm_extend_resp {
-+	TPM_COMMAND_CODE ordinal;
-+	TPM_PCRVALUE digest;
-+};
-+
-+struct tpm_cmd_buf {
-+	TPM_TAG tag;
-+	uint32_t size;
-+	TPM_RESULT result;
-+	union {
-+		struct tpm_extend_cmd extend;
-+	} cmd;
-+};
-+
-+struct tpm_resp_buf {
-+	TPM_TAG tag;
-+	uint32_t size;
-+	TPM_RESULT result;
-+	union {
-+		struct tpm_extend_resp extend;
-+	} resp;
-+};
-+
-+/* TPM Interface Specification functions */
-+uint8_t tis_request_locality(uint8_t l);
-+uint8_t tis_init(void);
-+size_t tis_send(struct tpm_cmd_buf *buf);
-+size_t tis_recv(struct tpm_resp_buf *buf);
-+
-+/* TPM Commands */
-+uint8_t tpm_pcr_extend(struct tpm_digest *d);
-+
-+#endif /* _ASM_X86_TPM_H */
-diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index d42d53458636..adb6e123fae1 100644
---- a/arch/x86/kernel/Makefile
-+++ b/arch/x86/kernel/Makefile
-@@ -70,7 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
- obj-$(CONFIG_IA32_EMULATION)	+= tls.o
- obj-y				+= step.o
- obj-$(CONFIG_INTEL_TXT)		+= tboot.o
--obj-$(CONFIG_TRENCHBOOT_STUB)	+= early_sha1.o
-+obj-$(CONFIG_TRENCHBOOT_STUB)	+= early_sha1.o early_tpm.o
- obj-$(CONFIG_ISA_DMA_API)	+= i8237.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
- obj-y				+= cpu/
-diff --git a/arch/x86/kernel/early_tpm.c b/arch/x86/kernel/early_tpm.c
-new file mode 100644
-index 000000000000..b5b59f80fe21
---- /dev/null
-+++ b/arch/x86/kernel/early_tpm.c
-@@ -0,0 +1,289 @@
++++ b/arch/x86/boot/compressed/early_tpm.c
+@@ -0,0 +1,288 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -195,7 +115,6 @@ index 000000000000..b5b59f80fe21
 +	return io.read32(mmio_addr);
 +}
 +
-+__attribute__((unused)) /* TODO not used yet */
 +static void write32(unsigned int val, uint32_t field)
 +{
 +	uint32_t mmio_addr = MMIO_BASE | field;
@@ -402,8 +321,89 @@ index 000000000000..b5b59f80fe21
 +
 +	return 1;
 +}
+diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
+new file mode 100644
+index 0000000..e9db509
+--- /dev/null
++++ b/arch/x86/include/asm/tpm.h
+@@ -0,0 +1,75 @@
++/*
++ * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
++ *
++ * The definitions in this header are extracted from the Trusted Computing
++ * Group's "TPM Main Specification", Parts 1-3.
++ *
++ */
++#ifndef _ASM_X86_TPM_H
++#define _ASM_X86_TPM_H
++
++#include <linux/types.h>
++
++#define SHA1_DIGEST_SIZE 20
++
++/* Section 2.2.3 */
++#define TPM_TAG uint16_t
++#define TPM_COMMAND_CODE uint32_t
++#define TPM_PCRINDEX uint32_t
++#define TPM_RESULT uint32_t
++/* End of Section 2.2.3 */
++
++/* Section 5.4 */
++struct tpm_sha1_digest {
++	uint8_t digest[SHA1_DIGEST_SIZE];
++};
++struct tpm_digest {
++	TPM_PCRINDEX pcr;
++	union {
++		struct tpm_sha1_digest sha1;
++	} digest;
++};
++
++#define TPM_DIGEST		struct tpm_digest
++#define TPM_PCRVALUE		TPM_DIGEST
++/* End Section 5.4 */
++
++struct tpm_extend_cmd {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRINDEX pcr_num;
++	TPM_DIGEST digest;
++};
++
++struct tpm_extend_resp {
++	TPM_COMMAND_CODE ordinal;
++	TPM_PCRVALUE digest;
++};
++
++struct tpm_cmd_buf {
++	TPM_TAG tag;
++	uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_cmd extend;
++	} cmd;
++};
++
++struct tpm_resp_buf {
++	TPM_TAG tag;
++	uint32_t size;
++	TPM_RESULT result;
++	union {
++		struct tpm_extend_resp extend;
++	} resp;
++};
++
++/* TPM Interface Specification functions */
++uint8_t tis_request_locality(uint8_t l);
++uint8_t tis_init(void);
++size_t tis_send(struct tpm_cmd_buf *buf);
++size_t tis_recv(struct tpm_resp_buf *buf);
++
++/* TPM Commands */
++uint8_t tpm_pcr_extend(struct tpm_digest *d);
++
++#endif /* _ASM_X86_TPM_H */
 diff --git a/include/linux/tpm_command.h b/include/linux/tpm_command.h
-index f5c03e9c3913..5619fc31ed64 100644
+index f5c03e9..159eaf2 100644
 --- a/include/linux/tpm_command.h
 +++ b/include/linux/tpm_command.h
 @@ -19,9 +19,13 @@
@@ -415,11 +415,11 @@ index f5c03e9c3913..5619fc31ed64 100644
  #define TPM_ORD_UNSEAL                  24
  
 +/* Return codes */
-+#define TPM_SUCCESS                     0
++#define TPM_SUCCESS			0
 +
  /* Other constants */
  #define SRKHANDLE                       0x40000000
  #define TPM_NONCE_SIZE                  20
 -- 
-2.13.6
+2.1.4
 

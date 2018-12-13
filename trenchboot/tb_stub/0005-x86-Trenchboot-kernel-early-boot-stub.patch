@@ -1,31 +1,33 @@
-From 286451433c4d988e2d1d52795e7f5bf96cbea1f3 Mon Sep 17 00:00:00 2001
+From 89347cd52a5a14f299c85fba027171f8d08f4140 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Mon, 10 Dec 2018 15:04:48 -0500
+Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/boot/compressed/Makefile  |   2 +
- arch/x86/boot/compressed/head_64.S |  16 ++++
+ arch/x86/boot/compressed/Makefile  |   2 +-
+ arch/x86/boot/compressed/head_64.S |  33 +++++++
+ arch/x86/boot/compressed/tb_main.c |  66 ++++++++++++++
  arch/x86/boot/compressed/tb_stub.S | 179 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 197 insertions(+)
+ 4 files changed, 279 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 466f66c8a7f8..f28c4e7ec585 100644
+index 47a18fb..ff4329e 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
-@@ -90,6 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
- 	$(objtree)/drivers/firmware/efi/libstub/lib.a
+@@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/tb_stub.o
-+
+ vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o \
+-	$(obj)/early_tpm.o
++	$(obj)/early_tpm.o $(obj)/tb_main.o $(obj)/tb_stub.o
+ 
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
- # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..687ad217bcc3 100644
+index 6403789..f7bc3d7 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -51,9 +53,105 @@ index 64037895b085..687ad217bcc3 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
+@@ -520,6 +536,23 @@ relocated:
+ 	shrq	$3, %rcx
+ 	rep	stosq
+ 
++#ifdef CONFIG_TRENCHBOOT_STUB
++	/*
++	 * Have to do the final early TB stub work in 64b area.
++	 *
++	 * *********** NOTE ***********
++	 *
++	 * Several boot params get used before we get a chance to measure
++	 * them in this call. This is a known issue and we currently don't
++	 * have a solution. One solution might be to set them in the really
++	 * early TB stub asm code but that might not work well.
++	 */
++	pushq	%rsi
++	movq	%rsi, %rdi
++	callq	tb_main
++	popq	%rsi
++#endif
++
+ /*
+  * Do the extraction, and jump to the new kernel..
+  */
+diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
+new file mode 100644
+index 0000000..aea58d2
+--- /dev/null
++++ b/arch/x86/boot/compressed/tb_main.c
+@@ -0,0 +1,66 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <asm/segment.h>
++#include <asm/boot.h>
++#include <asm/msr.h>
++#include <asm/processor-flags.h>
++#include <asm/asm-offsets.h>
++#include <asm/sha1.h>
++#include <asm/tpm.h>
++#include <asm/bootparam.h>
++#include <asm/trenchboot.h>
++
++void tb_main(u8 *bootparams)
++{
++	struct sha1_state sctx = {0};
++	u8 sha1_hash[SHA1_DIGEST_SIZE];
++	u32 cmdline_len;
++	u64 cmdline_addr;
++	u32 tb_flags;
++	struct tpm_digest extend = {
++		.pcr = 18,
++	};
++
++	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
++
++	tis_init();
++	tis_request_locality(2);
++
++	/* Hash the zero page/boot params */
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
++	tpm_pcr_extend(&extend);
++
++	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
++	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
++	cmdline_addr = *((u32*)(bootparams + BP_CMD_LINE_PTR));
++
++	/* Hash the command line */
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx, (u8*)cmdline_addr, cmdline_len);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
++	tpm_pcr_extend(&extend);
++
++	/* tis_init will ensure all localities are closed */
++	tis_init();
++}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..fcb9bb6cbdc3
+index 0000000..fcb9bb6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
 @@ -0,0 +1,179 @@
@@ -237,5 +335,5 @@ index 000000000000..fcb9bb6cbdc3
 +	.fill 32, 1, 0
 +tb_stack_end:
 -- 
-2.13.6
+2.1.4
 
