@@ -1,4 +1,4 @@
-From e01e90d6b7467df026432d48515371197b33b081 Mon Sep 17 00:00:00 2001
+From d62edebe5f50d55cd91f68c2c7bd21d65bf82cbf Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -14,7 +14,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 arch/x86/include/asm/tpm.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 3038ddf..47a18fb 100644
+index 3038ddf2cd76..47a18fbeb5a2 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -90,7 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -29,7 +29,7 @@ index 3038ddf..47a18fb 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 0000000..fa6d243
+index 000000000000..a8ff9dffb0a8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
 @@ -0,0 +1,288 @@
@@ -50,8 +50,9 @@ index 0000000..fa6d243
 +#include <asm/tpm.h>
 +
 +/* TPM TIS interface */
-+#define MMIO_BASE			0xFED40000
++#define MMIO_BASE			0xFED40000ULL
 +#define MAX_LOCALITY			4
++
 +/* macros to access registers at locality ’’l’’ */
 +#define ACCESS(l)			(0x0000 | ((l) << 12))
 +#define STS(l)				(0x0018 | ((l) << 12))
@@ -69,15 +70,8 @@ index 0000000..fa6d243
 +#define STS_GO				0x20 /* (W) */
 +
 +#define NO_LOCALITY			0xFF
-+static uint8_t locality = NO_LOCALITY;
 +
-+struct io_ops {
-+	unsigned char (*read8)(int field);
-+	void (*write8)(unsigned char val, int field);
-+	unsigned int (*read32)(int field);
-+	void (*write32)(unsigned int val, int field);
-+	void (*delay)(void);
-+};
++static uint8_t locality = NO_LOCALITY;
 +
 +static inline void io_delay(void)
 +{
@@ -85,41 +79,47 @@ index 0000000..fa6d243
 +	asm volatile ("outb %al, $0x80");
 +}
 +
-+/* abstract io calls for easy porting */
-+static struct io_ops io = {
-+	.read8 = inb,
-+	.write8 = outb,
-+	.read32 = inl,
-+	.write32 = outl,
-+	.delay = io_delay,
-+};
-+
 +static uint8_t read8(uint32_t field)
 +{
-+	uint32_t mmio_addr = MMIO_BASE | field;
++	void *addr = (void*)(MMIO_BASE | field);
++	u8 val;
 +
-+	return io.read8(mmio_addr);
++	barrier();
++	val = (*(volatile u8*)(addr));
++ 	rmb();
++
++	return val;
 +}
 +
 +static void write8(unsigned char val, uint32_t field)
 +{
-+	uint32_t mmio_addr = MMIO_BASE | field;
++	void *addr = (void*)(MMIO_BASE | field);
 +
-+	return io.write8(val, mmio_addr);
++	barrier();
++	(*(volatile u8 *)(addr)) = val;
++	wmb();
 +}
 +
 +static uint32_t read32(uint32_t field)
 +{
-+	uint32_t mmio_addr = MMIO_BASE | field;
++	void *addr = (void*)(MMIO_BASE | field);
++	u32 val;
 +
-+	return io.read32(mmio_addr);
++	barrier();
++	val = (*(volatile u32*)(addr));
++	rmb();
++
++	return val;
 +}
 +
-+static void write32(unsigned int val, uint32_t field)
++__attribute__((unused)) /* TODO not used yet */
++static void write32(uint32_t val, uint32_t field)
 +{
-+	uint32_t mmio_addr = MMIO_BASE | field;
++	void *addr = (void*)(MMIO_BASE | field);
 +
-+	return io.write32(val, mmio_addr);
++	barrier();
++	(*(volatile u8 *)(addr)) = val;
++	wmb();
 +}
 +
 +static uint32_t burst_wait(void)
@@ -131,7 +131,7 @@ index 0000000..fa6d243
 +		count += read8(STS(locality) + 2) << 8;
 +
 +		if (count == 0)
-+			io.delay(); /* wait for FIFO to drain */
++			io_delay(); /* wait for FIFO to drain */
 +	}
 +
 +	return count;
@@ -323,7 +323,7 @@ index 0000000..fa6d243
 +}
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 0000000..e9db509
+index 000000000000..e9db50972f7e
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
 @@ -0,0 +1,75 @@
@@ -403,7 +403,7 @@ index 0000000..e9db509
 +
 +#endif /* _ASM_X86_TPM_H */
 diff --git a/include/linux/tpm_command.h b/include/linux/tpm_command.h
-index f5c03e9..159eaf2 100644
+index f5c03e9c3913..159eaf27f56e 100644
 --- a/include/linux/tpm_command.h
 +++ b/include/linux/tpm_command.h
 @@ -19,9 +19,13 @@
@@ -421,5 +421,5 @@ index f5c03e9..159eaf2 100644
  #define SRKHANDLE                       0x40000000
  #define TPM_NONCE_SIZE                  20
 -- 
-2.1.4
+2.13.6
 

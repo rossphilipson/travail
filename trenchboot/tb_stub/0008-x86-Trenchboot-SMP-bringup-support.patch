@@ -1,4 +1,4 @@
-From 1021d904d32af6e26d9fcb91f7f14b9dce6f9f27 Mon Sep 17 00:00:00 2001
+From bef3c78562dc59cc2537893b1d2975efb232bd0a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -15,7 +15,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  4 files changed, 157 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393..d3839bc 100644
+index 63b3393bd98e..d3839bc371a5 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
 @@ -32,6 +32,11 @@ struct real_mode_header {
@@ -31,7 +31,7 @@ index 63b3393..d3839bc 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf..e778818 100644
+index f02ecaf97904..e778818a3cf4 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -156,7 +156,7 @@ index f02ecaf..e778818 100644
  		/*
  		 * Wait 10s total for first sign of life from AP
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30..679bb8c 100644
+index 30b0d30d861a..679bb8c217f3 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
 @@ -31,6 +31,11 @@ GLOBAL(real_mode_header)
@@ -172,7 +172,7 @@ index 30b0d30..679bb8c 100644
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb759..05c5ff1 100644
+index 24bb7598774e..05c5ff1e15a5 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,7 @@
@@ -272,5 +272,5 @@ index 24bb759..05c5ff1 100644
  
  	.bss
 -- 
-2.1.4
+2.13.6
 

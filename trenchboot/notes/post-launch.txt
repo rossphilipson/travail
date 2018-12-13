@@ -52,13 +52,12 @@ earliest:
 
 1. TB stub early:
   - Early assembly entry code in "compressed" to setup basics
-  - This just gets us off the ground to startup_32
-
-2. TB stub late:
-  - Later chunk of code in "kernel" to do other needed tasks.
   - Need an early C module to hash the zero page and update
     the TPM before using the boot params. This is called from
     the slightly later 64b code.
+
+2. TB stub late:
+  - Later chunk of code in "kernel" to do other needed tasks.
   - Try to use the sha1 kernel code via #includes
   - Will need an early TPM driver.
   - Need to figure out what needs validation:

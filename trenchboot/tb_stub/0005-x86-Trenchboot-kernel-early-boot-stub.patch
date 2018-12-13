@@ -1,4 +1,4 @@
-From 89347cd52a5a14f299c85fba027171f8d08f4140 Mon Sep 17 00:00:00 2001
+From 4da3fb5d1279afb62216d857b832ea55821856f3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -6,15 +6,15 @@ Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  33 +++++++
- arch/x86/boot/compressed/tb_main.c |  66 ++++++++++++++
- arch/x86/boot/compressed/tb_stub.S | 179 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 279 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/head_64.S |  33 ++++++++
+ arch/x86/boot/compressed/tb_main.c |  66 +++++++++++++++
+ arch/x86/boot/compressed/tb_stub.S | 165 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 265 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/tb_main.c
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 47a18fb..ff4329e 100644
+index 47a18fbeb5a2..ff4329e6b52c 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -27,7 +27,7 @@ index 47a18fb..ff4329e 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 6403789..f7bc3d7 100644
+index 64037895b085..f7bc3d7f7cfc 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -79,7 +79,7 @@ index 6403789..f7bc3d7 100644
   */
 diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
 new file mode 100644
-index 0000000..aea58d2
+index 000000000000..aea58d23669e
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_main.c
 @@ -0,0 +1,66 @@
@@ -151,10 +151,10 @@ index 0000000..aea58d2
 +}
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 0000000..fcb9bb6
+index 000000000000..88620cdfbaed
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,165 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -204,9 +204,6 @@ index 0000000..fcb9bb6
 +
 +	/* On entry %ebp has the base address from head_64.S, load the stack */
 +	leal	tb_stack_end(%ebp), %esp
-+
-+	/* TB flag indicates TB entry mode */
-+	andl	$(TB_FLAG_ACTIVE), tb_flags(%ebp)
 +
 +	/* On entry, only %cs is known good */
 +	addl	%ebp, (tb_gdt + 2)(%ebp)
@@ -280,8 +277,6 @@ index 0000000..fcb9bb6
 +	movl	$0x0, TXTCR_ERRORCODE(%eax)
 +	movl	$0xffffffff, TXTCR_ESTS(%eax)
 +
-+	andl	$(TB_FLAG_ARCH_TXT), tb_flags(%ebp)
-+
 +	jmp	.Lcpu_setup_done
 +
 +.Ldo_amd:
@@ -293,7 +288,6 @@ index 0000000..fcb9bb6
 +	stgi
 +
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
-+	andl	$(TB_FLAG_ARCH_SKINIT), tb_flags(%ebp)
 +
 +.Lcpu_setup_done:
 +	/*
@@ -321,19 +315,11 @@ index 0000000..fcb9bb6
 +	.quad	0x00cf92000000ffff	/* __TB32_DS */
 +tb_gdt_end:
 +
-+	/*
-+	 * Temporary storage for flags until they can be loaded into
-+	 * boot params making them available to the real kernel.
-+	 */
-+	.balign 4
-+tb_flags:
-+	.long	0
-+
 +	/* Small stack to work with */
 +	.balign 4
 +tb_stack:
 +	.fill 32, 1, 0
 +tb_stack_end:
 -- 
-2.1.4
+2.13.6
 

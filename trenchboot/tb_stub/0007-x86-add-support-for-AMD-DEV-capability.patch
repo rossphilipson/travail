@@ -1,4 +1,4 @@
-From 5709c4c388fe86e6746d40e746140568550e37ab Mon Sep 17 00:00:00 2001
+From 277cb9d777192ba452a970821348b9d38b99549a Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/8] x86: add support for AMD DEV capability
@@ -18,7 +18,7 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  create mode 100644 arch/x86/kernel/amd_dev.c
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 83b4892..1b5a91d 100644
+index 83b4892e0b15..1b5a91d51726 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1956,6 +1956,7 @@ config EFI_MIXED
@@ -42,7 +42,7 @@ index 83b4892..1b5a91d 100644
  config RAPIDIO
 diff --git a/arch/x86/include/asm/amd_dev.h b/arch/x86/include/asm/amd_dev.h
 new file mode 100644
-index 0000000..2001a7d
+index 000000000000..2001a7d841ee
 --- /dev/null
 +++ b/arch/x86/include/asm/amd_dev.h
 @@ -0,0 +1,65 @@
@@ -112,7 +112,7 @@ index 0000000..2001a7d
 +
 +#endif /* _ASM_X86_AMD_DEV_H */
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 45d5678..b19dbe8 100644
+index 45d567867ff2..b19dbe8dffd9 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
 @@ -111,6 +111,8 @@ obj-$(CONFIG_APB_TIMER)		+= apb_timer.o
@@ -126,7 +126,7 @@ index 45d5678..b19dbe8 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 0000000..76b5c8c
+index 000000000000..76b5c8c22e8f
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
 @@ -0,0 +1,174 @@
@@ -305,7 +305,7 @@ index 0000000..76b5c8c
 +	return err;
 +}
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d101058..3b8207c 100644
+index d10105825d57..3b8207c5d46b 100644
 --- a/arch/x86/realmode/init.c
 +++ b/arch/x86/realmode/init.c
 @@ -9,6 +9,11 @@
@@ -333,5 +333,5 @@ index d101058..3b8207c 100644
  }
  
 -- 
-2.1.4
+2.13.6
 
