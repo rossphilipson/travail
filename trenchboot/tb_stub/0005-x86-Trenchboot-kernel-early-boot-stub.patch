@@ -1,4 +1,4 @@
-From 243adfbd49a4595bafcd7cca5829563063ba7a91 Mon Sep 17 00:00:00 2001
+From 286451433c4d988e2d1d52795e7f5bf96cbea1f3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Mon, 10 Dec 2018 15:04:48 -0500
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,8 +7,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +
  arch/x86/boot/compressed/head_64.S |  16 ++++
- arch/x86/boot/compressed/tb_stub.S | 165 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 183 insertions(+)
+ arch/x86/boot/compressed/tb_stub.S | 179 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 197 insertions(+)
  create mode 100644 arch/x86/boot/compressed/tb_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
@@ -53,10 +53,10 @@ index 64037895b085..687ad217bcc3 100644
  ENTRY(startup_64)
 diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
 new file mode 100644
-index 000000000000..88620cdfbaed
+index 000000000000..fcb9bb6cbdc3
 --- /dev/null
 +++ b/arch/x86/boot/compressed/tb_stub.S
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,179 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -106,6 +106,9 @@ index 000000000000..88620cdfbaed
 +
 +	/* On entry %ebp has the base address from head_64.S, load the stack */
 +	leal	tb_stack_end(%ebp), %esp
++
++	/* TB flag indicates TB entry mode */
++	andl	$(TB_FLAG_ACTIVE), tb_flags(%ebp)
 +
 +	/* On entry, only %cs is known good */
 +	addl	%ebp, (tb_gdt + 2)(%ebp)
@@ -179,6 +182,8 @@ index 000000000000..88620cdfbaed
 +	movl	$0x0, TXTCR_ERRORCODE(%eax)
 +	movl	$0xffffffff, TXTCR_ESTS(%eax)
 +
++	andl	$(TB_FLAG_ARCH_TXT), tb_flags(%ebp)
++
 +	jmp	.Lcpu_setup_done
 +
 +.Ldo_amd:
@@ -190,6 +195,7 @@ index 000000000000..88620cdfbaed
 +	stgi
 +
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
++	andl	$(TB_FLAG_ARCH_SKINIT), tb_flags(%ebp)
 +
 +.Lcpu_setup_done:
 +	/*
@@ -216,6 +222,14 @@ index 000000000000..88620cdfbaed
 +	.quad	0x00cf9a000000ffff	/* __TB32_CS */
 +	.quad	0x00cf92000000ffff	/* __TB32_DS */
 +tb_gdt_end:
++
++	/*
++	 * Temporary storage for flags until they can be loaded into
++	 * boot params making them available to the real kernel.
++	 */
++	.balign 4
++tb_flags:
++	.long	0
 +
 +	/* Small stack to work with */
 +	.balign 4

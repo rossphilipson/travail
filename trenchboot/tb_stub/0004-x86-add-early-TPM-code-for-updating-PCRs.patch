@@ -1,24 +1,24 @@
-From b96054721cbafe1ab739329ee937b0b53993d357 Mon Sep 17 00:00:00 2001
+From 94c702ae59cf858dabffa48be5967af2227cbb5c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Mon, 10 Dec 2018 14:59:55 -0500
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/tpm.h  |  76 ++++++++++++
+ arch/x86/include/asm/tpm.h  |  75 ++++++++++++
  arch/x86/kernel/Makefile    |   2 +-
- arch/x86/kernel/early_tpm.c | 290 ++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/early_tpm.c | 289 ++++++++++++++++++++++++++++++++++++++++++++
  include/linux/tpm_command.h |   4 +
- 4 files changed, 371 insertions(+), 1 deletion(-)
+ 4 files changed, 369 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/include/asm/tpm.h
  create mode 100644 arch/x86/kernel/early_tpm.c
 
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..89239dad1eb9
+index 000000000000..e9db50972f7e
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,75 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -87,7 +87,6 @@ index 000000000000..89239dad1eb9
 +/* TPM Interface Specification functions */
 +uint8_t tis_request_locality(uint8_t l);
 +uint8_t tis_init(void);
-+void tis_free(void);
 +size_t tis_send(struct tpm_cmd_buf *buf);
 +size_t tis_recv(struct tpm_resp_buf *buf);
 +
@@ -110,10 +109,10 @@ index d42d53458636..adb6e123fae1 100644
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/early_tpm.c b/arch/x86/kernel/early_tpm.c
 new file mode 100644
-index 000000000000..dbd614533262
+index 000000000000..b5b59f80fe21
 --- /dev/null
 +++ b/arch/x86/kernel/early_tpm.c
-@@ -0,0 +1,290 @@
+@@ -0,0 +1,289 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -131,10 +130,8 @@ index 000000000000..dbd614533262
 +#include <asm/tpm.h>
 +
 +/* TPM TIS interface */
-+#define MMIO_BASE			0xFED40000ULL
-+#define MMIO_SIZE			0x50000
++#define MMIO_BASE			0xFED40000
 +#define MAX_LOCALITY			4
-+
 +/* macros to access registers at locality ’’l’’ */
 +#define ACCESS(l)			(0x0000 | ((l) << 12))
 +#define STS(l)				(0x0018 | ((l) << 12))
@@ -154,7 +151,13 @@ index 000000000000..dbd614533262
 +#define NO_LOCALITY			0xFF
 +static uint8_t locality = NO_LOCALITY;
 +
-+static void __iomem *mmio_tpm = NULL;
++struct io_ops {
++	unsigned char (*read8)(int field);
++	void (*write8)(unsigned char val, int field);
++	unsigned int (*read32)(int field);
++	void (*write32)(unsigned int val, int field);
++	void (*delay)(void);
++};
 +
 +static inline void io_delay(void)
 +{
@@ -162,33 +165,42 @@ index 000000000000..dbd614533262
 +	asm volatile ("outb %al, $0x80");
 +}
 +
++/* abstract io calls for easy porting */
++static struct io_ops io = {
++	.read8 = inb,
++	.write8 = outb,
++	.read32 = inl,
++	.write32 = outl,
++	.delay = io_delay,
++};
++
 +static uint8_t read8(uint32_t field)
 +{
-+	BUG_ON(!mmio_tpm);
++	uint32_t mmio_addr = MMIO_BASE | field;
 +
-+	return readb(mmio_tpm + field);
++	return io.read8(mmio_addr);
 +}
 +
 +static void write8(unsigned char val, uint32_t field)
 +{
-+	BUG_ON(!mmio_tpm);
++	uint32_t mmio_addr = MMIO_BASE | field;
 +
-+	writeb(val, mmio_tpm + field);
++	return io.write8(val, mmio_addr);
 +}
 +
 +static uint32_t read32(uint32_t field)
 +{
-+	BUG_ON(!mmio_tpm);
++	uint32_t mmio_addr = MMIO_BASE | field;
 +
-+	return readl(mmio_tpm + field);
++	return io.read32(mmio_addr);
 +}
 +
 +__attribute__((unused)) /* TODO not used yet */
 +static void write32(unsigned int val, uint32_t field)
 +{
-+	BUG_ON(!mmio_tpm);
++	uint32_t mmio_addr = MMIO_BASE | field;
 +
-+	writel(val, mmio_tpm + field);
++	return io.write32(val, mmio_addr);
 +}
 +
 +static uint32_t burst_wait(void)
@@ -200,7 +212,7 @@ index 000000000000..dbd614533262
 +		count += read8(STS(locality) + 2) << 8;
 +
 +		if (count == 0)
-+			io_delay(); /* wait for FIFO to drain */
++			io.delay(); /* wait for FIFO to drain */
 +	}
 +
 +	return count;
@@ -227,12 +239,6 @@ index 000000000000..dbd614533262
 +	uint32_t vendor;
 +	uint8_t i;
 +
-+	if (!mmio_tpm)
-+		mmio_tpm = early_ioremap(MMIO_BASE, MMIO_SIZE);
-+
-+	if (!mmio_tpm)
-+		return 0;
-+
 +	for (i=0; i<=MAX_LOCALITY; i++)
 +		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 +
@@ -244,14 +250,6 @@ index 000000000000..dbd614533262
 +		return 0;
 +
 +	return 1;
-+}
-+
-+void tis_free(void)
-+{
-+	if (mmio_tpm) {
-+		early_iounmap(mmio_tpm, MMIO_SIZE);
-+		mmio_tpm = NULL;
-+	}
 +}
 +
 +size_t tis_send(struct tpm_cmd_buf *buf)

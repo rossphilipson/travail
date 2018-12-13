@@ -1,15 +1,15 @@
-From fd34e5e8f21b273f57cfe898f2a6acf11931c821 Mon Sep 17 00:00:00 2001
+From bcb8d575df59ee09e146b3cbe373ca4866420bc4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Mon, 10 Dec 2018 16:02:06 -0500
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/kernel/Makefile     |   2 +-
- arch/x86/kernel/setup.c      |   5 ++
- arch/x86/kernel/trenchboot.c | 134 +++++++++++++++++++++++++++++++++++++++++++
- drivers/iommu/dmar.c         |   5 ++
- 4 files changed, 145 insertions(+), 1 deletion(-)
+ arch/x86/kernel/Makefile     |  2 +-
+ arch/x86/kernel/setup.c      |  5 +++
+ arch/x86/kernel/trenchboot.c | 92 ++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c         |  5 +++
+ 4 files changed, 103 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/kernel/trenchboot.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -50,10 +50,10 @@ index b4866badb235..9feda4d81677 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
 new file mode 100644
-index 000000000000..9935ba855bb3
+index 000000000000..4c374045aa6a
 --- /dev/null
 +++ b/arch/x86/kernel/trenchboot.c
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,92 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -76,8 +76,6 @@ index 000000000000..9935ba855bb3
 +#include <asm/msr.h>
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
-+#include <asm/sha1.h>
-+#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/setup.h>
 +#include <asm/trenchboot.h>
@@ -137,49 +135,9 @@ index 000000000000..9935ba855bb3
 +	/* TODO validate the DEV tables and devices */
 +}
 +
-+void tb_update_tpm(void)
-+{
-+	struct sha1_state sctx = {0};
-+	u8 sha1_hash[SHA1_DIGEST_SIZE];
-+	struct tpm_digest extend = {
-+		.pcr = 18,
-+	};
-+
-+	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+
-+	tis_init();
-+	tis_request_locality(2);
-+
-+	/* Hash the zero page/boot params */
-+	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8*)&boot_params, sizeof(struct boot_params));
-+	early_sha1_finalize(&sctx);
-+	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
-+	tpm_pcr_extend(&extend);
-+
-+	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+
-+	/* Hash the command line */
-+	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8*)boot_command_line, boot_params.hdr.cmdline_size);
-+	early_sha1_finalize(&sctx);
-+	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
-+	tpm_pcr_extend(&extend);
-+
-+	/* tis_init will ensure all localities are closed */
-+	tis_init();
-+
-+	tis_free();
-+}
-+
 +void tb_setup(void)
 +{
 +	BUG_ON(!(boot_params.trenchboot_info.tb_flags & TB_FLAG_ACTIVE));
-+
-+	/* First update TPM with boot params and commmand line */
-+	tb_update_tpm();
 +
 +	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_TXT)
 +		tb_setup_intel();
