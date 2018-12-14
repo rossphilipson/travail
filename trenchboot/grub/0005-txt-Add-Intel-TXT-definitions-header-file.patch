@@ -1,40 +1,19 @@
-From 31f7bd0756c8d77690be1fdcfff198b9bd00d1f1 Mon Sep 17 00:00:00 2001
+From d606dc22ec230cfe329055a8b13eb258fc55efa2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
 Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.am |  2 ++
- include/grub/txt.h    | 56 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 58 insertions(+)
- create mode 100644 include/grub/txt.h
+ include/grub/i386/txt.h | 56 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+ create mode 100644 include/grub/i386/txt.h
 
-diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 49f5a7c0d..52bb3ccc3 100644
---- a/grub-core/Makefile.am
-+++ b/grub-core/Makefile.am
-@@ -101,6 +101,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tpm.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/txt.h
- endif
- 
- if COND_i386_efi
-@@ -111,6 +112,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/txt.h
- endif
- 
- if COND_i386_coreboot
-diff --git a/include/grub/txt.h b/include/grub/txt.h
+diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..7fd51d596
+index 0000000..7fd51d5
 --- /dev/null
-+++ b/include/grub/txt.h
++++ b/include/grub/i386/txt.h
 @@ -0,0 +1,56 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
@@ -93,5 +72,5 @@ index 000000000..7fd51d596
 +
 +#endif
 -- 
-2.13.6
+2.1.4
 
