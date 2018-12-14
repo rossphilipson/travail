@@ -1,4 +1,4 @@
-From d62edebe5f50d55cd91f68c2c7bd21d65bf82cbf Mon Sep 17 00:00:00 2001
+From 2bff8e2f7ea9496bb3361102b932bf05bebd2e7d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -29,7 +29,7 @@ index 3038ddf2cd76..47a18fbeb5a2 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..a8ff9dffb0a8
+index 000000000000..4904b8f302d4
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
 @@ -0,0 +1,288 @@
@@ -71,7 +71,7 @@ index 000000000000..a8ff9dffb0a8
 +
 +#define NO_LOCALITY			0xFF
 +
-+static uint8_t locality = NO_LOCALITY;
++static u8 locality = NO_LOCALITY;
 +
 +static inline void io_delay(void)
 +{
@@ -79,19 +79,19 @@ index 000000000000..a8ff9dffb0a8
 +	asm volatile ("outb %al, $0x80");
 +}
 +
-+static uint8_t read8(uint32_t field)
++static u8 read8(u32 field)
 +{
 +	void *addr = (void*)(MMIO_BASE | field);
 +	u8 val;
 +
 +	barrier();
 +	val = (*(volatile u8*)(addr));
-+ 	rmb();
++	rmb();
 +
 +	return val;
 +}
 +
-+static void write8(unsigned char val, uint32_t field)
++static void write8(unsigned char val, u32 field)
 +{
 +	void *addr = (void*)(MMIO_BASE | field);
 +
@@ -100,7 +100,7 @@ index 000000000000..a8ff9dffb0a8
 +	wmb();
 +}
 +
-+static uint32_t read32(uint32_t field)
++static u32 read32(u32 field)
 +{
 +	void *addr = (void*)(MMIO_BASE | field);
 +	u32 val;
@@ -113,7 +113,7 @@ index 000000000000..a8ff9dffb0a8
 +}
 +
 +__attribute__((unused)) /* TODO not used yet */
-+static void write32(uint32_t val, uint32_t field)
++static void write32(u32 val, u32 field)
 +{
 +	void *addr = (void*)(MMIO_BASE | field);
 +
@@ -122,9 +122,9 @@ index 000000000000..a8ff9dffb0a8
 +	wmb();
 +}
 +
-+static uint32_t burst_wait(void)
++static u32 burst_wait(void)
 +{
-+	uint32_t count = 0;
++	u32 count = 0;
 +
 +	while (count == 0) {
 +		count = read8(STS(locality) + 1);
@@ -137,7 +137,7 @@ index 000000000000..a8ff9dffb0a8
 +	return count;
 +}
 +
-+uint8_t tis_request_locality(uint8_t l)
++u8 tis_request_locality(u8 l)
 +{
 +	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
 +	write8(ACCESS_REQUEST_USE, ACCESS(l));
@@ -153,10 +153,10 @@ index 000000000000..a8ff9dffb0a8
 +	return locality;
 +}
 +
-+uint8_t tis_init(void)
++u8 tis_init(void)
 +{
-+	uint32_t vendor;
-+	uint8_t i;
++	u32 vendor;
++	u8 i;
 +
 +	for (i=0; i<=MAX_LOCALITY; i++)
 +		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
@@ -173,16 +173,16 @@ index 000000000000..a8ff9dffb0a8
 +
 +size_t tis_send(struct tpm_cmd_buf *buf)
 +{
-+	uint8_t status, *buf_ptr;
-+	uint32_t burstcnt = 0;
-+	uint32_t count = 0;
++	u8 status, *buf_ptr;
++	u32 burstcnt = 0;
++	u32 count = 0;
 +
 +	if (locality >= 0 && locality <= MAX_LOCALITY)
 +		return 0;
 +
 +	write8(STS_COMMAND_READY, STS(locality));
 +
-+	buf_ptr = (uint8_t *) buf;
++	buf_ptr = (u8 *) buf;
 +
 +	/* send all but the last byte */
 +	while (count < (buf->size - 1)) {
@@ -219,10 +219,10 @@ index 000000000000..a8ff9dffb0a8
 +static size_t recv_data(unsigned char *buf, size_t len)
 +{
 +	size_t size = 0;
-+	uint8_t status, *bufptr;
-+	uint32_t burstcnt = 0;
++	u8 status, *bufptr;
++	u32 burstcnt = 0;
 +
-+	bufptr = (uint8_t *)buf;
++	bufptr = (u8 *)buf;
 +
 +	status = read8(STS(locality));
 +	while ((status & (STS_DATA_AVAIL | STS_VALID))
@@ -243,11 +243,11 @@ index 000000000000..a8ff9dffb0a8
 +
 +size_t tis_recv(struct tpm_resp_buf *buf)
 +{
-+	uint32_t expected;
-+	uint8_t status, *buf_ptr;
++	u32 expected;
++	u8 status, *buf_ptr;
 +	size_t size = 0;
 +
-+	buf_ptr = (uint8_t *)buf;
++	buf_ptr = (u8 *)buf;
 +
 +	/* ensure that there is data available */
 +	status = read8(STS(locality));
@@ -297,7 +297,7 @@ index 000000000000..a8ff9dffb0a8
 +}
 +/* End TIS interface */
 +
-+uint8_t tpm_pcr_extend(struct tpm_digest *d)
++u8 tpm_pcr_extend(struct tpm_digest *d)
 +{
 +	size_t bytes;
 +	struct tpm_cmd_buf send;
@@ -323,7 +323,7 @@ index 000000000000..a8ff9dffb0a8
 +}
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..e9db50972f7e
+index 000000000000..b4254d106026
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
 @@ -0,0 +1,75 @@
@@ -342,15 +342,15 @@ index 000000000000..e9db50972f7e
 +#define SHA1_DIGEST_SIZE 20
 +
 +/* Section 2.2.3 */
-+#define TPM_TAG uint16_t
-+#define TPM_COMMAND_CODE uint32_t
-+#define TPM_PCRINDEX uint32_t
-+#define TPM_RESULT uint32_t
++#define TPM_TAG u16
++#define TPM_COMMAND_CODE u32
++#define TPM_PCRINDEX u32
++#define TPM_RESULT u32
 +/* End of Section 2.2.3 */
 +
 +/* Section 5.4 */
 +struct tpm_sha1_digest {
-+	uint8_t digest[SHA1_DIGEST_SIZE];
++	u8 digest[SHA1_DIGEST_SIZE];
 +};
 +struct tpm_digest {
 +	TPM_PCRINDEX pcr;
@@ -376,7 +376,7 @@ index 000000000000..e9db50972f7e
 +
 +struct tpm_cmd_buf {
 +	TPM_TAG tag;
-+	uint32_t size;
++	u32 size;
 +	TPM_RESULT result;
 +	union {
 +		struct tpm_extend_cmd extend;
@@ -385,7 +385,7 @@ index 000000000000..e9db50972f7e
 +
 +struct tpm_resp_buf {
 +	TPM_TAG tag;
-+	uint32_t size;
++	u32 size;
 +	TPM_RESULT result;
 +	union {
 +		struct tpm_extend_resp extend;
@@ -393,13 +393,13 @@ index 000000000000..e9db50972f7e
 +};
 +
 +/* TPM Interface Specification functions */
-+uint8_t tis_request_locality(uint8_t l);
-+uint8_t tis_init(void);
++u8 tis_request_locality(u8 l);
++u8 tis_init(void);
 +size_t tis_send(struct tpm_cmd_buf *buf);
 +size_t tis_recv(struct tpm_resp_buf *buf);
 +
 +/* TPM Commands */
-+uint8_t tpm_pcr_extend(struct tpm_digest *d);
++u8 tpm_pcr_extend(struct tpm_digest *d);
 +
 +#endif /* _ASM_X86_TPM_H */
 diff --git a/include/linux/tpm_command.h b/include/linux/tpm_command.h
