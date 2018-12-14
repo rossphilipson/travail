@@ -1,0 +1,283 @@
+From 216adc65b88c0a00e8c76eead17286323ad4f3c6 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 14 Dec 2018 12:49:37 -0500
+Subject: [PATCH 4/4] slaunch: Add secure launch base framework
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ grub-core/Makefile.core.def            |   8 +++
+ grub-core/loader/i386/linux.c          |  18 ++++++
+ grub-core/loader/i386/slaunch.c        | 110 +++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c |  33 ++++++++++
+ grub-core/loader/i386/slaunch_txt.c    |  33 ++++++++++
+ 5 files changed, 202 insertions(+)
+ create mode 100644 grub-core/loader/i386/slaunch.c
+ create mode 100644 grub-core/loader/i386/slaunch_skinit.c
+ create mode 100644 grub-core/loader/i386/slaunch_txt.c
+
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index d7f515c85..e5ee48ebc 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -1730,6 +1730,14 @@ module = {
+ };
+ 
+ module = {
++  name = slaunch;
++  x86 = loader/i386/slaunch.c;
++  x86 = loader/i386/slaunch_txt.c;
++  x86 = loader/i386/slaunch_skinit.c;
++  enable = x86;
++};
++
++module = {
+   name = fdt;
+   efi = loader/efi/fdt.c;
+   common = lib/fdt.c;
+diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
+index c408b10d8..95db949f1 100644
+--- a/grub-core/loader/i386/linux.c
++++ b/grub-core/loader/i386/linux.c
+@@ -34,6 +34,7 @@
+ #include <grub/i386/relocator.h>
+ #include <grub/i18n.h>
+ #include <grub/lib/cmdline.h>
++#include <grub/slaunch.h>
+ #include <grub/linux.h>
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -79,6 +80,8 @@ static grub_efi_uintn_t efi_mmap_size;
+ #else
+ static const grub_size_t efi_mmap_size = 0;
+ #endif
++static grub_err_t (*grub_slaunch_func) (struct grub_slaunch_params*) = NULL;
++static struct grub_slaunch_params slparams;
+ 
+ /* FIXME */
+ #if 0
+@@ -95,6 +98,12 @@ static struct idt_descriptor idt_desc =
+   };
+ #endif
+ 
++void
++grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*))
++{
++  grub_slaunch_func = sfunc;
++}
++
+ static inline grub_size_t
+ page_align (grub_size_t size)
+ {
+@@ -611,6 +620,15 @@ grub_linux_boot (void)
+   }
+ #endif
+ 
++  /* If a secondary loader was set for secure launch, call it here.  */
++  if (grub_slaunch_func)
++    {
++      slparams.params = ctx.params;
++      slparams.real_mode_target = ctx.real_mode_target;
++      slparams.prot_mode_target = prot_mode_target;
++      return grub_slaunch_func(&slparams);
++    }
++
+   /* FIXME.  */
+   /*  asm volatile ("lidt %0" : : "m" (idt_desc)); */
+   state.ebp = state.edi = state.ebx = 0;
+diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
+new file mode 100644
+index 000000000..1de3e580e
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch.c
+@@ -0,0 +1,110 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/tpm.h>
++#include <grub/i386/cpuid.h>
++#include <grub/i386/msr.h>
++#include <grub/slaunch.h>
++
++GRUB_MOD_LICENSE("GPLv3+");
++
++static grub_dl_t my_mod;
++
++static grub_err_t
++grub_cmd_slaunch (grub_command_t cmd __attribute__ ((unused)),
++                int argc, char *argv[])
++{
++  grub_uint32_t manufacturer[3];
++  grub_uint32_t eax, edx, ebx, ecx;
++  grub_uint64_t msr_value;
++
++  if (argc == 0)
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("argument expected"));
++
++  /* Should be executing on the BSP  */
++  msr_value = grub_rdmsr(GRUB_MSR_X86_APICBASE);
++  if (! (msr_value & GRUB_MSR_X86_APICBASE_BSP))
++    return grub_error (GRUB_ERR_BAD_DEVICE, N_("secure launch must run on BSP"));
++
++  /* Is the an active TPM with a valid vendor ID */
++  if (! grub_tis_init ())
++
++
++  if (! grub_cpu_is_cpuid_supported ())
++    return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("CPUID not supported"));
++
++  grub_cpuid (0, eax, manufacturer[0], manufacturer[2], manufacturer[1]);
++
++  if (grub_memcmp (argv[0], "txt", 3) == 0)
++    {
++      if (grub_memcmp (manufacturer, "GenuineIntel", 12) != 0)
++        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("Intel platform required for TXT"));
++
++      grub_cpuid(GRUB_X86_CPUID_FEATURES, eax, ebx, ecx, edx);
++      if (! (ecx & GRUB_VMX_CPUID_FEATURE) || ! (ecx & GRUB_SMX_CPUID_FEATURE) )
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++			   N_("CPU does not support Intel TXT"));
++
++      msr_value = grub_rdmsr(GRUB_MSR_X86_FEATURE_CONTROL);
++      if (! (msr_value & GRUB_MSR_X86_ENABLE_VMX_IN_SMX))
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++			   N_("Intel TXT is not enabled"));
++
++      grub_linux_slaunch_set(grub_slaunch_boot_txt);
++    }
++  else if (grub_memcmp (argv[0], "skinit", 6) == 0)
++    {
++      if (grub_memcmp (manufacturer, "AuthenticAMD", 12) != 0)
++        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("AMD platform required for SKINIT"));
++
++      grub_cpuid(GRUB_AMD_CPUID_FEATURES, eax, ebx, ecx, edx);
++      if (! (ecx & GRUB_SVM_CPUID_FEATURE) )
++        return grub_error (GRUB_ERR_BAD_DEVICE, N_("CPU does not support AMD SVM"));
++
++      /* Check whether SVM feature is disabled in BIOS */
++      msr_value = grub_rdmsr(GRUB_MSR_AMD64_VM_CR);
++      if (msr_value & GRUB_MSR_SVM_VM_CR_SVM_DISABLE)
++        return grub_error(GRUB_ERR_BAD_DEVICE, "BIOS has AMD SVM disabled");
++
++      grub_linux_slaunch_set(grub_slaunch_boot_skinit);
++    }
++  else
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_command_t cmd;
++
++GRUB_MOD_INIT(slaunch)
++{
++  cmd = grub_register_command ("slaunch", grub_cmd_slaunch,
++                               0, N_("Launch Secure Loader"));
++  my_mod = mod;
++}
++
++GRUB_MOD_FINI(slaunch)
++{
++    grub_unregister_command (cmd);
++}
+diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
+new file mode 100644
+index 000000000..a020a88c7
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch_skinit.c
+@@ -0,0 +1,33 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/slaunch.h>
++
++grub_err_t
++grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams)
++{
++  slparams = slparams;
++
++  return GRUB_ERR_NONE;
++}
+diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
+new file mode 100644
+index 000000000..b4889c7a8
+--- /dev/null
++++ b/grub-core/loader/i386/slaunch_txt.c
+@@ -0,0 +1,33 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/slaunch.h>
++
++grub_err_t
++grub_slaunch_boot_txt (struct grub_slaunch_params *slparams)
++{
++  slparams = slparams;
++
++  return GRUB_ERR_NONE;
++}
+-- 
+2.13.6
+

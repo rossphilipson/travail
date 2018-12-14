@@ -1,7 +1,7 @@
 From 70514cb173722e6765daad33413833b6560d48a7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:26:21 -0500
-Subject: [PATCH 2/3] kern/tpm: Adding basic TPM 1.2 support
+Subject: [PATCH 2/4] kern/tpm: Adding basic TPM 1.2 support
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>

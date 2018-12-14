@@ -1,7 +1,7 @@
 From b9408b25cea2a42a7d82346e002eedee7e3a7dfb Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
-Subject: [PATCH 3/3] slaunch: Add main secure launch definitions header
+Subject: [PATCH 3/4] slaunch: Add main secure launch definitions header
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
