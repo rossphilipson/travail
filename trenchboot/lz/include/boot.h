@@ -90,25 +90,24 @@ static inline u32 ioread32(void *addr)
 static inline void iowrite8(void *addr, u8 val)
 {
 
-	barrier();
-	(*(volatile u8 *)(addr)) = val;
 	wmb();
+	(*(volatile u8 *)(addr)) = val;
+	barrier();
 }
 
 static inline void iowrite16(void *addr, u16 val)
 {
 
-	barrier();
-	(*(volatile u16 *)(addr)) = val;
 	wmb();
+	(*(volatile u16 *)(addr)) = val;
+	barrier();
 }
 
 static inline void iowrite32(void *addr, u32 val)
 {
-
-	barrier();
-	(*(volatile u32 *)(addr)) = val;
 	wmb();
+	(*(volatile u32 *)(addr)) = val;
+	barrier();
 }
 
 /* Basic port I/O */
