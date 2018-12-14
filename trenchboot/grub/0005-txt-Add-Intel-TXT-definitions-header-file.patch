@@ -1,0 +1,97 @@
+From 31f7bd0756c8d77690be1fdcfff198b9bd00d1f1 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 14 Dec 2018 12:56:36 -0500
+Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ grub-core/Makefile.am |  2 ++
+ include/grub/txt.h    | 56 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
+ create mode 100644 include/grub/txt.h
+
+diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
+index 49f5a7c0d..52bb3ccc3 100644
+--- a/grub-core/Makefile.am
++++ b/grub-core/Makefile.am
+@@ -101,6 +101,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tpm.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/txt.h
+ endif
+ 
+ if COND_i386_efi
+@@ -111,6 +112,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/txt.h
+ endif
+ 
+ if COND_i386_coreboot
+diff --git a/include/grub/txt.h b/include/grub/txt.h
+new file mode 100644
+index 000000000..7fd51d596
+--- /dev/null
++++ b/include/grub/txt.h
+@@ -0,0 +1,56 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ *
++ *  Intel TXT definitions header file.
++ */
++
++#ifndef GRUB_TXT_H
++#define GRUB_TXT_H 1
++
++#include <grub/types.h>
++
++/* Intel TXT Software Developers Guide - Appendix B */
++
++#define GRUB_TXT_PUB_CONFIG_REGS	0xfed30000
++#define GRUB_TXT_PRIV_CONFIG_REGS	0xfed20000
++
++#define GRUB_TXT_STS			0x0000
++#define GRUB_TXT_ESTS			0x0008
++#define GRUB_TXT_ERRORCODE		0x0030
++#define GRUB_TXT_CMD_RESET		0x0038
++#define GRUB_TXT_CMD_CLOSE_PRIVATE	0x0048
++#define GRUB_TXT_VER_FSBIF		0x0100
++#define GRUB_TXT_DIDVID			0x0110
++#define GRUB_TXT_VER_QPIIF		0x0200
++#define GRUB_TXT_CMD_UNLOCK_MEM_CONFIG	0x0218
++#define GRUB_TXT_SINIT_BASE		0x0270
++#define GRUB_TXT_SINIT_SIZE		0x0278
++#define GRUB_TXT_MLE_JOIN		0x0290
++#define GRUB_TXT_HEAP_BASE		0x0300
++#define GRUB_TXT_HEAP_SIZE		0x0308
++#define GRUB_TXT_MSEG_BASE		0x0310
++#define GRUB_TXT_MSEG_SIZE		0x0318
++#define GRUB_TXT_DPR			0x0330
++#define GRUB_TXT_CMD_OPEN_LOCALITY1	0x0380
++#define GRUB_TXT_CMD_CLOSE_LOCALITY1	0x0388
++#define GRUB_TXT_CMD_OPEN_LOCALITY2	0x0390
++#define GRUB_TXT_CMD_CLOSE_LOCALITY2	0x0398
++#define GRUB_TXT_PUBLIC_KEY		0x0400
++#define GRUB_TXT_CMD_SECRETS		0x08e0
++#define GRUB_TXT_CMD_NO_SECRETS		0x08e8
++#define GRUB_TXT_E2STS			0x08f0
++
++#endif
+-- 
+2.13.6
+
