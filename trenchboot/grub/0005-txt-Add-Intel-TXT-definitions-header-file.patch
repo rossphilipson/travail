@@ -1,20 +1,20 @@
-From d606dc22ec230cfe329055a8b13eb258fc55efa2 Mon Sep 17 00:00:00 2001
+From 1471adc0439174202a5ca9b1259c493acbe51db9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
 Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 56 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 56 insertions(+)
+ include/grub/i386/txt.h | 229 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 229 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 0000000..7fd51d5
+index 0000000..2687eb8
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,229 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -39,10 +39,18 @@ index 0000000..7fd51d5
 +
 +#include <grub/types.h>
 +
-+/* Intel TXT Software Developers Guide - Appendix B */
++/* Intel TXT Software Developers Guide */
 +
++/* Appendix B SMX Interaction with Platform */
++/* B.1 Intel Trusted Execution Technology Configuration Registers */
++
++#ifdef __x86_64__
++#define GRUB_TXT_PUB_CONFIG_REGS	0xfed30000ULL
++#define GRUB_TXT_PRIV_CONFIG_REGS	0xfed20000ULL
++#else
 +#define GRUB_TXT_PUB_CONFIG_REGS	0xfed30000
 +#define GRUB_TXT_PRIV_CONFIG_REGS	0xfed20000
++#endif
 +
 +#define GRUB_TXT_STS			0x0000
 +#define GRUB_TXT_ESTS			0x0008
@@ -69,6 +77,171 @@ index 0000000..7fd51d5
 +#define GRUB_TXT_CMD_SECRETS		0x08e0
 +#define GRUB_TXT_CMD_NO_SECRETS		0x08e8
 +#define GRUB_TXT_E2STS			0x08f0
++
++/* Appendix C Intel TXT Heap Memory */
++
++/* Ext Data Structs */
++
++struct grub_txt_heap_uuid
++{
++  grub_uint32_t data1;
++  grub_uint16_t data2;
++  grub_uint16_t data3;
++  grub_uint16_t data4;
++  grub_uint8_t data5[6];
++} GRUB_PACKED;
++
++struct grub_txt_heap_ext_data_element
++{
++  grub_uint32_t type;
++  grub_uint32_t size;
++  /* Data */
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_END			0
++
++struct grub_txt_heap_end_element
++{
++  grub_uint32_t type;
++  grub_uint32_t size;
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_BIOS_SPEC_VER	1
++
++struct grub_txt_heap_bios_spec_ver_element
++{
++  grub_uint16_t spec_ver_major;
++  grub_uint16_t spec_ver_minor;
++  grub_uint16_t spec_ver_revision;
++} HEAP_BIOS_SPEC_VER_ELEMENT;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_ACM			2
++
++struct grub_txt_heap_acm_element
++{
++  grub_uint32_t num_acms;
++  /* Array of num_acms grub_uint64_t addresses */
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_STM			3
++
++struct grub_txt_heap_stm_element
++{
++  /* STM specific BIOS properties */
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_CUSTOM		4
++
++struct grub_txt_heap_custom_element
++{
++  struct grub_txt_heap_uuid uuid;
++  /* Vendor Data */
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR	5
++
++struct grub_txt_heap_event_log_element
++{
++  grub_uint64_t event_log_phys_addr;
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_MADT			6
++
++struct grub_txt_heap_madt_element
++{
++  /* Copy of ACPI MADT table */
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_EVENT_LOG_POINTER2_1	8
++
++struct grub_txt_heap_event_log_pointer2_1_element
++{
++  grub_uint64_t phys_addr;
++  grub_uint32_t allocated_event_container_size;
++  grub_uint32_t first_record_offset;
++  grub_uint32_t next_record_offset;
++} GRUB_PACKED;
++
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_MCFG			8
++
++struct grub_txt_heap_mcfg_element
++{
++  /* Copy of ACPI MCFG table */
++} GRUB_PACKED;
++
++/* TXT Heap Tables */
++
++struct grub_txt_heap_bios_data
++{
++  grub_uint32_t version; /* Currently 5 for TPM 1.2 and 6 for TPM 2.0 */
++  grub_uint32_t bios_sinit_size;
++  grub_uint64_t reserved1;
++  grub_uint64_t reserved22;
++  grub_uint32_t num_logical_procs;
++  /* Versions >= 5 with updates in version 6 */
++  grub_uint32_t sinit_flags;
++  grub_uint32_t mle_flags;
++  /* Versions >= 4 */
++  /* Ext Data Elements */
++} GRUB_PACKED;
++
++struct grub_txt_heap_os_mle_data
++{
++  grub_uint32_t zero_page_addr;
++} GRUB_PACKED;
++
++struct grub_txt_os_sinit_data
++{
++  grub_uint32_t version; /* Currently 6 for TPM 1.2 and 7 for TPM 2.0 */
++  grub_uint32_t flags;
++  grub_uint64_t mle_ptab;
++  grub_uint64_t mle_size;
++  grub_uint64_t mle_hdr_base;
++  grub_uint64_t vtd_pmr_lo_base;
++  grub_uint64_t vtd_pmr_lo_size;
++  grub_uint64_t vtd_pmr_hi_base;
++  grub_uint64_t vtd_pmr_hi_size;
++  grub_uint64_t lcp_po_base;
++  grub_uint64_t lcp_po_size;
++  grub_uint32_t capabilities;
++  /* Version = 5 */
++  grub_uint64_t    efi_rsdt_ptr;
++  /* Versions >= 6 */
++  /* Ext Data Elements */
++} GRUB_PACKED;
++
++struct grut_txt_sinit_mle_data
++{
++  grub_uint32_t version;             /* Current values are 6 through 9 */
++  /* Versions <= 8 */
++  grub_uint8_t bios_acm_id[20];
++  grub_uint32_t edx_senter_flags;
++  grub_uint64_t mseg_valid;
++  grub_uint8_t sinit_hash[20];
++  grub_uint8_t mle_hash[20];
++  grub_uint8_t stm_hash[20];
++  grub_uint8_t lcp_policy_hash[20];
++  grub_uint32_t lcp_policy_control;
++  /* Versions >= 7 */
++  grub_uint32_t rlp_wakeup_addr;
++  grub_uint32_t reserved;
++  grub_uint32_t num_of_sinit_mdrs;
++  grub_uint32_t sinit_mdrs_table_offset;
++  grub_uint32_t sinit_vtd_dmar_table_size;
++  grub_uint32_t sinit_vtd_dmar_table_offset;
++  /* Versions >= 8 */
++  grub_uint32_t processor_scrtm_status;
++  /* Versions >= 9 */
++  /* Ext Data Elements */
++} GRUB_PACKED;
++
++struct grub_txt_sinit_memory_descriptor_records
++{
++  grub_uint64_t address;
++  grub_uint64_t length;
++  grub_uint8_t type;
++  grub_uint8_t reserved[7];
++} GRUB_PACKED;
 +
 +#endif
 -- 
