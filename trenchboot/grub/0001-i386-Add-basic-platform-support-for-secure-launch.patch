@@ -1,19 +1,19 @@
-From 2eb9411e793fd98060cf4761e27f4d270e4590bb Mon Sep 17 00:00:00 2001
+From 66688eecfba7c5bd93e72cf6715b31271ff7e6c6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 11:27:21 -0500
-Subject: [PATCH 1/4] i386: Add basic platform support for secure launch
+Subject: [PATCH 1/5] i386: Add basic platform support for secure launch
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/cpuid.h | 13 ++++++++
- include/grub/i386/mmio.h  | 83 +++++++++++++++++++++++++++++++++++++++++++++++
- include/grub/i386/msr.h   | 81 +++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 177 insertions(+)
+ include/grub/i386/cpuid.h |  13 ++++++
+ include/grub/i386/mmio.h  | 104 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/grub/i386/msr.h   |  81 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 198 insertions(+)
  create mode 100644 include/grub/i386/mmio.h
  create mode 100644 include/grub/i386/msr.h
 
 diff --git a/include/grub/i386/cpuid.h b/include/grub/i386/cpuid.h
-index f7ae4b0a4..8176e5d11 100644
+index f7ae4b0..8176e5d 100644
 --- a/include/grub/i386/cpuid.h
 +++ b/include/grub/i386/cpuid.h
 @@ -19,6 +19,19 @@
@@ -38,10 +38,10 @@ index f7ae4b0a4..8176e5d11 100644
  
 diff --git a/include/grub/i386/mmio.h b/include/grub/i386/mmio.h
 new file mode 100644
-index 000000000..15aa9f3c7
+index 0000000..fef406d
 --- /dev/null
 +++ b/include/grub/i386/mmio.h
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,104 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -62,72 +62,93 @@ index 000000000..15aa9f3c7
 +#ifndef GRUB_MMIO_H
 +#define GRUB_MMIO_H 1
 +
++#include <grub/types.h>
++
 +#define grub_mb()	__asm__ __volatile__ ("mfence" : : : "memory")
 +#define grub_rmb()	__asm__ __volatile__ ("lfence" : : : "memory")
 +#define grub_wmb()	__asm__ __volatile__ ("sfence" : : : "memory")
 +#define grub_barrier()	__asm__ __volatile__ ("" : : : "memory")
 +
-+static __inline unsigned char
++static __inline grub_uint8_t
 +grub_readb (void *addr)
 +{
-+  unsigned char _v;
++  grub_uint8_t _v;
 +
 +  grub_barrier();
-+  _v = (*(volatile unsigned char*)(addr));
++  _v = (*(volatile grub_uint8_t*)(addr));
 +  grub_rmb();
 +  return _v;
 +}
 +
-+static __inline unsigned short int
++static __inline grub_uint16_t
 +grub_readw (void *addr)
 +{
-+  unsigned short _v;
++  grub_uint16_t _v;
 +
 +  grub_barrier();
-+  _v = (*(volatile unsigned short*)(addr));
++  _v = (*(volatile grub_uint16_t*)(addr));
 +  grub_rmb();
 +  return _v;
 +}
 +
-+static __inline unsigned int
++static __inline grub_uint32_t
 +grub_readl (void *addr)
 +{
-+  unsigned int _v;
++  grub_uint32_t _v;
 +
 +  grub_barrier();
-+  _v = (*(volatile unsigned int*)(addr));
++  _v = (*(volatile grub_uint32_t*)(addr));
++  grub_rmb();
++  return _v;
++}
++
++static __inline grub_uint64_t
++grub_readq (void *addr)
++{
++  grub_uint64_t _v;
++
++  grub_barrier();
++  _v = (*(volatile grub_uint64_t*)(addr));
 +  grub_rmb();
 +  return _v;
 +}
 +
 +static __inline void
-+grub_writeb (unsigned char value, void *addr)
++grub_writeb (grub_uint8_t value, void *addr)
 +{
 +  grub_wmb();
-+  (*(volatile unsigned char *)(addr)) = value;
++  (*(volatile grub_uint8_t *)(addr)) = value;
 +  grub_barrier();
 +}
 +
 +static __inline void
-+grub_writew (unsigned short int value, void *addr)
++grub_writew (grub_uint16_t value, void *addr)
 +{
 +  grub_wmb();
-+  (*(volatile unsigned short *)(addr)) = value;
++  (*(volatile grub_uint16_t *)(addr)) = value;
 +  grub_barrier();
 +}
 +
 +static __inline void
-+grub_writel (unsigned int value, void *addr)
++grub_writel (grub_uint32_t value, void *addr)
 +{
 +  grub_wmb();
-+  (*(volatile unsigned int *)(addr)) = value;
++  (*(volatile grub_uint32_t *)(addr)) = value;
++  grub_barrier();
++}
++
++static __inline void
++grub_writeq (grub_uint64_t value, void *addr)
++{
++  grub_wmb();
++  (*(volatile grub_uint64_t *)(addr)) = value;
 +  grub_barrier();
 +}
 +
 +#endif
 diff --git a/include/grub/i386/msr.h b/include/grub/i386/msr.h
 new file mode 100644
-index 000000000..1e03f83cf
+index 0000000..1e03f83
 --- /dev/null
 +++ b/include/grub/i386/msr.h
 @@ -0,0 +1,81 @@
@@ -213,5 +234,5 @@ index 000000000..1e03f83cf
 +
 +#endif
 -- 
-2.13.6
+2.1.4
 
