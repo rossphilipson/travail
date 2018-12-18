@@ -1,20 +1,20 @@
-From 1471adc0439174202a5ca9b1259c493acbe51db9 Mon Sep 17 00:00:00 2001
+From ecf49ec9d7a93221ff1bf7968e86dd03bae06f82 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
 Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 229 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 229 insertions(+)
+ include/grub/i386/txt.h | 316 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 316 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 0000000..2687eb8
+index 000000000..54ee79b8e
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,316 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -38,6 +38,7 @@ index 0000000..2687eb8
 +#define GRUB_TXT_H 1
 +
 +#include <grub/types.h>
++#include <grub/cpu/mmio.h>
 +
 +/* Intel TXT Software Developers Guide */
 +
@@ -171,7 +172,7 @@ index 0000000..2687eb8
 +
 +/* TXT Heap Tables */
 +
-+struct grub_txt_heap_bios_data
++struct grub_txt_bios_data
 +{
 +  grub_uint32_t version; /* Currently 5 for TPM 1.2 and 6 for TPM 2.0 */
 +  grub_uint32_t bios_sinit_size;
@@ -185,7 +186,7 @@ index 0000000..2687eb8
 +  /* Ext Data Elements */
 +} GRUB_PACKED;
 +
-+struct grub_txt_heap_os_mle_data
++struct grub_txt_os_mle_data
 +{
 +  grub_uint32_t zero_page_addr;
 +} GRUB_PACKED;
@@ -243,7 +244,93 @@ index 0000000..2687eb8
 +  grub_uint8_t reserved[7];
 +} GRUB_PACKED;
 +
++/* TXT register and heap access */
++
++static inline grub_uint64_t
++grub_txt_read_reg (grub_uint32_t reg, grub_uint8_t read_public)
++{
++  grub_uint8_t *addr = (grub_uint8_t*)(read_public ? GRUB_TXT_PUB_CONFIG_REGS :
++                                       GRUB_TXT_PRIV_CONFIG_REGS);
++  return grub_readq(addr + reg);
++}
++
++static inline void
++grub_txt_write_reg (grub_uint32_t reg, grub_uint64_t val, grub_uint8_t read_public)
++{
++  grub_uint8_t *addr = (grub_uint8_t*)(read_public ? GRUB_TXT_PUB_CONFIG_REGS :
++                                       GRUB_TXT_PRIV_CONFIG_REGS);
++  grub_writeq(val, addr + reg);
++}
++
++static inline grub_uint8_t*
++grub_txt_get_heap (void)
++{
++#ifdef __x86_64__
++  return (grub_uint8_t*)grub_txt_read_reg (GRUB_TXT_HEAP_BASE, 1);
++#else
++  return (grub_uint8_t*)(grub_uint32_t)grub_txt_read_reg (GRUB_TXT_HEAP_BASE, 1);
++#endif
++}
++
++static inline grub_uint64_t
++grub_txt_bios_data_size (grub_uint8_t *heap)
++{
++  return *(grub_uint64_t *)heap;
++}
++
++static inline struct grub_txt_bios_data*
++grub_txt_bios_data_start (grub_uint8_t *heap)
++{
++  return (struct grub_txt_bios_data*)(heap + sizeof (grub_uint64_t));
++}
++
++static inline grub_uint64_t
++grub_txt_os_mle_data_size (grub_uint8_t *heap)
++{
++  return *(grub_uint64_t *)(heap + grub_txt_bios_data_size (heap));
++}
++
++static inline struct grub_txt_os_mle_data*
++grub_txt_os_mle_data_start (grub_uint8_t *heap)
++{
++  return (struct grub_txt_os_mle_data*)(heap + grub_txt_bios_data_size (heap) +
++                                        sizeof (grub_uint64_t));
++}
++
++static inline grub_uint64_t
++grub_txt_os_sinit_data_size (grub_uint8_t *heap)
++{
++  return *(grub_uint64_t *)(heap + grub_txt_bios_data_size (heap) +
++                            grub_txt_os_mle_data_size (heap));
++}
++
++static inline struct grub_txt_os_sinit_data *
++grub_txt_os_sinit_data_start (grub_uint8_t *heap)
++{
++  return (struct grub_txt_os_sinit_data*)(heap +
++                 grub_txt_bios_data_size (heap) +
++                 grub_txt_os_mle_data_size (heap) + sizeof (grub_uint64_t));
++}
++
++static inline grub_uint64_t
++grub_txt_sinit_mle_data_size (grub_uint8_t *heap)
++{
++  return *(grub_uint64_t *)(heap + grub_txt_bios_data_size (heap) +
++                            grub_txt_os_mle_data_size (heap) +
++                            grub_txt_os_sinit_data_size (heap));
++}
++
++static inline struct grub_txt_sinit_mle_data*
++grub_txt_sinit_mle_data_start (grub_uint8_t *heap)
++{
++  return (struct grub_txt_sinit_mle_data*)(heap +
++                 grub_txt_bios_data_size (heap) +
++                 grub_txt_os_mle_data_size (heap) +
++                 grub_txt_os_sinit_data_size (heap) +
++                 sizeof (grub_uint64_t));
++}
++
 +#endif
 -- 
-2.1.4
+2.13.6
 
