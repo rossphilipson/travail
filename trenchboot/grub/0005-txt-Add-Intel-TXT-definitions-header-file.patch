@@ -1,20 +1,20 @@
-From 2632ab3c7b47f4fe20cca47fba7c2e1b36ec8197 Mon Sep 17 00:00:00 2001
+From bfcfb1295be69d332036cba856459db7789f2a9c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
 Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 426 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 426 insertions(+)
+ include/grub/i386/txt.h | 471 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 471 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..06f8f9016
+index 000000000..5a7e0a21a
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,426 @@
+@@ -0,0 +1,471 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -41,6 +41,50 @@ index 000000000..06f8f9016
 +#include <grub/cpu/mmio.h>
 +
 +/* Intel TXT Software Developers Guide */
++
++/* Appendix A TXT Execution Technology Authenticated Code Modules */
++/* A.1 Authenticated Code Module Format */
++
++#define GRUB_TXT_ACM_MODULE_TYPE		2
++
++#define GRUB_TXT_ACM_MODULE_SUB_TYPE_TXT_ACM	0
++#define GRUB_TXT_ACM_MODULE_SUB_TYPE_S_ACM	1
++
++#define GRUB_TXT_ACM_HEADER_LEN_0_0		161
++#define GRUB_TXT_ACM_HEADER_LEN_3_0		224
++
++#define GRUB_TXT_ACM_HEADER_VERSION_0_0		0x0000
++#define GRUB_TXT_ACM_HEADER_VERSION_3_0		0x0300
++
++#define GRUB_TXT_ACM_FLAG_PREPRODUCTION		(1<<14)
++#define GRUB_TXT_ACM_FLAG_DEBUG_SIGNED		(1<<15)
++
++#define GRUB_TXT_ACM_MODULE_VENDOR_INTEL	0x00008086
++
++struct grub_txt_acm_header
++{
++  grub_uint16_t module_type;
++  grub_uint16_t module_sub_type;
++  grub_uint32_t header_len;
++  grub_uint32_t header_version;
++  grub_uint16_t chipset_id;
++  grub_uint16_t flags;
++  grub_uint32_t module_vendor;
++  grub_uint32_t date; /* e.g 20131231H == December 31, 2013 */
++  grub_uint32_t size; /* multiples of 4 bytes */
++  grub_uint16_t txt_svn;
++  grub_uint16_t se_svn;
++  grub_uint32_t code_control;
++  grub_uint32_t error_entry_point;
++  grub_uint32_t gdt_limit;
++  grub_uint32_t gdt_base;
++  grub_uint32_t seg_sel;
++  grub_uint32_t entry_point;
++  grub_uint8_t reserved2[64];
++  grub_uint32_t key_size;
++  grub_uint32_t scratch_size;
++  /* RSA Pub Key and Signature */
++} GRUB_PACKED;
 +
 +/* Appendix B SMX Interaction with Platform */
 +/* B.1 Intel Trusted Execution Technology Configuration Registers */
@@ -350,6 +394,7 @@ index 000000000..06f8f9016
 +
 +/* Intel 64 and IA-32 Architectures Software Developer’s Manual */
 +/* Volume 2 (2A, 2B, 2C & 2D): Instruction Set Reference, A-Z */
++
 +/* CHAPTER 6 SAFER MODE EXTENSIONS REFERENCE */
 +
 +#define GRUB_SMX_LEAF_CAPABILITIES	0
