@@ -1,28 +1,28 @@
-From b9408b25cea2a42a7d82346e002eedee7e3a7dfb Mon Sep 17 00:00:00 2001
+From 4c39b15518c1c87088df66f885a5da5e0d7f962c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
-Subject: [PATCH 3/4] slaunch: Add main secure launch definitions header
+Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.am  |  2 ++
+ grub-core/Makefile.am  |  3 +++
  include/grub/slaunch.h | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
+ 2 files changed, 53 insertions(+)
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 5a8b3b8cc..49f5a7c0d 100644
+index c283b6d..c9a1867 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
  KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tpm.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tis.h
 +KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
  endif
  
- if COND_i386_efi
-@@ -109,6 +110,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ if COND_i386_xen_pvh
+@@ -122,6 +123,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
@@ -30,9 +30,17 @@ index 5a8b3b8cc..49f5a7c0d 100644
  endif
  
  if COND_i386_coreboot
+@@ -183,6 +185,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
+ endif
+ 
+ if COND_ia64_efi
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..cac453f34
+index 0000000..cac453f
 --- /dev/null
 +++ b/include/grub/slaunch.h
 @@ -0,0 +1,50 @@
@@ -87,5 +95,5 @@ index 000000000..cac453f34
 +
 +#endif
 -- 
-2.13.6
+2.1.4
 
