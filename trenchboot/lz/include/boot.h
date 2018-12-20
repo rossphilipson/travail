@@ -45,6 +45,7 @@ typedef struct __packed sl_header {
 } sl_header_t;
 
 typedef struct __packed lz_header {
+	u8  uuid[16]; /* 78 f1 26 8e 04 92 11 e9  83 2a c8 5b 76 c4 cc 02 */
 	u32 trenchboot_loader_size;
 	u32 zero_page_addr;
 	u8  msb_key_hash[20];

@@ -33,6 +33,10 @@ sl_header:
 	.word	0xffff /* SL header LZ total length */
 
 lz_header:
+	.long	0x8e26f178 /* UUID */
+	.long	0xe9119204
+	.long	0x5bc82a83
+	.long	0x02ccc476
 	.long	0 /* Total size of TrenchBoot Intermediate Loader */
 		  /* bzImage (padded out to next page) */
 	.long	0 /* Zero Page address */
