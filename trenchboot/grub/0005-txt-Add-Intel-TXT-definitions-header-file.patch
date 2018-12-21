@@ -255,7 +255,7 @@ index 0000000..5a7e0a2
 +  /* Ext Data Elements */
 +} GRUB_PACKED;
 +
-+struct grut_txt_sinit_mle_data
++struct grub_txt_sinit_mle_data
 +{
 +  grub_uint32_t version;             /* Current values are 6 through 9 */
 +  /* Versions <= 8 */
