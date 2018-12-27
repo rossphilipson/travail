@@ -1,16 +1,18 @@
-From 9d1e8b9de173c2380446e4d494a01ae4f511efb4 Mon Sep 17 00:00:00 2001
+From e5eab59abb352c12b153bdd139304443e0a890df Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
 Subject: [PATCH 4/5] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def            |   8 +++
- grub-core/loader/i386/linux.c          |  18 +++++
- grub-core/loader/i386/slaunch.c        | 124 +++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c |  33 +++++++++
- grub-core/loader/i386/slaunch_txt.c    |  33 +++++++++
- 5 files changed, 216 insertions(+)
+ grub-core/Makefile.core.def            |   8 ++
+ grub-core/loader/i386/linux.c          |  18 +++
+ grub-core/loader/i386/slaunch.c        | 223 +++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c |  33 +++++
+ grub-core/loader/i386/slaunch_txt.c    |  33 +++++
+ include/grub/file.h                    |   3 +
+ include/grub/slaunch.h                 |  10 ++
+ 7 files changed, 328 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
@@ -86,10 +88,10 @@ index c408b10d8..216671f4a 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..8da254358
+index 000000000..4f04819ac
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,223 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -114,11 +116,7 @@ index 000000000..8da254358
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
-+#ifdef GRUB_MACHINE_EFI
-+#include <grub/tpm.h>
-+#else
-+#include <grub/tis.h>
-+#endif
++#include <grub/cpu/relocator.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
 +#include <grub/slaunch.h>
@@ -126,6 +124,53 @@ index 000000000..8da254358
 +GRUB_MOD_LICENSE("GPLv3+");
 +
 +static grub_dl_t my_mod;
++static struct grub_slaunch_module *modules = NULL, *modules_last = NULL;
++static struct grub_relocator *relocator = NULL;
++
++struct grub_slaunch_module*
++grub_slaunch_get_modules( void)
++{
++  return modules;
++}
++
++static grub_err_t
++grub_slaunch_add_module (void *addr, grub_addr_t target, grub_size_t size)
++{
++  struct grub_slaunch_module *newmod;
++
++  newmod = grub_malloc (sizeof (*newmod));
++  if (!newmod)
++    return grub_errno;
++  newmod->addr = (grub_uint8_t*)addr;
++  newmod->target = target;
++  newmod->size = size;
++  newmod->next = 0;
++
++  if (modules_last)
++    modules_last->next = newmod;
++  else
++    modules = newmod;
++  modules_last = newmod;
++
++  return GRUB_ERR_NONE;
++}
++
++static void
++grub_slaunch_free (void)
++{
++  struct grub_slaunch_module *cur, *next;
++
++  for (cur = modules; cur; cur = next)
++    {
++      next = cur->next;
++      grub_free (cur);
++    }
++  modules = NULL;
++  modules_last = NULL;
++
++  grub_relocator_unload (relocator);
++  relocator = NULL;
++}
 +
 +static grub_err_t
 +grub_cmd_slaunch (grub_command_t cmd __attribute__ ((unused)),
@@ -134,9 +179,6 @@ index 000000000..8da254358
 +  grub_uint32_t manufacturer[3];
 +  grub_uint32_t eax, edx, ebx, ecx;
 +  grub_uint64_t msr_value;
-+#ifdef GRUB_MACHINE_EFI
-+  grub_err_t err;
-+#endif
 +
 +  if (argc == 0)
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("argument expected"));
@@ -145,17 +187,6 @@ index 000000000..8da254358
 +  msr_value = grub_rdmsr (GRUB_MSR_X86_APICBASE);
 +  if (! (msr_value & GRUB_MSR_X86_APICBASE_BSP))
 +    return grub_error (GRUB_ERR_BAD_DEVICE, N_("secure launch must run on BSP"));
-+
-+#ifdef GRUB_MACHINE_EFI
-+  /* Use EFI TPM interface when available  */
-+  err = grub_err_t grub_tpm_init ();
-+  if (err != GRUB_ERR_NONE)
-+    return grub_error (err, N_("EFI TPM support error"));
-+#else
-+  /* Is the an active TPM with a valid vendor ID  */
-+  if (! grub_tis_init ())
-+    return grub_error (GRUB_ERR_BAD_DEVICE, N_("TPM not detected"));
-+#endif
 +
 +  if (! grub_cpu_is_cpuid_supported ())
 +    return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("CPUID not supported"));
@@ -201,18 +232,88 @@ index 000000000..8da254358
 +  return GRUB_ERR_NONE;
 +}
 +
-+static grub_command_t cmd;
++static grub_err_t
++grub_cmd_slaunch_module (grub_command_t cmd __attribute__ ((unused)),
++                int argc, char *argv[])
++{
++  grub_file_t file;
++  grub_ssize_t size;
++  grub_err_t err;
++  grub_relocator_chunk_t ch;
++  void *addr = NULL;
++  grub_addr_t target;
++
++  if (argc == 0)
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("filename expected"));
++
++  if (! relocator)
++    {
++      relocator = grub_relocator_new ();
++      if (! relocator)
++        return grub_errno;
++    }
++
++  file = grub_file_open (argv[0], GRUB_FILE_TYPE_SLAUNCH_MODULE);
++  if (! file)
++    return grub_errno;
++
++  size = grub_file_size (file);
++  if (size == 0)
++    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("file size is zero"));
++
++  err = grub_relocator_alloc_chunk_align (relocator, &ch,
++					  0x4000000, (0xffffffff - size) + 1,
++					  size, 0x1000,
++					  GRUB_RELOCATOR_PREFERENCE_NONE, 1);
++  if (err)
++    {
++       grub_file_close (file);
++       return err;
++    }
++
++  addr = get_virtual_current_address (ch);
++  target = get_physical_target_address (ch);
++
++  err = grub_slaunch_add_module (addr, target, size);
++  if (err)
++    {
++      grub_file_close (file);
++      return err;
++    }
++
++
++  if (grub_file_read (file, addr, size) != size)
++    {
++      grub_file_close (file);
++      if (!grub_errno)
++	grub_error (GRUB_ERR_FILE_READ_ERROR, N_("premature end of file %s"),
++		    argv[0]);
++      return grub_errno;
++    }
++
++  grub_file_close (file);
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_command_t cmd_slaunch, cmd_slaunch_module;
 +
 +GRUB_MOD_INIT(slaunch)
 +{
-+  cmd = grub_register_command ("slaunch", grub_cmd_slaunch,
-+                               0, N_("Launch Secure Loader"));
++  cmd_slaunch =
++	grub_register_command ("slaunch", grub_cmd_slaunch,
++				0, N_("Launch Secure Loader"));
++  cmd_slaunch_module =
++	grub_register_command ("slaunch_module", grub_cmd_slaunch_module,
++				0, N_("Secure Loader module command"));
 +  my_mod = mod;
 +}
 +
 +GRUB_MOD_FINI(slaunch)
 +{
-+    grub_unregister_command (cmd);
++  grub_slaunch_free ();
++  grub_unregister_command (cmd_slaunch_module);
++  grub_unregister_command (cmd_slaunch);
 +}
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
@@ -292,6 +393,41 @@ index 000000000..b4889c7a8
 +
 +  return GRUB_ERR_NONE;
 +}
+diff --git a/include/grub/file.h b/include/grub/file.h
+index 9aae46355..f391ef63b 100644
+--- a/include/grub/file.h
++++ b/include/grub/file.h
+@@ -123,6 +123,9 @@ enum grub_file_type
+ 
+     GRUB_FILE_TYPE_VERIFY_SIGNATURE,
+ 
++    /* Secure Launch module.  */
++    GRUB_FILE_TYPE_SLAUNCH_MODULE,
++
+     GRUB_FILE_TYPE_MASK = 0xffff,
+ 
+     /* --skip-sig is specified.  */
+diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
+index cac453f34..60d3e627c 100644
+--- a/include/grub/slaunch.h
++++ b/include/grub/slaunch.h
+@@ -42,6 +42,16 @@ struct grub_slaunch_params
+   grub_addr_t prot_mode_target;
+ };
+ 
++struct grub_slaunch_module
++{
++  struct grub_slaunch_module *next;
++  grub_uint8_t *addr;
++  grub_addr_t target;
++  grub_size_t size;
++};
++
++struct grub_slaunch_module *grub_slaunch_get_modules (void);
++
+ grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
+ grub_err_t grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams);
+ 
 -- 
 2.13.6
 
