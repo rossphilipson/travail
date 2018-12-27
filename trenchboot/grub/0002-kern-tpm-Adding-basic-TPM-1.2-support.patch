@@ -1,4 +1,4 @@
-From e1203962dc92d4770f265bd1a1917e5534f1e7a4 Mon Sep 17 00:00:00 2001
+From 69049436e22f54c3726d2b0cfe773cef4f06fb18 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:26:21 -0500
 Subject: [PATCH 2/5] kern/tpm: Adding basic TPM 1.2 support
@@ -17,7 +17,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 include/grub/tis.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index df8dbe2..c283b6d 100644
+index f4ff62b76..78ef05822 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -99,6 +99,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
@@ -27,12 +27,12 @@ index df8dbe2..c283b6d 100644
 +KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tis.h
  endif
  
- if COND_i386_xen_pvh
+ if COND_i386_efi
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index e16fb06..b8c89bd 100644
+index 2d75c4daf..d7f515c85 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -202,6 +202,8 @@ kernel = {
+@@ -198,6 +198,8 @@ kernel = {
  
    x86 = kern/i386/tsc.c;
    x86 = kern/i386/tsc_pit.c;
@@ -43,7 +43,7 @@ index e16fb06..b8c89bd 100644
    i386_efi = kern/i386/tsc_pmtimer.c;
 diff --git a/grub-core/kern/tis.c b/grub-core/kern/tis.c
 new file mode 100644
-index 0000000..0dfa0e6
+index 000000000..0dfa0e658
 --- /dev/null
 +++ b/grub-core/kern/tis.c
 @@ -0,0 +1,279 @@
@@ -328,7 +328,7 @@ index 0000000..0dfa0e6
 +}
 diff --git a/grub-core/kern/tpm.c b/grub-core/kern/tpm.c
 new file mode 100644
-index 0000000..03c1b5f
+index 000000000..03c1b5fbe
 --- /dev/null
 +++ b/grub-core/kern/tpm.c
 @@ -0,0 +1,52 @@
@@ -386,7 +386,7 @@ index 0000000..03c1b5f
 +}
 diff --git a/include/grub/tis.h b/include/grub/tis.h
 new file mode 100644
-index 0000000..d25548e
+index 000000000..d25548ef1
 --- /dev/null
 +++ b/include/grub/tis.h
 @@ -0,0 +1,156 @@
@@ -547,5 +547,5 @@ index 0000000..d25548e
 +
 +#endif
 -- 
-2.1.4
+2.13.6
 

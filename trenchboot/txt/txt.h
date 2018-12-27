@@ -338,7 +338,7 @@ static inline u64 txt_sinit_mle_data_size(u8 *heap)
 static inline struct txt_sinit_mle_data *txt_sinit_mle_data_start(u8 *heap)
 {
 	return (struct txt_sinit_mle_data*)(heap +
-		 	txt_bios_data_size(heap) +
+			txt_bios_data_size(heap) +
 			txt_os_mle_data_size(heap) +
 			txt_os_sinit_data_size(heap) +
 			sizeof(u64));

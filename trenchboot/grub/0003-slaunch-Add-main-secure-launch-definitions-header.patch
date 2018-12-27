@@ -1,4 +1,4 @@
-From 4c39b15518c1c87088df66f885a5da5e0d7f962c Mon Sep 17 00:00:00 2001
+From c8947892ef3bec5e58a87c1e9345bb6d81bcd0a3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
 Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
@@ -11,7 +11,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index c283b6d..c9a1867 100644
+index 78ef05822..04d67011a 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
@@ -21,8 +21,8 @@ index c283b6d..c9a1867 100644
 +KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
  endif
  
- if COND_i386_xen_pvh
-@@ -122,6 +123,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ if COND_i386_efi
+@@ -109,6 +110,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
@@ -30,7 +30,7 @@ index c283b6d..c9a1867 100644
  endif
  
  if COND_i386_coreboot
-@@ -183,6 +185,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+@@ -165,6 +167,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
@@ -40,7 +40,7 @@ index c283b6d..c9a1867 100644
  if COND_ia64_efi
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 0000000..cac453f
+index 000000000..cac453f34
 --- /dev/null
 +++ b/include/grub/slaunch.h
 @@ -0,0 +1,50 @@
@@ -95,5 +95,5 @@ index 0000000..cac453f
 +
 +#endif
 -- 
-2.1.4
+2.13.6
 

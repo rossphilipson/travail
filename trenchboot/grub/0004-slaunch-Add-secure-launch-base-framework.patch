@@ -1,4 +1,4 @@
-From 4987ea3ec140a093480a6fdfb03e642bf7d33298 Mon Sep 17 00:00:00 2001
+From 9d1e8b9de173c2380446e4d494a01ae4f511efb4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
 Subject: [PATCH 4/5] slaunch: Add secure launch base framework
@@ -16,10 +16,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index b8c89bd..a36deb2 100644
+index d7f515c85..e5ee48ebc 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1758,6 +1758,14 @@ module = {
+@@ -1730,6 +1730,14 @@ module = {
  };
  
  module = {
@@ -35,7 +35,7 @@ index b8c89bd..a36deb2 100644
    efi = loader/efi/fdt.c;
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index b601591..c25651f 100644
+index c408b10d8..216671f4a 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
@@ -44,9 +44,9 @@ index b601591..c25651f 100644
  #include <grub/lib/cmdline.h>
 +#include <grub/slaunch.h>
  #include <grub/linux.h>
- #include <grub/machine/kernel.h>
  
-@@ -80,6 +81,8 @@ static grub_efi_uintn_t efi_mmap_size;
+ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -79,6 +80,8 @@ static grub_efi_uintn_t efi_mmap_size;
  #else
  static const grub_size_t efi_mmap_size = 0;
  #endif
@@ -55,7 +55,7 @@ index b601591..c25651f 100644
  
  /* FIXME */
  #if 0
-@@ -96,6 +99,12 @@ static struct idt_descriptor idt_desc =
+@@ -95,6 +98,12 @@ static struct idt_descriptor idt_desc =
    };
  #endif
  
@@ -68,7 +68,7 @@ index b601591..c25651f 100644
  static inline grub_size_t
  page_align (grub_size_t size)
  {
-@@ -616,6 +625,15 @@ grub_linux_boot (void)
+@@ -611,6 +620,15 @@ grub_linux_boot (void)
    }
  #endif
  
@@ -86,7 +86,7 @@ index b601591..c25651f 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 0000000..8da2543
+index 000000000..8da254358
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
 @@ -0,0 +1,124 @@
@@ -216,7 +216,7 @@ index 0000000..8da2543
 +}
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
-index 0000000..a020a88
+index 000000000..a020a88c7
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_skinit.c
 @@ -0,0 +1,33 @@
@@ -255,7 +255,7 @@ index 0000000..a020a88
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 0000000..b4889c7
+index 000000000..b4889c7a8
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
 @@ -0,0 +1,33 @@
@@ -293,5 +293,5 @@ index 0000000..b4889c7
 +  return GRUB_ERR_NONE;
 +}
 -- 
-2.1.4
+2.13.6
 
