@@ -85,18 +85,25 @@ HeaderLen: At offset 16. Length of header in bytes.  Hardcoded to specified
 Version: At offset 20. Version number of this structure. Hardcoded to
          version 2.2 per the spec.
 
-EntryPoint: At offset 24. Linear (virt) entry point of MLE. Needs to be set.
+EntryPoint: At offset 24. Linear (virt) entry point of MLE. This is really
+            the virtual offset to the tb_stub_entry entry point. Since the
+            pages start at the beginning of the vmlinuz image in memory, this
+            is just the offset from the start of vmlinuz to tb_stub_entry. So
+            this can be hardcoded using the symbol name.
 
 FirstValidPage: At offset 28. Starting linear address of (first valid
                 page of) MLE. First page is start of MLE so hardcoded to 0.
 
 MleStart: At offset 32. Offset within MLE binary file of first byte
           of MLE, as specified in page table. Beginning of vmlinuz binary
-          is the beginning of the MLE so hardcoded to 0.
+          is the beginning of the MLE so hardcoded to 0. Note since this is
+          only intended for use by software, it doesn't matter whether it is
+          set.
 
 MleEnd: At offset 36. Offset within MLE binary file of last byte
         + 1 of MLE, as specified in page table. Needs to be set to vmlinuz
-        image size + 1.
+        image size + 1. Note since this is only intended for use by software,
+        it doesn't matter whether it is set so for simplicitly it is left 0.
 
 Capabilities: At offset 40. Bit vector of MLE-supported capabilities. Hardcoded
               to the flags we want.
