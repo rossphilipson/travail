@@ -1,20 +1,20 @@
-From 0abb275c6e14d4f304bc7cb25e9b846b5aed571b Mon Sep 17 00:00:00 2001
+From dea3bbf300d0fa5b60e3d3e1892c7e606b6999db Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 199 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 199 insertions(+)
+ arch/x86/include/asm/trenchboot.h | 202 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 202 insertions(+)
  create mode 100644 arch/x86/include/asm/trenchboot.h
 
 diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
 new file mode 100644
-index 000000000000..0a3b83552bc4
+index 0000000..db7dcdf
 --- /dev/null
 +++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,202 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -63,7 +63,10 @@ index 000000000000..0a3b83552bc4
 +#define TXT_CAP_RLP_WAKE_GETSEC		0x0000001
 +#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
 +
++#define TXT_MAX_EVENT_LOG_SIZE		5*4*1024   /* 4k*5 */
++
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
++#define TXT_OS_MLE_EVENT_LOG_BUFFER	0x4
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -215,5 +218,5 @@ index 000000000000..0a3b83552bc4
 +
 +#endif /* _ASM_X86_TRENCHBOOT_H */
 -- 
-2.13.6
+2.1.4
 
