@@ -7,7 +7,7 @@
  */
 
 #include <mem.h>
-#include <tpm.h>
+#include <tpm1.h>
 
 uint8_t tpm_pcr_extend(struct tpm_digest *d)
 {

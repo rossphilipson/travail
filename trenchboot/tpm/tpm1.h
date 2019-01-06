@@ -121,12 +121,6 @@ struct tpm_resp_buf {
 	} resp;
 };
 
-/* TPM Interface Specification functions */
-uint8_t tis_request_locality(uint8_t l);
-uint8_t tis_init(void);
-size_t tis_send(struct tpm_cmd_buf *buf);
-size_t tis_recv(struct tpm_resp_buf *buf);
-
 /* TPM Commands */
 uint8_t tpm_pcr_extend(struct tpm_digest *d);
 
