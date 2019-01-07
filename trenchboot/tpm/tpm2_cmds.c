@@ -1,6 +1,10 @@
 
 
+#include <tpm.h>
+
+#include "tpm_common.h"
 #include "tpm2.h"
+#include "tpm2_auth.h"
 
 #define SHA1_SIZE	20
 #define SHA256_SIZE	32
@@ -8,17 +12,16 @@
 #define SHA512_SIZE	64
 #define SM3256_SIZE	32
 
-int8_t tpm2_alloc_cmd(struct tpm_cmd *c, uint16_t tag, uint32_t code)
+int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, uint16_t tag,
+		uint32_t code)
 {
-	c->raw = malloc(PAGE_SIZE);
+	c->raw = b->ops->reserve();
 	if (!c->raw)
 		return -ENOMEM;
 
 	c->header = (struct tpm_header *)c->raw;
 	c->header.tag = cpu_to_be16(tag);
 	c->header.code = cpu_to_be32(code);
-	// wait unitl the end to convert
-	c->header.size = sizeof(struct tpm_header); 
 
 	return 0
 }
@@ -64,39 +67,38 @@ static uint16_t convert_digest_list(struct tpml_digest_values *digests)
 	return size;
 }
 
-int8_t tpm2_extend_pcr(uint32_t pcr, struct tpml_digest_values *digests)
+int8_t tpm2_extend_pcr(struct tpm *t, uint32_t pcr,
+		struct tpml_digest_values *digests)
 {
-	struct tpm_cmd cmd;
+	struct tpmbuff *b = t->buff;
+	struct tpm2_cmd cmd;
 	uint8_t *ptr;
 	uint16_t size;
 	int8_t ret = 0;
 
-	ret = tpm2_alloc_cmd(&cmd, TPM_ST_SESSIONS, TPM_CC_PCR_EXTEND);
+	ret = tpm2_alloc_cmd(b, &cmd, TPM_ST_SESSIONS, TPM_CC_PCR_EXTEND);
 	if (ret < 0)
 		return ret;
 
-	cmd.handles = (uint32_t *)(cmd.raw + cmd.header->size);
+	cmd.handles = (uint32_t *)b->ops->put(sizeof(uint32_t));
 	*cmd.handles = cpu_to_be32(pcr);
-	cmd.header->size += sizeof(uint32_t);
 
-	cmd.auth = (struct tpmb *)(cmd.raw + cmd.header->size);
+	cmd.auth = (struct tpm2b *)b->ops->put(tpm2_null_auth_size());
 	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
-	cmd.header->size += cmd.auth->size;
 	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 
-	cmd.params = (uint8_t *)(cmd.raw + cmd.header->size);
 	size = convert_digest_list(digests);
 	if (size == 0) {
-		if (cmd.raw)
-			free(cmd.raw);
+		t->free();
 		return -EINVAL;
 	}
+	cmd.params = (uint8_t *)b->ops->put(size);
 	memcpy(cmd.params, digests, size);
-	cmd.header->size = cpu_to_be16(cmd.header->size + size);
 
-	/* TODO: write the freaking send command */
-	ret = tpm2_send(&cmd);
-	free(cmd.raw);
+	cmd.header->size = cpu_to_be16(b->ops->size);
+
+	ret = t->ops->send(b);
+	b->ops->free();
 
 	return ret;
 }

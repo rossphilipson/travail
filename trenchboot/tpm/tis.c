@@ -9,6 +9,8 @@
 #include <boot.h>
 #include <tpm.h>
 
+#include "tpm_common.h"
+
 #define MMIO_BASE			0xFED40000
 #define MAX_LOCALITY			4
 /* macros to access registers at locality ’’l’’ */
@@ -107,7 +109,7 @@ uint8_t tis_init(void)
 	return 1;
 }
 
-size_t tis_send(struct tpm_cmd_buf *buf)
+size_t tis_send(struct tpmbuff *buf)
 {
 	uint8_t status, *buf_ptr;
 	uint32_t burstcnt = 0;
@@ -118,12 +120,12 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 
 	write8(STS_COMMAND_READY, STS(locality));
 
-	buf_ptr = (uint8_t *) buf;
+	buf_ptr = buf->head;
 
 	/* send all but the last byte */
-	while (count < (buf->size - 1)) {
+	while (count < (buf->len - 1)) {
 		burstcnt = burst_wait();
-		for (; burstcnt > 0 && count < buf->size - 1; burstcnt--) {
+		for (; burstcnt > 0 && count < (buf->len - 1); burstcnt--) {
 			write8(buf_ptr[count], DATA_FIFO(locality));
 			count++;
 		}
@@ -137,7 +139,7 @@ size_t tis_send(struct tpm_cmd_buf *buf)
 	}
 
 	/* write last byte */
-	write8(buf_ptr[count], DATA_FIFO(locality));
+	write8(buf_ptr[buf->len - 1], DATA_FIFO(locality));
 
 	/* make sure it stuck */
 	for (status = 0; (status & STS_VALID) == 0; )
@@ -177,13 +179,11 @@ static size_t recv_data(unsigned char *buf, size_t len)
 	return size;
 }
 
-size_t tis_recv(struct tpm_resp_buf *buf)
+size_t tis_recv(struct tpmbuff *buf)
 {
 	uint32_t expected;
 	uint8_t status, *buf_ptr;
-	size_t size = 0;
-
-	buf_ptr = (uint8_t *)buf;
+	struct tpm_header *hdr;
 
 	/* ensure that there is data available */
 	status = read8(STS(locality));
@@ -191,22 +191,26 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 			!= (STS_DATA_AVAIL | STS_VALID))
 		goto err;
 
-	/* read first 6 bytes, including tag and paramsize */
-	if ((size = recv_data(buf_ptr, 6)) < 6)
+	/* read header */
+	hdr = (struct tpm_header *)buf->head;
+	expected = sizeof(struct tpm_header);
+	if (recv_data(buf->head, expected) < expected)
 		goto err;
+	
+	/* convert header */
+	hdr->tag = be16_to_cpu(hdr->tag);
+	hdr->size = be32_to_cpu(hdr->size);
+	hdr->code = be32_to_cpu(hdr->code);
 
-	buf_ptr += 6;
-
-	expected = be32_to_cpu(buf->size);
-	if (expected > sizeof(struct tpm_resp_buf))
+	/* hdr->size = header + data */
+	expected = hdr->size - expected;
+	buf_ptr = buf->put(buf, expected);
+	if (! buf_ptr)
 		goto err;
 
 	/* read all data, except last byte */
-	if ((size += recv_data(buf_ptr, expected - 7))
-			< expected - 1)
+	if (recv_data(buf_ptr, expected - 1) < (expected - 1))
 		goto err;
-
-	buf_ptr += expected - 7;
 
 	/* check for receive underflow */
 	status = read8(STS(locality));
@@ -215,7 +219,8 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 		goto err;
 
 	/* read last byte */
-	if ((size += recv_data(buf_ptr, 1)) != expected)
+	buf_ptr = buf->put(buf, 1);
+	if (recv_data(buf_ptr, 1) != 1)
 		goto err;
 
 	/* make sure we read everything */
@@ -227,7 +232,7 @@ size_t tis_recv(struct tpm_resp_buf *buf)
 
 	write8(STS_COMMAND_READY, STS(locality));
 
-	return size;
+	return hdr->size;
 err:
 	return 0;
 }

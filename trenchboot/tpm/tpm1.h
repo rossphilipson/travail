@@ -10,6 +10,7 @@
 #define _TPM_H
 
 #include <types.h>
+#include <tpm.h>
 
 /* Section 2.2.3 */
 #define TPM_AUTH_DATA_USAGE uint8_t
@@ -82,7 +83,7 @@ struct tpm_digest {
 	} digest;
 };
 
-#define TPM_DIGEST		struct tpm_digest
+#define TPM_DIGEST		struct tpm_sha1_digest
 #define TPM_CHOSENID_HASH	TPM_DIGEST
 #define TPM_COMPOSITE_HASH	TPM_DIGEST
 #define TPM_DIRVALUE		TPM_DIGEST
@@ -93,7 +94,6 @@ struct tpm_digest {
 #define TPM_DAA_CONTEXT_SEED	TPM_DIGEST
 
 struct tpm_extend_cmd {
-	TPM_COMMAND_CODE ordinal;
 	TPM_PCRINDEX pcr_num;
 	TPM_DIGEST digest;
 };
@@ -103,25 +103,7 @@ struct tpm_extend_resp {
 	TPM_PCRVALUE digest;
 };
 
-struct tpm_cmd_buf {
-	TPM_TAG tag;
-	uint32_t size;
-	TPM_RESULT result;
-	union {
-		struct tpm_extend_cmd extend;
-	} cmd;
-};
-
-struct tpm_resp_buf {
-	TPM_TAG tag;
-	uint32_t size;
-	TPM_RESULT result;
-	union {
-		struct tpm_extend_resp extend;
-	} resp;
-};
-
 /* TPM Commands */
-uint8_t tpm_pcr_extend(struct tpm_digest *d);
+uint8_t tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d);
 
 #endif

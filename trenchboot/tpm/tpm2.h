@@ -10,6 +10,8 @@
 #define _TPM2_H
 
 #include <types.h>
+
+#include "tpm_common.h"
 #include "tpm2_constants.h"
 
 
@@ -61,13 +63,7 @@ struct tpms_auth_resp {
 	struct tpm2b *hmac;
 };
 
-struct tpm_header {
-	uint16_t tag;		/* TPMI_ST_COMMAND_TAG	*/
-	uint32_t size;		/* UINT32		*/
-	uint32_t code;		/* TPM_CC		*/
-};
-
-struct tpm_cmd {
+struct tpm2_cmd {
 	struct tpm_header *header;
 	uint32_t *handles[];	/* TPM_HANDLE		*/
 	struct tpm2b *auth;	/* Authorization Area	*/
@@ -75,7 +71,7 @@ struct tpm_cmd {
 	uint8_t *raw;		/* internal raw buffer	*/
 };
 
-struct tpm_resp {
+struct tpm2_resp {
 	struct tpm_header *header;
 	uint32_t *handles[];	/* TPM_HANDLE		*/
 	struct tpm2b *params;	/* Parameters		*/
