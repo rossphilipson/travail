@@ -1,0 +1,6 @@
+# TBOOT EFI files
+*.efi
+*.dsm
+*.gz
+slboot
+slboot-syms
