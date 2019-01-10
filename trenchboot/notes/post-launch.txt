@@ -63,6 +63,8 @@ earliest:
   - Need to figure out what needs validation:
     * Valideate PMRs and DEV ranges here
     * Not going to bother with TXT heap validation.
+  - TXT heap/SINIT/regs need to be marked as RESERVED
+  - TXT need to handle MDRs in SINIT-MLE heap
   - Need to figure out what comparable ops for SKINIT go here.
   - Pull in DEV map or PMR for expanded piggy end.
 
