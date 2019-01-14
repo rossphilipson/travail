@@ -652,15 +652,6 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     return txt_heap;
 }
 
-bool txt_is_launched(void)
-{
-    txt_sts_t sts;
-
-    sts._raw = read_pub_config_reg(TXTCR_STS);
-
-    return sts.senter_done_sts;
-}
-
 tb_error_t txt_launch_environment(loader_ctx *lctx)
 {
     void *mle_ptab_base;
@@ -819,13 +810,6 @@ bool txt_prepare_cpu(void)
 
     printk(TBOOT_INFO"CR0 and EFLAGS OK\n");
 
-    /*
-     * verify that we're not already in a protected environment
-     */
-    if ( txt_is_launched() ) {
-        printk(TBOOT_ERR"already in protected environment\n");
-        return false;
-    }
 
     /*
      * verify all machine check status registers are clear (unless

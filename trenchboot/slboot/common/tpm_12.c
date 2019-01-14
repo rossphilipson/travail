@@ -1630,10 +1630,7 @@ static bool tpm12_init(struct tpm_if *ti)
     if ( ti == NULL )
         return false;
 
-    if (!txt_is_launched())
-        ti->cur_loc = 0;
-    else
-        ti->cur_loc = 2;
+    ti->cur_loc = 0;
 
     locality = ti->cur_loc;
     if ( !tpm_validate_locality(locality) ) {

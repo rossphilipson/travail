@@ -2655,10 +2655,7 @@ static bool tpm20_init(struct tpm_if *ti)
     if ( ti == NULL || info_list == NULL )
         return false;
    
-    if (!txt_is_launched())
-        ti->cur_loc = 0;
-    else
-        ti->cur_loc = 2;
+    ti->cur_loc = 0;
 
     /* init version */
     ti->major = TPM20_VER_MAJOR;

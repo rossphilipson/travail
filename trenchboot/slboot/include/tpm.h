@@ -513,7 +513,6 @@ extern bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size, u8 *out, u32 *
 extern bool tpm_wait_cmd_ready(uint32_t locality);
 extern bool tpm_request_locality_crb(uint32_t locality);
 extern bool tpm_relinquish_locality_crb(uint32_t locality);
-extern bool txt_is_launched(void);
 extern bool tpm_workaround_crb(void);
 extern struct tpm_if *get_tpm(void);
 extern const struct tpm_if_fp *get_tpm_fp(void);

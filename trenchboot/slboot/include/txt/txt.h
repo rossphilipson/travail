@@ -44,7 +44,6 @@
 #define EVTLOG_TPM2_LEGACY   2
 #define EVTLOG_TPM2_TCG      3
 
-extern bool txt_is_launched(void);
 extern void txt_display_errors(void);
 extern bool txt_has_error(void);
 extern void txt_get_racm_error(void);

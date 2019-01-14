@@ -835,7 +835,7 @@ bool tpm_detect(void)
     const struct tpm_if_fp *tpm_fp;
     if (is_tpm_crb()) {
          printk(TBOOT_INFO"TPM: This is Intel PTT, TPM Family 0x%d\n", g_tpm_family);
-         if (!txt_is_launched()) {
+         /*TODO get in cleanup if (!txt_is_launched()) {*/
                if ( tpm_validate_locality_crb(0) ) 
 	             printk(TBOOT_INFO"TPM: CRB_INF Locality 0 is open\n");
 		 else {
@@ -845,7 +845,7 @@ bool tpm_detect(void)
 				 return false;
 			 }
                 }
-	  }
+	  /*}
     	  else {
               if ( tpm_validate_locality_crb(2) ) 
 		     printk(TBOOT_INFO"TPM: CRB_INF Locality 2 is open\n");
@@ -856,7 +856,7 @@ bool tpm_detect(void)
                           return false;
 			}
 		}
-    	  }
+    	  }*/
     }
     else {
 		g_tpm_ver = TPM_VER_12; 
