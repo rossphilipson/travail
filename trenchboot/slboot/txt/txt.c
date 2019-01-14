@@ -61,7 +61,6 @@
 #include <txt/heap.h>
 #include <txt/acmod.h>
 #include <txt/smx.h>
-#include <txt/verify.h>
 #include <io.h>
 
 /* counter timeout for waiting for all APs to enter wait-for-sipi */
@@ -80,6 +79,10 @@ extern long s3_flag;
 extern void print_event(const tpm12_pcr_event_t *evt);
 extern void print_event_2(void *evt, uint16_t alg);
 extern uint32_t print_event_2_1(void *evt);
+
+extern void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
+                         uint64_t min_lo_ram, uint64_t max_lo_ram,
+                         uint64_t min_hi_ram, uint64_t max_hi_ram);
 
 /*
  * this is the structure whose addr we'll put in TXT heap

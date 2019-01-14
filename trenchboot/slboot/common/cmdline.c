@@ -54,7 +54,7 @@
  * copy of original command line
  * part of tboot measurement (hence in .text section)
  */
-__text char g_cmdline[CMDLINE_SIZE] = { 0 };
+__data char g_cmdline[CMDLINE_SIZE] = { 0 };
 
 /* Used for kernel command line parameter setup */
 typedef struct {
@@ -78,7 +78,6 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "serial",     "115200,8n1,0x3f8" },
     /* serial=<baud>[/<clock_hz>][,<DPS>[,<io-base>[,<irq>[,<serial-bdf>[,<bridge-bdf>]]]]] */
     { "vga_delay",  "0" },           /* # secs */
-    { "ap_wake_mwait", "false" },    /* true|false */
     { "pcr_map", "legacy" },         /* legacy|da */
     { "min_ram", "0" },              /* size in bytes | 0 for no min */
     { "call_racm", "false" },        /* true|false|check */
@@ -465,15 +464,6 @@ void get_tboot_min_ram(void)
         return;
 
     g_min_ram = tb_strtoul(min_ram, NULL, 0);
-}
-
-bool get_tboot_mwait(void)
-{
-    const char *mwait = get_option_val(g_tboot_cmdline_options,
-                                       g_tboot_param_values, "ap_wake_mwait");
-    if ( mwait == NULL || tb_strcmp(mwait, "false") == 0 )
-        return false;
-    return true;
 }
 
 bool get_tboot_call_racm(void)

@@ -57,7 +57,6 @@
 #include <txt/mtrrs.h>
 #include <txt/config_regs.h>
 #include <txt/heap.h>
-#include <txt/verify.h>
 
 extern long s3_flag;
 
@@ -118,25 +117,6 @@ static bool read_processor_info(void)
     return true;
 }
 
-static bool supports_vmx(void)
-{
-    /* check that processor supports VMX instructions */
-    if ( !(g_cpuid_ext_feat_info & CPUID_X86_FEATURE_VMX) ) {
-        printk(TBOOT_ERR"ERR: CPU does not support VMX\n");
-        return false;
-    }
-    printk(TBOOT_INFO"CPU is VMX-capable\n");
-
-    /* and that VMX is enabled in the feature control MSR */
-    if ( !(g_feat_ctrl_msr & IA32_FEATURE_CONTROL_MSR_ENABLE_VMX_IN_SMX) ) {
-        printk(TBOOT_ERR"ERR: VMXON disabled by feature control MSR (%lx)\n",
-               g_feat_ctrl_msr);
-        return false;
-    }
-
-    return true;
-}
-
 static bool supports_smx(void)
 {
     /* check that processor supports SMX instructions */
@@ -180,11 +160,6 @@ static bool supports_smx(void)
     return true;
 }
 
-bool use_mwait(void)
-{
-    return get_tboot_mwait() && (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_XMM3);
-}
-
 tb_error_t supports_txt(void)
 {
     capabilities_t cap;
@@ -196,17 +171,6 @@ tb_error_t supports_txt(void)
     /* processor must support SMX */
     if ( !supports_smx() )
         return TB_ERR_SMX_NOT_SUPPORTED;
-
-    if ( use_mwait() ) {
-        /* set MONITOR/MWAIT support (SENTER will clear, so always set) */
-        uint64_t misc;
-        misc = rdmsr(MSR_IA32_MISC_ENABLE);
-        misc |= MSR_IA32_MISC_ENABLE_MONITOR_FSM;
-        wrmsr(MSR_IA32_MISC_ENABLE, misc);
-    }
-    else if ( !supports_vmx() ) {
-        return TB_ERR_VMX_NOT_SUPPORTED;
-    }
 
     /* testing for chipset support requires enabling SMX on the processor */
     write_cr4(read_cr4() | CR4_SMXE);

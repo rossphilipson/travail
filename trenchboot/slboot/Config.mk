@@ -70,7 +70,7 @@ CFLAGS		+= $(call cc-option,$(CC),-fno-stack-protector-all,)
 CFLAGS		+= $(call cc-option,$(CC),-fno-stack-check,)
 
 # changeset variable for banner
-CFLAGS		+= -DTBOOT_CHANGESET=\""$(shell ((hg parents --template "{isodate|isodate} {rev}:{node|short}" >/dev/null && hg parents --template "{isodate|isodate} {rev}:{node|short}") || echo "$(RELEASETIME) $(RELEASEVER)") 2>/dev/null)"\"
+CFLAGS		+= -DSLBOOT_CHANGESET=\""$(shell ((hg parents --template "{isodate|isodate} {rev}:{node|short}" >/dev/null && hg parents --template "{isodate|isodate} {rev}:{node|short}") || echo "$(RELEASETIME) $(RELEASEVER)") 2>/dev/null)"\"
 
 
 AFLAGS		+= -D__ASSEMBLY__

@@ -64,7 +64,6 @@
 #include <txt/mtrrs.h>
 #include <txt/config_regs.h>
 #include <txt/heap.h>
-#include <txt/verify.h>
 #include <acpi.h>
 #include <cmdline.h>
 #include <tpm_20.h>
@@ -156,27 +155,17 @@ void check_racm_result(void)
 
 void begin_launch(void *addr, uint32_t magic)
 {
+    const char *cmdline = get_cmdline(g_ldr_ctx);
     tb_error_t err;
 
     g_default_error_action = get_error_shutdown();
 
-    if (g_ldr_ctx->type == 0)
+    if ( g_ldr_ctx->type == 0 )
         determine_loader_type(addr, magic);
 
-    /* on pre-SENTER boot, copy command line to buffer in tboot image
-       (so that it will be measured); buffer must be 0 -filled */
-    {
-
-        const char *cmdline_orig = get_cmdline(g_ldr_ctx);
-        const char *cmdline = NULL;
-        if (cmdline_orig){
-           // cmdline = skip_filename(cmdline_orig);
-            cmdline = cmdline_orig;
-        }
-        tb_memset(g_cmdline, '\0', sizeof(g_cmdline));
-        if (cmdline)
-            tb_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
-    }
+    tb_memset(g_cmdline, '\0', sizeof(g_cmdline));
+    if ( cmdline )
+        tb_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
 
     /* always parse cmdline */
     tboot_parse_cmdline();
@@ -184,8 +173,8 @@ void begin_launch(void *addr, uint32_t magic)
     /* initialize all logging targets */
     printk_init();
 
-    printk(TBOOT_INFO"******************* TBOOT *******************\n");
-    printk(TBOOT_INFO"   %s\n", TBOOT_CHANGESET);
+    printk(TBOOT_INFO"******************* SLBOOT *******************\n");
+    printk(TBOOT_INFO"   %s\n", SLBOOT_CHANGESET);
     printk(TBOOT_INFO"*********************************************\n");
 
     printk(TBOOT_INFO"command line: %s\n", g_cmdline);
@@ -206,21 +195,20 @@ void begin_launch(void *addr, uint32_t magic)
     printk(TBOOT_INFO"BSP is cpu %u\n", get_apicid());
 
     /* make copy of e820 map that we will use and adjust */
-    if ( !copy_e820_map(g_ldr_ctx) )  error_action(TB_ERR_FATAL);
+    if ( !copy_e820_map(g_ldr_ctx) )
+        error_action(TB_ERR_FATAL);
 
     /* we need to make sure this is a (TXT-) capable platform before using */
     /* any of the features, incl. those required to check if the environment */
     /* has already been launched */
 
-    if (g_sinit == NULL) {
-       find_platform_sinit_module(g_ldr_ctx, (void **)&g_sinit, NULL);
-       /* check if it is newer than BIOS provided version, then copy it to BIOS reserved region */
-       g_sinit = copy_sinit(g_sinit);
-       if (g_sinit == NULL)
-           error_action(TB_ERR_SINIT_NOT_PRESENT);
-       if (!verify_acmod(g_sinit))
-           error_action(TB_ERR_ACMOD_VERIFY_FAILED);
-    }
+    find_platform_sinit_module(g_ldr_ctx, (void **)&g_sinit, NULL);
+    /* check if it is newer than BIOS provided version, then copy it to BIOS reserved region */
+    g_sinit = copy_sinit(g_sinit);
+    if (g_sinit == NULL)
+        error_action(TB_ERR_SINIT_NOT_PRESENT);
+    if (!verify_acmod(g_sinit))
+        error_action(TB_ERR_ACMOD_VERIFY_FAILED);
 
     /* make TPM ready for measured launch */
     if (!tpm_detect())

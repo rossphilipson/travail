@@ -47,7 +47,6 @@ extern bool get_tboot_serial(void);
 extern void get_tboot_baud(void);
 extern void get_tboot_fmt(void);
 extern void get_tboot_vga_delay(void);
-extern bool get_tboot_mwait(void);
 extern bool get_tboot_prefer_da(void);
 extern void get_tboot_min_ram(void);
 extern bool get_tboot_call_racm(void);
