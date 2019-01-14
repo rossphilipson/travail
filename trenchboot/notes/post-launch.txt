@@ -27,6 +27,9 @@ Questions:
  - TXT: What are we passing in the OS-MLE data?
    * Location of the Zero Page.
    * TODO (this will become known as we go).
+ - TXT/SKINIT: Reserving memory regions
+   * TODO marks TXT heap, ACM etc as RESERVED. Other bits too?
+   * TODO anything needed to be reserverd for SKINIT?
  - SKINIT: What post launch things need to be checked?
  - TXT: Restoring the LAPIC address, do we need to do this?
    * TODO (so far it looks painful and hacky to do).
