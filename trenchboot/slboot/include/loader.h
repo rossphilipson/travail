@@ -71,15 +71,12 @@ extern bool find_module_by_file_signature(loader_ctx *lctx,
 extern bool find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size);
 extern bool find_platform_sinit_module(loader_ctx *lctx, void **base, 
                                        uint32_t *size);
-extern bool find_lcp_module(loader_ctx *lctx, void **base, uint32_t *size);
-
 
 extern uint32_t find_efi_memmap(loader_ctx *lctx, uint32_t *descr_size,
                                 uint32_t *descr_vers, uint32_t *mmap_size);
 
 extern bool prepare_intermediate_loader(void);
 extern bool verify_loader_context(loader_ctx *lctx);
-extern bool verify_modules(loader_ctx *lctx);
 extern module_t *get_module(loader_ctx *lctx, unsigned int i);
 extern unsigned int get_module_count(loader_ctx *lctx);
 extern bool remove_txt_modules(loader_ctx *lctx);
@@ -103,8 +100,6 @@ extern void load_framebuffer_info(loader_ctx *lctx, void *vscr);
 extern char *get_first_module_cmd(loader_ctx *lctx);
 
 #endif /* __LOADER_H__ */
-
-
 
 /*
  * Local variables:

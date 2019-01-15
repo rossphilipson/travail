@@ -95,7 +95,7 @@ printk_long(char *what)
     }
 }
 
-static module_t 
+static module_t
 *get_module_mb1(const multiboot_info_t *mbi, unsigned int i)
 {
     if ( mbi == NULL ) {
@@ -124,7 +124,7 @@ static struct mb2_tag
     return (struct mb2_tag *) addr;
 }
 
-static struct mb2_tag 
+static struct mb2_tag
 *find_mb2_tag_type(struct mb2_tag *start, uint32_t tag_type)
 {
     while (start != NULL){
@@ -135,7 +135,7 @@ static struct mb2_tag
     return start;
 }
 
-static module_t 
+static module_t
 *get_module_mb2(loader_ctx *lctx, unsigned int i)
 {
     struct mb2_tag *start = (struct mb2_tag *)(lctx->addr + 8);
@@ -169,7 +169,7 @@ void print_mbi(const multiboot_info_t *mbi)
     printk(TBOOT_DETA"print mbi@%p ...\n", mbi);
     printk(TBOOT_DETA"\t flags: 0x%x\n", mbi->flags);
     if ( mbi->flags & MBI_MEMLIMITS )
-        printk(TBOOT_DETA"\t mem_lower: %uKB, mem_upper: %uKB\n", 
+        printk(TBOOT_DETA"\t mem_lower: %uKB, mem_upper: %uKB\n",
                mbi->mem_lower, mbi->mem_upper);
     if ( mbi->flags & MBI_BOOTDEV ) {
         printk(TBOOT_DETA"\t boot_device.bios_driver: 0x%x\n",
@@ -182,7 +182,7 @@ void print_mbi(const multiboot_info_t *mbi)
                mbi->boot_device.third_partition);
     }
     if ( mbi->flags & MBI_CMDLINE ) {
-# define CHUNK_SIZE 72 
+# define CHUNK_SIZE 72
         /* Break the command line up into 72 byte chunks */
         int   cmdlen = tb_strlen(mbi->cmdline);
         char *cmdptr = (char *)mbi->cmdline;
@@ -190,7 +190,7 @@ void print_mbi(const multiboot_info_t *mbi)
         printk(TBOOT_DETA"\t cmdline@0x%x: ", mbi->cmdline);
         chunk[CHUNK_SIZE] = '\0';
         while (cmdlen > 0) {
-            tb_strncpy(chunk, cmdptr, CHUNK_SIZE); 
+            tb_strncpy(chunk, cmdptr, CHUNK_SIZE);
             printk(TBOOT_DETA"\n\t\"%s\"", chunk);
             cmdptr += CHUNK_SIZE;
             cmdlen -= CHUNK_SIZE;
@@ -199,7 +199,7 @@ void print_mbi(const multiboot_info_t *mbi)
     }
 
     if ( mbi->flags & MBI_MODULES ) {
-        printk(TBOOT_DETA"\t mods_count: %u, mods_addr: 0x%x\n", 
+        printk(TBOOT_DETA"\t mods_count: %u, mods_addr: 0x%x\n",
                mbi->mods_count, mbi->mods_addr);
         for ( i = 0; i < mbi->mods_count; i++ ) {
             module_t *p = (module_t *)(mbi->mods_addr + i*sizeof(module_t));
@@ -236,7 +236,7 @@ void print_mbi(const multiboot_info_t *mbi)
         }
     }
     if ( mbi->flags & MBI_DRIVES ) {
-        printk(TBOOT_DETA"\t drives_length: %u, drives_addr: 0x%x\n", 
+        printk(TBOOT_DETA"\t drives_length: %u, drives_addr: 0x%x\n",
                mbi->drives_length, mbi->drives_addr);
     }
     if ( mbi->flags & MBI_CONFIG ) {
@@ -266,7 +266,6 @@ void print_mbi(const multiboot_info_t *mbi)
     }
 }
 #endif
-
 
 bool verify_loader_context(loader_ctx *lctx)
 {
@@ -300,12 +299,12 @@ static bool remove_mb2_tag(loader_ctx *lctx, struct mb2_tag *cur)
     e = (uint8_t *) end + end->size;
     /* we'll do this byte-wise */
     s = (uint8_t *) next; d = (uint8_t *) cur;
-            
-    while (s <= e){
+
+    while (s <= e) {
         *d = *s; d++; s++;
-    }                
+    }
     /* adjust MB2 length */
-    *((unsigned long *) lctx->addr) -= 
+    *((unsigned long *) lctx->addr) -=
         (uint8_t *)next - (uint8_t *)cur;
     /* sanity check */
     /* print_loader_ctx(lctx); */
@@ -480,7 +479,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
         if (cmdbuf[0] != '\0'){
             /* we need to grow the mb2_tag_string that holds the cmdline.
              * we know there's room, since we've shortened the MB2 by the
-             * length of the module_tag we've removed, which contained 
+             * length of the module_tag we've removed, which contained
              * the longer string.
              */
             struct mb2_tag *cur = (struct mb2_tag *)(lctx->addr + 8);
@@ -497,7 +496,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
 
             /* now we're all good, except for fixing up cmd */
             {
-                char * s = cmdbuf; 
+                char * s = cmdbuf;
                 char *d = cmd->string;
                 while (*s){
                     *d = *s;
@@ -511,7 +510,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
     return NULL;
 }
 
-static bool 
+static bool
 find_module(loader_ctx *lctx, void **base, size_t *size,
             const void *data, size_t len)
 {
@@ -555,8 +554,6 @@ find_module(loader_ctx *lctx, void **base, size_t *size,
 
 /*
  * remove (all) SINIT and LCP policy data modules (if present)
- *
- * TODO do this in slboot before launch?
  */
 bool
 remove_txt_modules(loader_ctx *lctx)
@@ -747,11 +744,11 @@ bool find_module_by_uuid(loader_ctx *lctx, void **base, size_t *size,
  * find a module by its file signature
  *
  */
-bool 
+bool
 find_module_by_file_signature(loader_ctx *lctx, void **base,
                               size_t *size, const char* file_signature)
 {
-    return find_module(lctx, base, size, 
+    return find_module(lctx, base, size,
                        file_signature, tb_strlen(file_signature));
 }
 
@@ -784,7 +781,7 @@ char *get_cmdline(loader_ctx *lctx)
         } else {
             return NULL;
         }
-    } else { 
+    } else {
         /* currently must be type  2 */
         struct mb2_tag *start = (struct mb2_tag *)(lctx->addr + 8);
         start = find_mb2_tag_type(start, MB2_TAG_TYPE_CMDLINE);
@@ -944,7 +941,7 @@ get_loader_ctx_end(loader_ctx *lctx)
  * will go through all modules to find an RACM that matches the platform
  * (size can be NULL)
  */
-bool 
+bool
 find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size)
 {
     if ( base != NULL )
@@ -983,7 +980,7 @@ find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size)
  * will go through all modules to find an SINIT that matches the platform
  * (size can be NULL)
  */
-bool 
+bool
 find_platform_sinit_module(loader_ctx *lctx, void **base, uint32_t *size)
 {
     if ( base != NULL )
@@ -1024,7 +1021,7 @@ find_platform_sinit_module(loader_ctx *lctx, void **base, uint32_t *size)
     return false;
 }
 
-void 
+void
 replace_e820_map(loader_ctx *lctx)
 {
     /* replace original with the copy */
@@ -1042,7 +1039,7 @@ replace_e820_map(loader_ctx *lctx)
         memory_map_t *old, *new;
         uint32_t i;
         uint32_t old_memmap_size = get_loader_memmap_length(lctx);
-        uint32_t old_memmap_entry_count = 
+        uint32_t old_memmap_entry_count =
             old_memmap_size / sizeof(memory_map_t);
         if (old_memmap_entry_count < (get_nr_map())){
             /* we have to grow */
@@ -1053,7 +1050,7 @@ replace_e820_map(loader_ctx *lctx)
                 return;
             }
             if (false ==
-                grow_mb2_tag(lctx, map, 
+                grow_mb2_tag(lctx, map,
                              sizeof(memory_map_t) *
                              ((get_nr_map()) - old_memmap_entry_count))){
                 printk(TBOOT_ERR"MB2 failed to grow e820 map tag\n");
@@ -1076,7 +1073,7 @@ replace_e820_map(loader_ctx *lctx)
                 old++, new++;
             }
         }
-        /* 
+        /*
            printk(TBOOT_INFO"AFTER replace_e820_map, loader context:\n");
            print_loader_ctx(lctx);
         */
@@ -1096,20 +1093,20 @@ void print_loader_ctx(loader_ctx *lctx)
         struct mb2_tag *start = (struct mb2_tag *)(lctx->addr + 8);
         printk(TBOOT_INFO"MB2 dump, size %d\n", *(uint32_t *)lctx->addr);
         while (start != NULL){
-            printk(TBOOT_INFO"MB2 tag found of type %d size %d ", 
+            printk(TBOOT_INFO"MB2 tag found of type %d size %d ",
                    start->type, start->size);
             switch (start->type){
             case MB2_TAG_TYPE_CMDLINE:
             case MB2_TAG_TYPE_LOADER_NAME:
                 {
-                    struct mb2_tag_string *ts = 
+                    struct mb2_tag_string *ts =
                         (struct mb2_tag_string *) start;
                     printk(TBOOT_INFO"%s", ts->string);
                 }
                 break;
             case MB2_TAG_TYPE_MODULE:
                 {
-                    struct mb2_tag_module *ts = 
+                    struct mb2_tag_module *ts =
                         (struct mb2_tag_module *) start;
                     printk_long(ts->cmdline);
                 }
@@ -1138,11 +1135,11 @@ uint8_t
         return NULL;
 
     start = (struct mb2_tag *) (lctx->addr + 8);
-    new_acpi = (struct mb2_tag_new_acpi *) 
+    new_acpi = (struct mb2_tag_new_acpi *)
         find_mb2_tag_type(start, MB2_TAG_TYPE_ACPI_NEW);
     if (new_acpi == NULL){
         /* we'll try the old type--the tag structs are the same */
-        new_acpi = (struct mb2_tag_new_acpi *) 
+        new_acpi = (struct mb2_tag_new_acpi *)
             find_mb2_tag_type(start, MB2_TAG_TYPE_ACPI_OLD);
         if (new_acpi == NULL)
             return NULL;
@@ -1229,17 +1226,17 @@ void load_framebuffer_info(loader_ctx *lctx, void *vscr)
         scr->lfb_height = mbf->common.fb_height;
         scr->lfb_depth =  mbf->common.fb_bpp;
         scr->lfb_line_len = mbf->common.fb_pitch;
-        scr->red_mask_size = mbf->fb_red_mask_size; 
-        scr->red_field_pos = mbf->fb_red_field_position; 
-        scr->blue_mask_size = mbf->fb_blue_mask_size; 
-        scr->blue_field_pos = mbf->fb_blue_field_position; 
-        scr->green_mask_size = mbf->fb_green_mask_size; 
-        scr->green_field_pos = mbf->fb_green_field_position; 
+        scr->red_mask_size = mbf->fb_red_mask_size;
+        scr->red_field_pos = mbf->fb_red_field_position;
+        scr->blue_mask_size = mbf->fb_blue_mask_size;
+        scr->blue_field_pos = mbf->fb_blue_field_position;
+        scr->green_mask_size = mbf->fb_green_mask_size;
+        scr->green_field_pos = mbf->fb_green_field_position;
 
         scr->lfb_size = scr->lfb_line_len * scr->lfb_height;
         /* round up to next 64k */
         scr->lfb_size = (scr->lfb_size + 65535) & 65535;
-        
+
         scr->orig_video_isVGA = 0x70; /* EFI FB */
         scr->orig_y = 24;
     }
@@ -1254,12 +1251,12 @@ void determine_loader_type(void *addr, uint32_t magic)
         switch (magic){
         case MB_MAGIC:
             g_ldr_ctx->type = MB1_ONLY;
-            { 
+            {
                 /* we may as well do this here--if we received an ELF
                  * sections tag, we won't use it, and it's useless to
                  * Xen downstream, since it's OUR ELF sections, not Xen's
                  */
-                multiboot_info_t *mbi = 
+                multiboot_info_t *mbi =
                     (multiboot_info_t *) addr;
                 if (mbi->flags & MBI_AOUT){
                     mbi->flags &= ~MBI_AOUT;
