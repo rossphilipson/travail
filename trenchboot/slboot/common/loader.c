@@ -59,13 +59,9 @@
 
 /* multiboot struct saved so that post_launch() can use it (in tboot.c) */
 extern loader_ctx *g_ldr_ctx;
-extern bool get_elf_image_range(const elf_header_t *elf, void **start, void **end);
-extern bool is_elf_image(const void *image, size_t size);
-extern bool expand_elf_image(const elf_header_t *elf, void **entry_point);
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
                                const void *initrd_image, size_t initrd_size,
                                void **entry_point);
-extern bool jump_elf_image(const void *entry_point, uint32_t magic);
 extern bool jump_linux_image(const void *entry_point);
 extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size, 
                            bool quiet);
@@ -513,19 +509,6 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
         return mod_start;
     }
     return NULL;
-}
-
-bool is_kernel_linux(void)
-{
-    if ( !verify_loader_context(g_ldr_ctx) )
-        return false;
-
-    // module_t *m = (module_t *)g_mbi->mods_addr;
-    module_t *m = get_module(g_ldr_ctx, 0);
-    void *kernel_image = (void *)m->mod_start;
-    size_t kernel_size = m->mod_end - m->mod_start;
-
-    return !is_elf_image(kernel_image, kernel_size);
 }
 
 static bool 
