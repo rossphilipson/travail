@@ -10,10 +10,11 @@
 #define _TIS_H
 
 #include <types.h>
+#include <tpm.h>
 
 /* TPM Interface Specification functions */
 uint8_t tis_request_locality(uint8_t l);
-uint8_t tis_init(void);
+uint8_t tis_init(struct tpm *t);
 size_t tis_send(struct tpm_cmd_buf *buf);
 size_t tis_recv(struct tpm_resp_buf *buf);
 

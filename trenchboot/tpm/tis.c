@@ -91,9 +91,8 @@ uint8_t tis_request_locality(uint8_t l)
 	return locality;
 }
 
-uint8_t tis_init(void)
+uint8_t tis_init(struct tpm *t)
 {
-	uint32_t vendor;
 	uint8_t i;
 
 	for (i=0; i<=MAX_LOCALITY; i++)
@@ -102,8 +101,8 @@ uint8_t tis_init(void)
 	if (tis_request_locality(0) == NO_LOCALITY)
 		return 0;
 
-	vendor = read32(DID_VID(0));
-	if ((vendor & 0xFFFF) == 0xFFFF)
+	t->vendor = read32(DID_VID(0));
+	if ((t->vendor & 0xFFFF) == 0xFFFF)
 		return 0;
 
 	return 1;

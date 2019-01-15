@@ -71,15 +71,15 @@ static struct tpmbuff_operations ops = {
 	.size = tpmb_size;
 };
 
-#ifdef CONF_STATIC_TPMBUFF
+#ifdef CONF_STATIC_ENV
 static struct tpmbuff _b = {
 	.ops = &ops;
 };
 #endif
 
-struct tpmbuff *alloc_tpmbuff(tpm_hw_intf i, uin8_t locality)
+struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
 {
-#ifdef CONF_STATIC_TPMBUFF
+#ifdef CONF_STATIC_ENV
 	struct tpmbuff *b = &_b;
 #else
 	struct tpmbuff *b = (struct tpmbuff *)malloc(sizeof(struct tpmbuff));
@@ -90,7 +90,9 @@ struct tpmbuff *alloc_tpmbuff(tpm_hw_intf i, uin8_t locality)
 	b->ops = &ops;
 #endif
 
-	switch (i) {
+	switch (intf) {
+	case TPM_DEVNODE:
+		break;;
 	case TPM_TIS:
 		if (b->head)
 			goto reset;

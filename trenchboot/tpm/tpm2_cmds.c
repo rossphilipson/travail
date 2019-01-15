@@ -6,13 +6,7 @@
 #include "tpm2.h"
 #include "tpm2_auth.h"
 
-#define SHA1_SIZE	20
-#define SHA256_SIZE	32
-#define SHA384_SIZE	48
-#define SHA512_SIZE	64
-#define SM3256_SIZE	32
-
-int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, uint16_t tag,
+static int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, uint16_t tag,
 		uint32_t code)
 {
 	c->raw = b->ops->reserve();
