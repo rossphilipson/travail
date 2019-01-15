@@ -256,6 +256,9 @@ void begin_launch(void *addr, uint32_t magic)
     if ( !prepare_tpm() )
         error_action(TB_ERR_TPM_NOT_READY);
 
+    if ( !prepare_intermediate_loader() )
+        error_action(TB_ERR_FATAL);
+
     /* launch the measured environment */
     err = txt_launch_environment(g_ldr_ctx);
     error_action(err);

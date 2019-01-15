@@ -79,14 +79,14 @@ extern bool is_kernel_linux(void);
 extern uint32_t find_efi_memmap(loader_ctx *lctx, uint32_t *descr_size,
                                 uint32_t *descr_vers, uint32_t *mmap_size);
 
-extern bool launch_kernel(void);
+extern bool prepare_intermediate_loader(void);
 extern bool verify_loader_context(loader_ctx *lctx);
 extern bool verify_modules(loader_ctx *lctx);
 extern module_t *get_module(loader_ctx *lctx, unsigned int i);
 extern unsigned int get_module_count(loader_ctx *lctx);
 extern bool remove_txt_modules(loader_ctx *lctx);
 
-extern bool	have_loader_memlimits(loader_ctx *lctx);
+extern bool have_loader_memlimits(loader_ctx *lctx);
 extern bool have_loader_memmap(loader_ctx *lctx);
 extern memory_map_t *get_loader_memmap(loader_ctx *lctx);
 extern uint32_t get_loader_memmap_length(loader_ctx *lctx);
