@@ -75,8 +75,7 @@ printk_long(const char *what)
 
 /* expand linux kernel with kernel image and initrd image */
 bool expand_linux_image(const void *linux_image, size_t linux_size,
-                        const void *initrd_image, size_t initrd_size,
-                        void **entry_point)
+                        const void *initrd_image, size_t initrd_size)
 {
     linux_kernel_header_t *hdr;
     uint32_t real_mode_base, protected_mode_base;
@@ -106,11 +105,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     if ( hdr == NULL ) {
         printk(TBOOT_ERR"Error: Linux kernel header is zero.\n");
-        return false;
-    }
-
-    if ( entry_point == NULL ) {
-        printk(TBOOT_ERR"Error: Output pointer is zero.\n");
         return false;
     }
 
@@ -434,56 +428,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* TODO this is where TB boot param info will go */
-
-    *entry_point = (void *)hdr->code32_start;
-    return true;
-}
-
-
-/* jump to protected-mode code of kernel */
-bool jump_linux_image(void *entry_point)
-{
-#define __BOOT_CS    0x10
-#define __BOOT_DS    0x18
-    static const uint64_t gdt_table[] __attribute__ ((aligned(16))) = {
-        0,
-        0,
-        0x00c09b000000ffff,     /* cs */
-        0x00c093000000ffff      /* ds */
-    };
-    /* both 4G flat, CS: execute/read, DS: read/write */
-
-    static struct __packed {
-        uint16_t  length;
-        uint32_t  table;
-    } gdt_desc;
-
-    gdt_desc.length = sizeof(gdt_table) - 1;
-    gdt_desc.table = (uint32_t)&gdt_table;
-
-    /* load gdt with CS = 0x10 and DS = 0x18 */
-    __asm__ __volatile__ (
-     " lgdtl %0;            "
-     " mov %1, %%ecx;       "
-     " mov %%ecx, %%ds;     "
-     " mov %%ecx, %%es;     "
-     " mov %%ecx, %%fs;     "
-     " mov %%ecx, %%gs;     "
-     " mov %%ecx, %%ss;     "
-     " ljmp %2, $(1f);      "
-     " 1:                   "
-     " xor %%ebp, %%ebp;    "
-     " xor %%edi, %%edi;    "
-     " xor %%ebx, %%ebx;    "
-     :: "m"(gdt_desc), "i"(__BOOT_DS), "i"(__BOOT_CS));
-
-    /* jump to protected-mode code */
-    __asm__ __volatile__ (
-     " cli;           "
-     " mov %0, %%esi; "    /* esi holds address of boot_params */
-     " jmp *%%edx;    "
-     " ud2;           "
-     :: "a"(boot_params), "d"(entry_point));
+    /**entry_point = (void *)hdr->code32_start;*/
 
     return true;
 }

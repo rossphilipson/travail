@@ -60,10 +60,8 @@
 /* multiboot struct saved so that post_launch() can use it (in tboot.c) */
 extern loader_ctx *g_ldr_ctx;
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
-                               const void *initrd_image, size_t initrd_size,
-                               void **entry_point);
-extern bool jump_linux_image(const void *entry_point);
-extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size, 
+                               const void *initrd_image, size_t initrd_size);
+extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size,
                            bool quiet);
 extern void error_action(tb_error_t error);
 static uint32_t g_mb_orig_size;
@@ -656,7 +654,6 @@ static void *remove_first_module(loader_ctx *lctx)
 
 bool prepare_intermediate_loader(void)
 {
-    void *kernel_entry_point;
     struct tpm_if *tpm = get_tpm();
     module_t *m;
     void *kernel_image;
@@ -720,8 +717,7 @@ bool prepare_intermediate_loader(void)
     }
 
     expand_linux_image(kernel_image, kernel_size,
-                       initrd_image, initrd_size,
-                       &kernel_entry_point);
+                       initrd_image, initrd_size);
 
     return true;
 }
