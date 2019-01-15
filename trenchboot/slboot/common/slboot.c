@@ -155,20 +155,21 @@ void check_racm_result(void)
 
 void begin_launch(void *addr, uint32_t magic)
 {
-    const char *cmdline = get_cmdline(g_ldr_ctx);
+    const char *cmdline;
     tb_error_t err;
 
-    g_default_error_action = get_error_shutdown();
+    /* this is the SLBOOT module loader type, either MB1 or MB2 */
+    determine_loader_type(addr, magic);
 
-    if ( g_ldr_ctx->type == 0 )
-        determine_loader_type(addr, magic);
-
+    cmdline = get_cmdline(g_ldr_ctx);
     tb_memset(g_cmdline, '\0', sizeof(g_cmdline));
     if ( cmdline )
         tb_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
 
     /* always parse cmdline */
     tboot_parse_cmdline();
+
+    g_default_error_action = get_error_shutdown();
 
     /* initialize all logging targets */
     printk_init();
@@ -178,6 +179,7 @@ void begin_launch(void *addr, uint32_t magic)
     printk(TBOOT_INFO"*********************************************\n");
 
     printk(TBOOT_INFO"command line: %s\n", g_cmdline);
+
     /* if telled to check revocation acm result, go with simplified path */
     if ( get_tboot_call_racm_check() )
         check_racm_result(); /* never return */
