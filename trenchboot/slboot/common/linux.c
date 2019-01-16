@@ -56,6 +56,8 @@ static boot_params_t *boot_params;
 
 extern void *get_tboot_mem_end(void);
 
+il_kernel_setup_t g_il_kernel_setup = {0};
+
 static void
 printk_long(const char *what)
 {
@@ -78,6 +80,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
                         const void *initrd_image, size_t initrd_size)
 {
     linux_kernel_header_t *hdr;
+    slaunch_info_t *slh;
     uint32_t real_mode_base, protected_mode_base;
     unsigned long real_mode_size, protected_mode_size;
         /* Note: real_mode_size + protected_mode_size = linux_size */
@@ -102,9 +105,25 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     hdr = (linux_kernel_header_t *)(linux_image + KERNEL_HEADER_OFFSET);
+    slh = (slaunch_info_t *)(linux_image + SLAUNCH_INFO_OFFSET);
 
     if ( hdr == NULL ) {
         printk(TBOOT_ERR"Error: Linux kernel header is zero.\n");
+        return false;
+    }
+
+    if ( slh == NULL ) {
+        printk(TBOOT_ERR"Error: Secure launch info is zero.\n");
+        return false;
+    }
+
+    if ( slh->sl_entry == 0 ) {
+        printk(TBOOT_ERR"Error: Secure launch entry not set.\n");
+        return false;
+    }
+
+    if ( slh->sl_mle_hdr == 0 ) {
+        printk(TBOOT_ERR"Error: Secure launch MLE header not set.\n");
         return false;
     }
 
@@ -144,7 +163,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         return false;
     }
 
-    /* boot loader is grub, set type_of_loader to 0x7 */
+    /* boot loader is grub, set type_of_loader to 0x71 */
     hdr->type_of_loader = LOADER_TYPE_GRUB;
 
     /* set loadflags and heap_end_ptr */
@@ -224,10 +243,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( have_loader_memlimits(g_ldr_ctx))
         real_mode_base =
             ((get_loader_mem_lower(g_ldr_ctx)) << 10) - REAL_MODE_SIZE;
-    if ( real_mode_base < TBOOT_KERNEL_CMDLINE_ADDR +
-         TBOOT_KERNEL_CMDLINE_SIZE )
-        real_mode_base = TBOOT_KERNEL_CMDLINE_ADDR +
-            TBOOT_KERNEL_CMDLINE_SIZE;
+    if ( real_mode_base < TBOOT_MLEPT_ADDR + TBOOT_MLEPT_SIZE )
+        real_mode_base = TBOOT_MLEPT_ADDR + TBOOT_MLEPT_SIZE;
     if ( real_mode_base > LEGACY_REAL_START )
         real_mode_base = LEGACY_REAL_START;
 
@@ -242,6 +259,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* if kernel is relocatable then move it above tboot */
     /* else it may expand over top of tboot */
+    /* NOTE the IL kernel is not relocatable and shold be loaded at the
+     * default location */
     if ( hdr->relocatable_kernel ) {
         protected_mode_base = (uint32_t)get_tboot_mem_end();
         /* fix possible mbi overwrite in grub2 case */
@@ -336,6 +355,9 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     tb_memset(boot_params, 0, sizeof(*boot_params));
     tb_memcpy(&boot_params->hdr, hdr, sizeof(*hdr));
 
+    /* Have to also perserve the secure launch info for later */
+    tb_memcpy(&boot_params->slaunch_info, slh, sizeof(*slh));
+
     /* need to handle a few EFI things here if such is our parentage */
     if (is_loader_launch_efi(g_ldr_ctx)){
         struct efi_info *efi = (struct efi_info *)(boot_params->efi_info);
@@ -428,7 +450,13 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* TODO this is where TB boot param info will go */
-    /**entry_point = (void *)hdr->code32_start;*/
+
+    /* Copy all the handoff information about the loaded IL kernel */
+    g_il_kernel_setup.real_mode_base = real_mode_base;
+    g_il_kernel_setup.real_mode_size = real_mode_size;
+    g_il_kernel_setup.protected_mode_base = protected_mode_base;
+    g_il_kernel_setup.protected_mode_size = protected_mode_size;
+    g_il_kernel_setup.boot_params = boot_params;
 
     return true;
 }

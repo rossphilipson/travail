@@ -57,11 +57,13 @@
 				      TBOOT_SERIAL_LOG_SIZE)
 #define TBOOT_E820_COPY_SIZE         0x01800
 
-/* address/size for modified VMM/kernel command line */
-#define TBOOT_KERNEL_CMDLINE_ADDR    (TBOOT_E820_COPY_ADDR + \
+/* Location for MLE page tables < 1M */
+#define TBOOT_MLEPT_ADDR             (TBOOT_E820_COPY_ADDR + \
 				      TBOOT_E820_COPY_SIZE)
-#define TBOOT_KERNEL_CMDLINE_SIZE    0x0400
+#define TBOOT_MLEPT_SIZE             (PAGE_SIZE*3)
 
+/* Used as a basic cmdline buffer size for copying cmdlines */
+#define TBOOT_KERNEL_CMDLINE_SIZE    0x0400
 
 #ifndef NR_CPUS
 #define NR_CPUS     512

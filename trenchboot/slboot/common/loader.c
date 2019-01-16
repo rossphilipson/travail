@@ -716,10 +716,8 @@ bool prepare_intermediate_loader(void)
         initrd_size = m->mod_end - m->mod_start;
     }
 
-    expand_linux_image(kernel_image, kernel_size,
-                       initrd_image, initrd_size);
-
-    return true;
+    return expand_linux_image(kernel_image, kernel_size,
+                              initrd_image, initrd_size);
 }
 
 /*
