@@ -51,6 +51,7 @@
 #include <processor.h>
 
 extern loader_ctx *g_ldr_ctx;
+extern uint32_t g_min_ram;
 
 static boot_params_t *boot_params;
 
@@ -86,6 +87,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         /* Note: real_mode_size + protected_mode_size = linux_size */
     uint32_t initrd_base;
     int vid_mode = 0;
+    uint32_t regs[4];
 
     /* Check param */
 
@@ -153,13 +155,25 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( hdr->header != HDRS_MAGIC ) {
         /* old kernel */
         printk(TBOOT_ERR
-               "Error: Old kernel (< 2.6.20) is not supported by tboot.\n");
+               "Error: Old kernel (< 2.6.20) is not supported by slboot.\n");
         return false;
     }
 
     if ( hdr->version < 0x0205 ) {
         printk(TBOOT_ERR
-               "Error: Old kernel (<2.6.20) is not supported by tboot.\n");
+               "Error: Old kernel (<2.6.20) is not supported by slboot.\n");
+        return false;
+    }
+
+    if ( hdr->relocatable_kernel ) {
+        printk(TBOOT_ERR
+               "Error: IL kernel should not be relocatable.\n");
+        return false;
+    }
+
+    if ( !(hdr->loadflags & FLAG_LOAD_HIGH) ) {
+        printk(TBOOT_ERR
+               "Error: IL kernel must have the FLAG_LOAD_HIGH loadflag set.\n");
         return false;
     }
 
@@ -449,7 +463,24 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         screen->orig_y = 24;               /* start display text @ screen end*/
     }
 
-    /* TODO this is where TB boot param info will go */
+    /* Setup the secure launch inforation in the boot params */
+    slh->sl_flags = SL_FLAG_ACTIVE;
+
+    do_cpuid(0, regs);
+    if ( regs[1] == 0x756e6547      /* "Genu" */
+         && regs[2] == 0x6c65746e   /* "ntel" */
+         && regs[3] == 0x49656e69 ) /* "ineI" */
+        slh->sl_flags |= SL_FLAG_ARCH_TXT;
+    else if ( regs[1] == 0x68747541 /* "Auth" */
+         && regs[2] == 0x444d4163   /* "cAMD" */
+         && regs[3] == 0x69746e65 ) /* "enti" */
+        slh->sl_flags |= SL_FLAG_ARCH_SKINIT;
+    else {
+        printk(TBOOT_ERR"Error: platform is neither Intel or AMD\n");
+        return false;
+    }
+
+    slh->sl_lo_pmr_min = g_min_ram;
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;

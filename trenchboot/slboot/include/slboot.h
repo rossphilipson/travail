@@ -115,6 +115,12 @@ typedef struct {
 #define TBOOT_LOG_UUID   {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                              {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
 
+#define SLAUNCH_CONFIG_SIGNATURE "{\n    \"slaunch_config:\" {"
+
+#define SL_FLAG_ACTIVE         0x00000001
+#define SL_FLAG_ARCH_SKINIT    0x00000002
+#define SL_FLAG_ARCH_TXT       0x00000004
+
 extern void error_action(tb_error_t error);
 extern void shutdown_system(uint32_t shutdown_type);
 
