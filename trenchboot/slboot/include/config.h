@@ -55,7 +55,7 @@
 /* address/size for modified e820 table */
 #define TBOOT_E820_COPY_ADDR         (TBOOT_SERIAL_LOG_ADDR + \
 				      TBOOT_SERIAL_LOG_SIZE)
-#define TBOOT_E820_COPY_SIZE         0x01800
+#define TBOOT_E820_COPY_SIZE         0x02000
 
 /* Location for MLE page tables < 1M */
 #define TBOOT_MLEPT_ADDR             (TBOOT_E820_COPY_ADDR + \
