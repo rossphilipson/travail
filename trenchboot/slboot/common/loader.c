@@ -60,7 +60,8 @@
 /* multiboot struct saved so that post_launch() can use it (in tboot.c) */
 extern loader_ctx *g_ldr_ctx;
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
-                               const void *initrd_image, size_t initrd_size);
+                               const void *initrd_image, size_t initrd_size,
+                               const void *slconfig_image, size_t slconfig_size);
 extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size,
                            bool quiet);
 extern void error_action(tb_error_t error);
@@ -508,9 +509,9 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
     return NULL;
 }
 
-static bool
-find_module(loader_ctx *lctx, void **base, size_t *size,
-            const void *data, size_t len)
+bool
+find_module_by_pattern(loader_ctx *lctx, void **base, size_t *size,
+                       const void *pattern, size_t len)
 {
     if ( lctx == NULL || lctx->addr == NULL) {
         printk(TBOOT_ERR"Error: context pointer is zero.\n");
@@ -539,11 +540,14 @@ find_module(loader_ctx *lctx, void **base, size_t *size,
             printk(TBOOT_ERR"Error: image size is smaller than data size.\n");
             return false;
         }
-        if ( tb_memcmp((void *)m->mod_start, data, len) == 0 ) {
-            *base = (void *)m->mod_start;
-            if ( size != NULL )
-                *size = mod_size;
-            return true;
+
+        for ( unsigned int j = 0; j < (mod_size + len); j++ ) {
+            if ( tb_memcmp((void *)(m->mod_start + j), pattern, len) == 0 ) {
+                *base = (void *)m->mod_start;
+                if ( size != NULL )
+                    *size = mod_size;
+                return true;
+            }
         }
     }
 
@@ -716,34 +720,10 @@ bool prepare_intermediate_loader(void)
         initrd_size = m->mod_end - m->mod_start;
     }
 
+    /* TODO find slconfig by pattern */
+
     return expand_linux_image(kernel_image, kernel_size,
-                              initrd_image, initrd_size);
-}
-
-/*
- * find_module_by_uuid
- *
- * find a module by its uuid
- *
- */
-bool find_module_by_uuid(loader_ctx *lctx, void **base, size_t *size,
-                         const uuid_t *uuid)
-{
-    return find_module(lctx, base, size, uuid, sizeof(*uuid));
-}
-
-/*
- * find_module_by_file_signature
- *
- * find a module by its file signature
- *
- */
-bool
-find_module_by_file_signature(loader_ctx *lctx, void **base,
-                              size_t *size, const char* file_signature)
-{
-    return find_module(lctx, base, size,
-                       file_signature, tb_strlen(file_signature));
+                              initrd_image, initrd_size, 0, 0);
 }
 
 char *get_module_cmd(loader_ctx *lctx, module_t *mod)

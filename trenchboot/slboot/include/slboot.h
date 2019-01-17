@@ -93,10 +93,6 @@ typedef struct __packed {
 #define TB_SHUTDOWN_REBOOT      0
 #define TB_SHUTDOWN_HALT        4
 
-/* {663C8DFF-E8B3-4b82-AABF-19EA4D057A08} */
-#define TBOOT_SHARED_UUID    {0x663c8dff, 0xe8b3, 0x4b82, 0xaabf, \
-                                 {0x19, 0xea, 0x4d, 0x5, 0x7a, 0x8 }}
-
 /*
  * used to log tboot printk output
  */
@@ -115,7 +111,10 @@ typedef struct {
 #define TBOOT_LOG_UUID   {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                              {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
 
-#define SLAUNCH_CONFIG_SIGNATURE "{\n    \"slaunch_config:\" {"
+#define SLAUNCH_LZ_UUID {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
+                             {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
+
+#define SLAUNCH_CONFIG_UUID "{9e7f6e6a-1a9f-11e9-9fea-c85b76c4cc02}"
 
 #define SL_FLAG_ACTIVE         0x00000001
 #define SL_FLAG_ARCH_SKINIT    0x00000002

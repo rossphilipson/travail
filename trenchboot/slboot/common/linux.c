@@ -78,7 +78,8 @@ printk_long(const char *what)
 
 /* expand linux kernel with kernel image and initrd image */
 bool expand_linux_image(const void *linux_image, size_t linux_size,
-                        const void *initrd_image, size_t initrd_size)
+                        const void *initrd_image, size_t initrd_size,
+                        const void *slconfig_image, size_t slconfig_size)
 {
     linux_kernel_header_t *hdr;
     slaunch_info_t *slh;
@@ -466,6 +467,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* Setup the secure launch inforation in the boot params */
     slh->sl_flags = SL_FLAG_ACTIVE;
 
+    /* TODO move cpuid check earlier */
     do_cpuid(0, regs);
     if ( regs[1] == 0x756e6547      /* "Genu" */
          && regs[2] == 0x6c65746e   /* "ntel" */
@@ -480,7 +482,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         return false;
     }
 
+    /* TODO check for 0 on intel */
     slh->sl_lo_pmr_min = g_min_ram;
+
+    /* TODO check for NULL and 0 */
+    slh->sl_config_addr = (uint32_t)slconfig_image;
+    slh->sl_config_size = slconfig_size;
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;
