@@ -1,4 +1,4 @@
-From bef3c78562dc59cc2537893b1d2975efb232bd0a Mon Sep 17 00:00:00 2001
+From 2a3274d6b53241e9ad4abc894030146ae6c5c3c1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -15,15 +15,15 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  4 files changed, 157 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393bd98e..d3839bc371a5 100644
+index 63b3393bd98e..e26ff1cc50eb 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
 @@ -32,6 +32,11 @@ struct real_mode_header {
  #endif
  	/* APM/BIOS reboot */
  	u32	machine_real_restart_asm;
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+	u32	tb_trampoline_start32;
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	u32	sl_trampoline_start32;
 +	u32	tr_gdt;
 +	u32	tr_gdt_end;
 +#endif
@@ -31,14 +31,14 @@ index 63b3393bd98e..d3839bc371a5 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..e778818a3cf4 100644
+index f02ecaf97904..de98e786daf8 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
  #include <asm/cpu_device_id.h>
  #include <asm/spec-ctrl.h>
  #include <asm/hw_irq.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
  
  /* representing HT siblings of each logical CPU */
  DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
@@ -52,7 +52,7 @@ index f02ecaf97904..e778818a3cf4 100644
 +	 * INIT here. The rest would be the normal SIPI process and then
 +	 * starting the AP in the realmode blob code.
 +	 */
-+#ifndef CONFIG_TRENCHBOOT_STUB
++#ifndef CONFIG_SECURE_LAUNCH_STUB
 +
  	pr_debug("Asserting INIT\n");
  
@@ -70,7 +70,7 @@ index f02ecaf97904..e778818a3cf4 100644
  	return NMI_DONE;
  }
  
-+#ifdef CONFIG_TRENCHBOOT_STUB
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +static int
 +wakeup_cpu_via_intel_txt(int cpu)
 +{
@@ -83,7 +83,7 @@ index f02ecaf97904..e778818a3cf4 100644
 +	/* Initialize MLE join structure once */
 +	if (mle_join.entry_point == 0) {
 +		/* Get start IP and GDT info from rmpiggy to use in TXT AP startup */
-+		mle_join.entry_point = real_mode_header->tb_trampoline_start32;
++		mle_join.entry_point = real_mode_header->sl_trampoline_start32;
 +		mle_join.seg_sel = __KERNEL32_CS;
 +		mle_join.gdt_base = real_mode_header->tr_gdt;
 +		mle_join.gdt_limit = real_mode_header->tr_gdt -
@@ -119,7 +119,7 @@ index f02ecaf97904..e778818a3cf4 100644
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
-+#ifndef CONFIG_TRENCHBOOT_STUB
++#ifndef CONFIG_SECURE_LAUNCH_STUB
 +
  	/*
  	 * Wake up a CPU in difference cases:
@@ -132,20 +132,20 @@ index f02ecaf97904..e778818a3cf4 100644
 +
 +	/*
 +	 * Halting and restarting the BSP is not supported in the Intermediate
-+	 * Loader. Also this code path should not be taken if Trenchboot is
++	 * Loader. Also this code path should not be taken if Secure Launch is
 +	 * not active.
 +	 */
 +	BUG_ON(cpu == 0);
-+	BUG_ON(!(boot_params.trenchboot_info.tb_flags & TB_FLAG_ACTIVE));
++	BUG_ON(!(boot_params.slaunch_info.sl_flags & SL_FLAG_ACTIVE));
 +
 +	/*
 +	 * Custom APIC driver configuration is not currently supported on AMD
 +	 * and on Intel the startup is totally different.
 +	 */
-+	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_SKINIT)
++	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
 +		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
 +						     cpu0_nmi_registered);
-+	else if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_TXT)
++	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
 +		boot_error = wakeup_cpu_via_intel_txt(cpu);
 +	else
 +		BUG();
@@ -156,15 +156,15 @@ index f02ecaf97904..e778818a3cf4 100644
  		/*
  		 * Wait 10s total for first sign of life from AP
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30d861a..679bb8c217f3 100644
+index 30b0d30d861a..eaefc007f242 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
 @@ -31,6 +31,11 @@ GLOBAL(real_mode_header)
  #endif
  	/* APM/BIOS reboot */
  	.long	pa_machine_real_restart_asm
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+	.long	pa_tb_trampoline_start32
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	.long	pa_sl_trampoline_start32
 +	.long	pa_tr_gdt
 +	.long	pa_tr_gdt_end
 +#endif
@@ -172,14 +172,14 @@ index 30b0d30d861a..679bb8c217f3 100644
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..05c5ff1e15a5 100644
+index 24bb7598774e..b1798c622ef8 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,7 @@
  #include <asm/segment.h>
  #include <asm/processor-flags.h>
  #include <asm/realmode.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
  #include "realmode.h"
  
  	.text
@@ -188,7 +188,7 @@ index 24bb7598774e..05c5ff1e15a5 100644
  	wbinvd
  
 +	# Only here in RM code on AMD platforms post SKINIT launch
-+#ifdef CONFIG_TRENCHBOOT_STUB
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +	stgi
 +#endif
 +
@@ -199,13 +199,13 @@ index 24bb7598774e..05c5ff1e15a5 100644
  	.section ".text32","ax"
  	.code32
  	.balign 4
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+ENTRY(tb_trampoline_start32)
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++ENTRY(sl_trampoline_start32)
 +	/*
 +	 * Entry vectro for AP startup from TXT. On entry:
 +	 *  - Protected mode
 +	 *  - Paging disabled
-+	 *  - %ebx has linear address of tb_trampoline_start
++	 *  - %ebx has linear address of sl_trampoline_start
 +	 *  - Only %cs is valid
 +	 *  - MCE/SMI/NMI are all disabled
 +	 * For the rest of the state of the world, see the Intel TXT manual
@@ -265,7 +265,7 @@ index 24bb7598774e..05c5ff1e15a5 100644
  	.quad	0x00cf9b000000ffff	# __KERNEL32_CS
  	.quad	0x00af9b000000ffff	# __KERNEL_CS
  	.quad	0x00cf93000000ffff	# __KERNEL_DS
-+#ifdef CONFIG_TRENCHBOOT_STUB
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +	.globl tr_gdt_end
 +#endif
  tr_gdt_end:

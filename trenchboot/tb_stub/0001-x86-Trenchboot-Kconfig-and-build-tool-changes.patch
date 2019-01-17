@@ -1,4 +1,4 @@
-From afcbccead7b9507ed5876f6d57b4fc6919a48b66 Mon Sep 17 00:00:00 2001
+From eeb72072b52a3b94919a551170a4cd82a5a9467f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes
@@ -8,19 +8,19 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/Kconfig                      |  7 +++++++
  arch/x86/boot/Makefile                |  2 +-
  arch/x86/boot/tools/build.c           | 19 +++++++++++++++++++
- arch/x86/include/uapi/asm/bootparam.h | 12 +++++++++++-
- 4 files changed, 38 insertions(+), 2 deletions(-)
+ arch/x86/include/uapi/asm/bootparam.h | 13 ++++++++++++-
+ 4 files changed, 39 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1a0be022f91d..83b4892e0b15 100644
+index 1a0be022f91d..a2fcb4a79199 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1953,6 +1953,13 @@ config EFI_MIXED
  
  	   If unsure, say N.
  
-+config TRENCHBOOT_STUB
-+	bool "Trenchboot stub support"
++config SECURE_LAUNCH_STUB
++	bool "Secure Launch stub support"
 +	depends on X86_64
 +	---help---
 +	  This kernel feature allows a bzImage to be loaded directly
@@ -30,7 +30,7 @@ index 1a0be022f91d..83b4892e0b15 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae9cc40..ab8e12fe9e54 100644
+index 9b5adae9cc40..6198f58777fa 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -38,20 +38,20 @@ index 9b5adae9cc40..ab8e12fe9e54 100644
  SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
  
 -sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
-+sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|tb_stub_entry\|tb_mle_header\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
++sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|sl_stub_entry\|sl_mle_header\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
  
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
 diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
-index d4e6cd4577e5..1f6c2bfb82d3 100644
+index d4e6cd4577e5..b4893284333f 100644
 --- a/arch/x86/boot/tools/build.c
 +++ b/arch/x86/boot/tools/build.c
 @@ -56,6 +56,8 @@ u8 buf[SETUP_SECT_MAX*512];
  unsigned long efi32_stub_entry;
  unsigned long efi64_stub_entry;
  unsigned long efi_pe_entry;
-+unsigned long tb_stub_entry;
-+unsigned long tb_mle_header;
++unsigned long sl_stub_entry;
++unsigned long sl_mle_header;
  unsigned long startup_64;
  
  /*----------------------------------------------------------------------*/
@@ -59,19 +59,19 @@ index d4e6cd4577e5..1f6c2bfb82d3 100644
  }
  #endif /* CONFIG_EFI_STUB */
  
-+#ifdef CONFIG_TRENCHBOOT_STUB
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +
-+static void trenchboot_stub_fields_update(void)
++static void slaunch_stub_fields_update(void)
 +{
-+	put_unaligned_le32(tb_stub_entry, &buf[0xcc]);
-+	put_unaligned_le32(tb_mle_header, &buf[0xd0]);
++	put_unaligned_le32(sl_stub_entry, &buf[0xcc]);
++	put_unaligned_le32(sl_mle_header, &buf[0xd0]);
 +}
 +
 +#else
 +
-+static void trenchboot_stub_fields_update(void) {}
++static void slaunch_stub_fields_update(void) {}
 +
-+#endif /* CONFIG_TRENCHBOOT_STUB */
++#endif /* CONFIG_SECURE_LAUNCH_STUB */
  
  /*
   * Parse zoffset.h and find the entry points. We could just #include zoffset.h
@@ -79,8 +79,8 @@ index d4e6cd4577e5..1f6c2bfb82d3 100644
  		PARSE_ZOFS(p, efi32_stub_entry);
  		PARSE_ZOFS(p, efi64_stub_entry);
  		PARSE_ZOFS(p, efi_pe_entry);
-+		PARSE_ZOFS(p, tb_stub_entry);
-+		PARSE_ZOFS(p, tb_mle_header);
++		PARSE_ZOFS(p, sl_stub_entry);
++		PARSE_ZOFS(p, sl_mle_header);
  		PARSE_ZOFS(p, startup_64);
  
  		p = strchr(p, '\n');
@@ -88,38 +88,39 @@ index d4e6cd4577e5..1f6c2bfb82d3 100644
  
  	efi_stub_entry_update();
  
-+	trenchboot_stub_fields_update();
++	slaunch_stub_fields_update();
 +
  	crc = partial_crc32(buf, i, crc);
  	if (fwrite(buf, 1, i, dest) != i)
  		die("Writing setup failed");
 diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
-index a06cbf019744..ba6096af5d5c 100644
+index a06cbf019744..97058e0795de 100644
 --- a/arch/x86/include/uapi/asm/bootparam.h
 +++ b/arch/x86/include/uapi/asm/bootparam.h
-@@ -112,6 +112,15 @@ struct efi_info {
+@@ -112,6 +112,16 @@ struct efi_info {
  	__u32 efi_memmap_hi;
  };
  
-+struct trenchboot_info {
-+	__u32 tb_entry;   /* Field updated by boot build tool */
-+	__u32 tb_mle_hdr; /* Field updated by boot build tool */
-+	__u32 tb_flags;
-+	__u32 tb_lo_pmr_min;
-+	__u32 tb_dev_map;
-+	__u32 tb_slaunch_config;
++struct slaunch_info {
++	__u32 sl_entry;   /* Field updated by boot build tool */
++	__u32 sl_mle_hdr; /* Field updated by boot build tool */
++	__u32 sl_flags;
++	__u32 sl_lo_pmr_min;
++	__u32 sl_dev_map;
++	__u32 sl_config_addr;
++	__u32 sl_config_size;
 +} __attribute__((packed));
 +
  /*
   * This is the maximum number of entries in struct boot_params::e820_table
   * (the zeropage), which is part of the x86 boot protocol ABI:
-@@ -163,7 +172,8 @@ struct boot_params {
+@@ -163,7 +173,8 @@ struct boot_params {
  	__u32 ext_ramdisk_image;			/* 0x0c0 */
  	__u32 ext_ramdisk_size;				/* 0x0c4 */
  	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
 -	__u8  _pad4[116];				/* 0x0cc */
-+	struct trenchboot_info trenchboot_info;		/* 0x0cc */
-+	__u8  _pad4[92];				/* 0x0e4 */
++	struct slaunch_info slaunch_info;		/* 0x0cc */
++	__u8  _pad4[88];				/* 0x0e8 */
  	struct edid_info edid_info;			/* 0x140 */
  	struct efi_info efi_info;			/* 0x1c0 */
  	__u32 alt_mem_k;				/* 0x1e0 */

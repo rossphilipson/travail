@@ -1,4 +1,4 @@
-From 277cb9d777192ba452a970821348b9d38b99549a Mon Sep 17 00:00:00 2001
+From 65914eb6845aa166922e6a5007feb3e483682b5e Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/8] x86: add support for AMD DEV capability
@@ -9,21 +9,21 @@ allows page level memory access to HyperTransport buses.
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/Kconfig               |   5 ++
- arch/x86/include/asm/amd_dev.h |  65 +++++++++++++++
+ arch/x86/include/asm/amd_dev.h |  66 ++++++++++++++++
  arch/x86/kernel/Makefile       |   2 +
- arch/x86/kernel/amd_dev.c      | 174 +++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/amd_dev.c      | 175 +++++++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/init.c       |  10 +++
- 5 files changed, 256 insertions(+)
+ 5 files changed, 258 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 83b4892e0b15..1b5a91d51726 100644
+index a2fcb4a79199..1193cfaac12b 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1956,6 +1956,7 @@ config EFI_MIXED
- config TRENCHBOOT_STUB
- 	bool "Trenchboot stub support"
+ config SECURE_LAUNCH_STUB
+ 	bool "Secure Launch stub support"
  	depends on X86_64
 +	select AMD_DEV
  	---help---
@@ -42,10 +42,10 @@ index 83b4892e0b15..1b5a91d51726 100644
  config RAPIDIO
 diff --git a/arch/x86/include/asm/amd_dev.h b/arch/x86/include/asm/amd_dev.h
 new file mode 100644
-index 000000000000..2001a7d841ee
+index 000000000000..0da883bc741f
 --- /dev/null
 +++ b/arch/x86/include/asm/amd_dev.h
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,66 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -62,6 +62,7 @@ index 000000000000..2001a7d841ee
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +/* SPDX-License-Identifier: GPL-2.0 */
++
 +#ifndef _ASM_X86_AMD_DEV_H
 +#define _ASM_X86_AMD_DEV_H
 +
@@ -112,7 +113,7 @@ index 000000000000..2001a7d841ee
 +
 +#endif /* _ASM_X86_AMD_DEV_H */
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 45d567867ff2..b19dbe8dffd9 100644
+index 798a7dc44c83..d4cc0081d369 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
 @@ -111,6 +111,8 @@ obj-$(CONFIG_APB_TIMER)		+= apb_timer.o
@@ -126,10 +127,10 @@ index 45d567867ff2..b19dbe8dffd9 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 000000000000..76b5c8c22e8f
+index 000000000000..78e5e9439f4a
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
-@@ -0,0 +1,174 @@
+@@ -0,0 +1,175 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -145,6 +146,7 @@ index 000000000000..76b5c8c22e8f
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#include <linux/types.h>
 +#include <linux/init.h>
 +#include <linux/errno.h>
@@ -305,7 +307,7 @@ index 000000000000..76b5c8c22e8f
 +	return err;
 +}
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d10105825d57..3b8207c5d46b 100644
+index d10105825d57..d9db936d5c77 100644
 --- a/arch/x86/realmode/init.c
 +++ b/arch/x86/realmode/init.c
 @@ -9,6 +9,11 @@
@@ -327,7 +329,7 @@ index d10105825d57..3b8207c5d46b 100644
 +#ifdef CONFIG_AMD_DEV
 +	/* DEV protect this region before use*/
 +	amd_dev_protect_pages(0, mem, size,
-+			boot_params.trenchboot_info.tb_dev_map);
++			boot_params.slaunch_info.sl_dev_map);
 +#endif
  	set_real_mode_mem(mem, size);
  }

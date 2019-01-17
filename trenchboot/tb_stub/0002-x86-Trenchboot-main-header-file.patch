@@ -1,20 +1,20 @@
-From dea3bbf300d0fa5b60e3d3e1892c7e606b6999db Mon Sep 17 00:00:00 2001
+From f20d936d7612cd3eeaab297a59d99e6a16fd053f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/trenchboot.h | 202 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 202 insertions(+)
- create mode 100644 arch/x86/include/asm/trenchboot.h
+ arch/x86/include/asm/slaunch.h | 203 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 203 insertions(+)
+ create mode 100644 arch/x86/include/asm/slaunch.h
 
-diff --git a/arch/x86/include/asm/trenchboot.h b/arch/x86/include/asm/trenchboot.h
+diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 0000000..db7dcdf
+index 000000000000..61b8672326b8
 --- /dev/null
-+++ b/arch/x86/include/asm/trenchboot.h
-@@ -0,0 +1,202 @@
++++ b/arch/x86/include/asm/slaunch.h
+@@ -0,0 +1,203 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -30,11 +30,12 @@ index 0000000..db7dcdf
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
-+#ifndef _ASM_X86_TRENCHBOOT_H
-+#define _ASM_X86_TRENCHBOOT_H
 +
-+#define __TB32_CS	0x0008
-+#define __TB32_DS	0x0010
++#ifndef _ASM_X86_SLAUNCH_H
++#define _ASM_X86_SLAUNCH_H
++
++#define __SL32_CS	0x0008
++#define __SL32_DS	0x0010
 +
 +#define CPU_AMD			1
 +#define CPU_INTEL		2
@@ -66,22 +67,22 @@ index 0000000..db7dcdf
 +#define TXT_MAX_EVENT_LOG_SIZE		5*4*1024   /* 4k*5 */
 +
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
-+#define TXT_OS_MLE_EVENT_LOG_BUFFER	0x4
++#define TXT_OS_MLE_MSB_KEY_HASH		0x4
++#define TXT_OS_MLE_EVENT_LOG_BUFFER	0x18
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
 +#define TXT_SINIT_MLE_DMAR_TABLE_OFFSET	0x8c
 +
-+#define TRENCHBOOT_INFO_OFFSET	0x0cc
-+#define TB_FLAGS_OFFSET		0x4
-+#define TB_XBI_OFFSET		0x8
++#define SLAUNCH_INFO_OFFSET	0x0cc
++#define SL_FLAGS_OFFSET		0x8
 +
 +#define BP_CMD_LINE_PTR		0x228
 +#define BP_CMDLINE_SIZE		0x238
 +
-+#define TB_FLAG_ACTIVE		0x00000001
-+#define TB_FLAG_ARCH_SKINIT	0x00000002
-+#define TB_FLAG_ARCH_TXT	0x00000004
++#define SL_FLAG_ACTIVE		0x00000001
++#define SL_FLAG_ARCH_SKINIT	0x00000002
++#define SL_FLAG_ARCH_TXT	0x00000004
 +
 +#ifndef __ASSEMBLY__
 +
@@ -211,12 +212,12 @@ index 0000000..db7dcdf
 +	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a"(X86_GETSEC_WAKEUP));
 +}
 +
-+void tb_setup(void);
-+struct acpi_table_header *tb_get_dmar_table(struct acpi_table_header *dmar);
++void slaunch_setup(void);
++struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar);
 +
 +#endif
 +
-+#endif /* _ASM_X86_TRENCHBOOT_H */
++#endif /* _ASM_X86_SLAUNCH_H */
 -- 
-2.1.4
+2.13.6
 

@@ -1,38 +1,38 @@
-From 977baa6c71f43e6f43755c902cf85581268d09f8 Mon Sep 17 00:00:00 2001
+From 357a899c8931bc262ab39c63879471d93e7445f1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/kernel/Makefile     |  1 +
- arch/x86/kernel/setup.c      |  5 +++
- arch/x86/kernel/trenchboot.c | 92 ++++++++++++++++++++++++++++++++++++++++++++
- drivers/iommu/dmar.c         |  5 +++
- 4 files changed, 103 insertions(+)
- create mode 100644 arch/x86/kernel/trenchboot.c
+ arch/x86/kernel/Makefile  |  1 +
+ arch/x86/kernel/setup.c   |  5 +++
+ arch/x86/kernel/slaunch.c | 93 +++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c      |  5 +++
+ 4 files changed, 104 insertions(+)
+ create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
-index 8824d01c0c35..45d567867ff2 100644
+index 8824d01c0c35..798a7dc44c83 100644
 --- a/arch/x86/kernel/Makefile
 +++ b/arch/x86/kernel/Makefile
 @@ -70,6 +70,7 @@ obj-$(CONFIG_X86_32)		+= tls.o
  obj-$(CONFIG_IA32_EMULATION)	+= tls.o
  obj-y				+= step.o
  obj-$(CONFIG_INTEL_TXT)		+= tboot.o
-+obj-$(CONFIG_TRENCHBOOT_STUB)	+= trenchboot.o
++obj-$(CONFIG_SECURE_LAUNCH_STUB) += slaunch.o
  obj-$(CONFIG_ISA_DMA_API)	+= i8237.o
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index b4866badb235..9feda4d81677 100644
+index b4866badb235..b359129cb408 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
 @@ -117,6 +117,7 @@
  #include <asm/microcode.h>
  #include <asm/kaslr.h>
  #include <asm/unwind.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
  
  /*
   * max_low_pfn_mapped: highest direct mapped pfn under 4GB
@@ -40,19 +40,19 @@ index b4866badb235..9feda4d81677 100644
  
  	tboot_probe();
  
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+	tb_setup();
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	slaunch_setup();
 +#endif
 +
  	map_vsyscall();
  
  	generic_apic_probe();
-diff --git a/arch/x86/kernel/trenchboot.c b/arch/x86/kernel/trenchboot.c
+diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..4c374045aa6a
+index 000000000000..af41d15352c3
 --- /dev/null
-+++ b/arch/x86/kernel/trenchboot.c
-@@ -0,0 +1,92 @@
++++ b/arch/x86/kernel/slaunch.c
+@@ -0,0 +1,93 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -68,6 +68,7 @@ index 000000000000..4c374045aa6a
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -77,19 +78,19 @@ index 000000000000..4c374045aa6a
 +#include <asm/asm-offsets.h>
 +#include <asm/bootparam.h>
 +#include <asm/setup.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
 +
 +/* This should be plenty of room */
 +static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
 +
-+struct acpi_table_header *tb_get_dmar_table(struct acpi_table_header *dmar)
++struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar)
 +{
 +	if (memcmp(txt_dmar, "DMAR", 4))
 +		return dmar;
 +	return (struct acpi_table_header*)(&txt_dmar[0]);
 +}
 +
-+static void tb_copy_dmar_table(void)
++static void slaunch_copy_dmar_table(void)
 +{
 +	void __iomem *heap;
 +	void __iomem *sinit_mle_data;
@@ -115,7 +116,7 @@ index 000000000000..4c374045aa6a
 +	memcpy(txt_dmar, (void*)(sinit_mle_data + dmar_offset), dmar_size);
 +}
 +
-+void tb_setup_intel(void)
++void slaunch_setup_intel(void)
 +{
 +	/* On Intel, have to handle TPM localities via TXT */
 +	txt_write_reg(TXTCR_CMD_SECRETS, 0x1, 0);
@@ -124,36 +125,36 @@ index 000000000000..4c374045aa6a
 +	(void)txt_read_reg(TXTCR_E2STS, 0);
 +
 +	/* Make a copy of the TXT heap provided DMAR to pass on later */
-+	tb_copy_dmar_table();
++	slaunch_copy_dmar_table();
 +
 +	/* TODO validate the PMRs */
 +}
 +
-+void tb_setup_amd(void)
++void slaunch_setup_amd(void)
 +{
 +	/* TODO validate the DEV tables and devices */
 +}
 +
-+void tb_setup(void)
++void slaunch_setup(void)
 +{
-+	BUG_ON(!(boot_params.trenchboot_info.tb_flags & TB_FLAG_ACTIVE));
++	BUG_ON(!(boot_params.slaunch_info.sl_flags & SL_FLAG_ACTIVE));
 +
-+	if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_TXT)
-+		tb_setup_intel();
-+	else if (boot_params.trenchboot_info.tb_flags & TB_FLAG_ARCH_SKINIT)
-+		tb_setup_amd();
++	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
++		slaunch_setup_intel();
++	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
++		slaunch_setup_amd();
 +	else
 +		BUG();
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
-index d9c748b6f9e4..723efdf04b49 100644
+index d9c748b6f9e4..5e9fc61da18e 100644
 --- a/drivers/iommu/dmar.c
 +++ b/drivers/iommu/dmar.c
 @@ -41,6 +41,7 @@
  #include <linux/iommu.h>
  #include <asm/irq_remapping.h>
  #include <asm/iommu_table.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
  
  #include "irq_remapping.h"
  
@@ -161,8 +162,8 @@ index d9c748b6f9e4..723efdf04b49 100644
  	 * ACPI tables may not be DMA protected by tboot, so use DMAR copy
  	 * SINIT saved in SinitMleData in TXT heap (which is DMA protected)
  	 */
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+	dmar_tbl = tb_get_dmar_table(dmar_tbl);
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	dmar_tbl = slaunch_get_dmar_table(dmar_tbl);
 +#else
  	dmar_tbl = tboot_get_dmar_table(dmar_tbl);
 +#endif

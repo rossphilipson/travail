@@ -1,4 +1,4 @@
-From 27595f426f96a57ece7147ed1c2f878ab4f82aad Mon Sep 17 00:00:00 2001
+From 5de8983884c2d4f1b5a5d10b616c09361d3d9fdc Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
@@ -7,31 +7,31 @@ Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   2 +
- arch/x86/boot/compressed/early_sha1.c | 111 ++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/sha1.h           |  28 +++++++++
- 3 files changed, 141 insertions(+)
+ arch/x86/boot/compressed/early_sha1.c | 112 ++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/sha1.h           |  29 +++++++++
+ 3 files changed, 143 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/include/asm/sha1.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 466f66c8a7f8..3038ddf2cd76 100644
+index 466f66c8a7f8..57f2f467cbb0 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -90,6 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  	$(objtree)/drivers/firmware/efi/libstub/lib.a
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
-+vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o
++vmlinux-objs-$(CONFIG_SECURE_LAUNCH_STUB) += $(obj)/early_sha1.o
 +
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..71530ca425ec
+index 000000000000..344a08348e65
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,112 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -47,6 +47,7 @@ index 000000000000..71530ca425ec
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <linux/string.h>
@@ -145,10 +146,10 @@ index 000000000000..71530ca425ec
 +}
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
-index 000000000000..2abea71ee344
+index 000000000000..cf894d498979
 --- /dev/null
 +++ b/arch/x86/include/asm/sha1.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,29 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -164,6 +165,7 @@ index 000000000000..2abea71ee344
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#ifndef _ASM_X86_SHA1_H
 +#define _ASM_X86_SHA1_H
 +

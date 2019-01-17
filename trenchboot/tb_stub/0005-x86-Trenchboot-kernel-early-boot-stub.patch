@@ -1,4 +1,4 @@
-From cefdb21ebcb94df97c25f0cc1e65a786ee993cc5 Mon Sep 17 00:00:00 2001
+From 61996dfc8c3a52b8c8da989811f55f97edc1267f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,47 +7,47 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 ++++++++
- arch/x86/boot/compressed/tb_main.c |  66 +++++++++++++++
- arch/x86/boot/compressed/tb_stub.S | 165 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c |  66 +++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 165 +++++++++++++++++++++++++++++++++++++
  4 files changed, 265 insertions(+), 1 deletion(-)
- create mode 100644 arch/x86/boot/compressed/tb_main.c
- create mode 100644 arch/x86/boot/compressed/tb_stub.S
+ create mode 100644 arch/x86/boot/compressed/sl_main.c
+ create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 47a18fbeb5a2..ff4329e6b52c 100644
+index 1a089f7f7f79..50f1ff478db0 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
- vmlinux-objs-$(CONFIG_TRENCHBOOT_STUB) += $(obj)/early_sha1.o \
+ vmlinux-objs-$(CONFIG_SECURE_LAUNCH_STUB) += $(obj)/early_sha1.o \
 -	$(obj)/early_tpm.o
-+	$(obj)/early_tpm.o $(obj)/tb_main.o $(obj)/tb_stub.o
++	$(obj)/early_tpm.o $(obj)/sl_main.o $(obj)/sl_stub.o
  
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..f7bc3d7f7cfc 100644
+index 64037895b085..9ddae11fe9a6 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
  ENDPROC(efi32_stub_entry)
  #endif
  
-+#ifdef CONFIG_TRENCHBOOT_STUB
-+ENTRY(tb_stub_entry)
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++ENTRY(sl_stub_entry)
 +	/*
-+	 * On entry, %ebx has the entry abs offset to tb_stub_entry. To
++	 * On entry, %ebx has the entry abs offset to sl_stub_entry. To
 +	 * find the beginning of where we are loaded, sub off from the
 +	 * beginning.
 +	 */
 +	movl	%ebx, %ebp
-+	subl	$(tb_stub_entry - startup_32), %ebp
++	subl	$(sl_stub_entry - startup_32), %ebp
 +
-+	/* More room to work in tb_stub in the text section */
-+	jmp	tb_stub
++	/* More room to work in sl_stub in the text section */
++	jmp	sl_stub
 +
-+ENDPROC(tb_stub_entry)
++ENDPROC(sl_stub_entry)
 +#endif
 +
  	.code64
@@ -57,31 +57,31 @@ index 64037895b085..f7bc3d7f7cfc 100644
  	shrq	$3, %rcx
  	rep	stosq
  
-+#ifdef CONFIG_TRENCHBOOT_STUB
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +	/*
-+	 * Have to do the final early TB stub work in 64b area.
++	 * Have to do the final early sl stub work in 64b area.
 +	 *
 +	 * *********** NOTE ***********
 +	 *
 +	 * Several boot params get used before we get a chance to measure
 +	 * them in this call. This is a known issue and we currently don't
 +	 * have a solution. One solution might be to set them in the really
-+	 * early TB stub asm code but that might not work well.
++	 * early sl stub asm code but that might not work well.
 +	 */
 +	pushq	%rsi
 +	movq	%rsi, %rdi
-+	callq	tb_main
++	callq	sl_main
 +	popq	%rsi
 +#endif
 +
  /*
   * Do the extraction, and jump to the new kernel..
   */
-diff --git a/arch/x86/boot/compressed/tb_main.c b/arch/x86/boot/compressed/tb_main.c
+diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..aea58d23669e
+index 000000000000..1c2b7795a752
 --- /dev/null
-+++ b/arch/x86/boot/compressed/tb_main.c
++++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,66 @@
 +/*
 + * This program is free software; you can redistribute it and/or
@@ -98,6 +98,7 @@ index 000000000000..aea58d23669e
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
++
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <asm/segment.h>
@@ -108,15 +109,14 @@ index 000000000000..aea58d23669e
 +#include <asm/sha1.h>
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
 +
-+void tb_main(u8 *bootparams)
++void sl_main(u8 *bootparams)
 +{
 +	struct sha1_state sctx = {0};
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
 +	u32 cmdline_len;
 +	u64 cmdline_addr;
-+	u32 tb_flags;
 +	struct tpm_digest extend = {
 +		.pcr = 18,
 +	};
@@ -149,11 +149,11 @@ index 000000000000..aea58d23669e
 +	/* tis_init will ensure all localities are closed */
 +	tis_init();
 +}
-diff --git a/arch/x86/boot/compressed/tb_stub.S b/arch/x86/boot/compressed/tb_stub.S
+diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..3cad98256a1c
+index 000000000000..074726b84525
 --- /dev/null
-+++ b/arch/x86/boot/compressed/tb_stub.S
++++ b/arch/x86/boot/compressed/sl_stub.S
 @@ -0,0 +1,165 @@
 +/*
 + * This program is free software; you can redistribute it and/or
@@ -178,18 +178,18 @@ index 000000000000..3cad98256a1c
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
 +#include <asm/bootparam.h>
-+#include <asm/trenchboot.h>
++#include <asm/slaunch.h>
 +
 +	/* The MLE Header per the TXT Specification, section 4.1 */
-+	.global	tb_mle_header
-+tb_mle_header:
++	.global	sl_mle_header
++sl_mle_header:
 +	.long	0x9082ac5a    /* UUID0 */
 +	.long	0x74a7476f    /* UUID1 */
 +	.long	0xa2555c0f    /* UUID2 */
 +	.long	0x42b651cb    /* UUID3 */
 +	.long	0x00000034    /* MLE header size */
 +	.long	0x00020002    /* MLE version 2.2 */
-+	.long	tb_stub_entry /* Linear entry point of MLE (virt. address) */
++	.long	sl_stub_entry /* Linear entry point of MLE (virt. address) */
 +	.long	0x00000000    /* First valid page of MLE */
 +	.long	0x00000000    /* Offset within binary of first byte of MLE */
 +	.long	0x00000000    /* Offset within binary of last byte + 1 of MLE */
@@ -198,30 +198,30 @@ index 000000000000..3cad98256a1c
 +	.long	0x00000000    /* Ending linear address of command line */
 +
 +	.code32
-+ENTRY(tb_stub)
++ENTRY(sl_stub)
 +	cli
 +	cld
 +
 +	/* On entry %ebp has the base address from head_64.S, load the stack */
-+	leal	tb_stack_end(%ebp), %esp
++	leal	sl_stack_end(%ebp), %esp
 +
 +	/* On entry, only %cs is known good */
-+	addl	%ebp, (tb_gdt + 2)(%ebp)
-+	lgdt	tb_gdt(%ebp)
++	addl	%ebp, (sl_gdt + 2)(%ebp)
++	lgdt	sl_gdt(%ebp)
 +
-+	movl	$(__TB32_DS), %eax
++	movl	$(__SL32_DS), %eax
 +	movw	%ax, %ds
 +	movw	%ax, %es
 +	movw	%ax, %fs
 +	movw	%ax, %gs
 +	movw	%ax, %ss
 +
-+	leal	.Ltb_cs(%ebp), %eax
-+	pushl	$(__TB32_CS)
++	leal	.Lsl_cs(%ebp), %eax
++	pushl	$(__SL32_CS)
 +	pushl	%eax
 +	lret
 +
-+.Ltb_cs:
++.Lsl_cs:
 +	addl	$8, %esp
 +
 +	/* Before going any further, make sure this is the BSP */
@@ -259,7 +259,7 @@ index 000000000000..3cad98256a1c
 +	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
 +	leal	.Lnmi_enabled(%ebp), %eax
 +	pushfl
-+	pushl	$(__TB32_CS)
++	pushl	$(__SL32_CS)
 +	pushl	%eax
 +	iret
 +
@@ -296,30 +296,30 @@ index 000000000000..3cad98256a1c
 +	 */
 +
 +	/* Store flags in boot params for later use */
-+	movl	%eax, (TRENCHBOOT_INFO_OFFSET + TB_FLAGS_OFFSET)(%esi)
++	movl	%eax, (SLAUNCH_INFO_OFFSET + SL_FLAGS_OFFSET)(%esi)
 +
-+	/* Don't want the kernel keeping any segment from the TB stub */
++	/* Don't want the kernel keeping any segment from the SL stub */
 +	andb	$~(KEEP_SEGMENTS), BP_loadflags(%esi)
 +
 +	/* Done, jump to normal 32b pm entry */
 +	jmp	startup_32
-+ENDPROC(tb_stub)
++ENDPROC(sl_stub)
 +
 +	.data
 +	.balign 16
-+tb_gdt:
-+	.word	tb_gdt_end - tb_gdt - 1
-+	.long	tb_gdt
++sl_gdt:
++	.word	sl_gdt_end - sl_gdt - 1
++	.long	sl_gdt
 +	.word	0
-+	.quad	0x00cf9a000000ffff	/* __TB32_CS */
-+	.quad	0x00cf92000000ffff	/* __TB32_DS */
-+tb_gdt_end:
++	.quad	0x00cf9a000000ffff	/* __SL32_CS */
++	.quad	0x00cf92000000ffff	/* __SL32_DS */
++sl_gdt_end:
 +
 +	/* Small stack to work with */
 +	.balign 4
-+tb_stack:
++sl_stack:
 +	.fill 32, 1, 0
-+tb_stack_end:
++sl_stack_end:
 -- 
 2.13.6
 
