@@ -260,11 +260,11 @@ typedef struct __packed {
  * OS/loader to MLE structure
  *   - private to tboot (so can be any format we need)
  */
-#define MAX_LCP_PO_DATA_SIZE     64*1024  /* 64k */
 #define MAX_EVENT_LOG_SIZE       5*4*1024   /* 4k*5 */
 
 typedef struct __packed {
     uint32_t zero_page_addr;
+    uint8_t  msb_key_hash[20];
     uint8_t  event_log_buffer[MAX_EVENT_LOG_SIZE];
 } os_mle_data_t;
 

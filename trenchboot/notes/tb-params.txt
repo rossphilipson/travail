@@ -27,26 +27,32 @@ where the EFI map is turned into the GRUB map after EBS.
 -- Trenchboot Bootparams --
 
 The following specific Trenchboot values need to be setup in the boot params
-(the trenchboot_info struct layout can be seen in
+(the slaunch_info struct layout can be seen in
 arch/x86/include/uapi/asm/bootparam.h):
 
-tb_entry: This is actually filled in by the build tool at IL kernel build time
-          and is read by GRUB to know where the protected mode Trenchboot stub
-          entry point location is. GRUB uses this to calculate code32_start.
+sl_entry: This is actually filled in by the build tool at IL kernel build time
+          and is read by the loader to know where the protected mode secure
+          launch stub entry point location is. It is  used to calculate
+          code32_start.
 
-tb_mle_hdr: This is actually filled in by the build tool at IL kernel build
-            time and is read by GRUB to know where the TXT MLE header within
-            the MLE. GRUB must fill in a number of values in this table (see
-            below).
+sl_mle_hdr: This is actually filled in by the build tool at IL kernel build
+            time and is read by the loader to know where the TXT MLE header
+            within the MLE. GRUB must fill in a number of values in this table
+            (see below).
 
-tb_lo_pmr_min: Special value for setting up the low PMR.
+sl_lo_pmr_min: Special value for setting up the low PMR. This is TXT only and
+               is setup by the loader.
 
-tb_dev_map: The DEV map passed to the IL kernel by the LZ.
+sl_dev_map: The DEV map passed to the IL kernel by the LZ.
 
-tb_flags: GRUB should set the late launch architecture and the active flag.
+sl_flags: The loader should set the late launch architecture and the active flag.
 
-tb_slaunch_config: The JSON config file that is passed to the IL kernel
-                   containing all boot information for starting the real kernel.
+sl_config_addr: Physical address of the JSON config file that is passed to the
+                IL kernel containing all boot information for starting the
+                real kernel. Setup by the loader.
+
+sl_config_size: Size of the JSON config file that is passed to the IL kernel.
+                Setup by the loader.
 
 The other values are used elsewhere, e.g. the landing zone fills in tb_dev_map.
 
@@ -56,9 +62,12 @@ The TXT heap has an area called the OS to MLE data structure that is used to
 pass values from pre to post launch. The offsets are defined in
 arch/x86/include/asm/trenchboot.h. These are the fields:
 
-zero_page_addr: 32 bit address of the zero page in low memory.
+zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
+                loader.
 
-msb_key_hash: TODO Daniel has to fill this in.
+msb_key_hash: TODO Daniel has to fill this in. Setup by the loader.
+
+event_log_buffer: TODO Daniel has to fill this in. Setup by the loader.
 
 -- LZ Header --
 
@@ -66,12 +75,13 @@ The LZ header is offset 4 bytes in the landing zone. It has the following
 fields that GRUB must setup (the type lz_header_t defines the fields in
 lz/include/boot.h):
 
-trenchboot_loader_size: The total size of the IL used to hash the IL into
-                        PCR 17 in the LZ.
+slaunch_loader_size: The total size of the IL used to hash the IL into
+                     PCR 17 in the LZ. Setup by the loader.
 
-zero_page_addr:  32 bit address of the zero page in low memory.
+zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
+                loader.
 
-msb_key_hash: TODO Daniel has to fill this in.
+msb_key_hash: TODO Daniel has to fill this in. Setup by the loader.
 
 -- MLE Header --
 

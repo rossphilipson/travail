@@ -44,7 +44,7 @@ void setup(void *_lz_base)
 	 * now do what we want. First order of business is to setup
 	 * DEV to cover memory from the start of bzImage to the end of the LZ
 	 * "kernel". At the end, trampoline to the PM entry point which will
-	 * include the TrenchBoot stub.
+	 * include the Secure Launch stub.
 	 */
 
 	/* Store the lz_base for all to use */
@@ -107,7 +107,7 @@ void setup2(void)
 
 	/* extend TB Loader code segment into PCR17 */
 	data = (u32*)(uintptr_t)*code32_start;
-	size = lz_header->trenchboot_loader_size;
+	size = lz_header->slaunch_loader_size;
 	sha1sum(&sha1ctx, data, size);
 
 	tpm_digest.pcr = 17;

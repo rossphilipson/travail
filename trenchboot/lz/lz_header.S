@@ -37,7 +37,7 @@ lz_header:
 	.long	0xe9119204
 	.long	0x5bc82a83
 	.long	0x02ccc476
-	.long	0 /* Total size of TrenchBoot Intermediate Loader */
+	.long	0 /* Total size of Trenchboot Intermediate Loader */
 		  /* bzImage (padded out to next page) */
 	.long	0 /* Zero Page address */
 	.fill	0x14 /* MSB Key Hash */

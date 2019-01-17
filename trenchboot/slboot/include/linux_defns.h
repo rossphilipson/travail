@@ -113,7 +113,8 @@ typedef struct __attribute__((packed)) {
     uint32_t sl_flags;
     uint32_t sl_lo_pmr_min;
     uint32_t sl_dev_map;
-    uint32_t sl_slaunch_config;
+    uint32_t sl_config_addr;
+    uint32_t sl_config_size;
 } slaunch_info_t;
 
 typedef struct __attribute__ ((packed)) {
@@ -128,7 +129,7 @@ typedef struct __attribute__ ((packed)) {
     uint8_t               sys_desc_table[0x0b0-0x0a0];              /* 0x0a0 */
     uint8_t               _pad4a[29];                               /* 0x0b0 */
     slaunch_info_t        slaunch_info;                             /* 0x0cc */
-    uint8_t               _pad4b[92];                               /* 0x0e4 */
+    uint8_t               _pad4b[88];                               /* 0x0e8 */
     uint8_t               edid_info[0x1c0-0x140];                   /* 0x140 */
     uint8_t               efi_info[0x1e0-0x1c0];                    /* 0x1c0 */
     uint8_t               alt_mem_k[0x1e4-0x1e0];                   /* 0x1e0 */
