@@ -58,9 +58,10 @@
 #define TBOOT_E820_COPY_SIZE         0x02000
 
 /* Location for MLE page tables < 1M */
+/* 1 PDP + 1 PD + 18 PTs = 36M total */
 #define TBOOT_MLEPT_ADDR             (TBOOT_E820_COPY_ADDR + \
 				      TBOOT_E820_COPY_SIZE)
-#define TBOOT_MLEPT_SIZE             (PAGE_SIZE*3)
+#define TBOOT_MLEPT_SIZE             (PAGE_SIZE*20)
 
 /* Used as a basic cmdline buffer size for copying cmdlines */
 #define TBOOT_KERNEL_CMDLINE_SIZE    0x0400
