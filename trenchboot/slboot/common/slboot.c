@@ -269,6 +269,10 @@ void shutdown_system(uint32_t shutdown_type)
     static const char *types[] = { "TB_SHUTDOWN_REBOOT", "TB_SHUTDOWN_HALT" };
     char type[32];
 
+    /* NOTE: the TPM close and open current locality is not needed here since */
+    /* since that only makes sense if this is called post laucnh which is */
+    /* the case in SLBOOT */
+
     if ( shutdown_type >= ARRAY_SIZE(types) )
         tb_snprintf(type, sizeof(type), "unknown: %u", shutdown_type);
     else {

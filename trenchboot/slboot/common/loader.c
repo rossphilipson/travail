@@ -658,23 +658,13 @@ static void *remove_first_module(loader_ctx *lctx)
 
 bool prepare_intermediate_loader(void)
 {
-    struct tpm_if *tpm = get_tpm();
     module_t *m;
     void *kernel_image;
     size_t kernel_size;
     void *initrd_image;
     size_t initrd_size;
-
-    if (g_tpm_family != TPM_IF_20_CRB ) {
-        if (!release_locality(tpm->cur_loc))
-            printk(TBOOT_ERR"Release TPM FIFO locality %d failed \n", tpm->cur_loc);
-    }
-    else {
-        if (!tpm_relinquish_locality_crb(tpm->cur_loc))
-            printk(TBOOT_ERR"Relinquish TPM CRB locality %d failed \n", tpm->cur_loc);
-        if (!tpm_workaround_crb())
-            printk(TBOOT_ERR"CRB workaround failed \n");
-    }
+    void *slconfig_image;
+    size_t slconfig_size;
 
     /* if using memory logging, reserve log area */
     if ( g_log_targets & TBOOT_LOG_TARGET_MEMORY ) {
@@ -709,21 +699,26 @@ bool prepare_intermediate_loader(void)
     if ( kernel_image == NULL )
         return false;
 
-
     if ( get_module_count(g_ldr_ctx) == 0 ) {
         initrd_size = 0;
         initrd_image = 0;
     }
     else {
-        m = get_module(g_ldr_ctx,0);
+        m = get_module(g_ldr_ctx, 0);
         initrd_image = (void *)m->mod_start;
         initrd_size = m->mod_end - m->mod_start;
     }
 
-    /* TODO find slconfig by pattern */
+    if ( !find_module_by_pattern(g_ldr_ctx, &slconfig_image, &slconfig_size,
+                                 (void*)SLAUNCH_CONFIG_UUID,
+                                 tb_strlen(SLAUNCH_CONFIG_UUID)) ) {
+        printk(TBOOT_ERR"Error: could not find secure launch config image.\n");
+        return false;
+    }
 
     return expand_linux_image(kernel_image, kernel_size,
-                              initrd_image, initrd_size, 0, 0);
+                              initrd_image, initrd_size,
+                              slconfig_image, slconfig_size);
 }
 
 char *get_module_cmd(loader_ctx *lctx, module_t *mod)

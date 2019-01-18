@@ -89,6 +89,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     uint32_t initrd_base;
     int vid_mode = 0;
     uint32_t regs[4];
+    uint32_t arch;
 
     /* Check param */
 
@@ -127,6 +128,30 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     if ( slh->sl_mle_hdr == 0 ) {
         printk(TBOOT_ERR"Error: Secure launch MLE header not set.\n");
+        return false;
+    }
+
+    do_cpuid(0, regs);
+    if ( regs[1] == 0x756e6547      /* "Genu" */
+         && regs[2] == 0x6c65746e   /* "ntel" */
+         && regs[3] == 0x49656e69 ) /* "ineI" */
+        arch = SL_FLAG_ARCH_TXT;
+    else if ( regs[1] == 0x68747541 /* "Auth" */
+         && regs[2] == 0x444d4163   /* "cAMD" */
+         && regs[3] == 0x69746e65 ) /* "enti" */
+        arch = SL_FLAG_ARCH_SKINIT;
+    else {
+        printk(TBOOT_ERR"Error: platform is neither Intel or AMD\n");
+        return false;
+    }
+
+    if ( (arch == SL_FLAG_ARCH_TXT)&&(g_min_ram == 0) ) {
+        printk(TBOOT_ERR"Error: Min ram setting for TXT must be > 0.\n");
+        return false;
+    }
+
+    if ( (slconfig_image == NULL)||(slconfig_size == 0) ) {
+        printk(TBOOT_ERR"Error: Secure launch config is invalid.\n");
         return false;
     }
 
@@ -466,26 +491,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* Setup the secure launch inforation in the boot params */
     slh->sl_flags = SL_FLAG_ACTIVE;
-
-    /* TODO move cpuid check earlier */
-    do_cpuid(0, regs);
-    if ( regs[1] == 0x756e6547      /* "Genu" */
-         && regs[2] == 0x6c65746e   /* "ntel" */
-         && regs[3] == 0x49656e69 ) /* "ineI" */
-        slh->sl_flags |= SL_FLAG_ARCH_TXT;
-    else if ( regs[1] == 0x68747541 /* "Auth" */
-         && regs[2] == 0x444d4163   /* "cAMD" */
-         && regs[3] == 0x69746e65 ) /* "enti" */
-        slh->sl_flags |= SL_FLAG_ARCH_SKINIT;
-    else {
-        printk(TBOOT_ERR"Error: platform is neither Intel or AMD\n");
-        return false;
-    }
-
-    /* TODO check for 0 on intel */
+    slh->sl_flags |= arch;
     slh->sl_lo_pmr_min = g_min_ram;
-
-    /* TODO check for NULL and 0 */
     slh->sl_config_addr = (uint32_t)slconfig_image;
     slh->sl_config_size = slconfig_size;
 

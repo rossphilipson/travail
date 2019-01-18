@@ -702,6 +702,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
 		error_action(TB_ERR_TPM_NOT_READY) ;
 	}
    }
+   /* TODO why is it not done for 1.2 w/ release_locality() ? */
 
    /*{
    tpm_reg_loc_ctrl_t    reg_loc_ctrl;
