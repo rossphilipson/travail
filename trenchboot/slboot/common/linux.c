@@ -283,8 +283,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( have_loader_memlimits(g_ldr_ctx))
         real_mode_base =
             ((get_loader_mem_lower(g_ldr_ctx)) << 10) - REAL_MODE_SIZE;
-    if ( real_mode_base < TBOOT_MLEPT_ADDR + TBOOT_MLEPT_SIZE )
-        real_mode_base = TBOOT_MLEPT_ADDR + TBOOT_MLEPT_SIZE;
+    if ( real_mode_base < SLBOOT_MLEPT_ADDR + SLBOOT_MLEPT_SIZE )
+        real_mode_base = SLBOOT_MLEPT_ADDR + SLBOOT_MLEPT_SIZE;
     if ( real_mode_base > LEGACY_REAL_START )
         real_mode_base = LEGACY_REAL_START;
 

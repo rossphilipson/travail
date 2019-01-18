@@ -55,6 +55,7 @@
 #include <hash.h>
 #include <cmdline.h>
 #include <acpi.h>
+#include <linux_defns.h>
 #include <txt/txt.h>
 #include <txt/config_regs.h>
 #include <txt/mtrrs.h>
@@ -63,59 +64,22 @@
 #include <txt/smx.h>
 #include <io.h>
 
-/* counter timeout for waiting for all APs to enter wait-for-sipi */
-#define AP_WFS_TIMEOUT     0x10000000
-
 __data struct acpi_rsdp g_rsdp;
+
+extern il_kernel_setup_t g_il_kernel_setup;
+
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
-extern char _mle_start[];         /* start of text section */
-extern char _mle_end[];           /* end of text section */
-/*extern char _post_launch_entry[];*/ /* entry point post SENTER, in boot.S */
-
-extern long s3_flag;
-
-/* MLE/kernel shared data page (in boot.S) */
-extern void print_event(const tpm12_pcr_event_t *evt);
-extern void print_event_2(void *evt, uint16_t alg);
-extern uint32_t print_event_2_1(void *evt);
 
 extern void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
                          uint64_t min_lo_ram, uint64_t max_lo_ram,
                          uint64_t min_hi_ram, uint64_t max_hi_ram);
-
-/*
- * this is the structure whose addr we'll put in TXT heap
- * it needs to be within the MLE pages, so force it to the .text section
- */
-/* TODO the MLE header will be elsewhere */
-static __text const mle_hdr_t g_mle_hdr = {
-    uuid              :  MLE_HDR_UUID,
-    length            :  sizeof(mle_hdr_t),
-    version           :  MLE_HDR_VER,
-    entry_point       :  0, /*(uint32_t)&_post_launch_entry - TBOOT_START,*/
-    first_valid_page  :  0,
-    mle_start_off     :  (uint32_t)&_mle_start - TBOOT_BASE_ADDR,
-    mle_end_off       :  (uint32_t)&_mle_end - TBOOT_BASE_ADDR,
-    capabilities      :  { MLE_HDR_CAPS },
-    cmdline_start_off :  (uint32_t)g_cmdline - TBOOT_BASE_ADDR,
-    cmdline_end_off   :  (uint32_t)g_cmdline + CMDLINE_SIZE - 1 -
-                                                       TBOOT_BASE_ADDR,
-};
-
-/*
- * counts of APs going into wait-for-sipi
- */
-/* count of APs in WAIT-FOR-SIPI */
-atomic_t ap_wfs_count;
 
 static void print_file_info(void)
 {
     printk(TBOOT_DETA"file addresses:\n");
     printk(TBOOT_DETA"\t &_start=%p\n", &_start);
     printk(TBOOT_DETA"\t &_end=%p\n", &_end);
-    printk(TBOOT_DETA"\t &_mle_start=%p\n", &_mle_start);
-    printk(TBOOT_DETA"\t &_mle_end=%p\n", &_mle_end);
 }
 
 /*
@@ -125,28 +89,27 @@ static void print_file_info(void)
 /* page dir/table entry is phys addr + P + R/W + PWT */
 #define MAKE_PDTE(addr)  (((uint64_t)(unsigned long)(addr) & PAGE_MASK) | 0x01)
 
-/* we assume/know that our image is <2MB and thus fits w/in a single */
-/* PT (512*4KB = 2MB) and thus fixed to 1 pg dir ptr and 1 pgdir and */
-/* 1 ptable = 3 pages and just 1 loop loop for ptable MLE page table */
+/* The MLE page tables have to be below the MLE which by default loads at 1M */
+/* so 20 pages are carved out of low memory from 0x6B000 to 0x80000 */
+/* That leave 18 page table pages that can cover up to 36M */
 /* can only contain 4k pages */
 
-static __mlept uint8_t g_mle_pt[3 * PAGE_SIZE];
-/* pgdir ptr + pgdir + ptab = 3 */
-
-static void *build_mle_pagetable(uint32_t mle_start, uint32_t mle_size)
+static void *build_mle_pagetable(void)
 {
     void *ptab_base;
     uint32_t ptab_size, mle_off;
     void *pg_dir_ptr_tab, *pg_dir, *pg_tab;
     uint64_t *pte;
+    uint32_t mle_start = g_il_kernel_setup.protected_mode_base;
+    uint32_t mle_size = g_il_kernel_setup.protected_mode_size;
 
     printk(TBOOT_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
            mle_start, mle_start+mle_size, mle_size);
-    if ( mle_size > 512*PAGE_SIZE ) {
+
+    if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED ) {
         printk(TBOOT_ERR"MLE size too big for single page table\n");
         return NULL;
     }
-
 
     /* should start on page boundary */
     if ( mle_start & ~PAGE_MASK ) {
@@ -155,8 +118,8 @@ static void *build_mle_pagetable(uint32_t mle_start, uint32_t mle_size)
     }
 
     /* place ptab_base below MLE */
-    ptab_size = sizeof(g_mle_pt);
-    ptab_base = &g_mle_pt;
+    ptab_size = SLBOOT_MLEPT_BYTES_COVERED;
+    ptab_base = (void*)SLBOOT_MLEPT_ADDR;
     tb_memset(ptab_base, 0, ptab_size);
     printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
 
@@ -181,7 +144,6 @@ static void *build_mle_pagetable(uint32_t mle_start, uint32_t mle_size)
 
     return ptab_base;
 }
-
 
 static __data event_log_container_t *g_elog = NULL;
 static __data heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
@@ -328,181 +290,6 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
     elt->size = sizeof(*elt);
 }
 
-bool evtlog_append_tpm12(uint8_t pcr, tb_hash_t *hash, uint32_t type)
-{
-    if ( g_elog == NULL )
-        return true;
-
-    tpm12_pcr_event_t *next = (tpm12_pcr_event_t *)
-                              ((void*)g_elog + g_elog->next_event_offset);
-
-    if ( g_elog->next_event_offset + sizeof(*next) > g_elog->size )
-        return false;
-
-    next->pcr_index = pcr;
-    next->type = type;
-    tb_memcpy(next->digest, hash, sizeof(next->digest));
-    next->data_size = 0;
-
-    g_elog->next_event_offset += sizeof(*next) + next->data_size;
-
-    print_event(next);
-    return true;
-}
-
-void dump_event_2(void)
-{
-    heap_event_log_descr_t *log_descr;
-
-    for ( unsigned int i=0; i<g_elog_2->count; i++ ) {
-        log_descr = &g_elog_2->event_log_descr[i];
-        printk(TBOOT_DETA"\t\t\t Log Descrption:\n");
-        printk(TBOOT_DETA"\t\t\t             Alg: %u\n", log_descr->alg);
-        printk(TBOOT_DETA"\t\t\t            Size: %u\n", log_descr->size);
-        printk(TBOOT_DETA"\t\t\t    EventsOffset: [%u,%u)\n",
-                log_descr->pcr_events_offset,
-                log_descr->next_event_offset);
-
-        uint32_t hash_size, data_size;
-        hash_size = get_hash_size(log_descr->alg);
-        if ( hash_size == 0 )
-            return;
-
-        void *curr, *next;
-        *((u64 *)(&curr)) = log_descr->phys_addr +
-                log_descr->pcr_events_offset;
-        *((u64 *)(&next)) = log_descr->phys_addr +
-                log_descr->next_event_offset;
-
-        if ( log_descr->alg != TB_HALG_SHA1 ) {
-            print_event_2(curr, TB_HALG_SHA1);
-            curr += sizeof(tpm12_pcr_event_t) + sizeof(tpm20_log_descr_t);
-        }
-
-        while ( curr < next ) {
-            print_event_2(curr, log_descr->alg);
-            data_size = *(uint32_t *)(curr + 2*sizeof(uint32_t) + hash_size);
-            curr += 3*sizeof(uint32_t) + hash_size + data_size;
-        }
-    }
-}
-
-bool evtlog_append_tpm2_legacy(uint8_t pcr, uint16_t alg, tb_hash_t *hash, uint32_t type)
-{
-    heap_event_log_descr_t *cur_desc = NULL;
-    uint32_t hash_size;
-    void *cur, *next;
-
-    for ( unsigned int i=0; i<g_elog_2->count; i++ ) {
-        if ( g_elog_2->event_log_descr[i].alg == alg ) {
-            cur_desc = &g_elog_2->event_log_descr[i];
-            break;
-        }
-    }
-    if ( !cur_desc )
-        return false;
-
-    hash_size = get_hash_size(alg);
-    if ( hash_size == 0 )
-        return false;
-
-    if ( cur_desc->next_event_offset + 32 > cur_desc->size )
-        return false;
-
-    cur = next = (void *)(unsigned long)cur_desc->phys_addr +
-                     cur_desc->next_event_offset;
-    *((u32 *)next) = pcr;
-    next += sizeof(u32);
-    *((u32 *)next) = type;
-    next += sizeof(u32);
-    tb_memcpy((uint8_t *)next, hash, hash_size);
-    next += hash_size;
-    *((u32 *)next) = 0;
-    cur_desc->next_event_offset += 3*sizeof(uint32_t) + hash_size;
-
-    print_event_2(cur, alg);
-    return true;
-}
-
-bool evtlog_append_tpm2_tcg(uint8_t pcr, uint32_t type, hash_list_t *hl)
-{
-    uint32_t i, event_size;
-    unsigned int hash_size;
-    tcg_pcr_event2 *event;
-    uint8_t *hash_entry;
-    tcg_pcr_event2 dummy;
-
-    /*
-     * Dont't use sizeof(tcg_pcr_event2) since that has TPML_DIGESTV_VALUES_1.digests
-     * set to 5. Compute the static size as pcr_index + event_type +
-     * digest.count + event_size. Then add the space taken up by the hashes.
-     */
-    event_size = sizeof(dummy.pcr_index) + sizeof(dummy.event_type) +
-        sizeof(dummy.digest.count) + sizeof(dummy.event_size);
-
-    for (i = 0; i < hl->count; i++) {
-        hash_size = get_hash_size(hl->entries[i].alg);
-        if (hash_size == 0) {
-            return false;
-        }
-        event_size += sizeof(uint16_t); // hash_alg field
-        event_size += hash_size;
-    }
-
-    // Check if event will fit in buffer.
-    if (event_size + g_elog_2_1->next_record_offset >
-        g_elog_2_1->allcoated_event_container_size) {
-        return false;
-    }
-
-    event = (tcg_pcr_event2*)(void *)(unsigned long)g_elog_2_1->phys_addr +
-        g_elog_2_1->next_record_offset;
-    event->pcr_index = pcr;
-    event->event_type = type;
-    event->event_size = 0;  // No event data passed by tboot.
-    event->digest.count = hl->count;
-
-    hash_entry = (uint8_t *)&event->digest.digests[0];
-    for (i = 0; i < hl->count; i++) {
-        // Populate individual TPMT_HA_1 structs.
-        *((uint16_t *)hash_entry) = hl->entries[i].alg; // TPMT_HA_1.hash_alg
-        hash_entry += sizeof(uint16_t);
-        hash_size = get_hash_size(hl->entries[i].alg);  // already checked above
-        tb_memcpy(hash_entry, &(hl->entries[i].hash), hash_size);
-        hash_entry += hash_size;
-    }
-
-    g_elog_2_1->next_record_offset += event_size;
-    print_event_2_1(event);
-    return true;
-}
-
-bool evtlog_append(uint8_t pcr, hash_list_t *hl, uint32_t type)
-{
-    int log_type = get_evtlog_type();
-    switch (log_type) {
-    case EVTLOG_TPM12:
-        if ( !evtlog_append_tpm12(pcr, &hl->entries[0].hash, type) )
-            return false;
-        break;
-    case EVTLOG_TPM2_LEGACY:
-        for (unsigned int i=0; i<hl->count; i++) {
-            if ( !evtlog_append_tpm2_legacy(pcr, hl->entries[i].alg,
-                &hl->entries[i].hash, type))
-                return false;
-	    }
-        break;
-    case EVTLOG_TPM2_TCG:
-        if ( !evtlog_append_tpm2_tcg(pcr, type, hl) )
-            return false;
-        break;
-    default:
-        return false;
-    }
-
-    return true;
-}
-
 __data uint32_t g_using_da = 0;
 __data acm_hdr_t *g_sinit = 0;
 
@@ -552,10 +339,10 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
 
     /* this is phys addr */
     os_sinit_data->mle_ptab = (uint64_t)(unsigned long)ptab_base;
-    os_sinit_data->mle_size = g_mle_hdr.mle_end_off - g_mle_hdr.mle_start_off;
+    os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
     /* this is linear addr (offset from MLE base) of mle header */
-    os_sinit_data->mle_hdr_base = (uint64_t)(unsigned long)&g_mle_hdr -
-        (uint64_t)(unsigned long)&_mle_start;
+    os_sinit_data->mle_hdr_base = g_il_kernel_setup.boot_params->slaunch_info.sl_mle_hdr;
+
     /* VT-d PMRs */
     uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
 
@@ -675,9 +462,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     print_file_info();
 
     /* create MLE page table */
-    mle_ptab_base = build_mle_pagetable(
-                             g_mle_hdr.mle_start_off + TBOOT_BASE_ADDR,
-                             g_mle_hdr.mle_end_off - g_mle_hdr.mle_start_off);
+    mle_ptab_base = build_mle_pagetable();
     if ( mle_ptab_base == NULL )
         return TB_ERR_FATAL;
 

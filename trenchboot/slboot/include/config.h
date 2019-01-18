@@ -59,9 +59,13 @@
 
 /* Location for MLE page tables < 1M */
 /* 1 PDP + 1 PD + 18 PTs = 36M total */
-#define TBOOT_MLEPT_ADDR             (TBOOT_E820_COPY_ADDR + \
-				      TBOOT_E820_COPY_SIZE)
-#define TBOOT_MLEPT_SIZE             (PAGE_SIZE*20)
+#define SLBOOT_MLEPT_ADDR            (TBOOT_E820_COPY_ADDR + \
+                                      TBOOT_E820_COPY_SIZE)
+#define SLBOOT_MLEPT_PAGES           20
+#define SLBOOT_MLEPT_SIZE            (PAGE_SIZE*SLBOOT_MLEPT_PAGES)
+#define SLBOOT_MLEPT_PAGE_TABLES     (SLBOOT_MLEPT_PAGES - 2)
+#define SLBOOT_MLEPT_PAGES_COVERED   (SLBOOT_MLEPT_PAGE_TABLES*512)
+#define SLBOOT_MLEPT_BYTES_COVERED   (SLBOOT_MLEPT_PAGES_COVERED*PAGE_SIZE)
 
 /* Used as a basic cmdline buffer size for copying cmdlines */
 #define TBOOT_KERNEL_CMDLINE_SIZE    0x0400
@@ -91,7 +95,6 @@ extern char _end[];              /* end of tboot */
 
 #define __data     __attribute__ ((__section__ (".data")))
 #define __text     __attribute__ ((__section__ (".text")))
-#define __mlept    __attribute__ ((__section__ (".mlept")))
 
 #define __packed   __attribute__ ((packed))
 
@@ -113,7 +116,6 @@ extern char _end[];              /* end of tboot */
 #endif /* NO_TBOOT_LOGLVL */
 
 #endif /* __CONFIG_H__ */
-
 
 /*
  * Local variables:

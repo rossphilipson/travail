@@ -11,10 +11,6 @@ SECTIONS
 
   .text : {
 	*(.slboot_multiboot_header)
-  . = ALIGN(4096);
-	*(.mlept)
-
-  _mle_start = .;               /* beginning of MLE pages */
 	*(.text)
 	*(.fixup)
 	*(.gnu.warning)
@@ -22,8 +18,6 @@ SECTIONS
 
   .rodata : { *(.rodata) *(.rodata.*) }
   . = ALIGN(4096);
-
-  _mle_end = .;                 /* end of MLE pages */
 
   .data : {			/* Data */
 	*(.data)
