@@ -106,84 +106,80 @@ static void tpm_send_cmd_ready_status(uint32_t locality)
     write_tpm_sts_reg(locality);
 }
 
-
 static bool tpm_send_cmd_ready_status_crb(uint32_t locality)
 {
-      tpm_reg_ctrl_request_t reg_ctrl_request;
-      tpm_reg_ctrl_sts_t reg_ctrl_sts;
+    tpm_reg_ctrl_request_t reg_ctrl_request;
+    tpm_reg_ctrl_sts_t reg_ctrl_sts;
+    uint32_t i = 0;
 
-      read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
-
-#ifdef TPM_TRACE
-      printk(TBOOT_INFO"1. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle); 	
-      printk(TBOOT_INFO"1. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts); 	
-#endif
-
-	if ( reg_ctrl_sts.tpmidle == 1) {
-           tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
-           reg_ctrl_request.cmdReady = 1;
-	    write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
-
-	    return true;
-	}
-
-      tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
-      reg_ctrl_request.goIdle = 1;
-      write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
-	  
-      uint32_t i = 0;
-      do {
-          read_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
-          if ( reg_ctrl_request.goIdle == 0) 
-		break;
-          else {
-              cpu_relax(); 
-	       read_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
+    read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
 
 #ifdef TPM_TRACE
-		printk(TBOOT_INFO"1. reg_ctrl_request.goIdle: 0x%x\n", reg_ctrl_request.goIdle);
-		printk(TBOOT_INFO"1. reg_ctrl_request.cmdReady: 0x%x\n", reg_ctrl_request.cmdReady);
+    printk(TBOOT_INFO"1. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle);
+    printk(TBOOT_INFO"1. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts);
 #endif
 
-          }
-          i++;
-       } while ( i <= TPM_DATA_AVAIL_TIME_OUT);
+    if ( reg_ctrl_sts.tpmidle == 1) {
+        tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+        reg_ctrl_request.cmdReady = 1;
+        write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
-       if ( i > TPM_DATA_AVAIL_TIME_OUT ) {
-            printk(TBOOT_ERR"TPM: reg_ctrl_request.goidle timeout!\n");
-            return false;
-       }
+        return true;
+    }
 
-	read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
+    tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+    reg_ctrl_request.goIdle = 1;
+    write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
+
+    do {
+        read_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
+        if ( reg_ctrl_request.goIdle == 0)
+            break;
+        else {
+            cpu_relax();
+            read_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
+#ifdef TPM_TRACE
+            printk(TBOOT_INFO"1. reg_ctrl_request.goIdle: 0x%x\n", reg_ctrl_request.goIdle);
+            printk(TBOOT_INFO"1. reg_ctrl_request.cmdReady: 0x%x\n", reg_ctrl_request.cmdReady);
+#endif
+        }
+        i++;
+    } while ( i <= TPM_DATA_AVAIL_TIME_OUT);
+
+    if ( i > TPM_DATA_AVAIL_TIME_OUT ) {
+        printk(TBOOT_ERR"TPM: reg_ctrl_request.goidle timeout!\n");
+        return false;
+    }
+
+    read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
 
 #ifdef TPM_TRACE
-	printk(TBOOT_INFO"2. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle); 	
-       printk(TBOOT_INFO"2. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts); 	
+    printk(TBOOT_INFO"2. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle);
+    printk(TBOOT_INFO"2. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts);
 #endif
 
-       tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
-       reg_ctrl_request.cmdReady = 1;
-	write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
-
-#ifdef TPM_TRACE	
-	printk(TBOOT_INFO"2. reg_ctrl_request.goIdle: 0x%x\n", reg_ctrl_request.goIdle);
-	printk(TBOOT_INFO"2. reg_ctrl_request.cmdReady: 0x%x\n", reg_ctrl_request.cmdReady);
-#endif
- 
-	read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
+    tb_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+    reg_ctrl_request.cmdReady = 1;
+    write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
 #ifdef TPM_TRACE
-	printk(TBOOT_INFO"2. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle); 	
-       printk(TBOOT_INFO"2. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts); 	
+    printk(TBOOT_INFO"2. reg_ctrl_request.goIdle: 0x%x\n", reg_ctrl_request.goIdle);
+    printk(TBOOT_INFO"2. reg_ctrl_request.cmdReady: 0x%x\n", reg_ctrl_request.cmdReady);
 #endif
 
-	return true;
-	
+    read_tpm_reg(locality, TPM_CRB_CTRL_STS, &reg_ctrl_sts);
+
+#ifdef TPM_TRACE
+    printk(TBOOT_INFO"2. reg_ctrl_sts.tpmidle: 0x%x\n", reg_ctrl_sts.tpmidle);
+    printk(TBOOT_INFO"2. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts);
+#endif
+
+    return true;
 }
 
 static bool tpm_check_cmd_ready_status_crb(uint32_t locality)
 {
-    tpm_reg_ctrl_request_t reg_ctrl_request; 
+    tpm_reg_ctrl_request_t reg_ctrl_request;
     read_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
 #ifdef TPM_TRACE
@@ -191,11 +187,10 @@ static bool tpm_check_cmd_ready_status_crb(uint32_t locality)
     printk(TBOOT_INFO"3. reg_ctrl_request.cmdReady: 0x%x\n", reg_ctrl_request.cmdReady);
 #endif
 
-    if ( reg_ctrl_request.cmdReady == 0) 
-		return true;
+    if ( reg_ctrl_request.cmdReady == 0 )
+        return true;
     else
-		return false;
-
+        return false;
 }
 
 static bool tpm_check_cmd_ready_status(uint32_t locality)
@@ -261,7 +256,7 @@ bool tpm_validate_locality(uint32_t locality)
 {
     uint32_t i;
     tpm_reg_access_t reg_acc;
-    
+
     for ( i = TPM_VALIDATE_LOCALITY_TIME_OUT; i > 0; i-- ) {
         /*
          * TCG spec defines reg_acc.tpm_reg_valid_sts bit to indicate whether
@@ -290,18 +285,17 @@ bool tpm_validate_locality_crb(uint32_t locality)
          *  Platfrom Tpm  Profile for TPM 2.0 SPEC
          */
         read_tpm_reg(locality, TPM_REG_LOC_STATE, &reg_loc_state);
- 	 if ( reg_loc_state.tpm_reg_valid_sts == 1 && reg_loc_state.loc_assigned == 1 && reg_loc_state.active_locality == locality) {
-			 printk(TBOOT_INFO"TPM: reg_loc_state._raw[0]:  0x%x\n", reg_loc_state._raw[0]);
-			 return true;
-        	}
-        cpu_relax(); 
+        if ( reg_loc_state.tpm_reg_valid_sts == 1 && reg_loc_state.loc_assigned == 1 && reg_loc_state.active_locality == locality) {
+            printk(TBOOT_INFO"TPM: reg_loc_state._raw[0]:  0x%x\n", reg_loc_state._raw[0]);
+            return true;
+        }
+        cpu_relax();
     }
 
     printk(TBOOT_ERR"TPM: tpm_validate_locality_crb timeout\n");
     printk(TBOOT_INFO"TPM: reg_loc_state._raw[0]: 0x%x\n", reg_loc_state._raw[0]);
     return false;
 }
-
 
 bool tpm_wait_cmd_ready(uint32_t locality)
 {
@@ -553,18 +547,15 @@ RelinquishControl:
 bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_size)
 {
     uint32_t i;
-    
     bool ret = true;
-
     //tpm_reg_loc_ctrl_t reg_loc_ctrl;
     tpm_reg_ctrl_start_t start;
-
     tpm_reg_ctrl_cmdsize_t  CmdSize;
     tpm_reg_ctrl_cmdaddr_t  CmdAddr;
     tpm_reg_ctrl_rspsize_t  RspSize;
     tpm_reg_ctrl_rspaddr_t  RspAddr;
     uint32_t  tpm_crb_data_buffer_base;
-	
+
     if ( locality >= TPM_NR_LOCALITIES ) {
         printk(TBOOT_WARN"TPM: Invalid locality for tpm_submit_cmd_crb()\n");
         return false;
@@ -585,7 +576,7 @@ bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_si
 
     if ( !tpm_wait_cmd_ready_crb(locality) ) {
         printk(TBOOT_WARN"TPM: tpm_wait_cmd_read_crb failed\n");
-	 return false;
+        return false;
     }
 
 #ifdef TPM_TRACE
@@ -598,26 +589,22 @@ bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_si
     /* write the command to the TPM CRB  buffer 01-04-2016  */
 //copy *in and size to crb buffer
 
-
-
     CmdAddr.cmdladdr = TPM_LOCALITY_CRB_BASE_N(locality) | TPM_CRB_DATA_BUFFER;
     CmdAddr.cmdhaddr = 0;
     RspAddr.rspaddr = TPM_LOCALITY_CRB_BASE_N(locality) | TPM_CRB_DATA_BUFFER;
     CmdSize.cmdsize = TPMCRBBUF_LEN;
     RspSize.rspsize = TPMCRBBUF_LEN;
     tpm_crb_data_buffer_base = TPM_CRB_DATA_BUFFER;
-	
 
- #ifdef TPM_TRACE  
-       printk(TBOOT_INFO"CmdAddr.cmdladdr is 0x%x\n",CmdAddr.cmdladdr);
-       printk(TBOOT_INFO"CmdAddr.cmdhaddr is 0x%x\n",CmdAddr.cmdhaddr);
+#ifdef TPM_TRACE
+    printk(TBOOT_INFO"CmdAddr.cmdladdr is 0x%x\n",CmdAddr.cmdladdr);
+    printk(TBOOT_INFO"CmdAddr.cmdhaddr is 0x%x\n",CmdAddr.cmdhaddr);
 
-	printk(TBOOT_INFO"CmdSize.cmdsize is 0x%x\n",CmdSize.cmdsize);
-	printk(TBOOT_INFO"RspAddr.rspaddr is 0x%Lx\n",RspAddr.rspaddr);
-	printk(TBOOT_INFO"RspSize.rspsize is 0x%x\n",RspSize.rspsize);
-	
+    printk(TBOOT_INFO"CmdSize.cmdsize is 0x%x\n",CmdSize.cmdsize);
+    printk(TBOOT_INFO"RspAddr.rspaddr is 0x%Lx\n",RspAddr.rspaddr);
+    printk(TBOOT_INFO"RspSize.rspsize is 0x%x\n",RspSize.rspsize);
 #endif
-    
+
     write_tpm_reg(locality, TPM_CRB_CTRL_CMD_ADDR, &CmdAddr);
     write_tpm_reg(locality, TPM_CRB_CTRL_CMD_SIZE, &CmdSize);
     write_tpm_reg(locality, TPM_CRB_CTRL_RSP_ADDR, &RspAddr);
@@ -633,15 +620,15 @@ bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_si
     write_tpm_reg(locality, TPM_CRB_CTRL_START, &start);
     //read_tpm_reg(locality, TPM_CRB_CTRL_START, &start);
     printk(TBOOT_INFO"tpm_ctrl_start.start is 0x%x\n",start.start);
-	
+
     /* check for data available */
     i = 0;
     do {
-	   read_tpm_reg(locality, TPM_CRB_CTRL_START, &start);
+        read_tpm_reg(locality, TPM_CRB_CTRL_START, &start);
         //printk(TBOOT_INFO"tpm_ctrl_start.start is 0x%x\n",start.start);
-          if ( start.start == 0 ) break;
-          else  cpu_relax();
-          i++;
+        if ( start.start == 0 ) break;
+        else  cpu_relax();
+        i++;
     } while ( i <= TPM_DATA_AVAIL_TIME_OUT );
 
     if ( i > TPM_DATA_AVAIL_TIME_OUT ) {
@@ -657,8 +644,6 @@ bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_si
         //tpm_crb_data_buffer_base++;
     }
 
-  
-
 #ifdef TPM_TRACE
     {
         printk(TBOOT_INFO"TPM: After cmd submit, response size = 0x%x\n", *out_size);
@@ -671,14 +656,12 @@ bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size,  u8 *out, u32 *out_si
 
 RelinquishControl:
     /* deactivate current locality */
-   // reg_loc_ctrl._raw[0] = 0;
+    // reg_loc_ctrl._raw[0] = 0;
     //reg_loc_ctrl.relinquish = 1;
     //write_tpm_reg(locality, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
 
     return ret;
-
 }
-
 
 bool release_locality(uint32_t locality)
 {
@@ -717,7 +700,7 @@ bool tpm_relinquish_locality_crb(uint32_t locality)
     uint32_t i;
     tpm_reg_loc_state_t reg_loc_state;
     tpm_reg_loc_ctrl_t reg_loc_ctrl;
-	
+
 #ifdef TPM_TRACE
     printk(TBOOT_DETA"TPM: releasing CRB_INF locality %u\n", locality);
 #endif
@@ -743,24 +726,21 @@ bool tpm_relinquish_locality_crb(uint32_t locality)
     return false;
 }
 
-
-
 bool is_tpm_crb(void)
-{      
-     tpm_crb_interface_id_t crb_interface;
-     read_tpm_reg(0, TPM_INTERFACE_ID, &crb_interface);
-     if (crb_interface.interface_type == TPM_INTERFACE_ID_CRB  ) {
-	 printk(TBOOT_INFO"TPM: PTP CRB interface is active...\n");
-	 if (g_tpm_family != TPM_IF_20_CRB ) g_tpm_family = TPM_IF_20_CRB;
-        return true;
+{
+    tpm_crb_interface_id_t crb_interface;
+    read_tpm_reg(0, TPM_INTERFACE_ID, &crb_interface);
+    if (crb_interface.interface_type == TPM_INTERFACE_ID_CRB  ) {
+        printk(TBOOT_INFO"TPM: PTP CRB interface is active...\n");
+        if (g_tpm_family != TPM_IF_20_CRB ) g_tpm_family = TPM_IF_20_CRB;
+            return true;
      }
      if (crb_interface.interface_type == TPM_INTERFACE_ID_FIFO_20) {
-	  printk(TBOOT_INFO"TPM: TPM 2.0 FIFO interface is active...\n");     
-	  if (g_tpm_family != TPM_IF_20_FIFO) g_tpm_family = TPM_IF_20_FIFO;
+         printk(TBOOT_INFO"TPM: TPM 2.0 FIFO interface is active...\n");
+         if (g_tpm_family != TPM_IF_20_FIFO) g_tpm_family = TPM_IF_20_FIFO;
      }
-     return false;	
+     return false;
 }
-
 
 bool prepare_tpm(void)
 {
@@ -768,15 +748,15 @@ bool prepare_tpm(void)
      * must ensure TPM_ACCESS_0.activeLocality bit is clear
      * (: locality is not active)
      */
-   if (is_tpm_crb()) 
+    if (is_tpm_crb())
 //   	return release_locality_crb(0);
-       return true;
-   else 
-   	return release_locality(0);
+        return true;
+    else
+        return release_locality(0);
 }
 
-bool tpm_request_locality_crb(uint32_t locality){
-
+bool tpm_request_locality_crb(uint32_t locality)
+{
     uint32_t            i;
     tpm_reg_loc_state_t  reg_loc_state;
     tpm_reg_loc_ctrl_t    reg_loc_ctrl;
@@ -801,7 +781,6 @@ bool tpm_request_locality_crb(uint32_t locality){
     }
 
     return true;
-
 }
 
 bool tpm_workaround_crb(void)
@@ -833,51 +812,40 @@ bool tpm_detect(void)
 {
     struct tpm_if *tpm = get_tpm(); /* Don't leave tpm as NULL */
     const struct tpm_if_fp *tpm_fp;
+
     if (is_tpm_crb()) {
-         printk(TBOOT_INFO"TPM: This is Intel PTT, TPM Family 0x%d\n", g_tpm_family);
-         /*TODO get in cleanup if (!txt_is_launched()) {*/
-               if ( tpm_validate_locality_crb(0) ) 
-	             printk(TBOOT_INFO"TPM: CRB_INF Locality 0 is open\n");
-		 else {
-		 	printk(TBOOT_INFO"TPM: CRB_INF request access to Locality 0...\n");
-			if (!tpm_request_locality_crb(0)) {
-			        printk(TBOOT_ERR"TPM: CRB_INF Locality 0 request failed...\n");
-				 return false;
-			 }
-                }
-	  /*}
-    	  else {
-              if ( tpm_validate_locality_crb(2) ) 
-		     printk(TBOOT_INFO"TPM: CRB_INF Locality 2 is open\n");
-		else {	 
-		      printk(TBOOT_INFO"TPM: CRB_INF request access to Locality 2...\n");
-		      if (!tpm_request_locality_crb(2)) {
-		 	     printk(TBOOT_ERR"TPM: CRB_INF Locality 2 request failed...\n");
-                          return false;
-			}
-		}
-    	  }*/
+        printk(TBOOT_INFO"TPM: This is Intel PTT, TPM Family 0x%d\n", g_tpm_family);
+
+        if ( tpm_validate_locality_crb(0) )
+            printk(TBOOT_INFO"TPM: CRB_INF Locality 0 is open\n");
+        else {
+            printk(TBOOT_INFO"TPM: CRB_INF request access to Locality 0...\n");
+            if (!tpm_request_locality_crb(0)) {
+                printk(TBOOT_ERR"TPM: CRB_INF Locality 0 request failed...\n");
+                return false;
+            }
+        }
     }
     else {
-		g_tpm_ver = TPM_VER_12; 
-		tpm_fp = get_tpm_fp(); /* Don't leave tpm_fp as NULL */
+        g_tpm_ver = TPM_VER_12;
+        tpm_fp = get_tpm_fp(); /* Don't leave tpm_fp as NULL */
 
-		if ( tpm_validate_locality(0) )  printk(TBOOT_INFO"TPM: FIFO_INF Locality 0 is open\n");
-		else {	
-			printk(TBOOT_ERR"TPM: FIFO_INF Locality 0 is not open\n");
-			return false;
-			}
-		/* determine TPM family from command check */
-		if ( tpm_fp->check() )  {
-			g_tpm_family = TPM_IF_12;
-			printk(TBOOT_INFO"TPM: discrete TPM1.2 Family 0x%d\n", g_tpm_family);	
-			}
-		else {
-			g_tpm_family = TPM_IF_20_FIFO;
-			printk(TBOOT_INFO"TPM: discrete TPM2.0 Family 0x%d\n", g_tpm_family);
-			}
-	}
-   
+        if ( tpm_validate_locality(0) )  printk(TBOOT_INFO"TPM: FIFO_INF Locality 0 is open\n");
+        else {
+            printk(TBOOT_ERR"TPM: FIFO_INF Locality 0 is not open\n");
+            return false;
+        }
+        /* determine TPM family from command check */
+        if ( tpm_fp->check() )  {
+            g_tpm_family = TPM_IF_12;
+            printk(TBOOT_INFO"TPM: discrete TPM1.2 Family 0x%d\n", g_tpm_family);
+        }
+        else {
+            g_tpm_family = TPM_IF_20_FIFO;
+            printk(TBOOT_INFO"TPM: discrete TPM2.0 Family 0x%d\n", g_tpm_family);
+        }
+    }
+
     if (g_tpm_family == TPM_IF_12)  g_tpm_ver = TPM_VER_12;
     if (g_tpm_family == TPM_IF_20_FIFO)  g_tpm_ver = TPM_VER_20;
     if (g_tpm_family == TPM_IF_20_CRB)  g_tpm_ver = TPM_VER_20;
@@ -894,8 +862,9 @@ void tpm_print(struct tpm_if *ti)
     printk(TBOOT_INFO"TPM attribute:\n");
     printk(TBOOT_INFO"\t extend policy: %d\n", ti->extpol);
     printk(TBOOT_INFO"\t current alg id: 0x%x\n", ti->cur_alg);
-    printk(TBOOT_INFO"\t timeout values: A: %u, B: %u, C: %u, D: %u\n", ti->timeout.timeout_a, ti->timeout.timeout_b, ti->timeout.timeout_c, ti->timeout.timeout_d);
-} 
+    printk(TBOOT_INFO"\t timeout values: A: %u, B: %u, C: %u, D: %u\n",
+           ti->timeout.timeout_a, ti->timeout.timeout_b, ti->timeout.timeout_c, ti->timeout.timeout_d);
+}
 
 struct tpm_if *get_tpm(void)
 {
@@ -910,8 +879,8 @@ const struct tpm_if_fp *get_tpm_fp(void)
         return &tpm_20_if_fp;
 
     return NULL;
-
 }
+
 /*
  * Local variables:
  * mode: C
