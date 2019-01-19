@@ -4,14 +4,14 @@
 
 #define NULL_AUTH_SIZE 9
 
-uint16_t tpm2_null_auth_size(void)
+u16 tpm2_null_auth_size(void)
 {
 	return NULL_AUTH_SIZE;
 }
 
-uint16_t tpm2_null_auth(uint8_t *b)
+u16 tpm2_null_auth(u8 *b)
 {
-	uint32_t *handle = (uint32_t *)b;
+	u32 *handle = (u32 *)b;
 
 	memset(b, 0, NULL_AUTH_SIZE);
 

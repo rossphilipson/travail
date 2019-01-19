@@ -61,13 +61,13 @@ err:
 	return NULL;
 }
 
-int8_t tpm_request_locality(struct tpm *t, uint8_t l)
+int8_t tpm_request_locality(struct tpm *t, u8 l)
 {
 	return tpm->ops->request_locality(l);
 }
 
-int8_t tpm_extend_pcr(struct tpm *t, uint32_t pcr, uint16_t algo,
-		uint8_t *digest)
+int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
+		u8 *digest)
 {
 	int8_t ret;
 
@@ -85,9 +85,9 @@ int8_t tpm_extend_pcr(struct tpm *t, uint32_t pcr, uint16_t algo,
 		ret = tpm1_pcr_extend(t, &d);
 	} else if (t->family == TPM20) {
 #ifdef CONF_STATIC_ENV
-		uint8_t buf[70];
+		u8 buf[70];
 #else
-		uint8_t *buf = (uint8_t *)malloc(70);
+		u8 *buf = (u8 *)malloc(70);
 #endif
 		struct tpml_digest_values *d;
 

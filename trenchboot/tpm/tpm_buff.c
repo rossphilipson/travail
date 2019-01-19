@@ -11,7 +11,7 @@
 #define TPM_CRB_DATA_BUFFER_OFFSET	0x80
 #define TPM_CRB_DATA_BUFFER_SIZE	3966
 
-static uint8_t *tpmb_reserve(struct tpmbuff *b)
+static u8 *tpmb_reserve(struct tpmbuff *b)
 {
 	if (b->locked)
 		return NULL;
@@ -32,9 +32,9 @@ static void tpmb_free(struct tpmbuff *b)
 	b->tail = NULL;
 }
 
-static uint8_t *tpmb_put(struct tpmbuff *b, size_t size)
+static u8 *tpmb_put(struct tpmbuff *b, size_t size)
 {
-	uint8_t *tail = b->tail;
+	u8 *tail = b->tail;
 
 	if ((b->len + size) > b->truesize)
 		return NULL; /* TODO: add overflow buffer support */
@@ -97,7 +97,7 @@ struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
 		if (b->head)
 			goto reset;
 
-		b->head = (uint8_t *)malloc(PAGE_SIZE);
+		b->head = (u8 *)malloc(PAGE_SIZE);
 		b->truesize = PAGE_SIZE;
 		break;
 	case TPM_CRB:

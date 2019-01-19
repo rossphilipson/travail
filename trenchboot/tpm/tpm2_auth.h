@@ -9,7 +9,7 @@
 #ifndef _TPM2_H
 #define _TPM2_H
 
-uint16_t tpm2_null_auth_size(void);
-uint16_t tpm2_null_auth(uint8_t *b);
+u16 tpm2_null_auth_size(void);
+u16 tpm2_null_auth(u8 *b);
 
 #endif

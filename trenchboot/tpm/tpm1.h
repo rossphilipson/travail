@@ -13,48 +13,48 @@
 #include <tpm.h>
 
 /* Section 2.2.3 */
-#define TPM_AUTH_DATA_USAGE uint8_t
-#define TPM_PAYLOAD_TYPE uint8_t
-#define TPM_VERSION_BYTE uint8_t
-#define TPM_TAG uint16_t
-#define TPM_PROTOCOL_ID uint16_t
-#define TPM_STARTUP_TYPE uint16_t
-#define TPM_ENC_SCHEME uint16_t
-#define TPM_SIG_SCHEME uint16_t
-#define TPM_MIGRATE_SCHEME uint16_t
-#define TPM_PHYSICAL_PRESENCE uint16_t
-#define TPM_ENTITY_TYPE uint16_t
-#define TPM_KEY_USAGE uint16_t
-#define TPM_EK_TYPE uint16_t
-#define TPM_STRUCTURE_TAG uint16_t
-#define TPM_PLATFORM_SPECIFIC uint16_t
-#define TPM_COMMAND_CODE uint32_t
-#define TPM_CAPABILITY_AREA uint32_t
-#define TPM_KEY_FLAGS uint32_t
-#define TPM_ALGORITHM_ID uint32_t
-#define TPM_MODIFIER_INDICATOR uint32_t
-#define TPM_ACTUAL_COUNT uint32_t
-#define TPM_TRANSPORT_ATTRIBUTES uint32_t
-#define TPM_AUTHHANDLE uint32_t
-#define TPM_DIRINDEX uint32_t
-#define TPM_KEY_HANDLE uint32_t
-#define TPM_PCRINDEX uint32_t
-#define TPM_RESULT uint32_t
-#define TPM_RESOURCE_TYPE uint32_t
-#define TPM_KEY_CONTROL uint32_t
-#define TPM_NV_INDEX uint32_t The
-#define TPM_FAMILY_ID uint32_t
-#define TPM_FAMILY_VERIFICATION uint32_t
-#define TPM_STARTUP_EFFECTS uint32_t
-#define TPM_SYM_MODE uint32_t
-#define TPM_FAMILY_FLAGS uint32_t
-#define TPM_DELEGATE_INDEX uint32_t
-#define TPM_CMK_DELEGATE uint32_t
-#define TPM_COUNT_ID uint32_t
-#define TPM_REDIT_COMMAND uint32_t
-#define TPM_TRANSHANDLE uint32_t
-#define TPM_HANDLE uint32_t
-#define TPM_FAMILY_OPERATION uint32_t
+#define TPM_AUTH_DATA_USAGE u8
+#define TPM_PAYLOAD_TYPE u8
+#define TPM_VERSION_BYTE u8
+#define TPM_TAG u16
+#define TPM_PROTOCOL_ID u16
+#define TPM_STARTUP_TYPE u16
+#define TPM_ENC_SCHEME u16
+#define TPM_SIG_SCHEME u16
+#define TPM_MIGRATE_SCHEME u16
+#define TPM_PHYSICAL_PRESENCE u16
+#define TPM_ENTITY_TYPE u16
+#define TPM_KEY_USAGE u16
+#define TPM_EK_TYPE u16
+#define TPM_STRUCTURE_TAG u16
+#define TPM_PLATFORM_SPECIFIC u16
+#define TPM_COMMAND_CODE u32
+#define TPM_CAPABILITY_AREA u32
+#define TPM_KEY_FLAGS u32
+#define TPM_ALGORITHM_ID u32
+#define TPM_MODIFIER_INDICATOR u32
+#define TPM_ACTUAL_COUNT u32
+#define TPM_TRANSPORT_ATTRIBUTES u32
+#define TPM_AUTHHANDLE u32
+#define TPM_DIRINDEX u32
+#define TPM_KEY_HANDLE u32
+#define TPM_PCRINDEX u32
+#define TPM_RESULT u32
+#define TPM_RESOURCE_TYPE u32
+#define TPM_KEY_CONTROL u32
+#define TPM_NV_INDEX u32 The
+#define TPM_FAMILY_ID u32
+#define TPM_FAMILY_VERIFICATION u32
+#define TPM_STARTUP_EFFECTS u32
+#define TPM_SYM_MODE u32
+#define TPM_FAMILY_FLAGS u32
+#define TPM_DELEGATE_INDEX u32
+#define TPM_CMK_DELEGATE u32
+#define TPM_COUNT_ID u32
+#define TPM_REDIT_COMMAND u32
+#define TPM_TRANSHANDLE u32
+#define TPM_HANDLE u32
+#define TPM_FAMILY_OPERATION u32
 
 /* Section 6 */
 #define TPM_TAG_RQU_COMMAND		0x00C1
@@ -74,7 +74,7 @@
 
 /* Section 5.4 */
 struct tpm_sha1_digest {
-	uint8_t digest[SHA1_DIGEST_SIZE];
+	u8 digest[SHA1_DIGEST_SIZE];
 };
 struct tpm_digest {
 	TPM_PCRINDEX pcr;
@@ -104,6 +104,6 @@ struct tpm_extend_resp {
 };
 
 /* TPM Commands */
-uint8_t tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d);
+u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d);
 
 #endif

@@ -19,38 +19,38 @@
  *   Using this as the base structure similar to the spec
  */
 struct tpm2b {
-	uint16_t size;
-	uint8_t	buffer[0];
+	u16 size;
+	u8	buffer[0];
 };
 
 // Table 32  Definition of TPMA_SESSION Bits <  IN/OUT>
 struct tpma_session{
-	uint8_t continue_session  : 1;
-	uint8_t audit_exclusive	  : 1;
-	uint8_t audit_reset       : 1;
-	uint8_t reserved3_4       : 2;
-	uint8_t decrypt           : 1;
-	uint8_t encrypt           : 1;
-	uint8_t audit             : 1;
+	u8 continue_session  : 1;
+	u8 audit_exclusive	  : 1;
+	u8 audit_reset       : 1;
+	u8 reserved3_4       : 2;
+	u8 decrypt           : 1;
+	u8 encrypt           : 1;
+	u8 audit             : 1;
 };
 
 
 // Table 72  Definition of TPMT_HA Structure <  IN/OUT>
 struct tpmt_ha {
-	uint16_t alg;		/* TPMI_ALG_HASH	*/
-	uint8_t digest[0];	/* TPMU_HA		*/
+	u16 alg;		/* TPMI_ALG_HASH	*/
+	u8 digest[0];	/* TPMU_HA		*/
 };
 
 // Table 100  Definition of TPML_DIGEST_VALUES Structure
 struct tpml_digest_values {
-	uint32_t count;
+	u32 count;
 	struct tpmt_ha digests[0];
 };
 
 
 // Table 124  Definition of TPMS_AUTH_COMMAND Structure <  IN>
 struct tpms_auth_cmd {
-	uint32_t *handle;
+	u32 *handle;
 	struct tpm2b *nonce;
 	struct tpma_session *attributes;
 	struct tpm2b *hmac;
@@ -65,18 +65,18 @@ struct tpms_auth_resp {
 
 struct tpm2_cmd {
 	struct tpm_header *header;
-	uint32_t *handles[];	/* TPM_HANDLE		*/
+	u32 *handles[];	/* TPM_HANDLE		*/
 	struct tpm2b *auth;	/* Authorization Area	*/
-	uint8_t *params;	/* Parameters		*/
-	uint8_t *raw;		/* internal raw buffer	*/
+	u8 *params;	/* Parameters		*/
+	u8 *raw;		/* internal raw buffer	*/
 };
 
 struct tpm2_resp {
 	struct tpm_header *header;
-	uint32_t *handles[];	/* TPM_HANDLE		*/
+	u32 *handles[];	/* TPM_HANDLE		*/
 	struct tpm2b *params;	/* Parameters		*/
-	uint8_t *auth;		/* Authorization Area	*/
-	uint8_t *raw;		/* internal raw buffer	*/
+	u8 *auth;		/* Authorization Area	*/
+	u8 *raw;		/* internal raw buffer	*/
 };
 
 #endif

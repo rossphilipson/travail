@@ -11,7 +11,7 @@
 
 #include "tpm1.h"
 
-uint8_t tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
+u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
 {
 	struct tpmbuff *b = t->buff;
 	struct tpm_header *hdr;

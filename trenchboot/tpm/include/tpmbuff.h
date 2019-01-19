@@ -7,9 +7,9 @@
 #define _TPMBUFF_H
 
 struct tpmbuff_operations {
-	uint8_t *(*reserve)(void);
+	u8 *(*reserve)(void);
 	void (*free)(void);
-	uint8_t *(*put)(size_t size);
+	u8 *(*put)(size_t size);
 	size_t (*trim)(size_t size);
 	size_t (*size)(void);
 };
@@ -19,12 +19,12 @@ struct tpmbuff {
 	size_t truesize;
 	size_t len;
 
-	uint8_t locked;
+	u8 locked;
 
-	uint8_t *head;
-	uint8_t *data;
-	uint8_t *tail;
-	uint8_t *end;
+	u8 *head;
+	u8 *data;
+	u8 *tail;
+	u8 *end;
 
 	struct tpmbuff_operations *ops;
 };

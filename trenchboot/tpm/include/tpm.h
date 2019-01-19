@@ -9,21 +9,21 @@
 #include <tpmbuff.h>
 
 struct tpm_operations {
-	uint8_t (*init)(struct tpm *t)
-	uint8_t (*request_locality)(uint8_t l)
+	u8 (*init)(struct tpm *t)
+	u8 (*request_locality)(u8 l)
 	size_t (*send)(struct tpmbuff *buf)
 	size_t (*recv)(struct tpmbuff *buf)
 };
 
 struct tpm {
-	uint32_t vendor;
-	uint8_t family;
+	u32 vendor;
+	u8 family;
 	struct tpm_operations *ops;
 	struct tpmbuff *buff;
 };
 
 struct tpm *enable_tpm(tpm_hw_type force);
-int8_t tpm_request_locality(struct tpm *t, uint8_t l);
-int8_t tpm_extend_pcr(struct tpm *t, uint32_t pcr, uint16_t algo,
-		uint8_t *digest);
+int8_t tpm_request_locality(struct tpm *t, u8 l);
+int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
+		u8 *digest);
 #endif

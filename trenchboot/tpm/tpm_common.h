@@ -14,9 +14,9 @@
 #define SM3256_SIZE	32
 
 struct tpm_header {
-	uint16_t tag;
-	uint32_t size;
-	uint32_t code;
+	u16 tag;
+	u32 size;
+	u32 code;
 };
 
 #endif

@@ -30,39 +30,39 @@
 #define STS_GO				0x20 /* (W) */
 
 #define NO_LOCALITY			0xFF
-static uint8_t locality = NO_LOCALITY;
+static u8 locality = NO_LOCALITY;
 
-static uint8_t read8(uint32_t field)
+static u8 read8(u32 field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
 
 	return ioread8(mmio_addr);
 }
 
-static void write8(unsigned char val, uint32_t field)
+static void write8(unsigned char val, u32 field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
 
 	iowrite8(val, mmio_addr);
 }
 
-static uint32_t read32(uint32_t field)
+static u32 read32(u32 field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
 
 	return ioread32(mmio_addr);
 }
 
-static void write32(unsigned int val, uint32_t field)
+static void write32(unsigned int val, u32 field)
 {
-	void *mmio_addr = (void*)(uint64_t)(MMIO_BASE | field);
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
 
 	iowrite32(val, mmio_addr);
 }
 
-static uint32_t burst_wait(void)
+static u32 burst_wait(void)
 {
-	uint32_t count = 0;
+	u32 count = 0;
 
 	while (count == 0) {
 		count = read8(STS(locality) + 1);
@@ -75,7 +75,7 @@ static uint32_t burst_wait(void)
 	return count;
 }
 
-uint8_t tis_request_locality(uint8_t l)
+u8 tis_request_locality(u8 l)
 {
 	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
 	write8(ACCESS_REQUEST_USE, ACCESS(l));
@@ -91,9 +91,9 @@ uint8_t tis_request_locality(uint8_t l)
 	return locality;
 }
 
-uint8_t tis_init(struct tpm *t)
+u8 tis_init(struct tpm *t)
 {
-	uint8_t i;
+	u8 i;
 
 	for (i=0; i<=MAX_LOCALITY; i++)
 		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
@@ -110,9 +110,9 @@ uint8_t tis_init(struct tpm *t)
 
 size_t tis_send(struct tpmbuff *buf)
 {
-	uint8_t status, *buf_ptr;
-	uint32_t burstcnt = 0;
-	uint32_t count = 0;
+	u8 status, *buf_ptr;
+	u32 burstcnt = 0;
+	u32 count = 0;
 
 	if (locality > MAX_LOCALITY)
 		return 0;
@@ -156,10 +156,10 @@ size_t tis_send(struct tpmbuff *buf)
 static size_t recv_data(unsigned char *buf, size_t len)
 {
 	size_t size = 0;
-	uint8_t status, *bufptr;
-	uint32_t burstcnt = 0;
+	u8 status, *bufptr;
+	u32 burstcnt = 0;
 
-	bufptr = (uint8_t *)buf;
+	bufptr = (u8 *)buf;
 
 	status = read8(STS(locality));
 	while ((status & (STS_DATA_AVAIL | STS_VALID))
@@ -180,8 +180,8 @@ static size_t recv_data(unsigned char *buf, size_t len)
 
 size_t tis_recv(struct tpmbuff *buf)
 {
-	uint32_t expected;
-	uint8_t status, *buf_ptr;
+	u32 expected;
+	u8 status, *buf_ptr;
 	struct tpm_header *hdr;
 
 	/* ensure that there is data available */
