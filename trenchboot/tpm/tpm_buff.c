@@ -72,7 +72,9 @@ static struct tpmbuff_operations ops = {
 };
 
 #ifdef CONF_STATIC_ENV
-static struct tpmbuff _b = {
+statuc u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
+
+static struct tpmbuff tpm_buff = {
 	.ops = &ops;
 };
 #endif
@@ -80,12 +82,12 @@ static struct tpmbuff _b = {
 struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
 {
 #ifdef CONF_STATIC_ENV
-	struct tpmbuff *b = &_b;
+	struct tpmbuff *b = &tpm_buff;
 #else
 	struct tpmbuff *b = (struct tpmbuff *)malloc(sizeof(struct tpmbuff));
 
 	if (!b)
-		return NULL;
+		goto err;
 
 	b->ops = &ops;
 #endif
@@ -97,8 +99,15 @@ struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
 		if (b->head)
 			goto reset;
 
+#ifdef CONF_STATIC_ENV
+		b->head = &tis_buff;
+		b->truesize = STATIC_TIS_BUFFER_SIZE;
+#else
 		b->head = (u8 *)malloc(PAGE_SIZE);
+		if (!b->head)
+			goto free_buff;
 		b->truesize = PAGE_SIZE;
+#endif
 		break;
 	case TPM_CRB:
 		b->buf = TPM_LPC_BASE + (locality << 12) \
@@ -109,7 +118,7 @@ struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
 		/* Not implemented yet */
 		break;;
 	default:
-		return NULL;
+		goto err;
 	}
 
 reset:
@@ -120,6 +129,13 @@ reset:
 	b->end = b->head + (b->truesize - 1);
 
 	return b;
+
+#ifndef CONF_STATIC_ENV
+free_buff:
+	free(b);
+#endif
+err:
+	return NULL;
 }
 
 void free_tpmbuff(struct tpmbuff *b, tpm_hw_intf i)
@@ -127,7 +143,11 @@ void free_tpmbuff(struct tpmbuff *b, tpm_hw_intf i)
 
 	switch (i) {
 	case TPM_TIS:
+#ifdef CONF_STATIC_ENV
+		b->head = NULL;
+#else
 		free(b->head);
+#endif
 		break;
 	case TPM_CRB:
 		/* No Op */
@@ -139,5 +159,7 @@ void free_tpmbuff(struct tpmbuff *b, tpm_hw_intf i)
 		break;
 	}
 
+#ifndef CONF_STATIC_ENV
 	free(b);
+#endif
 }

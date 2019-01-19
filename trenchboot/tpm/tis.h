@@ -12,6 +12,7 @@
 #include <types.h>
 #include <tpm.h>
 
+#define STATIC_TIS_BUFFER_SIZE 1024
 /* TPM Interface Specification functions */
 u8 tis_request_locality(u8 l);
 u8 tis_init(struct tpm *t);

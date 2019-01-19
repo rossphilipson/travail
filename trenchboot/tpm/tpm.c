@@ -19,13 +19,13 @@ struct tpm_operations tis_ops = {
 };
 
 #ifdef CONF_STATIC_ENV
-struct tpm _t;
+static struct tpm tpm;
 #endif
 
 struct tpm *enable_tpm(tpm_hw_type force)
 {
 #ifdef CONF_STATIC_ENV
-	struct tpm *t = &_t;
+	struct tpm *t = &tpm;
 #else
 	struct tpm *t = (struct tpm *)malloc(sizeof(struct tpm));
 
@@ -66,6 +66,7 @@ int8_t tpm_request_locality(struct tpm *t, u8 l)
 	return tpm->ops->request_locality(l);
 }
 
+#define MAX_TPM_EXTEND_SIZE 70 /* TPM2 SHA512 is the largest */
 int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		u8 *digest)
 {
@@ -84,14 +85,12 @@ int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 
 		ret = tpm1_pcr_extend(t, &d);
 	} else if (t->family == TPM20) {
-#ifdef CONF_STATIC_ENV
-		u8 buf[70];
-#else
-		u8 *buf = (u8 *)malloc(70);
-#endif
 		struct tpml_digest_values *d;
+#ifdef CONF_STATIC_ENV
+		u8 buf[MAX_TPM_EXTEND_SIZE];
+#else
+		u8 *buf = (u8 *)malloc(MAX_TPM_EXTEND_SIZE);
 
-#ifndef CONF_STATIC_ENV
 		if (!buf) {
 			ret = -ERR;
 			goto out;
