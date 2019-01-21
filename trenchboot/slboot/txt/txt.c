@@ -97,9 +97,9 @@ static void print_file_info(void)
 static void *build_mle_pagetable(void)
 {
     void *ptab_base;
-    uint32_t ptab_size, mle_off;
+    uint32_t ptab_size, mle_off, pd_off;
     void *pg_dir_ptr_tab, *pg_dir, *pg_tab;
-    uint64_t *pte;
+    uint64_t *pte, *pde;
     uint32_t mle_start = g_il_kernel_setup.protected_mode_base;
     uint32_t mle_size = g_il_kernel_setup.protected_mode_size;
 
@@ -130,16 +130,25 @@ static void *build_mle_pagetable(void)
     /* only use first entry in page dir ptr table */
     *(uint64_t *)pg_dir_ptr_tab = MAKE_PDTE(pg_dir);
 
-    /* only use first entry in page dir */
+    /* start with first entry in page dir */
     *(uint64_t *)pg_dir = MAKE_PDTE(pg_tab);
 
     pte = pg_tab;
+    pde = pg_dir;
     mle_off = 0;
+    pd_off = 0;
+
     do {
         *pte = MAKE_PDTE(mle_start + mle_off);
 
         pte++;
         mle_off += PAGE_SIZE;
+
+        pd_off++;
+        if ( pd_off % 512 ) {
+            pde++;
+            *pde = MAKE_PDTE(pte);
+        }
     } while ( mle_off < mle_size );
 
     return ptab_base;
