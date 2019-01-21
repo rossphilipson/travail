@@ -118,7 +118,7 @@ static void *build_mle_pagetable(void)
     }
 
     /* place ptab_base below MLE */
-    ptab_size = SLBOOT_MLEPT_BYTES_COVERED;
+    ptab_size = SLBOOT_MLEPT_SIZE;
     ptab_base = (void*)SLBOOT_MLEPT_ADDR;
     tb_memset(ptab_base, 0, ptab_size);
     printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
