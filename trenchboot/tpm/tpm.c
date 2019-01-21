@@ -22,7 +22,7 @@ struct tpm_operations tis_ops = {
 static struct tpm tpm;
 #endif
 
-struct tpm *enable_tpm(tpm_hw_type force)
+struct tpm *enable_tpm(enum tpm_hw_intf force)
 {
 #ifdef CONF_STATIC_ENV
 	struct tpm *t = &tpm;

@@ -29,7 +29,7 @@ struct tpmbuff {
 	struct tpmbuff_operations *ops;
 };
 
-struct tpmbuff *alloc_tpmbuff(tpm_hw_intf i, uin8_t locality);
-void free_tpmbuff(struct tpmbuff *b, tpm_hw_intf i);
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, uin8_t locality);
+void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i);
 
 #endif

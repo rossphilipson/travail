@@ -79,7 +79,7 @@ static struct tpmbuff tpm_buff = {
 };
 #endif
 
-struct tpmbuff *alloc_tpmbuff(tpm_hw_type intf, uin8_t locality)
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
 {
 #ifdef CONF_STATIC_ENV
 	struct tpmbuff *b = &tpm_buff;
@@ -138,7 +138,7 @@ err:
 	return NULL;
 }
 
-void free_tpmbuff(struct tpmbuff *b, tpm_hw_intf i)
+void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i)
 {
 
 	switch (i) {
