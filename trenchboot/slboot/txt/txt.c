@@ -310,6 +310,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     txt_heap_t *txt_heap;
     uint64_t *size;
     struct tpm_if *tpm = get_tpm();
+    os_mle_data_t *os_mle_data;
 
     txt_heap = get_txt_heap();
 
@@ -322,10 +323,14 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     /*
      * OS/loader to MLE data
      */
-    os_mle_data_t *os_mle_data = get_os_mle_data_start(txt_heap);
+    os_mle_data = get_os_mle_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_mle_data - sizeof(uint64_t));
     *size = sizeof(*os_mle_data) + sizeof(uint64_t);
     tb_memset(os_mle_data, 0, sizeof(*os_mle_data));
+    /* set the zero page addr here */
+    /* NOTE msb_key_hash is not currently used and the log is setup later */
+    os_mle_data = get_os_mle_data_start(txt_heap);
+    os_mle_data->zero_page_addr = (uint32_t)g_il_kernel_setup.boot_params;
 
     /*
      * OS/loader to SINIT data
@@ -451,7 +456,6 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
 tb_error_t txt_launch_environment(loader_ctx *lctx)
 {
     void *mle_ptab_base;
-    os_mle_data_t *os_mle_data;
     txt_heap_t *txt_heap;
 
     /*
@@ -480,15 +484,12 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     if ( txt_heap == NULL )
         return TB_ERR_TXT_NOT_SUPPORTED;
 
-    /* TODO set the zero page addr here or possibly later in the launch */
-    os_mle_data = get_os_mle_data_start(txt_heap);
-    os_mle_data->zero_page_addr = 0;
-
     /* set MTRRs properly for AC module (SINIT) */
     if ( !set_mtrrs_for_acmod(g_sinit) )
         return TB_ERR_FATAL;
 
    /* deactivate current locality */
+   /* TODO why is it not done for 1.2 w/ release_locality() ? */
    if (g_tpm_family == TPM_IF_20_CRB ) {
        printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
 	if (!tpm_relinquish_locality_crb(0)){
@@ -496,7 +497,6 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
 		error_action(TB_ERR_TPM_NOT_READY) ;
 	}
    }
-   /* TODO why is it not done for 1.2 w/ release_locality() ? */
 
    /*{
    tpm_reg_loc_ctrl_t    reg_loc_ctrl;
