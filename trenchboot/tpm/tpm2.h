@@ -20,13 +20,13 @@
  */
 struct tpm2b {
 	u16 size;
-	u8	buffer[0];
+	u8 buffer[0];
 };
 
 // Table 32  Definition of TPMA_SESSION Bits <  IN/OUT>
 struct tpma_session{
 	u8 continue_session  : 1;
-	u8 audit_exclusive	  : 1;
+	u8 audit_exclusive   : 1;
 	u8 audit_reset       : 1;
 	u8 reserved3_4       : 2;
 	u8 decrypt           : 1;
@@ -37,7 +37,7 @@ struct tpma_session{
 
 // Table 72  Definition of TPMT_HA Structure <  IN/OUT>
 struct tpmt_ha {
-	u16 alg;		/* TPMI_ALG_HASH	*/
+	u16 alg;	/* TPMI_ALG_HASH	*/
 	u8 digest[0];	/* TPMU_HA		*/
 };
 

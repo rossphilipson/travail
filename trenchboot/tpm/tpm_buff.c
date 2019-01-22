@@ -94,7 +94,7 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
 
 	switch (intf) {
 	case TPM_DEVNODE:
-		break;;
+		break;
 	case TPM_TIS:
 		if (b->head)
 			goto reset;
@@ -116,7 +116,7 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
-		break;;
+		break;
 	default:
 		goto err;
 	}
@@ -154,7 +154,7 @@ void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i)
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
-		break;;
+		break;
 	default:
 		break;
 	}

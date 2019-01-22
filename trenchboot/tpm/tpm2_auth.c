@@ -19,4 +19,3 @@ u16 tpm2_null_auth(u8 *b)
 
 	return NULL_AUTH_SIZE;
 }
-

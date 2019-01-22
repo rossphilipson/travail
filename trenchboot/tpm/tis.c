@@ -195,7 +195,7 @@ size_t tis_recv(struct tpmbuff *buf)
 	expected = sizeof(struct tpm_header);
 	if (recv_data(buf->head, expected) < expected)
 		goto err;
-	
+
 	/* convert header */
 	hdr->tag = be16_to_cpu(hdr->tag);
 	hdr->size = be32_to_cpu(hdr->size);
