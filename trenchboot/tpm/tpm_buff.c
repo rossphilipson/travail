@@ -47,7 +47,7 @@ static u8 *tpmb_put(struct tpmbuff *b, size_t size)
 
 static size_t tpmb_trim(struct tpmbuff *b, size_t size)
 {
-	if ((b->len - size) < 0)
+	if (b->len < size)
 		size = b->len;
 	
 	/* TODO: add overflow buffer support */
@@ -94,6 +94,8 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
 
 	switch (intf) {
 	case TPM_DEVNODE:
+		/* TODO: need implementation */
+		goto err;
 		break;
 	case TPM_TIS:
 		if (b->head)
@@ -116,6 +118,7 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
+		goto err;
 		break;
 	default:
 		goto err;
@@ -150,7 +153,7 @@ void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i)
 #endif
 		break;
 	case TPM_CRB:
-		/* No Op */
+		b->head = NULL;
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */

@@ -35,12 +35,13 @@ struct tpm *enable_tpm(enum tpm_hw_intf force)
 
 	switch (force) {
 	case TPM_DEVNODE:
+		/* Not implemented yet */
 		break;
 	case TPM_TIS:
 		if (tis_init(t))
 			t->ops = &tis_ops;
 		else
-			goto err;
+			goto free;
 		break;
 	case TPM_CRB:
 		/* Not implemented yet */
@@ -123,12 +124,9 @@ int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		default:
 			goto free;
 		}
-#ifndef CONF_STATIC_ENV
-		free(buf);
-#endif
 
 		ret = tpm2_extend_pcr(t, pcr, d);
-		goto out;
+		goto free;
 	} else {
 		ret = -ERR;
 		goto out;
