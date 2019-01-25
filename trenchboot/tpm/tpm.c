@@ -22,7 +22,66 @@ struct tpm_operations tis_ops = {
 static struct tpm tpm;
 #endif
 
-struct tpm *enable_tpm(enum tpm_hw_intf force)
+void io_delay(void)
+{
+	/* This is the default delay type in native_io_delay */
+	asm volatile ("outb %al, $0x80");
+}
+
+u8 read8(u32 field)
+{
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
+
+	return ioread8(mmio_addr);
+}
+
+void write8(unsigned char val, u32 field)
+{
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
+
+	iowrite8(val, mmio_addr);
+}
+
+u32 read32(u32 field)
+{
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
+
+	return ioread32(mmio_addr);
+}
+
+void write32(unsigned int val, u32 field)
+{
+	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
+
+	iowrite32(val, mmio_addr);
+}
+
+static void find_interface_and_family(tpm *t)
+{
+	struct tpm_interface_id intf_id;
+	struct tpm_intf_capability intf_cap;
+
+	/* First see if the interface is CRB, then we know it is TPM20 */
+	intf_id.val = read32(TPM_INTERFACE_ID_0);
+	if (intf.interface_type == TPM_CRB_INTF_ACTIVE) {
+		t->intf = TPM_CRB;
+		t->family = TPM20;
+		return;
+	}
+
+	/* If not a CRB then a TIS/FIFO interface */
+	t->intf = TPM_TIS;
+
+	/* Now to sort out whether it is 1.2 or 2.0 using TIS */
+	intf_cap.val = read32(TPM_INTF_CAPABILITY_0);
+	if ( (intf_cap.interface_version == TPM12_TIS_INTF_12) ||
+	     (intf_cap.interface_version == TPM12_TIS_INTF_13) )
+		t->family = TPM12;
+	else
+		t->family = TPM20;
+}
+
+struct tpm *enable_tpm(void)
 {
 #ifdef CONF_STATIC_ENV
 	struct tpm *t = &tpm;
@@ -32,8 +91,9 @@ struct tpm *enable_tpm(enum tpm_hw_intf force)
 	if (!t)
 		goto err;
 #endif
+	find_interface_and_family(t);
 
-	switch (force) {
+	switch (t->intf) {
 	case TPM_DEVNODE:
 		/* Not implemented yet */
 		break;
@@ -137,4 +197,4 @@ free:
 #endif
 out:
 	return ret;
-}	
+}
