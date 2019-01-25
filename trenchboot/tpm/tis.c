@@ -35,11 +35,11 @@ static u32 burst_wait(void)
 	u32 count = 0;
 
 	while (count == 0) {
-		count = read8(STS(locality) + 1);
-		count += read8(STS(locality) + 2) << 8;
+		count = tpm_read8(STS(locality) + 1);
+		count += tpm_read8(STS(locality) + 2) << 8;
 
 		if (count == 0)
-			io_delay(); /* wait for FIFO to drain */
+			tpm_io_delay(); /* wait for FIFO to drain */
 	}
 
 	return count;
@@ -47,12 +47,12 @@ static u32 burst_wait(void)
 
 u8 tis_request_locality(u8 l)
 {
-	write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
-	write8(ACCESS_REQUEST_USE, ACCESS(l));
+	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+	tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
 
 	/* wait for locality to be granted */
-	if (read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
-		if (l <= MAX_LOCALITY)
+	if (tpm_read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
+		if (l <= TPM_MAX_LOCALITY)
 			locality = l;
 		else
 			locality = NO_LOCALITY;
@@ -65,13 +65,13 @@ u8 tis_init(struct tpm *t)
 {
 	u8 i;
 
-	for (i=0; i<=MAX_LOCALITY; i++)
-		write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
+	for (i=0; i <= TPM_MAX_LOCALITY; i++)
+		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
 	if (tis_request_locality(0) == NO_LOCALITY)
 		return 0;
 
-	t->vendor = read32(DID_VID(0));
+	t->vendor = tpm_read32(DID_VID(0));
 	if ((t->vendor & 0xFFFF) == 0xFFFF)
 		return 0;
 
@@ -84,10 +84,10 @@ size_t tis_send(struct tpmbuff *buf)
 	u32 burstcnt = 0;
 	u32 count = 0;
 
-	if (locality > MAX_LOCALITY)
+	if (locality > TPM_MAX_LOCALITY)
 		return 0;
 
-	write8(STS_COMMAND_READY, STS(locality));
+	tpm_write8(STS_COMMAND_READY, STS(locality));
 
 	buf_ptr = buf->head;
 
@@ -95,30 +95,30 @@ size_t tis_send(struct tpmbuff *buf)
 	while (count < (buf->len - 1)) {
 		burstcnt = burst_wait();
 		for (; burstcnt > 0 && count < (buf->len - 1); burstcnt--) {
-			write8(buf_ptr[count], DATA_FIFO(locality));
+			tpm_write8(buf_ptr[count], DATA_FIFO(locality));
 			count++;
 		}
 
 		/* check for overflow */
 		for (status = 0; (status & STS_VALID) == 0; )
-			status = read8(STS(locality));
+			status = tpm_read8(STS(locality));
 
 		if ((status & STS_DATA_EXPECT) == 0)
 			return 0;
 	}
 
 	/* write last byte */
-	write8(buf_ptr[buf->len - 1], DATA_FIFO(locality));
+	tpm_write8(buf_ptr[buf->len - 1], DATA_FIFO(locality));
 
 	/* make sure it stuck */
 	for (status = 0; (status & STS_VALID) == 0; )
-		status = read8(STS(locality));
+		status = tpm_read8(STS(locality));
 
 	if ((status & STS_DATA_EXPECT) != 0)
 		return 0;
 
 	/* go and do it */
-	write8(STS_GO, STS(locality));
+	tpm_write8(STS_GO, STS(locality));
 
 	return (size_t)count;
 }
@@ -131,18 +131,18 @@ static size_t recv_data(unsigned char *buf, size_t len)
 
 	bufptr = (u8 *)buf;
 
-	status = read8(STS(locality));
+	status = tpm_read8(STS(locality));
 	while ((status & (STS_DATA_AVAIL | STS_VALID))
 			== (STS_DATA_AVAIL | STS_VALID)
 			&& size < len) {
 		burstcnt = burst_wait();
 		for (; burstcnt > 0 && size < len; burstcnt--) {
-			*bufptr = read8(DATA_FIFO(locality));
+			*bufptr = tpm_read8(DATA_FIFO(locality));
 			bufptr++;
 			size++;
 		}
 
-		status = read8(STS(locality));
+		status = tpm_read8(STS(locality));
 	}
 
 	return size;
@@ -154,8 +154,11 @@ size_t tis_recv(struct tpmbuff *buf)
 	u8 status, *buf_ptr;
 	struct tpm_header *hdr;
 
+	if (locality > TPM_MAX_LOCALITY)
+		goto err;
+
 	/* ensure that there is data available */
-	status = read8(STS(locality));
+	status = tpm_read8(STS(locality));
 	if ((status & (STS_DATA_AVAIL | STS_VALID))
 			!= (STS_DATA_AVAIL | STS_VALID))
 		goto err;
@@ -182,7 +185,7 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* check for receive underflow */
-	status = read8(STS(locality));
+	status = tpm_read8(STS(locality));
 	if ((status & (STS_DATA_AVAIL | STS_VALID))
 			!= (STS_DATA_AVAIL | STS_VALID))
 		goto err;
@@ -193,13 +196,13 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* make sure we read everything */
-	status = read8(STS(locality));
+	status = tpm_read8(STS(locality));
 	if ((status & (STS_DATA_AVAIL | STS_VALID))
 			== (STS_DATA_AVAIL | STS_VALID)) {
 		goto err;
 	}
 
-	write8(STS_COMMAND_READY, STS(locality));
+	tpm_write8(STS_COMMAND_READY, STS(locality));
 
 	return hdr->size;
 err:

@@ -7,8 +7,8 @@
 #ifndef _TPM_H
 #define _TPM_H
 
-#define MMIO_BASE	0xFED40000
-#define MAX_LOCALITY	4
+#define TPM_MMIO_BASE		0xFED40000
+#define TPM_MAX_LOCALITY	4
 
 #define SHA1_SIZE	20
 #define SHA256_SIZE	32
@@ -71,10 +71,10 @@ struct tpm_intf_capability {
 	};
 } __attribute__ ((packed));
 
-void io_delay(void);
-u8 read8(u32 field);
-void write8(unsigned char val, u32 field);
-u32 read32(u32 field);
-void write32(unsigned int val, u32 field);
+void tpm_io_delay(void);
+u8 tpm_read8(u32 field);
+void tpm_write8(unsigned char val, u32 field);
+u32 tpm_read32(u32 field);
+void tpm_write32(unsigned int val, u32 field);
 
 #endif
