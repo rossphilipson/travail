@@ -52,8 +52,8 @@
 #define TPM_VER_20 2
 
 #define TPM_INTERFACE_ID_FIFO_20  0x0
-#define TPM_INTERFACE_ID_CRB     0x1
-#define TPM_INTERFACE_ID_FIFO_13   0xF
+#define TPM_INTERFACE_ID_CRB      0x1
+#define TPM_INTERFACE_ID_FIFO_13  0xF
 
 #define TPM_LOCALITY_BASE             0xfed40000
 #define TPM_LOCALITY_0                TPM_LOCALITY_BASE
@@ -298,10 +298,16 @@ typedef union {
    struct __packed {
         uint64_t  interface_type:4;
         uint64_t  interface_version:4;
-        uint64_t  interface_capability:4;
-        uint64_t  interface_selector:4;
+        uint64_t  cap_locality:1;
+        uint64_t  reserverd1:2;
+        uint64_t  cap_data_xfer_size_support:2;
+        uint64_t  cap_tis:1;
+        uint64_t  cap_crb:1;
+        uint64_t  cap_if_res:2;
+        uint64_t  interface_selector:2;
+        uint64_t  intf_sel_lock:1;
+        uint64_t  reserverd2:4;
         uint64_t  rid:8;
-        uint64_t  res:8;
         uint64_t  vid:16;
         uint64_t  did:16;
    };

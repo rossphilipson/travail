@@ -734,12 +734,13 @@ bool is_tpm_crb(void)
         printk(TBOOT_INFO"TPM: PTP CRB interface is active...\n");
         if (g_tpm_family != TPM_IF_20_CRB ) g_tpm_family = TPM_IF_20_CRB;
             return true;
-     }
-     if (crb_interface.interface_type == TPM_INTERFACE_ID_FIFO_20) {
-         printk(TBOOT_INFO"TPM: TPM 2.0 FIFO interface is active...\n");
-         if (g_tpm_family != TPM_IF_20_FIFO) g_tpm_family = TPM_IF_20_FIFO;
-     }
-     return false;
+    }
+    if (crb_interface.interface_type == TPM_INTERFACE_ID_FIFO_20) {
+        printk(TBOOT_INFO"TPM: TPM 2.0 FIFO interface is active...\n");
+        if (g_tpm_family != TPM_IF_20_FIFO) g_tpm_family = TPM_IF_20_FIFO;
+    }
+
+    return false;
 }
 
 bool prepare_tpm(void)
