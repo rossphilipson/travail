@@ -141,10 +141,13 @@ err:
 	return NULL;
 }
 
-void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i)
+void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf intf)
 {
 
-	switch (i) {
+	switch (intf) {
+	case TPM_DEVNODE:
+		/* Not implemented yet */
+		break;
 	case TPM_TIS:
 #ifdef CONF_STATIC_ENV
 		b->head = NULL;

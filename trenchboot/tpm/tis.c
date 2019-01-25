@@ -11,8 +11,6 @@
 
 #include "tpm_common.h"
 
-#define MMIO_BASE			0xFED40000
-#define MAX_LOCALITY			4
 /* macros to access registers at locality ’’l’’ */
 #define ACCESS(l)			(0x0000 | ((l) << 12))
 #define STS(l)				(0x0018 | ((l) << 12))
@@ -31,34 +29,6 @@
 
 #define NO_LOCALITY			0xFF
 static u8 locality = NO_LOCALITY;
-
-static u8 read8(u32 field)
-{
-	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
-
-	return ioread8(mmio_addr);
-}
-
-static void write8(unsigned char val, u32 field)
-{
-	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
-
-	iowrite8(val, mmio_addr);
-}
-
-static u32 read32(u32 field)
-{
-	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
-
-	return ioread32(mmio_addr);
-}
-
-static void write32(unsigned int val, u32 field)
-{
-	void *mmio_addr = (void*)(u64)(MMIO_BASE | field);
-
-	iowrite32(val, mmio_addr);
-}
 
 static u32 burst_wait(void)
 {
