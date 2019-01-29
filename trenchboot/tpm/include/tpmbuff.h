@@ -13,7 +13,7 @@ struct tpmbuff_operations {
 	void (*free)(struct tpmbuff *b);
 	u8 *(*put)(struct tpmbuff *b, size_t size);
 	size_t (*trim)(struct tpmbuff *b, size_t size);
-	size_t (*size)(struct tpmbuff *b;
+	size_t (*size)(struct tpmbuff *b);
 };
 
 /* mirroring Linux SKB */
