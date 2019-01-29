@@ -8,6 +8,7 @@
 
 #include <boot.h>
 #include <tpm.h>
+#include <tpmbuff.h>
 
 #include "tpm_common.h"
 
@@ -176,7 +177,7 @@ size_t tis_recv(struct tpmbuff *buf)
 
 	/* hdr->size = header + data */
 	expected = hdr->size - expected;
-	buf_ptr = buf->put(buf, expected);
+	buf_ptr = buf->ops->put(buf, expected);
 	if (! buf_ptr)
 		goto err;
 
@@ -191,7 +192,7 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* read last byte */
-	buf_ptr = buf->put(buf, 1);
+	buf_ptr = buf->ops->put(buf, 1);
 	if (recv_data(buf_ptr, 1) != 1)
 		goto err;
 

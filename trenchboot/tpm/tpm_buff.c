@@ -79,7 +79,7 @@ static struct tpmbuff tpm_buff = {
 };
 #endif
 
-struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, uin8_t locality)
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
 {
 #ifdef CONF_STATIC_ENV
 	struct tpmbuff *b = &tpm_buff;

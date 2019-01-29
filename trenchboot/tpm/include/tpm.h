@@ -13,18 +13,11 @@ enum tpm_hw_intf {
 	TPM_TIS,
 	TPM_CRB,
 	TPM_UEFI
-}
+};
 
 enum tpm_family {
 	TPM12,
 	TPM20
-}
-
-struct tpm_operations {
-	u8 (*init)(struct tpm *t)
-	u8 (*request_locality)(u8 l)
-	size_t (*send)(struct tpmbuff *buf)
-	size_t (*recv)(struct tpmbuff *buf)
 };
 
 struct tpm {
@@ -33,6 +26,13 @@ struct tpm {
 	enum tpm_hw_intf intf;
 	struct tpm_operations *ops;
 	struct tpmbuff *buff;
+};
+
+struct tpm_operations {
+	u8 (*init)(struct tpm *t);
+	u8 (*request_locality)(u8 l);
+	size_t (*send)(struct tpmbuff *buf);
+	size_t (*recv)(struct tpmbuff *buf);
 };
 
 struct tpm *enable_tpm(void);

@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef _TPM_H
-#define _TPM_H
+#ifndef _TPM1_H
+#define _TPM1_H
 
 #include <types.h>
 #include <tpm.h>

@@ -6,12 +6,14 @@
 #ifndef _TPMBUFF_H
 #define _TPMBUFF_H
 
+struct tpmbuff;
+
 struct tpmbuff_operations {
-	u8 *(*reserve)(void);
-	void (*free)(void);
-	u8 *(*put)(size_t size);
-	size_t (*trim)(size_t size);
-	size_t (*size)(void);
+	u8 *(*reserve)(struct tpmbuff *b);
+	void (*free)(struct tpmbuff *b);
+	u8 *(*put)(struct tpmbuff *b, size_t size);
+	size_t (*trim)(struct tpmbuff *b, size_t size);
+	size_t (*size)(struct tpmbuff *b;
 };
 
 /* mirroring Linux SKB */
@@ -29,7 +31,7 @@ struct tpmbuff {
 	struct tpmbuff_operations *ops;
 };
 
-struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, uin8_t locality);
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);
 void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i);
 
 #endif

@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _TPM_H
-#define _TPM_H
+#ifndef _TPM_COMMON_H
+#define _TPM_COMMON_H
 
 #define TPM_MMIO_BASE		0xFED40000
 #define TPM_MAX_LOCALITY	4
@@ -54,19 +54,19 @@ struct tpm_intf_capability {
 	union {
 		u32 val;
 		struct {
-			u32 data_avail_int_support:1
-			u32 sts_valid_int_support:1
-			u32 locality_change_int_support:1
-			u32 interrupt_level_high:1
-			u32 interrupt_level_low:1
-			u32 interrupt_edge_rising:1
-			u32 interrupt_edge_falling:1
-			u32 command_ready_int_support:1
-			u32 burst_count_static:1
-			u32 data_transfer_size_support:2
-			u32 reserved1:17
-			u32 interface_version:3
-			u32 reserved2:1
+			u32 data_avail_int_support:1;
+			u32 sts_valid_int_support:1;
+			u32 locality_change_int_support:1;
+			u32 interrupt_level_high:1;
+			u32 interrupt_level_low:1;
+			u32 interrupt_edge_rising:1;
+			u32 interrupt_edge_falling:1;
+			u32 command_ready_int_support:1;
+			u32 burst_count_static:1;
+			u32 data_transfer_size_support:2;
+			u32 reserved1:17;
+			u32 interface_version:3;
+			u32 reserved2:1;
 		};
 	};
 } __attribute__ ((packed));
