@@ -1,6 +1,7 @@
 
 
 #include <tpm.h>
+#include <tpmbuff.h>
 
 #include "tpm_common.h"
 #include "tpm2.h"
@@ -14,10 +15,10 @@ static int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 		return -ENOMEM;
 
 	c->header = (struct tpm_header *)c->raw;
-	c->header.tag = cpu_to_be16(tag);
-	c->header.code = cpu_to_be32(code);
+	c->header->tag = cpu_to_be16(tag);
+	c->header->code = cpu_to_be32(code);
 
-	return 0
+	return 0;
 }
 
 static u16 convert_digest_list(struct tpml_digest_values *digests)
@@ -31,27 +32,27 @@ static u16 convert_digest_list(struct tpml_digest_values *digests)
 		case TPM_ALG_SHA1:
 			h->alg = cpu_to_be16(h->alg);
 			h = (struct tpmt_ha *)((u8 *)h + SHA1_SIZE);
-			size += sizeof(uint_16_t) + SHA1_SIZE;
+			size += sizeof(u16) + SHA1_SIZE;
 			break;
 		case TPM_ALG_SHA256:
 			h->alg = cpu_to_be16(h->alg);
 			h = (struct tpmt_ha *)((u8 *)h + SHA256_SIZE);
-			size += sizeof(uint_16_t) + SHA256_SIZE;
+			size += sizeof(u16) + SHA256_SIZE;
 			break;
 		case TPM_ALG_SHA384:
 			h->alg = cpu_to_be16(h->alg);
 			h = (struct tpmt_ha *)((u8 *)h + SHA384_SIZE);
-			size += sizeof(uint_16_t) + SHA384_SIZE;
+			size += sizeof(u16) + SHA384_SIZE;
 			break;
 		case TPM_ALG_SHA512:
 			h->alg = cpu_to_be16(h->alg);
 			h = (struct tpmt_ha *)((u8 *)h + SHA512_SIZE);
-			size += sizeof(uint_16_t) + SHA512_SIZE;
+			size += sizeof(u16) + SHA512_SIZE;
 			break;
 		case TPM_ALG_SM3256:
 			h->alg = cpu_to_be16(h->alg);
 			h = (struct tpmt_ha *)((u8 *)h + SM3256_SIZE);
-			size += sizeof(uint_16_t) + SHA1_SIZE;
+			size += sizeof(u16) + SHA1_SIZE;
 			break;
 		default:
 			return 0;
@@ -83,16 +84,16 @@ int8_t tpm2_extend_pcr(struct tpm *t, u32 pcr,
 
 	size = convert_digest_list(digests);
 	if (size == 0) {
-		t->free();
+		b->ops->free(b);
 		return -EINVAL;
 	}
 	cmd.params = (u8 *)b->ops->put(size);
 	memcpy(cmd.params, digests, size);
 
-	cmd.header->size = cpu_to_be16(b->ops->size);
+	cmd.header->size = cpu_to_be16(b->ops->size(b));
 
 	ret = t->ops->send(b);
-	b->ops->free();
+	b->ops->free(b);
 
 	return ret;
 }

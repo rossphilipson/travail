@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef _TPM2_H
-#define _TPM2_H
+#ifndef _TPM2_AUTH_H
+#define _TPM2_AUTH_H
 
 u16 tpm2_null_auth_size(void);
 u16 tpm2_null_auth(u8 *b);
