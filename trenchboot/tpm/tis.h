@@ -16,7 +16,7 @@
 /* TPM Interface Specification functions */
 u8 tis_request_locality(u8 l);
 u8 tis_init(struct tpm *t);
-size_t tis_send(struct tpm_cmd_buf *buf);
-size_t tis_recv(struct tpm_resp_buf *buf);
+size_t tis_send(struct tpmbuff *buf);
+size_t tis_recv(struct tpmbuff *buf);
 
 #endif

@@ -7,6 +7,8 @@
 #include <tpmbuff.h>
 
 #include "tpm_common.h"
+#include "tpm1.h"
+#include "tis.h"
 
 #define TPM_CRB_DATA_BUFFER_OFFSET	0x80
 #define TPM_CRB_DATA_BUFFER_SIZE	3966
@@ -49,7 +51,7 @@ static size_t tpmb_trim(struct tpmbuff *b, size_t size)
 {
 	if (b->len < size)
 		size = b->len;
-	
+
 	/* TODO: add overflow buffer support */
 
 	b->tail -= size;
@@ -72,7 +74,7 @@ static struct tpmbuff_operations ops = {
 };
 
 #ifdef CONF_STATIC_ENV
-statuc u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
+static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
 
 static struct tpmbuff tpm_buff = {
 	.ops = &ops;
