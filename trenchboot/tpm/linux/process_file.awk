@@ -5,7 +5,8 @@ BEGIN {
           C = 0;
       }
       {
-          skip = 0;
+          if (skip > 0)
+              skip = skip - 1;
           if (NR == 1) {
               comment_word = $1;
               if ($1 == "/*") {
@@ -32,7 +33,7 @@ BEGIN {
                   skip = 1;
               if (header == 1) {
                   if ($1 ~ /^#ifndef/)
-                      skip = 1;
+                      skip = 2;
                   if ($1 ~ /^#endif/)
                       skip = 1;
               }
