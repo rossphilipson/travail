@@ -6,6 +6,7 @@
 #include <tpm.h>
 
 #include "tis.h"
+#include "crb.h"
 #include "tpm_common.h"
 #include "tpm1.h"
 #include "tpm2.h"
@@ -16,6 +17,13 @@ struct tpm_operations tis_ops = {
 	.request_locality = tis_request_locality;
 	.send = tis_send;
 	.recv = tis_recv;
+};
+
+struct tpm_operations crb_ops = {
+	.init = crb_init;
+	.request_locality = crb_request_locality;
+	.send = crb_send;
+	.recv = crb_recv;
 };
 
 #ifdef CONF_STATIC_ENV
@@ -104,7 +112,10 @@ struct tpm *enable_tpm(void)
 			goto free;
 		break;
 	case TPM_CRB:
-		/* Not implemented yet */
+		if (crb_init(t))
+			t->ops = &crb_ops;
+		else
+			goto free;
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
