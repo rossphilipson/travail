@@ -1,0 +1,43 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+          in_copyright = 0;
+          C = 0;
+      }
+      {
+          skip = 0;
+          if (NR == 1) {
+              comment_word = $1;
+              if ($1 == "/*") {
+                  comment_word = "*";
+                  C = 1;
+              }
+              in_copyright = 1;
+              next;
+          }
+          if (in_copyright == 1) {
+              if ($1 != comment_word)
+              {
+                  in_copyright = 0;
+                  if (C == 1) {
+                      if ($1 ~ /\**\//)
+                          skip = 1;
+                      else
+                          exit 1;
+                  }
+              }
+          }
+          if (in_copyright == 0) {
+              if ($1 ~ /^#include/)
+                  skip = 1;
+              if (header == 1) {
+                  if ($1 ~ /^#ifndef/)
+                      skip = 1;
+                  if ($1 ~ /^#endif/)
+                      skip = 1;
+              }
+          }
+          if (in_copyright == 0 && skip == 0)
+              print;
+      }
+END   { }
