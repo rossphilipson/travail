@@ -65,15 +65,15 @@ struct tpms_auth_resp {
 
 struct tpm2_cmd {
 	struct tpm_header *header;
-	u32 *handles[];	/* TPM_HANDLE		*/
+	u32 *handles;		/* TPM_HANDLE		*/
 	struct tpm2b *auth;	/* Authorization Area	*/
-	u8 *params;	/* Parameters		*/
+	u8 *params;		/* Parameters		*/
 	u8 *raw;		/* internal raw buffer	*/
 };
 
 struct tpm2_resp {
 	struct tpm_header *header;
-	u32 *handles[];	/* TPM_HANDLE		*/
+	u32 *handles;		/* TPM_HANDLE		*/
 	struct tpm2b *params;	/* Parameters		*/
 	u8 *auth;		/* Authorization Area	*/
 	u8 *raw;		/* internal raw buffer	*/
