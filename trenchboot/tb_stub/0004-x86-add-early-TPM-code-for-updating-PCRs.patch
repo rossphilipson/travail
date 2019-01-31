@@ -118,7 +118,7 @@ index 000000000000..4904b8f302d4
 +	void *addr = (void*)(MMIO_BASE | field);
 +
 +	barrier();
-+	(*(volatile u8 *)(addr)) = val;
++	(*(volatile u32 *)(addr)) = val;
 +	wmb();
 +}
 +
