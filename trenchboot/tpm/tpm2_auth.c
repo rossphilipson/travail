@@ -1,4 +1,5 @@
-
+#include <types.h>
+#include <mem.h>
 
 #include "tpm2_constants.h"
 

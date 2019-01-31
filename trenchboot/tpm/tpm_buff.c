@@ -4,6 +4,7 @@
  */
 
 #include <types.h>
+#include <tpm.h>
 #include <tpmbuff.h>
 
 #include "tpm_common.h"
@@ -66,18 +67,18 @@ static size_t tpmb_size(struct tpmbuff *b)
 }
 
 static struct tpmbuff_operations ops = {
-	.reserve = tpmb_reserve;
-	.free = tpmb_free;
-	.put = tpmb_put;
-	.trim = tpmb_trim;
-	.size = tpmb_size;
+	.reserve = tpmb_reserve,
+	.free = tpmb_free,
+	.put = tpmb_put,
+	.trim = tpmb_trim,
+	.size = tpmb_size
 };
 
 #ifdef CONF_STATIC_ENV
 static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
 
 static struct tpmbuff tpm_buff = {
-	.ops = &ops;
+	.ops = &ops
 };
 #endif
 
@@ -104,7 +105,7 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
 			goto reset;
 
 #ifdef CONF_STATIC_ENV
-		b->head = &tis_buff;
+		b->head = (u8 *)&tis_buff;
 		b->truesize = STATIC_TIS_BUFFER_SIZE;
 #else
 		b->head = (u8 *)malloc(PAGE_SIZE);
@@ -114,8 +115,8 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
 #endif
 		break;
 	case TPM_CRB:
-		b->buf = TPM_LPC_BASE + (locality << 12) \
-			       + TPM_CRB_DATA_BUFFER_OFFSET;
+		b->head = (u8 *)(u64)(TPM_MMIO_BASE + (locality << 12) \
+			       + TPM_CRB_DATA_BUFFER_OFFSET);
 		b->truesize = TPM_CRB_DATA_BUFFER_SIZE;
 		break;
 	case TPM_UEFI:
