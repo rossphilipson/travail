@@ -13,17 +13,17 @@
 #include "tpm2_constants.h"
 
 struct tpm_operations tis_ops = {
-	.init = tis_init;
-	.request_locality = tis_request_locality;
-	.send = tis_send;
-	.recv = tis_recv;
+	.init = tis_init,
+	.request_locality = tis_request_locality,
+	.send = tis_send,
+	.recv = tis_recv
 };
 
 struct tpm_operations crb_ops = {
-	.init = crb_init;
-	.request_locality = crb_request_locality;
-	.send = crb_send;
-	.recv = crb_recv;
+	.init = crb_init,
+	.request_locality = crb_request_locality,
+	.send = crb_send,
+	.recv = crb_recv
 };
 
 #ifdef CONF_STATIC_ENV
@@ -70,14 +70,14 @@ void tpm_write32(unsigned int val, u32 field)
 	iowrite32(val, mmio_addr);
 }
 
-static void find_interface_and_family(tpm *t)
+static void find_interface_and_family(struct tpm *t)
 {
 	struct tpm_interface_id intf_id;
 	struct tpm_intf_capability intf_cap;
 
 	/* First see if the interface is CRB, then we know it is TPM20 */
 	intf_id.val = tpm_read32(TPM_INTERFACE_ID_0);
-	if (intf.interface_type == TPM_CRB_INTF_ACTIVE) {
+	if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE) {
 		t->intf = TPM_CRB;
 		t->family = TPM20;
 		return;
@@ -148,18 +148,19 @@ int8_t tpm_request_locality(struct tpm *t, u8 l)
 int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		u8 *digest)
 {
-	int8_t ret;
+	int8_t ret = 0;
 
 	if (t->family == TPM12) {
 		struct tpm_digest d;
 
-		if (hash != SHA1) {
-			ret = -ERR;
+		if (algo != TPM_ALG_SHA1) {
+			ret = -EINVAL;
 			goto out;
 		}
 
 		d.pcr = pcr;
-		memcpy(d.digest, digest, SHA1_DIGEST_SIZE);
+		memcpy((void*)d.digest.sha1.digest,
+                        digest, SHA1_DIGEST_SIZE);
 
 		ret = tpm1_pcr_extend(t, &d);
 	} else if (t->family == TPM20) {
@@ -170,7 +171,7 @@ int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		u8 *buf = (u8 *)malloc(MAX_TPM_EXTEND_SIZE);
 
 		if (!buf) {
-			ret = -ERR;
+			ret = -ENOMEM;
 			goto out;
 		}
 #endif
@@ -205,7 +206,7 @@ int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		ret = tpm2_extend_pcr(t, pcr, d);
 		goto free;
 	} else {
-		ret = -ERR;
+		ret = -EINVAL;
 		goto out;
 	}
 free:

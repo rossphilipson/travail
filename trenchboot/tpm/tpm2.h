@@ -79,4 +79,7 @@ struct tpm2_resp {
 	u8 *raw;		/* internal raw buffer	*/
 };
 
+int8_t tpm2_extend_pcr(struct tpm *t, u32 pcr,
+		struct tpml_digest_values *digests);
+
 #endif
