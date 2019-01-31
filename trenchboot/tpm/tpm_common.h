@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019 Daniel P. Smith, Apertus Solutions, LLC
  *
