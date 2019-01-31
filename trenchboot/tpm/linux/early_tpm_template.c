@@ -26,7 +26,6 @@
 #include <linux/linkage.h>
 #include <asm/io.h>
 #include <asm/segment.h>
-#include <linux/tpm_command.h>
 #include <asm/tpm.h>
 
 #include "early_tpm.h"

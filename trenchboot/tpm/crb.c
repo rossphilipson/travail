@@ -24,7 +24,7 @@
 
 #define REGISTER(l,r)		(((l) << 12) | r)
 
-static u16 locality;
+static u8 locality = NO_LOCALITY;
 
 struct tpm_loc_state {
 	union {
@@ -101,19 +101,19 @@ struct tpm_crb_intf_id_ext {
 /* TPM Duration A: 20ms */
 static void duration_a(void)
 {
-	udelay(20);
+	tpm_udelay(20);
 }
 
 /* TPM Duration B: 750ms */
 static void duration_b(void)
 {
-	udelay(750);
+	tpm_udelay(750);
 }
 
 /* TPM Duration C: 1000ms */
 static void duration_c(void)
 {
-	udelay(1000);
+	tpm_udelay(1000);
 }
 
 /* Timeouts defined in Table 16 of the PTP */
@@ -121,25 +121,25 @@ static void duration_c(void)
 /* TPM Timeout A: 750ms */
 static void timeout_a(void)
 {
-	udelay(750);
+	tpm_udelay(750);
 }
 
 /* TPM Timeout B: 2000ms */
 static void timeout_b(void)
 {
-	udelay(2000);
+	tpm_udelay(2000);
 }
 
 /* TPM Timeout C: 200ms */
 static void timeout_c(void)
 {
-	udelay(200);
+	tpm_udelay(200);
 }
 
 /* TPM Timeout D: 30ms */
 static void timeout_d(void)
 {
-	udelay(30);
+	tpm_udelay(30);
 }
 
 static u8 is_idle(void)
@@ -254,7 +254,7 @@ u8 crb_init(struct tpm *t)
 	u8 i;
 	struct tpm_crb_intf_id_ext id;
 
-	for (i=0; i<=MAX_LOCALITY; i++)
+	for (i=0; i<=TPM_MAX_LOCALITY; i++)
 		crb_relinquish_locality(i);
 
 	if (crb_request_locality(0) == NO_LOCALITY)

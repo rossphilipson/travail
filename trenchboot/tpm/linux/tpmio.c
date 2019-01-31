@@ -3,19 +3,19 @@
  *
  */
 
-void io_delay(void)
+void tpm_io_delay(void)
 {
 	/* This is the default delay type in native_io_delay */
 	asm volatile ("outb %al, $0x80");
 }
 
-void udelay(int loops)
+void tpm_udelay(int loops)
 {
 	while (loops--)
-		io_delay();	/* Approximately 1 us */
+		tpm_io_delay();	/* Approximately 1 us */
 }
 
-u8 read8(u32 field)
+u8 tpm_read8(u32 field)
 {
 	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
 	u8 val;
@@ -27,7 +27,7 @@ u8 read8(u32 field)
 	return val;
 }
 
-void write8(unsigned char val, u32 field)
+void tpm_write8(unsigned char val, u32 field)
 {
 	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
 
@@ -36,7 +36,7 @@ void write8(unsigned char val, u32 field)
 	wmb();
 }
 
-u32 read32(u32 field)
+u32 tpm_read32(u32 field)
 {
 	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
 	u32 val;
@@ -48,7 +48,7 @@ u32 read32(u32 field)
 	return val;
 }
 
-void write32(u32 val, u32 field)
+void tpm_write32(u32 val, u32 field)
 {
 	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
 

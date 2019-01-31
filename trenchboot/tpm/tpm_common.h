@@ -73,7 +73,7 @@ struct tpm_intf_capability {
 } __attribute__ ((packed));
 
 void tpm_io_delay(void);
-void udelay(int loops);
+void tpm_udelay(int loops);
 u8 tpm_read8(u32 field);
 void tpm_write8(unsigned char val, u32 field);
 u32 tpm_read32(u32 field);
