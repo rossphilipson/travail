@@ -37,6 +37,8 @@ BEGIN {
                   if ($1 ~ /^#endif/)
                       skip = 1;
               }
+	      if ($1 == "static" && $2 == "u8" && $3 == "locality")
+                  skip = 1;
           }
           if (in_copyright == 0 && skip == 0)
               print;

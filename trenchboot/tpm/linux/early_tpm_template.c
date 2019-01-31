@@ -36,3 +36,5 @@
  */
 #define CONF_STATIC_ENV
 
+static u8 locality = NO_LOCALITY;
+
