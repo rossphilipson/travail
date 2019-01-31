@@ -12,8 +12,8 @@ BEGIN {
               if ($1 == "/*") {
                   comment_word = "*";
                   C = 1;
+                  in_copyright = 1;
               }
-              in_copyright = 1;
               next;
           }
           if (in_copyright == 1) {
