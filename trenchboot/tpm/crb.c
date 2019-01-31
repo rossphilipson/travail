@@ -1,3 +1,8 @@
+#include <tpm.h>
+#include <tpmbuff.h>
+
+#include "crb.h"
+#include "tpm_common.h"
 
 #define TPM_LOC_STATE		0x0000
 #define TPM_LOC_CTRL		0x0008
@@ -42,7 +47,7 @@ struct tpm_loc_ctrl {
 			u32 relinquish:1;
 			u32 seize:1;
 			u32 reset_establishment_bit:1;
-			u32 _reserved:28
+			u32 _reserved:28;
 		};
 	};
 } __attribute__ ((packed));
@@ -51,9 +56,9 @@ struct tpm_loc_sts {
 	union {
 		u32 val;
 		struct {
-			u32 Granted:1;
+			u32 granted:1;
 			u32 beenSeized:1;
-			u32 _reserved:30
+			u32 _reserved:30;
 		};
 	};
 } __attribute__ ((packed));
@@ -175,7 +180,7 @@ static u8 is_cmd_exec(void)
 
 static u8 cmd_ready(void)
 {
-	struct tpm_crb_ctrl_sts ctl_sts;
+	struct tpm_crb_ctrl_req ctl_req;
 
 	if (is_idle()) {
 		ctl_req.cmd_ready = 1;
@@ -191,7 +196,6 @@ static u8 cmd_ready(void)
 
 static void go_idle(void)
 {
-	struct tpm_crb_ctrl_sts ctl_sts;
 	struct tpm_crb_ctrl_req ctl_req;
 
 	if (is_idle())
@@ -212,10 +216,10 @@ void crb_relinquish_locality(u16 l)
 
 	loc_ctrl.relinquish = 1;
 
-	tpm_write32(ACCESS(l) | loc_ctrl.val);
+	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 }
 
-u8 crb_request_locality(u16 l)
+u8 crb_request_locality(u8 l)
 {
 	struct tpm_loc_state loc_state;
 	struct tpm_loc_ctrl loc_ctrl;
@@ -225,16 +229,18 @@ u8 crb_request_locality(u16 l)
 	loc_state.val = tpm_read8(REGISTER(0, TPM_LOC_STATE));
 
 	if (loc_state.loc_assigned == 1) {
-		if (loc_state.active_locality == l)
-			return;
+		if (loc_state.active_locality == l) {
+			locality = l;
+                        return locality;
+                }
 
 		crb_relinquish_locality(loc_state.loc_assigned);
 	}
 
-	tpm_loc_ctrl.request_access = 1;
+	loc_ctrl.request_access = 1;
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 
-	loc_sts.value = tpm_read32(REGISTER(l, TPM_LOC_STS));
+	loc_sts.val = tpm_read32(REGISTER(l, TPM_LOC_STS));
 	if (loc_sts.granted != 1)
 		return NO_LOCALITY;
 
@@ -254,7 +260,7 @@ u8 crb_init(struct tpm *t)
 	if (crb_request_locality(0) == NO_LOCALITY)
 		return 0;
 
-	id = tpm_read32(REGISTER(0,TPM_CRB_INTF_ID+4));
+	id.val = tpm_read32(REGISTER(0,TPM_CRB_INTF_ID+4));
 	t->vendor = ((id.vid & 0x00FF) << 8) | ((id.vid & 0xFF00) >> 8);
 	if ((t->vendor & 0xFFFF) == 0xFFFF)
 		return 0;

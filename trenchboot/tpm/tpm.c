@@ -36,6 +36,12 @@ void tpm_io_delay(void)
 	asm volatile ("outb %al, $0x80");
 }
 
+void udelay(int loops)
+{
+        while (loops--)
+                io_delay();     /* Approximately 1 us */
+}
+
 u8 tpm_read8(u32 field)
 {
 	void *mmio_addr = (void*)(u64)(TPM_MMIO_BASE | field);

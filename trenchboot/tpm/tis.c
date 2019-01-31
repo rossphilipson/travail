@@ -28,7 +28,6 @@
 #define STS_DATA_EXPECT			0x08 /* (R) */
 #define STS_GO				0x20 /* (W) */
 
-#define NO_LOCALITY			0xFF
 static u8 locality = NO_LOCALITY;
 
 static u32 burst_wait(void)

@@ -6,8 +6,6 @@
 #ifndef _TPM_H
 #define _TPM_H
 
-#include <tpmbuff.h>
-
 enum tpm_hw_intf {
 	TPM_DEVNODE,
 	TPM_TIS,
@@ -19,6 +17,8 @@ enum tpm_family {
 	TPM12,
 	TPM20
 };
+
+struct tpmbuff;
 
 struct tpm {
 	u32 vendor;
