@@ -39,6 +39,14 @@ BEGIN {
               }
 	      if ($1 == "static" && $2 == "u8" && $3 == "locality")
                   skip = 1;
+              if ($1 == "static" && $2 == "struct" && $3 == "tpmbuff_operations")
+                  print "__attribute__ ((__section__ (\".data\")))"
+              if ($1 == "static" && $2 == "struct" && $3 == "tpmbuff")
+                  print "__attribute__ ((__section__ (\".data\")))"
+              if ($1 == "struct" && $2 == "tpm_operations" && $3 == "tis_ops")
+                  print "__attribute__ ((__section__ (\".data\")))"
+              if ($1 == "struct" && $2 == "tpm_operations" && $3 == "crb_ops")
+                  print "__attribute__ ((__section__ (\".data\")))"
           }
           if (in_copyright == 0 && skip == 0)
               print;
