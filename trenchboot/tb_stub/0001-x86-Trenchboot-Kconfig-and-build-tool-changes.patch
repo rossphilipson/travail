@@ -1,4 +1,4 @@
-From eeb72072b52a3b94919a551170a4cd82a5a9467f Mon Sep 17 00:00:00 2001
+From 72cc04f8cd28d010598cf66e576ecd1c2bb34d51 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes

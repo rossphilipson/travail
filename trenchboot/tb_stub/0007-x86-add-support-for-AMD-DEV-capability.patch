@@ -1,4 +1,4 @@
-From 65914eb6845aa166922e6a5007feb3e483682b5e Mon Sep 17 00:00:00 2001
+From b689e60672dc451b5966c5ba67f3dcd090ee543f Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/8] x86: add support for AMD DEV capability

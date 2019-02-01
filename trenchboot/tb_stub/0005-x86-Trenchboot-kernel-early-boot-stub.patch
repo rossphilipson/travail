@@ -1,4 +1,4 @@
-From 61996dfc8c3a52b8c8da989811f55f97edc1267f Mon Sep 17 00:00:00 2001
+From 818db734a8b267a243d130cdd9376a7fc35655f6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 ++++++++
- arch/x86/boot/compressed/sl_main.c |  66 +++++++++++++++
+ arch/x86/boot/compressed/sl_main.c |  75 +++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 165 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 265 insertions(+), 1 deletion(-)
+ 4 files changed, 274 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -79,10 +79,10 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..1c2b7795a752
+index 000000000000..731cbe3032a5
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,75 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -117,22 +117,29 @@ index 000000000000..1c2b7795a752
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
 +	u32 cmdline_len;
 +	u64 cmdline_addr;
-+	struct tpm_digest extend = {
-+		.pcr = 18,
-+	};
++	struct tpm *tpm;
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +
-+	tis_init();
-+	tis_request_locality(2);
++	/*
++ 	 * TODO not checking the return value on purpose since if this fails
++ 	 * and returns NULL, there is no point going on. A NULL deref will
++ 	 * cause a crash and end everyting right here. If there is a better
++ 	 * way to handle this, it can be improved upon in the future.
++ 	 *
++ 	 * The same deal for tpm_request_locality and tpm_extend_pcr, if these
++ 	 * returns a failure value there is nothing much that can be done so
++ 	 * the return value is not checked.
++ 	 */
++	tpm = enable_tpm();
++	(void)tpm_request_locality(tpm, 2);
 +
 +	/* Hash the zero page/boot params */
 +	early_sha1_init(&sctx);
 +	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
-+	tpm_pcr_extend(&extend);
++	(void)tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
@@ -143,11 +150,13 @@ index 000000000000..1c2b7795a752
 +	early_sha1_update(&sctx, (u8*)cmdline_addr, cmdline_len);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	memcpy(&extend.digest.sha1.digest[0], &sha1_hash[0], SHA1_DIGEST_SIZE);
-+	tpm_pcr_extend(&extend);
++	(void)tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
 +
-+	/* tis_init will ensure all localities are closed */
-+	tis_init();
++	/*
++ 	 * TODO tis_init, which was called here, used to ensure all localities
++ 	 * are closed. Not sure what should be done here now. Maybe adding a
++ 	 * tpm_free() that causes the same thing to happen.
++ 	 */
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
