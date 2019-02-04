@@ -50,6 +50,9 @@ echo "Finished early_tpm.h"
 echo "/*** tpm_buff.c ***/" >> early_tpm.c
 ./process_file.awk ../tpm_buff.c >> early_tpm.c
 echo "" >> early_tpm.c
+echo "/*** tpmio.c ***/" >> early_tpm.c
+./process_file.awk tpmio.c >> early_tpm.c
+echo "" >> early_tpm.c
 echo "/*** tis.c ***/" >> early_tpm.c
 ./process_file.awk ../tis.c >> early_tpm.c
 echo "" >> early_tpm.c
