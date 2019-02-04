@@ -39,9 +39,9 @@ struct tpm_operations {
 };
 
 struct tpm *enable_tpm(void);
-int8_t tpm_request_locality(struct tpm *t, u8 l);
+u8 tpm_request_locality(struct tpm *t, u8 l);
 void tpm_relinquish_locality(struct tpm *t);
-int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
+int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		u8 *digest);
 void free_tpm(struct tpm *t);
 #endif

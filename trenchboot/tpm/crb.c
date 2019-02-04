@@ -219,11 +219,6 @@ static void crb_relinquish_locality_internal(u16 l)
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 }
 
-void crb_relinquish_locality(void)
-{
-	crb_relinquish_locality_internal(locality);
-}
-
 u8 crb_request_locality(u8 l)
 {
 	struct tpm_loc_state loc_state;
@@ -253,6 +248,10 @@ u8 crb_request_locality(u8 l)
 	return locality;
 }
 
+void crb_relinquish_locality(void)
+{
+	crb_relinquish_locality_internal(locality);
+}
 
 u8 crb_init(struct tpm *t)
 {

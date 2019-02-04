@@ -7,7 +7,7 @@
 #include "tpm2.h"
 #include "tpm2_auth.h"
 
-static int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
+static int tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 		u32 code)
 {
 	c->header = (struct tpm_header *)b->ops->reserve(b);
@@ -61,14 +61,14 @@ static u16 convert_digest_list(struct tpml_digest_values *digests)
 	return size;
 }
 
-int8_t tpm2_extend_pcr(struct tpm *t, u32 pcr,
+int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 		struct tpml_digest_values *digests)
 {
 	struct tpmbuff *b = t->buff;
 	struct tpm2_cmd cmd;
 	u8 *ptr;
 	u16 size;
-	int8_t ret = 0;
+	int ret = 0;
 
 	ret = tpm2_alloc_cmd(b, &cmd, TPM_ST_SESSIONS, TPM_CC_PCR_EXTEND);
 	if (ret < 0)
