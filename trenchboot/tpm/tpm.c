@@ -15,6 +15,7 @@
 struct tpm_operations tis_ops = {
 	.init = tis_init,
 	.request_locality = tis_request_locality,
+	.relinquish_locality = tis_relinquish_locality,
 	.send = tis_send,
 	.recv = tis_recv
 };
@@ -22,6 +23,7 @@ struct tpm_operations tis_ops = {
 struct tpm_operations crb_ops = {
 	.init = crb_init,
 	.request_locality = crb_request_locality,
+	.relinquish_locality = crb_relinquish_locality,
 	.send = crb_send,
 	.recv = crb_recv
 };
@@ -104,6 +106,11 @@ int8_t tpm_request_locality(struct tpm *t, u8 l)
 	return t->ops->request_locality(l);
 }
 
+void tpm_relinquish_locality(struct tpm *t)
+{
+	return t->ops->relinquish_locality();
+}
+
 #define MAX_TPM_EXTEND_SIZE 70 /* TPM2 SHA512 is the largest */
 int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		u8 *digest)
@@ -175,4 +182,13 @@ free:
 #endif
 out:
 	return ret;
+}
+
+void free_tpm(struct tpm *t)
+{
+	tpm_relinquish_locality(t);
+
+#ifndef CONF_STATIC_ENV
+	free(t);
+#endif
 }

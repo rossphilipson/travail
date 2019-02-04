@@ -15,6 +15,7 @@
 #define STATIC_TIS_BUFFER_SIZE 1024
 /* TPM Interface Specification functions */
 u8 crb_request_locality(u8 l);
+void crb_relinquish_locality(void);
 u8 crb_init(struct tpm *t);
 size_t crb_send(struct tpmbuff *buf);
 size_t crb_recv(struct tpmbuff *buf);

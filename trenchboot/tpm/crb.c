@@ -210,13 +210,18 @@ static void go_idle(void)
 	return;
 }
 
-void crb_relinquish_locality(u16 l)
+static void crb_relinquish_locality_internal(u16 l)
 {
 	struct tpm_loc_ctrl loc_ctrl;
 
 	loc_ctrl.relinquish = 1;
 
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
+}
+
+void crb_relinquish_locality(void)
+{
+	crb_relinquish_locality_internal(locality);
 }
 
 u8 crb_request_locality(u8 l)
@@ -234,7 +239,7 @@ u8 crb_request_locality(u8 l)
                         return locality;
                 }
 
-		crb_relinquish_locality(loc_state.loc_assigned);
+		crb_relinquish_locality_internal(loc_state.loc_assigned);
 	}
 
 	loc_ctrl.request_access = 1;
@@ -255,7 +260,7 @@ u8 crb_init(struct tpm *t)
 	struct tpm_crb_intf_id_ext id;
 
 	for (i=0; i<=TPM_MAX_LOCALITY; i++)
-		crb_relinquish_locality(i);
+		crb_relinquish_locality_internal(i);
 
 	if (crb_request_locality(0) == TPM_NO_LOCALITY)
 		return 0;

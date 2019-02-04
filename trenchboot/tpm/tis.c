@@ -61,6 +61,11 @@ u8 tis_request_locality(u8 l)
 	return locality;
 }
 
+void tis_relinquish_locality(void)
+{
+	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+}
+
 u8 tis_init(struct tpm *t)
 {
 	u8 i;
