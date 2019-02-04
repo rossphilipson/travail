@@ -1,4 +1,4 @@
-From efda6ef4210c23c8bd564a4fa5bd4db737eee61a Mon Sep 17 00:00:00 2001
+From 77346cbb947ba70e0798f499ea61e41731c22d65 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -6,11 +6,11 @@ Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1114 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.c | 1142 ++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/early_tpm.h |  354 +++++++++++
- arch/x86/include/asm/tpm.h           |  102 ++++
+ arch/x86/include/asm/tpm.h           |  107 ++++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1576 insertions(+), 1 deletion(-)
+ 5 files changed, 1609 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -31,10 +31,10 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..60d78692075d
+index 000000000000..35df4e188a3d
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1114 @@
+@@ -0,0 +1,1142 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -73,7 +73,7 @@ index 000000000000..60d78692075d
 + */
 +#define CONF_STATIC_ENV
 +
-+static u8 locality = NO_LOCALITY;
++static u8 locality = TPM_NO_LOCALITY;
 +
 +/*** tpm_buff.c ***/
 +
@@ -243,6 +243,62 @@ index 000000000000..60d78692075d
 +#endif
 +}
 +
++/*** tpmio.c ***/
++
++void tpm_io_delay(void)
++{
++	/* This is the default delay type in native_io_delay */
++	asm volatile ("outb %al, $0x80");
++}
++
++void tpm_udelay(int loops)
++{
++	while (loops--)
++		tpm_io_delay();	/* Approximately 1 us */
++}
++
++u8 tpm_read8(u32 field)
++{
++	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
++	u8 val;
++
++	barrier();
++	val = (*(volatile u8*)(addr));
++	rmb();
++
++	return val;
++}
++
++void tpm_write8(unsigned char val, u32 field)
++{
++	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
++
++	barrier();
++	(*(volatile u8 *)(addr)) = val;
++	wmb();
++}
++
++u32 tpm_read32(u32 field)
++{
++	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
++	u32 val;
++
++	barrier();
++	val = (*(volatile u32*)(addr));
++	rmb();
++
++	return val;
++}
++
++void tpm_write32(u32 val, u32 field)
++{
++	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
++
++	barrier();
++	(*(volatile u32 *)(addr)) = val;
++	wmb();
++}
++
 +/*** tis.c ***/
 +
 +
@@ -289,10 +345,15 @@ index 000000000000..60d78692075d
 +		if (l <= TPM_MAX_LOCALITY)
 +			locality = l;
 +		else
-+			locality = NO_LOCALITY;
++			locality = TPM_NO_LOCALITY;
 +	}
 +
 +	return locality;
++}
++
++void tis_relinquish_locality(void)
++{
++	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
 +}
 +
 +u8 tis_init(struct tpm *t)
@@ -302,7 +363,7 @@ index 000000000000..60d78692075d
 +	for (i=0; i <= TPM_MAX_LOCALITY; i++)
 +		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 +
-+	if (tis_request_locality(0) == NO_LOCALITY)
++	if (tis_request_locality(0) == TPM_NO_LOCALITY)
 +		return 0;
 +
 +	t->vendor = tpm_read32(DID_VID(0));
@@ -651,7 +712,7 @@ index 000000000000..60d78692075d
 +	return;
 +}
 +
-+void crb_relinquish_locality(u16 l)
++static void crb_relinquish_locality_internal(u16 l)
 +{
 +	struct tpm_loc_ctrl loc_ctrl;
 +
@@ -675,7 +736,7 @@ index 000000000000..60d78692075d
 +                        return locality;
 +                }
 +
-+		crb_relinquish_locality(loc_state.loc_assigned);
++		crb_relinquish_locality_internal(loc_state.loc_assigned);
 +	}
 +
 +	loc_ctrl.request_access = 1;
@@ -683,12 +744,16 @@ index 000000000000..60d78692075d
 +
 +	loc_sts.val = tpm_read32(REGISTER(l, TPM_LOC_STS));
 +	if (loc_sts.granted != 1)
-+		return NO_LOCALITY;
++		return TPM_NO_LOCALITY;
 +
 +	locality = l;
 +	return locality;
 +}
 +
++void crb_relinquish_locality(void)
++{
++	crb_relinquish_locality_internal(locality);
++}
 +
 +u8 crb_init(struct tpm *t)
 +{
@@ -696,9 +761,9 @@ index 000000000000..60d78692075d
 +	struct tpm_crb_intf_id_ext id;
 +
 +	for (i=0; i<=TPM_MAX_LOCALITY; i++)
-+		crb_relinquish_locality(i);
++		crb_relinquish_locality_internal(i);
 +
-+	if (crb_request_locality(0) == NO_LOCALITY)
++	if (crb_request_locality(0) == TPM_NO_LOCALITY)
 +		return 0;
 +
 +	id.val = tpm_read32(REGISTER(0,TPM_CRB_INTF_ID+4));
@@ -836,7 +901,7 @@ index 000000000000..60d78692075d
 +
 +
 +
-+static int8_t tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
++static int tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 +		u32 code)
 +{
 +	c->header = (struct tpm_header *)b->ops->reserve(b);
@@ -890,14 +955,14 @@ index 000000000000..60d78692075d
 +	return size;
 +}
 +
-+int8_t tpm2_extend_pcr(struct tpm *t, u32 pcr,
++int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 +		struct tpml_digest_values *digests)
 +{
 +	struct tpmbuff *b = t->buff;
 +	struct tpm2_cmd cmd;
 +	u8 *ptr;
 +	u16 size;
-+	int8_t ret = 0;
++	int ret = 0;
 +
 +	ret = tpm2_alloc_cmd(b, &cmd, TPM_ST_SESSIONS, TPM_CC_PCR_EXTEND);
 +	if (ret < 0)
@@ -929,10 +994,12 @@ index 000000000000..60d78692075d
 +/*** tpm.c ***/
 +
 +
++
 +__attribute__ ((__section__ (".data")))
 +struct tpm_operations tis_ops = {
 +	.init = tis_init,
 +	.request_locality = tis_request_locality,
++	.relinquish_locality = tis_relinquish_locality,
 +	.send = tis_send,
 +	.recv = tis_recv
 +};
@@ -941,6 +1008,7 @@ index 000000000000..60d78692075d
 +struct tpm_operations crb_ops = {
 +	.init = crb_init,
 +	.request_locality = crb_request_locality,
++	.relinquish_locality = crb_relinquish_locality,
 +	.send = crb_send,
 +	.recv = crb_recv
 +};
@@ -948,60 +1016,6 @@ index 000000000000..60d78692075d
 +#ifdef CONF_STATIC_ENV
 +static struct tpm tpm;
 +#endif
-+
-+void tpm_io_delay(void)
-+{
-+	/* This is the default delay type in native_io_delay */
-+	asm volatile ("outb %al, $0x80");
-+}
-+
-+void tpm_udelay(int loops)
-+{
-+        while (loops--)
-+                tpm_io_delay();     /* Approximately 1 us */
-+}
-+
-+u8 tpm_read8(u32 field)
-+{
-+	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
-+	u8 val;
-+
-+	barrier();
-+	val = (*(volatile u8*)(addr));
-+	rmb();
-+
-+	return val;
-+}
-+
-+void tpm_write8(unsigned char val, u32 field)
-+{
-+	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
-+
-+	barrier();
-+	(*(volatile u8 *)(addr)) = val;
-+	wmb();
-+}
-+
-+u32 tpm_read32(u32 field)
-+{
-+	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
-+	u32 val;
-+
-+	barrier();
-+	val = (*(volatile u32*)(addr));
-+	rmb();
-+
-+	return val;
-+}
-+
-+void tpm_write32(u32 val, u32 field)
-+{
-+	void *addr = (void*)(u64)(TPM_MMIO_BASE | field);
-+
-+	barrier();
-+	(*(volatile u32 *)(addr)) = val;
-+	wmb();
-+}
 +
 +static void find_interface_and_family(struct tpm *t)
 +{
@@ -1072,16 +1086,21 @@ index 000000000000..60d78692075d
 +	return NULL;
 +}
 +
-+int8_t tpm_request_locality(struct tpm *t, u8 l)
++u8 tpm_request_locality(struct tpm *t, u8 l)
 +{
 +	return t->ops->request_locality(l);
 +}
 +
++void tpm_relinquish_locality(struct tpm *t)
++{
++	return t->ops->relinquish_locality();
++}
++
 +#define MAX_TPM_EXTEND_SIZE 70 /* TPM2 SHA512 is the largest */
-+int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
++int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 +		u8 *digest)
 +{
-+	int8_t ret = 0;
++	int ret = 0;
 +
 +	if (t->family == TPM12) {
 +		struct tpm_digest d;
@@ -1149,9 +1168,18 @@ index 000000000000..60d78692075d
 +out:
 +	return ret;
 +}
++
++void free_tpm(struct tpm *t)
++{
++	tpm_relinquish_locality(t);
++
++#ifndef CONF_STATIC_ENV
++	free(t);
++#endif
++}
 diff --git a/arch/x86/boot/compressed/early_tpm.h b/arch/x86/boot/compressed/early_tpm.h
 new file mode 100644
-index 000000000000..1127041ae48d
+index 000000000000..76d44329696a
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.h
 @@ -0,0 +1,354 @@
@@ -1185,8 +1213,6 @@ index 000000000000..1127041ae48d
 +
 +#define TPM_MMIO_BASE		0xFED40000
 +#define TPM_MAX_LOCALITY	4
-+
-+#define NO_LOCALITY		0xFF
 +
 +#define SHA1_SIZE	20
 +#define SHA256_SIZE	32
@@ -1263,6 +1289,7 @@ index 000000000000..1127041ae48d
 +#define STATIC_TIS_BUFFER_SIZE 1024
 +/* TPM Interface Specification functions */
 +u8 tis_request_locality(u8 l);
++void tis_relinquish_locality(void);
 +u8 tis_init(struct tpm *t);
 +size_t tis_send(struct tpmbuff *buf);
 +size_t tis_recv(struct tpmbuff *buf);
@@ -1274,6 +1301,7 @@ index 000000000000..1127041ae48d
 +#define STATIC_TIS_BUFFER_SIZE 1024
 +/* TPM Interface Specification functions */
 +u8 crb_request_locality(u8 l);
++void crb_relinquish_locality(void);
 +u8 crb_init(struct tpm *t);
 +size_t crb_send(struct tpmbuff *buf);
 +size_t crb_recv(struct tpmbuff *buf);
@@ -1446,7 +1474,7 @@ index 000000000000..1127041ae48d
 +	u8 *raw;		/* internal raw buffer	*/
 +};
 +
-+int8_t tpm2_extend_pcr(struct tpm *t, u32 pcr,
++int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 +		struct tpml_digest_values *digests);
 +
 +/*** tpm2_constants.h ***/
@@ -1511,10 +1539,10 @@ index 000000000000..1127041ae48d
 +#endif
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..14a3a3db845d
+index 000000000000..25eb11f8ed89
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,107 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -1550,6 +1578,8 @@ index 000000000000..14a3a3db845d
 +/*** tpm.h ***/
 +
 +
++#define TPM_NO_LOCALITY		0xFF
++
 +enum tpm_hw_intf {
 +	TPM_DEVNODE,
 +	TPM_TIS,
@@ -1575,14 +1605,17 @@ index 000000000000..14a3a3db845d
 +struct tpm_operations {
 +	u8 (*init)(struct tpm *t);
 +	u8 (*request_locality)(u8 l);
++	void (*relinquish_locality)(void);
 +	size_t (*send)(struct tpmbuff *buf);
 +	size_t (*recv)(struct tpmbuff *buf);
 +};
 +
 +struct tpm *enable_tpm(void);
-+int8_t tpm_request_locality(struct tpm *t, u8 l);
-+int8_t tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
++u8 tpm_request_locality(struct tpm *t, u8 l);
++void tpm_relinquish_locality(struct tpm *t);
++int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 +		u8 *digest);
++void free_tpm(struct tpm *t);
 +/*** tpmbuff.h ***/
 +
 +
