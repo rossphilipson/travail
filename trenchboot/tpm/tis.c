@@ -28,7 +28,7 @@
 #define STS_DATA_EXPECT			0x08 /* (R) */
 #define STS_GO				0x20 /* (W) */
 
-static u8 locality = NO_LOCALITY;
+static u8 locality = TPM_NO_LOCALITY;
 
 static u32 burst_wait(void)
 {
@@ -55,7 +55,7 @@ u8 tis_request_locality(u8 l)
 		if (l <= TPM_MAX_LOCALITY)
 			locality = l;
 		else
-			locality = NO_LOCALITY;
+			locality = TPM_NO_LOCALITY;
 	}
 
 	return locality;
@@ -68,7 +68,7 @@ u8 tis_init(struct tpm *t)
 	for (i=0; i <= TPM_MAX_LOCALITY; i++)
 		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
-	if (tis_request_locality(0) == NO_LOCALITY)
+	if (tis_request_locality(0) == TPM_NO_LOCALITY)
 		return 0;
 
 	t->vendor = tpm_read32(DID_VID(0));

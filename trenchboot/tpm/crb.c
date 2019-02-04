@@ -24,7 +24,7 @@
 
 #define REGISTER(l,r)		(((l) << 12) | r)
 
-static u8 locality = NO_LOCALITY;
+static u8 locality = TPM_NO_LOCALITY;
 
 struct tpm_loc_state {
 	union {
@@ -242,7 +242,7 @@ u8 crb_request_locality(u8 l)
 
 	loc_sts.val = tpm_read32(REGISTER(l, TPM_LOC_STS));
 	if (loc_sts.granted != 1)
-		return NO_LOCALITY;
+		return TPM_NO_LOCALITY;
 
 	locality = l;
 	return locality;
@@ -257,7 +257,7 @@ u8 crb_init(struct tpm *t)
 	for (i=0; i<=TPM_MAX_LOCALITY; i++)
 		crb_relinquish_locality(i);
 
-	if (crb_request_locality(0) == NO_LOCALITY)
+	if (crb_request_locality(0) == TPM_NO_LOCALITY)
 		return 0;
 
 	id.val = tpm_read32(REGISTER(0,TPM_CRB_INTF_ID+4));

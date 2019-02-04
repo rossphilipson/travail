@@ -36,5 +36,5 @@
  */
 #define CONF_STATIC_ENV
 
-static u8 locality = NO_LOCALITY;
+static u8 locality = TPM_NO_LOCALITY;
 

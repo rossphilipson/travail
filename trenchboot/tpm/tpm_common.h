@@ -9,8 +9,6 @@
 #define TPM_MMIO_BASE		0xFED40000
 #define TPM_MAX_LOCALITY	4
 
-#define NO_LOCALITY		0xFF
-
 #define SHA1_SIZE	20
 #define SHA256_SIZE	32
 #define SHA384_SIZE	48

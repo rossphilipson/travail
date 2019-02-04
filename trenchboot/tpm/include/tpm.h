@@ -6,6 +6,8 @@
 #ifndef _TPM_H
 #define _TPM_H
 
+#define TPM_NO_LOCALITY		0xFF
+
 enum tpm_hw_intf {
 	TPM_DEVNODE,
 	TPM_TIS,
