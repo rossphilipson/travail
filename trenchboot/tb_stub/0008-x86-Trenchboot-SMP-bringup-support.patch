@@ -1,4 +1,4 @@
-From 159052f1d70905536b1734e7b24e50f4e77ba065 Mon Sep 17 00:00:00 2001
+From f2b2c7ae2b298b3580675b9e89d2e44c2f5f291e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
@@ -8,11 +8,11 @@ the APs in very different states post launch.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/realmode.h      |  5 +++
- arch/x86/kernel/smpboot.c            | 79 ++++++++++++++++++++++++++++++++++++
- arch/x86/realmode/rm/header.S        |  5 +++
- arch/x86/realmode/rm/trampoline_64.S | 68 +++++++++++++++++++++++++++++++
- 4 files changed, 157 insertions(+)
+ arch/x86/include/asm/realmode.h      |  5 ++
+ arch/x86/kernel/smpboot.c            | 91 ++++++++++++++++++++++++++++++++++++
+ arch/x86/realmode/rm/header.S        |  5 ++
+ arch/x86/realmode/rm/trampoline_64.S | 68 +++++++++++++++++++++++++++
+ 4 files changed, 169 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..e26ff1cc50eb 100644
@@ -31,7 +31,7 @@ index 63b3393bd98e..e26ff1cc50eb 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..de98e786daf8 100644
+index f02ecaf97904..fcff1153a3db 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -66,11 +66,14 @@ index f02ecaf97904..de98e786daf8 100644
  	pr_debug("Deasserting INIT\n");
  
  	/* Target chip */
-@@ -885,6 +896,48 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
+@@ -885,6 +896,60 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
  	return NMI_DONE;
  }
  
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
++
++static atomic_t first_ap_only;
++
 +static int
 +wakeup_cpu_via_intel_txt(int cpu)
 +{
@@ -80,16 +83,25 @@ index f02ecaf97904..de98e786daf8 100644
 +	void __iomem *sinit_mle_data;
 +	u32 caps;
 +
-+	/* Initialize MLE join structure once */
-+	if (mle_join.entry_point == 0) {
-+		/* Get start IP and GDT info from rmpiggy to use in TXT AP startup */
-+		mle_join.entry_point = real_mode_header->sl_trampoline_start32;
-+		mle_join.seg_sel = __KERNEL32_CS;
-+		mle_join.gdt_base = real_mode_header->tr_gdt;
-+		mle_join.gdt_limit = real_mode_header->tr_gdt -
-+			    real_mode_header->tr_gdt - 1;
-+		txt_write_reg(TXTCR_MLE_JOIN, virt_to_phys(&mle_join), 0);
-+	}
++	/*
++	 * For TXT, all APs will get woken up at the same time so this wakeup
++	 * code only runs on the first AP CPU it is called for.
++	 */
++	if (atomic_read(&first_ap_only) == 1)
++		return 0;
++
++	atomic_set(&first_ap_only, 1);
++
++	/*
++	 * Initialize MLE join structure. Get start IP and GDT info from
++ 	 * rmpiggy to use in TXT AP startup
++ 	 */
++	mle_join.entry_point = real_mode_header->sl_trampoline_start32;
++	mle_join.seg_sel = __KERNEL32_CS;
++	mle_join.gdt_base = real_mode_header->tr_gdt;
++	mle_join.gdt_limit = real_mode_header->tr_gdt -
++		    real_mode_header->tr_gdt - 1;
++	txt_write_reg(TXTCR_MLE_JOIN, virt_to_phys(&mle_join), 0);
 +
 +	heap = txt_get_heap();
 +	if (unlikely(!heap))
@@ -115,7 +127,7 @@ index f02ecaf97904..de98e786daf8 100644
  /*
   * Wake up AP by INIT, INIT, STARTUP sequence.
   *
-@@ -1010,6 +1063,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1075,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -124,7 +136,7 @@ index f02ecaf97904..de98e786daf8 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1022,6 +1077,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1022,6 +1089,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
  
