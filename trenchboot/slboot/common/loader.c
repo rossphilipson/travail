@@ -686,6 +686,18 @@ bool prepare_intermediate_loader(void)
     /* remove all SINIT and LCP modules since kernel may not handle */
     remove_txt_modules(g_ldr_ctx);
 
+    if ( !find_module_by_pattern(g_ldr_ctx, &slconfig_image, &slconfig_size,
+                                 (void*)SLAUNCH_CONFIG_UUID,
+                                 tb_strlen(SLAUNCH_CONFIG_UUID)) ) {
+        printk(TBOOT_ERR"Error: could not find secure launch config image.\n");
+        return false;
+    }
+
+    if ( remove_module(g_ldr_ctx, slconfig_image) == NULL ) {
+        printk(TBOOT_ERR"Error: failed to remove secure launch config module.\n");
+        return false;
+    }
+
     printk(TBOOT_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 
     /* print_mbi(g_mbi); */
@@ -707,13 +719,6 @@ bool prepare_intermediate_loader(void)
         m = get_module(g_ldr_ctx, 0);
         initrd_image = (void *)m->mod_start;
         initrd_size = m->mod_end - m->mod_start;
-    }
-
-    if ( !find_module_by_pattern(g_ldr_ctx, &slconfig_image, &slconfig_size,
-                                 (void*)SLAUNCH_CONFIG_UUID,
-                                 tb_strlen(SLAUNCH_CONFIG_UUID)) ) {
-        printk(TBOOT_ERR"Error: could not find secure launch config image.\n");
-        return false;
     }
 
     return expand_linux_image(kernel_image, kernel_size,

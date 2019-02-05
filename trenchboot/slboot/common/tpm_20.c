@@ -140,7 +140,7 @@ static bool reverse_copy_pcr_selection_out(TPML_PCR_SELECTION *pcr_selection,
  * This can be used for the any of the following
  * TPM 2.0 data structures, but is not limited to these:
  *
- *      ENCRYPTED_SECRET_2B 
+ *      ENCRYPTED_SECRET_2B
  *      TPM2B_DIGEST
  *      TPM2B_NONCE
  *      TPM2B_DATA
@@ -149,8 +149,8 @@ static bool reverse_copy_pcr_selection_out(TPML_PCR_SELECTION *pcr_selection,
  *
  * Inputs:
  *
- *      dest -- pointer to SIZED_BYTE_BUFFER 
- *      src -- pointer to SIZED_BYTE_BUFFER 
+ *      dest -- pointer to SIZED_BYTE_BUFFER
+ *      src -- pointer to SIZED_BYTE_BUFFER
  *
  * Outputs:
  *
@@ -1657,6 +1657,7 @@ static uint32_t _tpm20_shutdown(uint32_t locality, u16 type)
 
 __data u32 handle2048 = 0;
 static const char auth_str[] = "test";
+#if 0
 static uint32_t _tpm20_create_primary(uint32_t locality,
                                      tpm_create_primary_in *in,
                                      tpm_create_primary_out *out)
@@ -1668,7 +1669,7 @@ static uint32_t _tpm20_create_primary(uint32_t locality,
     void *sensitive_size_ptr;
     void *other;
     u16 size;
-    
+
     reverse_copy_header(TPM_CC_CreatePrimary, &in->sessions);
 
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
@@ -1755,7 +1756,7 @@ static uint32_t _tpm20_create_primary(uint32_t locality,
 
     return ret;
 }
-
+#endif
 
 static uint32_t _tpm20_create(uint32_t locality,
                               tpm_create_in *in,
@@ -1768,7 +1769,7 @@ static uint32_t _tpm20_create(uint32_t locality,
     void *sensitive_size_ptr;
     void *other;
     u16 size;
-    
+
     reverse_copy_header(TPM_CC_Create, &in->sessions);
 
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
@@ -1861,7 +1862,7 @@ static uint32_t _tpm20_load(uint32_t locality,
     u16 rsp_tag;
     void *other;
     u16 size;
-    
+
     reverse_copy_header(TPM_CC_Load, &in->sessions);
 
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
@@ -1921,7 +1922,7 @@ static uint32_t _tpm20_unseal(uint32_t locality,
     u16 rsp_tag;
     void *other;
     u16 size;
-    
+
     reverse_copy_header(TPM_CC_Unseal, &in->sessions);
 
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
@@ -1983,7 +1984,7 @@ static uint32_t _tpm20_context_save(uint32_t locality,
     reverse_copy(cmd_buf + CMD_SIZE_OFFSET, &cmd_size, sizeof(cmd_size));
 
     rsp_size = sizeof(*out);
-    
+
     if (g_tpm_family == TPM_IF_20_FIFO) {
         if (!tpm_submit_cmd(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
             return TPM_RC_FAILURE;
@@ -2002,12 +2003,11 @@ static uint32_t _tpm20_context_save(uint32_t locality,
 
     if (rsp_tag == TPM_ST_SESSIONS)
         other += sizeof(u32); /* Skip past parameter size field */
-	   
+
     if ( !reverse_copy_context_out(&out->context, &other) )
         return TPM_RC_FAILURE;
 
     return ret;
-    
 }
 
 static uint32_t _tpm20_context_load(uint32_t locality,
@@ -2021,15 +2021,15 @@ static uint32_t _tpm20_context_load(uint32_t locality,
 
     reverse_copy_header(TPM_CC_ContextLoad, 0);
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
-	
+
     reverse_copy_context_in(&other, &in->context);
-    
+
     /* Now set the command size field, now that we know the size of the whole command */
     cmd_size = (u8 *)other - cmd_buf;
     reverse_copy(cmd_buf + CMD_SIZE_OFFSET, &cmd_size, sizeof(cmd_size));
 
     rsp_size = RSP_HEAD_SIZE + sizeof(*out);
-    
+
     if (g_tpm_family == TPM_IF_20_FIFO) {
         if (!tpm_submit_cmd(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
 	    return TPM_RC_FAILURE;
@@ -2038,7 +2038,7 @@ static uint32_t _tpm20_context_load(uint32_t locality,
         if (!tpm_submit_cmd_crb(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
             return TPM_RC_FAILURE;
     }
-    
+
     reverse_copy(&ret, rsp_buf + RSP_RST_OFFSET, sizeof(ret));
     if ( ret != TPM_RC_SUCCESS )
         return ret;
@@ -2048,7 +2048,7 @@ static uint32_t _tpm20_context_load(uint32_t locality,
 
     if (rsp_tag == TPM_ST_SESSIONS)
         other += sizeof(u32); /* Skip past parameter size field */
-	   
+
     reverse_copy_out(out->loadedHandle, other);
 
     return ret;
@@ -2062,17 +2062,16 @@ static uint32_t _tpm20_context_flush(uint32_t locality,
     u16 rsp_tag;
     void *other;
 
-	
     reverse_copy_header(TPM_CC_FlushContext, 0);
     other = (void *)cmd_buf + CMD_HEAD_SIZE;
     reverse_copy_in(other, in->flushHandle);
-	
+
     /* Now set the command size field, now that we know the size of the whole command */
     cmd_size = (u8 *)other - cmd_buf;
     reverse_copy(cmd_buf + CMD_SIZE_OFFSET, &cmd_size, sizeof(cmd_size));
 
     rsp_size = RSP_HEAD_SIZE;
-    
+
     if (g_tpm_family == TPM_IF_20_FIFO) {
         if (!tpm_submit_cmd(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
             return TPM_RC_FAILURE;
@@ -2081,21 +2080,20 @@ static uint32_t _tpm20_context_flush(uint32_t locality,
         if (!tpm_submit_cmd_crb(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
             return TPM_RC_FAILURE;
     }
-    
+
     reverse_copy(&ret, rsp_buf + RSP_RST_OFFSET, sizeof(ret));
-    
+
     if ( ret != TPM_RC_SUCCESS )
         return ret;
 
     other = (void *)rsp_buf + RSP_HEAD_SIZE;
-    
+
     reverse_copy(&rsp_tag, rsp_buf, sizeof(rsp_tag));
 
     if (rsp_tag == TPM_ST_SESSIONS)
         other += sizeof(u32); 
-	   
+
     return ret;
-    
 }
 
 
@@ -2324,7 +2322,7 @@ static bool tpm20_nv_write(struct tpm_if *ti, uint32_t locality,
     tpm_nv_write_out write_out;
     u32 ret;
 
-    if ( ti == NULL || data == NULL || data_size == 0 
+    if ( ti == NULL || data == NULL || data_size == 0
             || data_size > MAX_NV_INDEX_SIZE )
         return false;
 
@@ -2392,8 +2390,8 @@ static bool tpm20_seal(struct tpm_if *ti, uint32_t locality,
                        uint32_t in_data_size, const uint8_t *in_data,
                        uint32_t *sealed_data_size, uint8_t *sealed_data)
 {
-    tpm_create_in create_in; 
-    tpm_create_out create_out; 
+    tpm_create_in create_in;
+    tpm_create_out create_out;
     u32 ret;
 
     create_in.parent_handle = handle2048;
@@ -2427,7 +2425,7 @@ static bool tpm20_seal(struct tpm_if *ti, uint32_t locality,
     }
     create_in.sensitive.t.sensitive.data.t.size = in_data_size;
     tb_memcpy(&(create_in.sensitive.t.sensitive.data.t.buffer[0]),
-            in_data, in_data_size); 
+            in_data, in_data_size);
 
     create_in.outside_info.t.size = 0;
     create_in.creation_pcr.count = 0;
@@ -2440,7 +2438,7 @@ static bool tpm20_seal(struct tpm_if *ti, uint32_t locality,
         return false;
     }
     *sealed_data_size = sizeof(create_out);
-    tb_memcpy(sealed_data, &create_out, *sealed_data_size); 
+    tb_memcpy(sealed_data, &create_out, *sealed_data_size);
 
     return true;
 }
@@ -2449,10 +2447,10 @@ static bool tpm20_unseal(struct tpm_if *ti, uint32_t locality,
                          uint32_t sealed_data_size, const uint8_t *sealed_data,
                          uint32_t *secret_size, uint8_t *secret)
 {
-    tpm_load_in load_in; 
-    tpm_load_out load_out; 
-    tpm_unseal_in unseal_in; 
-    tpm_unseal_out unseal_out; 
+    tpm_load_in load_in;
+    tpm_load_out load_out;
+    tpm_unseal_in unseal_in;
+    tpm_unseal_out unseal_out;
     u32 ret;
 
     if ( ti == NULL || locality >= TPM_NR_LOCALITIES
@@ -2499,8 +2497,8 @@ static bool tpm20_unseal(struct tpm_if *ti, uint32_t locality,
 static bool tpm20_get_random(struct tpm_if *ti, uint32_t locality,
                              uint8_t *random_data, uint32_t *data_size)
 {
-    tpm_get_random_in random_in; 
-    tpm_get_random_out random_out; 
+    tpm_get_random_in random_in;
+    tpm_get_random_out random_out;
     u32 ret, out_size, requested_size;
     static bool first_attempt;
 
@@ -2544,7 +2542,7 @@ static bool tpm20_get_random(struct tpm_if *ti, uint32_t locality,
 
             out_size = random_out.random_bytes.t.size;
             if (out_size > 0)
-                tb_memcpy(random_data+*data_size, 
+                tb_memcpy(random_data+*data_size,
                         &(random_out.random_bytes.t.buffer[0]), out_size);
             *data_size += out_size;
         }
@@ -2596,11 +2594,11 @@ static bool tpm20_context_save(struct tpm_if *ti, u32 locality, TPM_HANDLE handl
         ti->error = ret;
         return false;
     }
-    else 
+    else
 	 printk(TBOOT_WARN"TPM: tpm2 context save successful, return value = %08X\n", ret);
     tb_memcpy((tpm_contextsave_out *)context_saved, &out, sizeof(tpm_contextsave_out));
     return true;
-}	
+}
 
 static bool tpm20_context_load(struct tpm_if *ti, u32 locality, void  *context_saved, TPM_HANDLE *handle)
 {
@@ -2610,7 +2608,7 @@ static bool tpm20_context_load(struct tpm_if *ti, u32 locality, void  *context_s
 
     if ( ti == NULL || locality >= TPM_NR_LOCALITIES )
         return false;
-	
+
     tb_memcpy(&in, (tpm_contextsave_out *)context_saved, sizeof(tpm_contextsave_out));
 
     ret = _tpm20_context_load(locality, &in, &out);
@@ -2623,13 +2621,13 @@ static bool tpm20_context_load(struct tpm_if *ti, u32 locality, void  *context_s
 	printk(TBOOT_WARN"TPM: tpm2 context load successful, return value = %08X\n", ret);
     *handle = out.loadedHandle;
     return true;
-}	
+}
 
 static bool tpm20_context_flush(struct tpm_if *ti, u32 locality, TPM_HANDLE handle)
 {
     tpm_flushcontext_in in;
     u32 ret;
-    
+
     if ( ti == NULL || locality >= TPM_NR_LOCALITIES )
         return false;
     if ( handle == 0 )
@@ -2641,10 +2639,10 @@ static bool tpm20_context_flush(struct tpm_if *ti, u32 locality, TPM_HANDLE hand
         ti->error = ret;
         return false;
     }
-    else 
+    else
         printk(TBOOT_WARN"TPM: tpm2 context flush successful, return value = %08X\n", ret);
     return true;
-}	
+}
 
 static bool tpm20_init(struct tpm_if *ti)
 {
@@ -2654,7 +2652,7 @@ static bool tpm20_init(struct tpm_if *ti)
 
     if ( ti == NULL || info_list == NULL )
         return false;
-   
+
     ti->cur_loc = 0;
 
     /* init version */
@@ -2727,6 +2725,7 @@ static bool tpm20_init(struct tpm_if *ti)
 	return false;
     }
 
+#if 0 /* Sealing is not needed in SLBOOT */
     if (handle2048 != 0)
         goto out;
 
@@ -2765,7 +2764,7 @@ static bool tpm20_init(struct tpm_if *ti)
     primary_in.public.t.public_area.unique.keyed_hash.t.size = 0;
     primary_in.outside_info.t.size = 0;
     primary_in.creation_pcr.count = 0;
-    
+
     printk(TBOOT_DETA"TPM:CreatePrimary creating hierarchy handle = %08X\n", primary_in.primary_handle);
     ret = _tpm20_create_primary(ti->cur_loc, &primary_in, &primary_out);
     if (ret != TPM_RC_SUCCESS) {
@@ -2774,10 +2773,12 @@ static bool tpm20_init(struct tpm_if *ti)
         return false;
     }
     handle2048 = primary_out.obj_handle;
- 
+
     printk(TBOOT_DETA"TPM:CreatePrimary created object handle = %08X\n", handle2048);
 out:
     tpm_print(ti);
+#endif
+
     return true;
 }
 
