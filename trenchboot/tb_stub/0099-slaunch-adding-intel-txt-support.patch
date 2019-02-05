@@ -1,117 +1,118 @@
-From fff0597d2d92aceb9e7fbb0d00d8ff51850e85b2 Mon Sep 17 00:00:00 2001
+From e9dacd1cefcbef078bfde5e03e579d9551a4f415 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
-Subject: [PATCH 99/99] slaunch: adding intel txt support
+Subject: [PATCH] slaunch: adding intel txt support
 
 ---
- arch/x86/kernel/slaunch.c | 188 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 188 insertions(+)
+ arch/x86/kernel/slaunch.c | 196 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 196 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index af41d15352c3..551a64c1f3c8 100644
+index af41d15352c3..338a5862a69d 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -24,6 +24,7 @@
- #include <asm/bootparam.h>
- #include <asm/setup.h>
- #include <asm/slaunch.h>
-+#include <linux/seq_file.h>
- 
- /* This should be plenty of room */
- static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
-@@ -91,3 +92,190 @@ void slaunch_setup(void)
+@@ -91,3 +91,199 @@ void slaunch_setup(void)
  	else
  		BUG();
  }
 +
-+#define FS_LOG_ENTRY 0
-+#define FS_DIR_ENTRY 1 /* must be last */
-+#define FS_ENTRIES 2
++
++struct memfile {
++	char *name;
++	void *addr;
++	size_t size;
++}
++
++static struct memfile sl_evtlog = {"evtlog", 0, 0};
++static struct memfile sl_config = {"config", 0, 0};
++
++#define SL_EVTLOG_ENTRY 0
++#define SL_CONFIG_ENTRY 1
++#define SL_DIR_ENTRY 2 /* directoy node must be last */
++#define FS_ENTRIES 3
 +
 +static struct dentry *fs_entries[FS_ENTRIES];
 +
 +
-+#define TPM_LOG_BLOCK_SIZE 1024
-+
-+static void *tpm_evtlog_start(struct seq_file *m, loff_t *pos)
++static ssize_t sl_memfile_read(struct memfile *file, char __user *outbuf, size_t count, loff_t *pos)
 +{
-+	struct txt_op *log = m->private;
-+	void *addr = log->buffer;
++	void __iomem *addr;
++	void *buf;
++	int ret = -EFAULT;
 +
-+	addr += *pos * TPM_LOG_BLOCK_SIZE;
++	if (!file->addr)
++		goto err;
 +
-+	if (addr > log->buffer + log->size)
-+		return NULL;
++	addr = ioremap_nocache(file->addr, file->size);
++	if (!addr)
++		goto err;
 +
-+	return addr;
-+}
-+
-+static void *tpm_evtlog_next(struct seq_file *m, void *v, loff_t *pos)
-+{
-+	size_t size = 0;
-+	struct txt_op *log = m->private;
-+	void *addr = v;
-+
-+	size = (log->buffer + log->size) - addr;
-+	size = size > TPM_LOG_BLOCK_SIZE ? TPM_LOG_BLOCK_SIZE : size;
-+
-+	if ((size == 0) ||
-+	    ((addr + size) > (log->buffer + log->size)))
-+		return NULL;
-+
-+	addr += size;
-+	(*pos)++;
-+
-+	return addr;
-+}
-+
-+static void tpm_evtlog_stop(struct seq_file *m, void *v)
-+{
-+}
-+
-+static int tpm_evtlog_show(struct seq_file *m, void *v)
-+{
-+	size_t size;
-+	struct txt_op *log = m->private;
-+	void *addr = v;
-+
-+	size = ((log->buffer + log->size) - addr) > TPM_LOG_BLOCK_SIZE ?
-+		TPM_LOG_BLOCK_SIZE : (log->buffer + log->size) - addr;
-+
-+	if ((size != 0) &&
-+	    ((addr + size) <= (log->buffer + log->size)))
-+		seq_write(m, addr, size);
-+
-+	return 0;
-+}
-+
-+const struct seq_operations tpm_evtlog_seqops = {
-+	.start = tpm_evtlog_start,
-+	.next = tpm_evtlog_next,
-+	.stop = tpm_evtlog_stop,
-+	.show = tpm_evtlog_show,
-+};
-+
-+static int tpm_evtlog_open(struct inode *inode, struct file *file)
-+{
-+	int err;
-+	struct seq_file *seq;
-+
-+	err = seq_open(file, &tpm_evtlog_seqops);
-+	if (!err) {
-+		seq = file->private_data;
-+		seq->private = &txt_log;
++	if (*pos >= file->size) {
++		ret = 0;
++		goto iounmap;
 +	}
 +
-+	return err;
++	if (*pos + count > file->size)
++		count = file->size - *pos;
++
++	buf = kmalloc(count, GFP_KERNEL);
++	if (!buf) {
++		ret = -ENOMEM;
++		goto iounmap;
++	}
++
++	memcpy_fromio(buf, addr + *pos, count);
++	if (copy_to_user(outbuf, buf, count))
++		goto free;
++
++	*ppos += count;
++
++	ret = count;
++
++free:
++	kfree(buf);
++
++iounmap:
++	iounmap(addr);
++
++err:
++	return ret;
 +}
 +
-+static const struct file_operations tpm_evtlog_ops = {
-+        .open = tpm_evtlog_open,
-+        .read = seq_read,
-+        .llseek = seq_lseek,
-+        .release = seq_release,
++static ssize_t sl_evtlog_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
++{
++	return sl_memfile_read(&sl_evtlog, buf, count, pos);
++}
++
++static ssize_t sl_config_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
++{
++	return sl_memfile_read(&sl_evtlog, buf, count, pos);
++}
++
++static const struct file_operations evtlog_ops = {
++        .read = sl_evtlog_read,
++	.llseek	= default_llseek,
 +};
++
++static const struct file_operations config_ops = {
++        .read = sl_config_read,
++	.llseek	= default_llseek,
++};
++
++/*
++ * TXT configuration registers (offsets from TXT_{PUB, PRIV}_CONFIG_REGS_BASE)
++ */
++
++#define TXT_PUB_CONFIG_REGS_BASE       0xfed30000
++#define TXT_PRIV_CONFIG_REGS_BASE      0xfed20000
++
++/* # pages for each config regs space - used by fixmap */
++#define NR_TXT_CONFIG_PAGES     ((TXT_PUB_CONFIG_REGS_BASE -                \
++				  TXT_PRIV_CONFIG_REGS_BASE) >> PAGE_SHIFT)
++
++/* offsets from pub/priv config space */
++#define TXTCR_HEAP_BASE             0x0300
++#define TXTCR_HEAP_SIZE             0x0308
 +
 +
 +static long expose_evtlog(const char *name)
@@ -160,7 +161,7 @@ index af41d15352c3..551a64c1f3c8 100644
 +}
 +
 +
-+static int slaunch_intel_log(void)
++static int slaunch_intel_evtlog(void)
 +{
 +	int err;
 +
@@ -181,7 +182,7 @@ index af41d15352c3..551a64c1f3c8 100644
 +	return 0;
 +}
 +
-+static int slaunch_intel_log(void)
++static int slaunch_amd_evtlog(void)
 +{
 +	return 0;
 +}
@@ -191,9 +192,9 @@ index af41d15352c3..551a64c1f3c8 100644
 +	int err;
 +
 +	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
-+		slaunch_intel_log();
++		slaunch_intel_evtlog();
 +	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
-+		slaunch_amd_log();
++		slaunch_amd_evtlog();
 +	else
 +		BUG();
 +	return 0;
@@ -211,5 +212,5 @@ index af41d15352c3..551a64c1f3c8 100644
 +
 +__exitcall(slaunch_exit);
 -- 
-2.20.1
+2.11.0
 
