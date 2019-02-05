@@ -494,7 +494,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
        printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
 	if (!tpm_relinquish_locality_crb(0)){
 		printk(TBOOT_INFO"Relinquish CRB locality 0 failed...\n");
-		error_action(TB_ERR_TPM_NOT_READY) ;
+		error_action(TB_ERR_TPM_NOT_READY);
 	}
    }
 

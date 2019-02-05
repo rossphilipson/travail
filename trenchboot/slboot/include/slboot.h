@@ -91,7 +91,8 @@ typedef struct __packed {
 } tboot_acpi_sleep_info_t;
 
 #define TB_SHUTDOWN_REBOOT      0
-#define TB_SHUTDOWN_HALT        4
+#define TB_SHUTDOWN_SHUTDOWN    1
+#define TB_SHUTDOWN_HALT        2
 
 /*
  * used to log tboot printk output

@@ -42,6 +42,11 @@ Questions:
    * Do we need to make more room in the early fixmap?
    * Can we map less TXT reg pages?
    * Should the SMP code use early or late remap?
+ - SEXIT:
+   * TODO much to consider here
+ - S5:
+   * TODO post launch setup the FADT so SLBOOT does not have access
+     to it and being able to shutdown.
 
 Stages:
 ---------------------------------------------------------------------

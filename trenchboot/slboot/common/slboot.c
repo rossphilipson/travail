@@ -68,7 +68,6 @@
 #include <cmdline.h>
 #include <tpm_20.h>
 
-extern void error_action(tb_error_t error);
 extern void verify_IA32_se_svn_status(const acm_hdr_t *acm_hdr);
 
 /* loader context struct saved so that post_launch() can use it */
@@ -150,7 +149,7 @@ static void launch_racm(void)
 void check_racm_result(void)
 {
     txt_get_racm_error();
-    shutdown_system(TB_SHUTDOWN_HALT);
+    shutdown_system(TB_SHUTDOWN_SHUTDOWN);
 }
 
 void begin_launch(void *addr, uint32_t magic)
@@ -204,6 +203,13 @@ void begin_launch(void *addr, uint32_t magic)
     /* any of the features, incl. those required to check if the environment */
     /* has already been launched */
 
+    /* need to verify that platform supports TXT before we can check error */
+    /* (this includes TPM support). despite the name this function also */
+    /* enables SMX mode in CR4. it needs to be done before attempting to */
+    /* verify the ACMOD */
+    err = supports_txt();
+    error_action(err);
+
     find_platform_sinit_module(g_ldr_ctx, (void **)&g_sinit, NULL);
     /* check if it is newer than BIOS provided version, then copy it to BIOS reserved region */
     g_sinit = copy_sinit(g_sinit);
@@ -222,11 +228,6 @@ void begin_launch(void *addr, uint32_t magic)
     /* if telled to call revocation acm, go with simplified path */
     if ( get_tboot_call_racm() )
         launch_racm(); /* never return */
-
-    /* need to verify that platform supports TXT before we can check error */
-    /* (this includes TPM support) */
-    err = supports_txt();
-    error_action(err);
 
     /* print any errors on last boot, which must be from TXT launch */
     txt_display_errors();
@@ -266,7 +267,8 @@ void begin_launch(void *addr, uint32_t magic)
 
 void shutdown_system(uint32_t shutdown_type)
 {
-    static const char *types[] = { "TB_SHUTDOWN_REBOOT", "TB_SHUTDOWN_HALT" };
+    static const char *types[] = { "TB_SHUTDOWN_REBOOT", "TB_SHUTDOWN_REBOOT",
+                                   "TB_SHUTDOWN_HALT" };
     char type[32];
 
     /* NOTE: the TPM close and open current locality is not needed here since */
@@ -299,7 +301,10 @@ void shutdown_system(uint32_t shutdown_type)
                 /* (supported by all TXT-capable chipsets) */
                 outb(0xcf9, 0x06);
             }
-
+            break;
+        case TB_SHUTDOWN_SHUTDOWN:
+            /* TODO implement S5 */
+            break;
         /* FALLTHROUGH */
         case TB_SHUTDOWN_HALT:
         default:
@@ -311,7 +316,6 @@ void shutdown_system(uint32_t shutdown_type)
 void handle_exception(void)
 {
     printk(TBOOT_INFO"received exception; shutting down...\n");
-    shutdown_system(TB_SHUTDOWN_HALT);
 }
 
 /*
