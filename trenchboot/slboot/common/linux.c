@@ -83,6 +83,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 {
     linux_kernel_header_t *hdr;
     slaunch_info_t *slh;
+    linux_kernel_header_t temp_hdr;
     uint32_t real_mode_base, protected_mode_base;
     unsigned long real_mode_size, protected_mode_size;
         /* Note: real_mode_size + protected_mode_size = linux_size */
@@ -92,7 +93,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     uint32_t arch;
 
     /* Check param */
-
     if ( linux_image == NULL ) {
         printk(TBOOT_ERR"Error: Linux kernel image is zero.\n");
         return false;
@@ -272,11 +272,13 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
                (unsigned long)initrd_base,
                (unsigned long)(initrd_base + initrd_size));
 
+        hdr->ramdisk_image = initrd_base;
+        hdr->ramdisk_size = initrd_size;
     }
-    else
-        initrd_base = (uint32_t)initrd_image;
-    hdr->ramdisk_image = initrd_base;
-    hdr->ramdisk_size = initrd_size;
+    else {
+        hdr->ramdisk_image = 0;
+        hdr->ramdisk_size = 0;
+    }
 
     /* calc location of real mode part */
     real_mode_base = LEGACY_REAL_START;
@@ -289,7 +291,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         real_mode_base = LEGACY_REAL_START;
 
     real_mode_size = (hdr->setup_sects + 1) * SECTOR_SIZE;
-    if ( real_mode_size + sizeof(boot_params_t) > KERNEL_CMDLINE_OFFSET ) {
+    if ( real_mode_size > KERNEL_CMDLINE_OFFSET ) {
         printk(TBOOT_ERR"realmode data is too large\n");
         return false;
     }
@@ -351,26 +353,32 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         return false;
     }
 
-    /* set cmd_line_ptr */
-    hdr->cmd_line_ptr = real_mode_base + KERNEL_CMDLINE_OFFSET;
-
-    /* Save linux header struct to temp memory, in case the it is overwritten by tb_memmove below*/
-    linux_kernel_header_t temp_hdr;
+    /* save linux header struct to temp memory to copy changes to zero page */
     tb_memmove(&temp_hdr, hdr, sizeof(temp_hdr));
-    hdr = &temp_hdr;
+
+    /* load real-mode part */
+    tb_memmove((void *)real_mode_base, linux_image, real_mode_size);
+    printk(TBOOT_DETA"Kernel (real mode) from 0x%lx to 0x%lx\n",
+           (unsigned long)linux_image,
+           (unsigned long)real_mode_base);
+    printk(TBOOT_DETA"gggg: 0x%x\n", *((uint32_t*)real_mode_base));
 
     /* load protected-mode part */
     tb_memmove((void *)protected_mode_base, linux_image + real_mode_size,
             protected_mode_size);
     printk(TBOOT_DETA"Kernel (protected mode) from 0x%lx to 0x%lx\n",
-           (unsigned long)protected_mode_base,
-           (unsigned long)(protected_mode_base + protected_mode_size));
+           (unsigned long)(linux_image + real_mode_size),
+           (unsigned long)protected_mode_base);
 
-    /* load real-mode part */
-    tb_memmove((void *)real_mode_base, linux_image, real_mode_size);
-    printk(TBOOT_DETA"Kernel (real mode) from 0x%lx to 0x%lx\n",
-           (unsigned long)real_mode_base,
-           (unsigned long)(real_mode_base + real_mode_size));
+    /* reset pointers to point into zero page at real mode base */
+    hdr = (linux_kernel_header_t *)(linux_image + KERNEL_HEADER_OFFSET);
+    slh = (slaunch_info_t *)(linux_image + SLAUNCH_INFO_OFFSET);
+
+    /* copy back the updated kernel header */
+    tb_memmove(hdr, &temp_hdr, sizeof(temp_hdr));
+
+    /* set cmd_line_ptr */
+    hdr->cmd_line_ptr = real_mode_base + KERNEL_CMDLINE_OFFSET;
 
     /* copy cmdline */
     const char *kernel_cmdline = get_cmdline(g_ldr_ctx);
@@ -391,12 +399,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     printk_long((void *)hdr->cmd_line_ptr);
 
     /* need to put boot_params in real mode area so it gets mapped */
-    boot_params = (boot_params_t *)(real_mode_base + real_mode_size);
-    tb_memset(boot_params, 0, sizeof(*boot_params));
-    tb_memcpy(&boot_params->hdr, hdr, sizeof(*hdr));
-
-    /* Have to also perserve the secure launch info for later */
-    tb_memcpy(&boot_params->slaunch_info, slh, sizeof(*slh));
+    boot_params = (boot_params_t *)real_mode_base;
 
     /* need to handle a few EFI things here if such is our parentage */
     if (is_loader_launch_efi(g_ldr_ctx)){
@@ -405,10 +408,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             (struct screen_info_t *)(boot_params->screen_info);
         uint32_t address = 0;
         uint64_t long_address = 0UL;
-
         uint32_t descr_size = 0, descr_vers = 0, mmap_size = 0, efi_mmap_addr = 0;
-
-
 
         /* loader signature */
         tb_memcpy(&efi->efi_ldr_sig, "EL64", sizeof(uint32_t));
@@ -502,6 +502,13 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     g_il_kernel_setup.protected_mode_base = protected_mode_base;
     g_il_kernel_setup.protected_mode_size = protected_mode_size;
     g_il_kernel_setup.boot_params = boot_params;
+
+    printk(TBOOT_DETA"Intermediate Loader kernel details:\n");
+    printk(TBOOT_DETA"\treal_mode_base: 0x%x\n", real_mode_base);
+    printk(TBOOT_DETA"\treal_mode_size: 0x%lx\n", real_mode_size);
+    printk(TBOOT_DETA"\tprotected_mode_base: 0x%x\n", protected_mode_base);
+    printk(TBOOT_DETA"\tprotected_mode_size: 0x%lx\n", protected_mode_size);
+    printk(TBOOT_DETA"\tboot_params: 0x%p\n", boot_params);
 
     return true;
 }
