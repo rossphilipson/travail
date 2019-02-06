@@ -127,7 +127,7 @@ typedef struct __attribute__ ((packed)) {
     uint8_t               hd0_info[16];     /* obsolete! */         /* 0x080 */
     uint8_t               hd1_info[16];     /* obsolete! */         /* 0x090 */
     uint8_t               sys_desc_table[0x0b0-0x0a0];              /* 0x0a0 */
-    uint8_t               _pad4a[29];                               /* 0x0b0 */
+    uint8_t               _pad4a[28];                               /* 0x0b0 */
     slaunch_info_t        slaunch_info;                             /* 0x0cc */
     uint8_t               _pad4b[88];                               /* 0x0e8 */
     uint8_t               edid_info[0x1c0-0x140];                   /* 0x140 */

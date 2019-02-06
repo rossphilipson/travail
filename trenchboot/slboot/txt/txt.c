@@ -331,6 +331,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     /* NOTE msb_key_hash is not currently used and the log is setup later */
     os_mle_data = get_os_mle_data_start(txt_heap);
     os_mle_data->zero_page_addr = (uint32_t)g_il_kernel_setup.boot_params;
+    printk(TBOOT_DETA"Zero page addr: 0x%x\n", os_mle_data->zero_page_addr);
 
     /*
      * OS/loader to SINIT data
