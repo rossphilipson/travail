@@ -145,7 +145,7 @@ static void *build_mle_pagetable(void)
         mle_off += PAGE_SIZE;
 
         pd_off++;
-        if ( pd_off % 512 ) {
+        if ( !(pd_off % 512) ) {
             pde++;
             *pde = MAKE_PDTE(pte);
         }
@@ -458,6 +458,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
 {
     void *mle_ptab_base;
     txt_heap_t *txt_heap;
+    uint32_t *mle_size;
 
     /*
      * find correct SINIT AC module in modules list
@@ -512,7 +513,15 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
    printk(TBOOT_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
    }*/
 
-   printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
+    /*
+     * Need to update the MLE header with the size of the MLE. The field is
+     * the 9th dword in.
+     */
+    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base +
+                       g_il_kernel_setup.boot_params->slaunch_info.sl_mle_hdr);
+    *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
+
+    printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
     /* (optionally) pause before executing GETSEC[SENTER] */
     if ( g_vga_delay > 0 )
         delay(g_vga_delay * 1000);
