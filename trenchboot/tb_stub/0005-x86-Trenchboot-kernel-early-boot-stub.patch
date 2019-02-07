@@ -1,4 +1,4 @@
-From 8bce61dab3f5d56fe50ceeb82171c3a7cfdf3988 Mon Sep 17 00:00:00 2001
+From aa139396d875a2a6789cdb1a7604e613b392523a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 ++++++++
- arch/x86/boot/compressed/sl_main.c |  91 ++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 165 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 290 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c |  91 +++++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 163 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 288 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -176,10 +176,10 @@ index 000000000000..33a3d3085ec1
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..074726b84525
+index 000000000000..e3710ecb80e2
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,163 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -258,7 +258,7 @@ index 000000000000..074726b84525
 +
 +.Lbsp_ok:
 +	/* Assume CPU is AMD to start */
-+	andl	$(CPU_AMD), %edi
++	movl	$(CPU_AMD), %edi
 +
 +	/* Now see if it is Intel */
 +	movl	$0x0, %eax
@@ -269,11 +269,11 @@ index 000000000000..074726b84525
 +	jnz	.Lcpu_check_done
 +	cmpl	$0x6c65746e, %ecx
 +	jnz	.Lcpu_check_done
-+	andl	$(CPU_INTEL), %edi
++	movl	$(CPU_INTEL), %edi
 +
 +.Lcpu_check_done:
 +	/* Now that we know what CPU it is, do vendor specific operations */
-+	testl	$(CPU_AMD), %edi
++	cmpl	$(CPU_AMD), %edi
 +	jz	.Ldo_amd
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
@@ -295,6 +295,7 @@ index 000000000000..074726b84525
 +	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
 +	movl	TXTCR_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
 +	addl	%ecx, %eax /* skip over BIOS data to OS-MLE data */
++	addl	$8, %eax /* skip over OS-MLE size field */
 +	movl	(%eax), %esi /* read zero page addr into %esi */
 +
 +	/* Clear the TXT error registers for a clean start of day */
@@ -319,9 +320,6 @@ index 000000000000..074726b84525
 +	 * Don't enable MCE at this point. The kernel will enable
 +	 * it on the BSP later when it is ready.
 +	 */
-+
-+	/* Store flags in boot params for later use */
-+	movl	%eax, (SLAUNCH_INFO_OFFSET + SL_FLAGS_OFFSET)(%esi)
 +
 +	/* Don't want the kernel keeping any segment from the SL stub */
 +	andb	$~(KEEP_SEGMENTS), BP_loadflags(%esi)
