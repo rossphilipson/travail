@@ -2,6 +2,7 @@ void print_debug_chars_inl(void)
 {
 	asm volatile (  "pushq	%%rcx\n\t"
 			"pushq	%%rdx\n\t"
+			"pushq	%%rax\n\t"
 			"xorl	%%ecx, %%ecx\n\t"
 			"1:\n\t"
 			"cmpb	$5, %%cl\n\t"
@@ -19,6 +20,7 @@ void print_debug_chars_inl(void)
 			"incb	%%cl\n\t"
 			"jmp	1b\n\t"
 			"2:\n\t"
+			"popq	%%rax\n\t"
 			"popq	%%rdx\n\t"
 			"popq	%%rcx\n\t"
 			: : : );

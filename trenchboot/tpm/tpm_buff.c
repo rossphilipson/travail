@@ -68,6 +68,7 @@ size_t tpmb_size(struct tpmbuff *b)
 
 #ifdef CONF_STATIC_ENV
 static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
+static struct tpmbuff tpm_buff;
 #endif
 
 struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)

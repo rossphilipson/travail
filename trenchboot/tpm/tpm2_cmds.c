@@ -6,6 +6,8 @@
 #include "tpm_common.h"
 #include "tpm2.h"
 #include "tpm2_auth.h"
+#include "tis.h"
+#include "crb.h"
 
 static int tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 		u32 code)

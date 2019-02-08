@@ -26,7 +26,7 @@ static void find_interface_and_family(struct tpm *t)
 	if (intf_cap.interface_version == TPM12_TIS_INTF_12) {
 		t->family = TPM12;
 		t->intf = TPM_TIS;
-		return
+		return;
 	}
 
 	/* Assume that it is 2.0 and TIS */
@@ -50,6 +50,23 @@ struct tpm *enable_tpm(void)
 		goto err;
 #endif
 	find_interface_and_family(t);
+
+	switch (t->intf) {
+	case TPM_DEVNODE:
+		/* Not implemented yet */
+		break;
+	case TPM_TIS:
+		if (!tis_init(t))
+			goto free;
+		break;
+	case TPM_CRB:
+		if (!crb_init(t))
+			goto free;
+		break;
+	case TPM_UEFI:
+		/* Not implemented yet */
+		break;
+	}
 
 	/* TODO: ACPI TPM discovery */
 
@@ -87,10 +104,10 @@ void tpm_relinquish_locality(struct tpm *t)
 		/* Not implemented yet */
 		break;
 	case TPM_TIS:
-		tis_relinquish_locality(l);
+		tis_relinquish_locality();
 		break;
 	case TPM_CRB:
-		crb_relinquish_locality(l);
+		crb_relinquish_locality();
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */

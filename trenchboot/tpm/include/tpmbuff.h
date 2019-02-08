@@ -6,16 +6,6 @@
 #ifndef _TPMBUFF_H
 #define _TPMBUFF_H
 
-struct tpmbuff;
-
-struct tpmbuff_operations {
-	u8 *(*reserve)(struct tpmbuff *b);
-	void (*free)(struct tpmbuff *b);
-	u8 *(*put)(struct tpmbuff *b, size_t size);
-	size_t (*trim)(struct tpmbuff *b, size_t size);
-	size_t (*size)(struct tpmbuff *b);
-};
-
 /* mirroring Linux SKB */
 struct tpmbuff {
 	size_t truesize;
@@ -27,8 +17,6 @@ struct tpmbuff {
 	u8 *data;
 	u8 *tail;
 	u8 *end;
-
-	struct tpmbuff_operations *ops;
 };
 
 u8 *tpmb_reserve(struct tpmbuff *b);
