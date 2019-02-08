@@ -1,4 +1,4 @@
-From aa139396d875a2a6789cdb1a7604e613b392523a Mon Sep 17 00:00:00 2001
+From ac4b711f5d13f81db15e5c36377371a25c90b7fa Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 ++++++++
- arch/x86/boot/compressed/sl_main.c |  91 +++++++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c |  90 ++++++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 163 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 288 insertions(+), 1 deletion(-)
+ 4 files changed, 287 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -79,10 +79,10 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..33a3d3085ec1
+index 000000000000..b2ad798c3111
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,90 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -110,11 +110,20 @@ index 000000000000..33a3d3085ec1
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/slaunch.h>
-+#include "misc.h"
 +
-+static void sl_die(void)
++static void sl_txt_reset(u64 error)
 +{
-+	__asm__ __volatile__("ud2");
++	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE);
++
++	barrier();
++	(*(volatile u64 *)(addr)) = error;
++	wmb();
++
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_RESET);
++
++	barrier();
++	(*(volatile u64 *)(addr)) = 1;
++	wmb();
 +}
 +
 +void sl_main(u8 *bootparams)
@@ -133,15 +142,11 @@ index 000000000000..33a3d3085ec1
 + 	 * environment depends on this and the other TPM operations succeeding.
 + 	 */
 +	tpm = enable_tpm();
-+	if (!tpm) {
-+		error_putstr("FATAL error in Secure Launch, cannot enable the TPM\n");
-+		sl_die();
-+	}
++	if (!tpm)
++		sl_txt_reset(TXT_SLERROR_TPM_INIT);
 +
-+	if (tpm_request_locality(tpm, 2) == TPM_NO_LOCALITY) {
-+		error_putstr("FATAL error in Secure Launch, cannot open locality\n");
-+		sl_die();
-+	}
++	if (tpm_request_locality(tpm, 2) == TPM_NO_LOCALITY)
++		sl_txt_reset(TXT_SLERROR_TPM_GET_LOC);
 +
 +	/* Hash the zero page/boot params */
 +	early_sha1_init(&sctx);
@@ -149,11 +154,8 @@ index 000000000000..33a3d3085ec1
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret) {
-+		error_putstr("FATAL error in Secure Launch, PCR extend failed\n");
-+		error_puthex(ret);
-+		sl_die();
-+	}
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
@@ -165,18 +167,15 @@ index 000000000000..33a3d3085ec1
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret) {
-+		error_putstr("FATAL error in Secure Launch, PCR extend failed\n");
-+		error_puthex(ret);
-+		sl_die();
-+	}
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	tpm_relinquish_locality(tpm);
 +	free_tpm(tpm);
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..e3710ecb80e2
+index 000000000000..0064840bc545
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
 @@ -0,0 +1,163 @@
@@ -321,8 +320,8 @@ index 000000000000..e3710ecb80e2
 +	 * it on the BSP later when it is ready.
 +	 */
 +
-+	/* Don't want the kernel keeping any segment from the SL stub */
-+	andb	$~(KEEP_SEGMENTS), BP_loadflags(%esi)
++	/* Keep SL segments for the early portion of the kernel boot */
++	orb	$(KEEP_SEGMENTS), BP_loadflags(%esi)
 +
 +	/* Done, jump to normal 32b pm entry */
 +	jmp	startup_32

@@ -2,6 +2,7 @@
 ENTRY(debug_put_chars)
 	pushl	%ecx
 	pushl	%edx
+	pushl	%eax
 	xorl	%ecx, %ecx
 1:
 	cmpb	$5, %cl
@@ -19,6 +20,7 @@ ENTRY(debug_put_chars)
 	incb	%cl
 	jmp	1b
 2:
+	popl	%eax
 	popl	%edx
 	popl	%ecx
 	jmp	debug_back

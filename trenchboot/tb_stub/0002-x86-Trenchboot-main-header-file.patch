@@ -1,20 +1,20 @@
-From 4c9f0e072ca2cf970532beca46e46b6c67b0c221 Mon Sep 17 00:00:00 2001
+From 54d9c9c72876131a64185f62f0a60cabf5f3b825 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 203 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 203 insertions(+)
+ arch/x86/include/asm/slaunch.h | 208 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 208 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..61b8672326b8
+index 000000000000..908e895ba778
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,208 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -51,6 +51,7 @@ index 000000000000..61b8672326b8
 +#define TXTCR_STS			0x0000
 +#define TXTCR_ESTS			0x0008
 +#define TXTCR_ERRORCODE			0x0030
++#define TXTCR_CMD_RESET			0x0038
 +#define TXTCR_MLE_JOIN			0x0290
 +#define TXTCR_HEAP_BASE			0x0300
 +#define TXTCR_HEAP_SIZE			0x0308
@@ -73,6 +74,10 @@ index 000000000000..61b8672326b8
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
 +#define TXT_SINIT_MLE_DMAR_TABLE_OFFSET	0x8c
++
++#define TXT_SLERROR_TPM_INIT		0xc0008001
++#define TXT_SLERROR_TPM_GET_LOC		0xc0008002
++#define TXT_SLERROR_TPM_EXTEND		0xc0008003
 +
 +#define SLAUNCH_INFO_OFFSET	0x0cc
 +#define SL_FLAGS_OFFSET		0x8
