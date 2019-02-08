@@ -31,7 +31,12 @@ struct tpmbuff {
 	struct tpmbuff_operations *ops;
 };
 
-struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);
+u8 *tpmb_reserve(struct tpmbuff *b);
+void tpmb_free(struct tpmbuff *b);
+u8 *tpmb_put(struct tpmbuff *b, size_t size);
+size_t tpmb_trim(struct tpmbuff *b, size_t size);
+size_t tpmb_size(struct tpmbuff *b);
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);;
 void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i);
 
 #endif

@@ -10,7 +10,7 @@
 static int tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 		u32 code)
 {
-	c->header = (struct tpm_header *)b->ops->reserve(b);
+	c->header = (struct tpm_header *)tpmb_reserve(b);
 	if (!c->header)
 		return -ENOMEM;
 
@@ -74,25 +74,39 @@ int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 	if (ret < 0)
 		return ret;
 
-	cmd.handles = (u32 *)b->ops->put(b, sizeof(u32));
+	cmd.handles = (u32 *)tpmb_put(b, sizeof(u32));
 	*cmd.handles = cpu_to_be32(pcr);
 
-	cmd.auth = (struct tpm2b *)b->ops->put(b, tpm2_null_auth_size());
+	cmd.auth = (struct tpm2b *)tpmb_put(b, tpm2_null_auth_size());
 	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
 	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 
 	size = convert_digest_list(digests);
 	if (size == 0) {
-		b->ops->free(b);
+		tpmb_free(b);
 		return -EINVAL;
 	}
-	cmd.params = (u8 *)b->ops->put(b, size);
+	cmd.params = (u8 *)tpmb_put(b, size);
 	memcpy(cmd.params, digests, size);
 
-	cmd.header->size = cpu_to_be16(b->ops->size(b));
+	cmd.header->size = cpu_to_be16(tpmb_size(b));
 
-	ret = t->ops->send(b);
-	b->ops->free(b);
+	switch (t->intf) {
+	case TPM_DEVNODE:
+		/* Not implemented yet */
+		break;
+	case TPM_TIS:
+		ret = tis_send(b);
+		break;
+	case TPM_CRB:
+		ret = crb_send(b);
+		break;
+	case TPM_UEFI:
+		/* Not implemented yet */
+		break;
+	}
+
+	tpmb_free(b);
 
 	return ret;
 }

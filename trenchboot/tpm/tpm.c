@@ -12,22 +12,6 @@
 #include "tpm2.h"
 #include "tpm2_constants.h"
 
-struct tpm_operations tis_ops = {
-	.init = tis_init,
-	.request_locality = tis_request_locality,
-	.relinquish_locality = tis_relinquish_locality,
-	.send = tis_send,
-	.recv = tis_recv
-};
-
-struct tpm_operations crb_ops = {
-	.init = crb_init,
-	.request_locality = crb_request_locality,
-	.relinquish_locality = crb_relinquish_locality,
-	.send = crb_send,
-	.recv = crb_recv
-};
-
 #ifdef CONF_STATIC_ENV
 static struct tpm tpm;
 #endif
@@ -69,27 +53,6 @@ struct tpm *enable_tpm(void)
 #endif
 	find_interface_and_family(t);
 
-	switch (t->intf) {
-	case TPM_DEVNODE:
-		/* Not implemented yet */
-		break;
-	case TPM_TIS:
-		if (tis_init(t))
-			t->ops = &tis_ops;
-		else
-			goto free;
-		break;
-	case TPM_CRB:
-		if (crb_init(t))
-			t->ops = &crb_ops;
-		else
-			goto free;
-		break;
-	case TPM_UEFI:
-		/* Not implemented yet */
-		break;
-	}
-
 	/* TODO: ACPI TPM discovery */
 
 	return t;
@@ -103,12 +66,38 @@ err:
 
 u8 tpm_request_locality(struct tpm *t, u8 l)
 {
-	return t->ops->request_locality(l);
+	switch (t->intf) {
+	case TPM_DEVNODE:
+		/* Not implemented yet */
+		break;
+	case TPM_TIS:
+		tis_request_locality(l);
+		break;
+	case TPM_CRB:
+		crb_request_locality(l);
+		break;
+	case TPM_UEFI:
+		/* Not implemented yet */
+		break;
+	}
 }
 
 void tpm_relinquish_locality(struct tpm *t)
 {
-	return t->ops->relinquish_locality();
+	switch (t->intf) {
+	case TPM_DEVNODE:
+		/* Not implemented yet */
+		break;
+	case TPM_TIS:
+		tis_relinquish_locality(l);
+		break;
+	case TPM_CRB:
+		crb_relinquish_locality(l);
+		break;
+	case TPM_UEFI:
+		/* Not implemented yet */
+		break;
+	}
 }
 
 #define MAX_TPM_EXTEND_SIZE 70 /* TPM2 SHA512 is the largest */

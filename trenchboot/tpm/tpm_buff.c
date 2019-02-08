@@ -14,7 +14,7 @@
 #define TPM_CRB_DATA_BUFFER_OFFSET	0x80
 #define TPM_CRB_DATA_BUFFER_SIZE	3966
 
-static u8 *tpmb_reserve(struct tpmbuff *b)
+u8 *tpmb_reserve(struct tpmbuff *b)
 {
 	if (b->locked)
 		return NULL;
@@ -27,7 +27,7 @@ static u8 *tpmb_reserve(struct tpmbuff *b)
 	return b->head;
 }
 
-static void tpmb_free(struct tpmbuff *b)
+void tpmb_free(struct tpmbuff *b)
 {
 	b->len = 0;
 	b->locked = 0;
@@ -35,7 +35,7 @@ static void tpmb_free(struct tpmbuff *b)
 	b->tail = NULL;
 }
 
-static u8 *tpmb_put(struct tpmbuff *b, size_t size)
+u8 *tpmb_put(struct tpmbuff *b, size_t size)
 {
 	u8 *tail = b->tail;
 
@@ -48,7 +48,7 @@ static u8 *tpmb_put(struct tpmbuff *b, size_t size)
 	return tail;
 }
 
-static size_t tpmb_trim(struct tpmbuff *b, size_t size)
+size_t tpmb_trim(struct tpmbuff *b, size_t size)
 {
 	if (b->len < size)
 		size = b->len;
@@ -61,25 +61,13 @@ static size_t tpmb_trim(struct tpmbuff *b, size_t size)
 	return size;
 }
 
-static size_t tpmb_size(struct tpmbuff *b)
+size_t tpmb_size(struct tpmbuff *b)
 {
 	return b->len;
 }
 
-static struct tpmbuff_operations ops = {
-	.reserve = tpmb_reserve,
-	.free = tpmb_free,
-	.put = tpmb_put,
-	.trim = tpmb_trim,
-	.size = tpmb_size
-};
-
 #ifdef CONF_STATIC_ENV
 static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
-
-static struct tpmbuff tpm_buff = {
-	.ops = &ops
-};
 #endif
 
 struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
@@ -91,8 +79,6 @@ struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
 
 	if (!b)
 		goto err;
-
-	b->ops = &ops;
 #endif
 
 	switch (intf) {
