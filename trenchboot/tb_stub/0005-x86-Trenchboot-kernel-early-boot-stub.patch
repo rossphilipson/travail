@@ -1,4 +1,4 @@
-From ac4b711f5d13f81db15e5c36377371a25c90b7fa Mon Sep 17 00:00:00 2001
+From 1822473ccbdd4e14a31dedfb50a624d8df99b3f3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 ++++++++
- arch/x86/boot/compressed/sl_main.c |  90 ++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 163 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 287 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 106 +++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 166 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 306 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -79,10 +79,10 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..b2ad798c3111
+index 000000000000..900ec933ccb4
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,106 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -113,14 +113,30 @@ index 000000000000..b2ad798c3111
 +
 +static void sl_txt_reset(u64 error)
 +{
-+	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE);
++	void *addr;
++	u64 val;
 +
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE);
 +	barrier();
 +	(*(volatile u64 *)(addr)) = error;
 +	wmb();
 +
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_RESET);
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_E2STS);
++	barrier();
++	val = (*(volatile u64*)(addr));
++	rmb();
 +
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_UNLOCK_MEM_CONFIG);
++	barrier();
++	(*(volatile u64 *)(addr)) = 1;
++	wmb();
++
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_E2STS);
++	barrier();
++	val = (*(volatile u64*)(addr));
++	rmb();
++
++	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_RESET);
 +	barrier();
 +	(*(volatile u64 *)(addr)) = 1;
 +	wmb();
@@ -175,10 +191,10 @@ index 000000000000..b2ad798c3111
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..0064840bc545
+index 000000000000..61536b1643c8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,163 @@
+@@ -0,0 +1,166 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -291,16 +307,19 @@ index 000000000000..0064840bc545
 +	addl	$12, %esp
 +
 +	/* On Intel, the zero page address is passed in the TXT heap */
-+	movl	$(TXT_PUB_CONFIG_REGS_BASE), %eax /* TXT MMIO pub regs */
-+	movl	TXTCR_HEAP_BASE(%eax), %ecx /* read size of BIOS data */
-+	addl	%ecx, %eax /* skip over BIOS data to OS-MLE data */
-+	addl	$8, %eax /* skip over OS-MLE size field */
-+	movl	(%eax), %esi /* read zero page addr into %esi */
++	/* Read physical base of heap into EAX */
++	movl	(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_HEAP_BASE), %eax
++	/* Read the size of the BIOS data into ECX (in first 8 bytes */
++	movl	(%eax), %ecx
++	/* Skip over BIOS data and size of OS to MLE */
++	addl	%ecx, %eax
++	addl	$8, %eax
++	/* First 4 bytes of OS to MLE are the zero page */
++	movl	(%eax), %esi
 +
 +	/* Clear the TXT error registers for a clean start of day */
-+	movl	$(TXT_PRIV_CONFIG_REGS_BASE), %eax /* TXT MMIO priv regs */
-+	movl	$0x0, TXTCR_ERRORCODE(%eax)
-+	movl	$0xffffffff, TXTCR_ESTS(%eax)
++	movl	$0, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE)
++	movl	$0xffffffff, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ESTS)
 +
 +	jmp	.Lcpu_setup_done
 +

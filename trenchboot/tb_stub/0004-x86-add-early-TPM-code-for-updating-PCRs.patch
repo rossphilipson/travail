@@ -1,4 +1,4 @@
-From 426ef624576fbee07b7a346d5543a04535c366d1 Mon Sep 17 00:00:00 2001
+From ac81845ae9f1d1cc8683447c27456c28e128fc8f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
@@ -6,11 +6,11 @@ Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1142 ++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/early_tpm.h |  354 +++++++++++
- arch/x86/include/asm/tpm.h           |  107 ++++
+ arch/x86/boot/compressed/early_tpm.c | 1183 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.h |  354 ++++++++++
+ arch/x86/include/asm/tpm.h           |  103 +++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1609 insertions(+), 1 deletion(-)
+ 5 files changed, 1646 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -31,10 +31,10 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..35df4e188a3d
+index 000000000000..928a4ca08534
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1142 @@
+@@ -0,0 +1,1183 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -82,7 +82,7 @@ index 000000000000..35df4e188a3d
 +#define TPM_CRB_DATA_BUFFER_OFFSET	0x80
 +#define TPM_CRB_DATA_BUFFER_SIZE	3966
 +
-+static u8 *tpmb_reserve(struct tpmbuff *b)
++u8 *tpmb_reserve(struct tpmbuff *b)
 +{
 +	if (b->locked)
 +		return NULL;
@@ -95,7 +95,7 @@ index 000000000000..35df4e188a3d
 +	return b->head;
 +}
 +
-+static void tpmb_free(struct tpmbuff *b)
++void tpmb_free(struct tpmbuff *b)
 +{
 +	b->len = 0;
 +	b->locked = 0;
@@ -103,7 +103,7 @@ index 000000000000..35df4e188a3d
 +	b->tail = NULL;
 +}
 +
-+static u8 *tpmb_put(struct tpmbuff *b, size_t size)
++u8 *tpmb_put(struct tpmbuff *b, size_t size)
 +{
 +	u8 *tail = b->tail;
 +
@@ -116,7 +116,7 @@ index 000000000000..35df4e188a3d
 +	return tail;
 +}
 +
-+static size_t tpmb_trim(struct tpmbuff *b, size_t size)
++size_t tpmb_trim(struct tpmbuff *b, size_t size)
 +{
 +	if (b->len < size)
 +		size = b->len;
@@ -129,27 +129,14 @@ index 000000000000..35df4e188a3d
 +	return size;
 +}
 +
-+static size_t tpmb_size(struct tpmbuff *b)
++size_t tpmb_size(struct tpmbuff *b)
 +{
 +	return b->len;
 +}
 +
-+__attribute__ ((__section__ (".data")))
-+static struct tpmbuff_operations ops = {
-+	.reserve = tpmb_reserve,
-+	.free = tpmb_free,
-+	.put = tpmb_put,
-+	.trim = tpmb_trim,
-+	.size = tpmb_size
-+};
-+
 +#ifdef CONF_STATIC_ENV
 +static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
-+
-+__attribute__ ((__section__ (".data")))
-+static struct tpmbuff tpm_buff = {
-+	.ops = &ops
-+};
++static struct tpmbuff tpm_buff;
 +#endif
 +
 +struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
@@ -161,8 +148,6 @@ index 000000000000..35df4e188a3d
 +
 +	if (!b)
 +		goto err;
-+
-+	b->ops = &ops;
 +#endif
 +
 +	switch (intf) {
@@ -337,40 +322,51 @@ index 000000000000..35df4e188a3d
 +
 +u8 tis_request_locality(u8 l)
 +{
-+	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
-+	tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
++        if (l > TPM_MAX_LOCALITY)
++                return TPM_NO_LOCALITY;
 +
-+	/* wait for locality to be granted */
-+	if (tpm_read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
-+		if (l <= TPM_MAX_LOCALITY)
-+			locality = l;
-+		else
-+			locality = TPM_NO_LOCALITY;
-+	}
++	if (l == locality)
++		return locality;
 +
-+	return locality;
++        if (locality < TPM_MAX_LOCALITY) {
++                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
++                locality = TPM_NO_LOCALITY;
++        }
++
++        tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
++
++        /* wait for locality to be granted */
++        if (tpm_read8(ACCESS(l)) & ACCESS_ACTIVE_LOCALITY)
++                locality = l;
++
++        return locality;
 +}
 +
 +void tis_relinquish_locality(void)
 +{
-+	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
++        if (locality < TPM_MAX_LOCALITY)
++		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
++
++        locality = TPM_NO_LOCALITY;
 +}
 +
 +u8 tis_init(struct tpm *t)
 +{
-+	u8 i;
++        u8 i;
 +
-+	for (i=0; i <= TPM_MAX_LOCALITY; i++)
-+		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
++        for (i=0; i <= TPM_MAX_LOCALITY; i++)
++                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 +
-+	if (tis_request_locality(0) == TPM_NO_LOCALITY)
-+		return 0;
++        locality = TPM_NO_LOCALITY;
 +
-+	t->vendor = tpm_read32(DID_VID(0));
-+	if ((t->vendor & 0xFFFF) == 0xFFFF)
-+		return 0;
++        if (tis_request_locality(0) == TPM_NO_LOCALITY)
++                return 0;
 +
-+	return 1;
++        t->vendor = tpm_read32(DID_VID(0));
++        if ((t->vendor & 0xFFFF) == 0xFFFF)
++                return 0;
++
++        return 1;
 +}
 +
 +size_t tis_send(struct tpmbuff *buf)
@@ -836,7 +832,7 @@ index 000000000000..35df4e188a3d
 +	struct tpm_extend_resp *resp;
 +	size_t bytes;
 +
-+	if (! b->ops->reserve(b))
++	if (! tpmb_reserve(b))
 +		goto out;
 +
 +	hdr = (struct tpm_header *)b->head;
@@ -845,33 +841,62 @@ index 000000000000..35df4e188a3d
 +	hdr->code = TPM_ORD_EXTEND;
 +
 +	cmd = (struct tpm_extend_cmd *)
-+		b->ops->put(b, sizeof(struct tpm_extend_cmd));
++		tpmb_put(b, sizeof(struct tpm_extend_cmd));
 +	cmd->pcr_num = d->pcr;
 +	memcpy(&(cmd->digest), &(d->digest), sizeof(TPM_DIGEST));
 +
-+	hdr->size = b->ops->size(b);
++	hdr->size = tpmb_size(b);
 +
-+	if (hdr->size != t->ops->send(b))
-+		goto free;
-+	b->ops->free(b);
++	switch (t->intf) {
++	case TPM_DEVNODE:
++		/* Not implemented yet */
++		break;
++	case TPM_TIS:
++		if (hdr->size != tis_send(b))
++			goto free;
++		break;
++	case TPM_CRB:
++		/* Not valid for TPM 1.2 */
++		break;
++	case TPM_UEFI:
++		/* Not implemented yet */
++		break;
++	}
++
++	tpmb_free(b);
 +
 +	/* Reset buffer for receive */
-+	if (! b->ops->reserve(b))
++	if (! tpmb_reserve(b))
 +		goto out;
 +
 +	hdr = (struct tpm_header *)b->head;
 +	resp = (struct tpm_extend_resp *)
-+		b->ops->put(b, sizeof(struct tpm_extend_resp));
-+	if (b->ops->size(b) != t->ops->recv(b))
-+		goto free;
-+	b->ops->free(b);
++		tpmb_put(b, sizeof(struct tpm_extend_resp));
++
++	switch (t->intf) {
++	case TPM_DEVNODE:
++		/* Not implemented yet */
++		break;
++	case TPM_TIS:
++		if (tpmb_size(b) != tis_recv(b))
++			goto free;
++		break;
++	case TPM_CRB:
++		/* Not valid for TPM 1.2 */
++		break;
++	case TPM_UEFI:
++		/* Not implemented yet */
++		break;
++	}
++
++	tpmb_free(b);
 +
 +	if (resp->ordinal != TPM_SUCCESS)
 +		goto out;
 +
 +	return 1;
 +free:
-+	b->ops->free(b);
++	tpmb_free(b);
 +out:
 +	return 0;
 +}
@@ -904,7 +929,7 @@ index 000000000000..35df4e188a3d
 +static int tpm2_alloc_cmd(struct tpmbuff *b, struct tpm2_cmd *c, u16 tag,
 +		u32 code)
 +{
-+	c->header = (struct tpm_header *)b->ops->reserve(b);
++	c->header = (struct tpm_header *)tpmb_reserve(b);
 +	if (!c->header)
 +		return -ENOMEM;
 +
@@ -968,25 +993,39 @@ index 000000000000..35df4e188a3d
 +	if (ret < 0)
 +		return ret;
 +
-+	cmd.handles = (u32 *)b->ops->put(b, sizeof(u32));
++	cmd.handles = (u32 *)tpmb_put(b, sizeof(u32));
 +	*cmd.handles = cpu_to_be32(pcr);
 +
-+	cmd.auth = (struct tpm2b *)b->ops->put(b, tpm2_null_auth_size());
++	cmd.auth = (struct tpm2b *)tpmb_put(b, tpm2_null_auth_size());
 +	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
 +	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 +
 +	size = convert_digest_list(digests);
 +	if (size == 0) {
-+		b->ops->free(b);
++		tpmb_free(b);
 +		return -EINVAL;
 +	}
-+	cmd.params = (u8 *)b->ops->put(b, size);
++	cmd.params = (u8 *)tpmb_put(b, size);
 +	memcpy(cmd.params, digests, size);
 +
-+	cmd.header->size = cpu_to_be16(b->ops->size(b));
++	cmd.header->size = cpu_to_be16(tpmb_size(b));
 +
-+	ret = t->ops->send(b);
-+	b->ops->free(b);
++	switch (t->intf) {
++	case TPM_DEVNODE:
++		/* Not implemented yet */
++		break;
++	case TPM_TIS:
++		ret = tis_send(b);
++		break;
++	case TPM_CRB:
++		ret = crb_send(b);
++		break;
++	case TPM_UEFI:
++		/* Not implemented yet */
++		break;
++	}
++
++	tpmb_free(b);
 +
 +	return ret;
 +}
@@ -994,24 +1033,6 @@ index 000000000000..35df4e188a3d
 +/*** tpm.c ***/
 +
 +
-+
-+__attribute__ ((__section__ (".data")))
-+struct tpm_operations tis_ops = {
-+	.init = tis_init,
-+	.request_locality = tis_request_locality,
-+	.relinquish_locality = tis_relinquish_locality,
-+	.send = tis_send,
-+	.recv = tis_recv
-+};
-+
-+__attribute__ ((__section__ (".data")))
-+struct tpm_operations crb_ops = {
-+	.init = crb_init,
-+	.request_locality = crb_request_locality,
-+	.relinquish_locality = crb_relinquish_locality,
-+	.send = crb_send,
-+	.recv = crb_recv
-+};
 +
 +#ifdef CONF_STATIC_ENV
 +static struct tpm tpm;
@@ -1022,24 +1043,22 @@ index 000000000000..35df4e188a3d
 +	struct tpm_interface_id intf_id;
 +	struct tpm_intf_capability intf_cap;
 +
-+	/* First see if the interface is CRB, then we know it is TPM20 */
-+	intf_id.val = tpm_read32(TPM_INTERFACE_ID_0);
-+	if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE) {
-+		t->intf = TPM_CRB;
-+		t->family = TPM20;
++	/* Sort out whether if it is 1.2 */
++	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
++	if (intf_cap.interface_version == TPM12_TIS_INTF_12) {
++		t->family = TPM12;
++		t->intf = TPM_TIS;
 +		return;
 +	}
 +
-+	/* If not a CRB then a TIS/FIFO interface */
++	/* Assume that it is 2.0 and TIS */
++	t->family = TPM20;
 +	t->intf = TPM_TIS;
 +
-+	/* Now to sort out whether it is 1.2 or 2.0 using TIS */
-+	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
-+	if ( (intf_cap.interface_version == TPM12_TIS_INTF_12) ||
-+	     (intf_cap.interface_version == TPM12_TIS_INTF_13) )
-+		t->family = TPM12;
-+	else
-+		t->family = TPM20;
++	/* Check if the interface is CRB */
++	intf_id.val = tpm_read32(TPM_INTERFACE_ID_0);
++	if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE)
++		t->intf = TPM_CRB;
 +}
 +
 +struct tpm *enable_tpm(void)
@@ -1059,15 +1078,11 @@ index 000000000000..35df4e188a3d
 +		/* Not implemented yet */
 +		break;
 +	case TPM_TIS:
-+		if (tis_init(t))
-+			t->ops = &tis_ops;
-+		else
++		if (!tis_init(t))
 +			goto free;
 +		break;
 +	case TPM_CRB:
-+		if (crb_init(t))
-+			t->ops = &crb_ops;
-+		else
++		if (!crb_init(t))
 +			goto free;
 +		break;
 +	case TPM_UEFI:
@@ -1088,12 +1103,38 @@ index 000000000000..35df4e188a3d
 +
 +u8 tpm_request_locality(struct tpm *t, u8 l)
 +{
-+	return t->ops->request_locality(l);
++	switch (t->intf) {
++	case TPM_DEVNODE:
++		/* Not implemented yet */
++		break;
++	case TPM_TIS:
++		tis_request_locality(l);
++		break;
++	case TPM_CRB:
++		crb_request_locality(l);
++		break;
++	case TPM_UEFI:
++		/* Not implemented yet */
++		break;
++	}
 +}
 +
 +void tpm_relinquish_locality(struct tpm *t)
 +{
-+	return t->ops->relinquish_locality();
++	switch (t->intf) {
++	case TPM_DEVNODE:
++		/* Not implemented yet */
++		break;
++	case TPM_TIS:
++		tis_relinquish_locality();
++		break;
++	case TPM_CRB:
++		crb_relinquish_locality();
++		break;
++	case TPM_UEFI:
++		/* Not implemented yet */
++		break;
++	}
 +}
 +
 +#define MAX_TPM_EXTEND_SIZE 70 /* TPM2 SHA512 is the largest */
@@ -1539,10 +1580,10 @@ index 000000000000..76d44329696a
 +#endif
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..25eb11f8ed89
+index 000000000000..aca94a582691
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,103 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -1598,16 +1639,7 @@ index 000000000000..25eb11f8ed89
 +	u32 vendor;
 +	enum tpm_family family;
 +	enum tpm_hw_intf intf;
-+	struct tpm_operations *ops;
 +	struct tpmbuff *buff;
-+};
-+
-+struct tpm_operations {
-+	u8 (*init)(struct tpm *t);
-+	u8 (*request_locality)(u8 l);
-+	void (*relinquish_locality)(void);
-+	size_t (*send)(struct tpmbuff *buf);
-+	size_t (*recv)(struct tpmbuff *buf);
 +};
 +
 +struct tpm *enable_tpm(void);
@@ -1644,7 +1676,12 @@ index 000000000000..25eb11f8ed89
 +	struct tpmbuff_operations *ops;
 +};
 +
-+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);
++u8 *tpmb_reserve(struct tpmbuff *b);
++void tpmb_free(struct tpmbuff *b);
++u8 *tpmb_put(struct tpmbuff *b, size_t size);
++size_t tpmb_trim(struct tpmbuff *b, size_t size);
++size_t tpmb_size(struct tpmbuff *b);
++struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);;
 +void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i);
 +
 +
