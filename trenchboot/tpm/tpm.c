@@ -21,24 +21,22 @@ static void find_interface_and_family(struct tpm *t)
 	struct tpm_interface_id intf_id;
 	struct tpm_intf_capability intf_cap;
 
-	/* First see if the interface is CRB, then we know it is TPM20 */
-	intf_id.val = tpm_read32(TPM_INTERFACE_ID_0);
-	if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE) {
-		t->intf = TPM_CRB;
-		t->family = TPM20;
-		return;
+	/* Sort out whether if it is 1.2 */
+	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
+	if (intf_cap.interface_version == TPM12_TIS_INTF_12) {
+		t->family = TPM12;
+		t->intf = TPM_TIS;
+		return
 	}
 
-	/* If not a CRB then a TIS/FIFO interface */
+	/* Assume that it is 2.0 and TIS */
+	t->family = TPM20;
 	t->intf = TPM_TIS;
 
-	/* Now to sort out whether it is 1.2 or 2.0 using TIS */
-	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
-	if ( (intf_cap.interface_version == TPM12_TIS_INTF_12) ||
-	     (intf_cap.interface_version == TPM12_TIS_INTF_13) )
-		t->family = TPM12;
-	else
-		t->family = TPM20;
+	/* Check if the interface is CRB */
+	intf_id.val = tpm_read32(TPM_INTERFACE_ID_0);
+	if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE)
+		t->intf = TPM_CRB;
 }
 
 struct tpm *enable_tpm(void)
