@@ -47,40 +47,51 @@ static u32 burst_wait(void)
 
 u8 tis_request_locality(u8 l)
 {
-	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
-	tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
+        if (l > TPM_MAX_LOCALITY)
+                return TPM_NO_LOCALITY;
 
-	/* wait for locality to be granted */
-	if (tpm_read8(ACCESS(l) & ACCESS_ACTIVE_LOCALITY)) {
-		if (l <= TPM_MAX_LOCALITY)
-			locality = l;
-		else
-			locality = TPM_NO_LOCALITY;
-	}
+	if (l == locality)
+		return locality;
 
-	return locality;
+        if (locality < TPM_MAX_LOCALITY) {
+                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+                locality = TPM_NO_LOCALITY;
+        }
+
+        tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
+
+        /* wait for locality to be granted */
+        if (tpm_read8(ACCESS(l)) & ACCESS_ACTIVE_LOCALITY)
+                locality = l;
+
+        return locality;
 }
 
 void tis_relinquish_locality(void)
 {
-	tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+        if (locality < TPM_MAX_LOCALITY)
+		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+
+        locality = TPM_NO_LOCALITY;
 }
 
 u8 tis_init(struct tpm *t)
 {
-	u8 i;
+        u8 i;
 
-	for (i=0; i <= TPM_MAX_LOCALITY; i++)
-		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
+        for (i=0; i <= TPM_MAX_LOCALITY; i++)
+                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
-	if (tis_request_locality(0) == TPM_NO_LOCALITY)
-		return 0;
+        locality = TPM_NO_LOCALITY;
 
-	t->vendor = tpm_read32(DID_VID(0));
-	if ((t->vendor & 0xFFFF) == 0xFFFF)
-		return 0;
+        if (tis_request_locality(0) == TPM_NO_LOCALITY)
+                return 0;
 
-	return 1;
+        t->vendor = tpm_read32(DID_VID(0));
+        if ((t->vendor & 0xFFFF) == 0xFFFF)
+                return 0;
+
+        return 1;
 }
 
 size_t tis_send(struct tpmbuff *buf)
