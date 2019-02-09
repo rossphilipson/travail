@@ -1,4 +1,4 @@
-From 5a3fb8b8f1f26563943c65e116efd90c0e37a72b Mon Sep 17 00:00:00 2001
+From bc4a245823fd9fa8f5749048a6c39d0f674c1634 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
 Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
@@ -11,7 +11,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 0000000..02ad34d
+index 000000000..02ad34d5d
 --- /dev/null
 +++ b/include/grub/i386/txt.h
 @@ -0,0 +1,474 @@
@@ -490,5 +490,5 @@ index 0000000..02ad34d
 +
 +#endif
 -- 
-2.1.4
+2.13.6
 

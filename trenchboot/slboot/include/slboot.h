@@ -115,8 +115,6 @@ typedef struct {
 #define SLAUNCH_LZ_UUID {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
                              {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
 
-#define SLAUNCH_CONFIG_UUID "{9e7f6e6a-1a9f-11e9-9fea-c85b76c4cc02}"
-
 #define SL_FLAG_ACTIVE         0x00000001
 #define SL_FLAG_ARCH_SKINIT    0x00000002
 #define SL_FLAG_ARCH_TXT       0x00000004

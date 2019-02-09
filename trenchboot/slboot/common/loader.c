@@ -60,8 +60,7 @@
 /* multiboot struct saved so that post_launch() can use it (in tboot.c) */
 extern loader_ctx *g_ldr_ctx;
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
-                               const void *initrd_image, size_t initrd_size,
-                               const void *slconfig_image, size_t slconfig_size);
+                               const void *initrd_image, size_t initrd_size);
 extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size,
                            bool quiet);
 extern void error_action(tb_error_t error);
@@ -663,8 +662,6 @@ bool prepare_intermediate_loader(void)
     size_t kernel_size;
     void *initrd_image;
     size_t initrd_size;
-    void *slconfig_image;
-    size_t slconfig_size;
 
     /* if using memory logging, reserve log area */
     if ( g_log_targets & TBOOT_LOG_TARGET_MEMORY ) {
@@ -685,18 +682,6 @@ bool prepare_intermediate_loader(void)
 
     /* remove all SINIT and LCP modules since kernel may not handle */
     remove_txt_modules(g_ldr_ctx);
-
-    if ( !find_module_by_pattern(g_ldr_ctx, &slconfig_image, &slconfig_size,
-                                 (void*)SLAUNCH_CONFIG_UUID,
-                                 tb_strlen(SLAUNCH_CONFIG_UUID)) ) {
-        printk(TBOOT_ERR"Error: could not find secure launch config image.\n");
-        return false;
-    }
-
-    if ( remove_module(g_ldr_ctx, slconfig_image) == NULL ) {
-        printk(TBOOT_ERR"Error: failed to remove secure launch config module.\n");
-        return false;
-    }
 
     printk(TBOOT_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 
@@ -722,8 +707,7 @@ bool prepare_intermediate_loader(void)
     }
 
     return expand_linux_image(kernel_image, kernel_size,
-                              initrd_image, initrd_size,
-                              slconfig_image, slconfig_size);
+                              initrd_image, initrd_size);
 }
 
 char *get_module_cmd(loader_ctx *lctx, module_t *mod)

@@ -78,8 +78,7 @@ printk_long(const char *what)
 
 /* expand linux kernel with kernel image and initrd image */
 bool expand_linux_image(const void *linux_image, size_t linux_size,
-                        const void *initrd_image, size_t initrd_size,
-                        const void *slconfig_image, size_t slconfig_size)
+                        const void *initrd_image, size_t initrd_size)
 {
     linux_kernel_header_t *hdr;
     slaunch_info_t *slh;
@@ -147,11 +146,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     if ( (arch == SL_FLAG_ARCH_TXT)&&(g_min_ram == 0) ) {
         printk(TBOOT_ERR"Error: Min ram setting for TXT must be > 0.\n");
-        return false;
-    }
-
-    if ( (slconfig_image == NULL)||(slconfig_size == 0) ) {
-        printk(TBOOT_ERR"Error: Secure launch config is invalid.\n");
         return false;
     }
 
@@ -493,8 +487,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     slh->sl_flags = SL_FLAG_ACTIVE;
     slh->sl_flags |= arch;
     slh->sl_lo_pmr_min = g_min_ram;
-    slh->sl_config_addr = (uint32_t)slconfig_image;
-    slh->sl_config_size = slconfig_size;
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;

@@ -1,4 +1,4 @@
-From e5eab59abb352c12b153bdd139304443e0a890df Mon Sep 17 00:00:00 2001
+From a15bdb2448e1b4d246562572283dabf7eaf2e568 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
 Subject: [PATCH 4/5] slaunch: Add secure launch base framework
@@ -9,10 +9,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  grub-core/loader/i386/linux.c          |  18 +++
  grub-core/loader/i386/slaunch.c        | 223 +++++++++++++++++++++++++++++++++
  grub-core/loader/i386/slaunch_skinit.c |  33 +++++
- grub-core/loader/i386/slaunch_txt.c    |  33 +++++
+ grub-core/loader/i386/slaunch_txt.c    |  34 +++++
  include/grub/file.h                    |   3 +
  include/grub/slaunch.h                 |  10 ++
- 7 files changed, 328 insertions(+)
+ 7 files changed, 329 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
@@ -356,10 +356,10 @@ index 000000000..a020a88c7
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..b4889c7a8
+index 000000000..f4f2b5fd2
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *
@@ -384,6 +384,7 @@ index 000000000..b4889c7a8
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
++#include <grub/cpu/txt.h>
 +#include <grub/slaunch.h>
 +
 +grub_err_t
@@ -408,10 +409,10 @@ index 9aae46355..f391ef63b 100644
  
      /* --skip-sig is specified.  */
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
-index cac453f34..60d3e627c 100644
+index bba307ac2..ba64841bb 100644
 --- a/include/grub/slaunch.h
 +++ b/include/grub/slaunch.h
-@@ -42,6 +42,16 @@ struct grub_slaunch_params
+@@ -41,6 +41,16 @@ struct grub_slaunch_params
    grub_addr_t prot_mode_target;
  };
  
