@@ -1,4 +1,4 @@
-From fd363327e597acf1bc69b0a537f21a46027fde4f Mon Sep 17 00:00:00 2001
+From ea58120856c73147d258515c86106ca959e5d015 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
@@ -79,7 +79,7 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..900ec933ccb4
+index 000000000000..3fd30da469e8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,106 @@
@@ -111,35 +111,35 @@ index 000000000000..900ec933ccb4
 +#include <asm/bootparam.h>
 +#include <asm/slaunch.h>
 +
-+static void sl_txt_reset(u64 error)
++static u64 sl_txt_read(u32 reg)
 +{
-+	void *addr;
++	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
 +	u64 val;
 +
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE);
-+	barrier();
-+	(*(volatile u64 *)(addr)) = error;
-+	wmb();
-+
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_E2STS);
 +	barrier();
 +	val = (*(volatile u64*)(addr));
 +	rmb();
 +
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_UNLOCK_MEM_CONFIG);
-+	barrier();
-+	(*(volatile u64 *)(addr)) = 1;
-+	wmb();
++	return val;
++}
 +
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_E2STS);
-+	barrier();
-+	val = (*(volatile u64*)(addr));
-+	rmb();
++static void sl_txt_write(u32 reg, u64 val)
++{
++	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
 +
-+	addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_CMD_RESET);
 +	barrier();
-+	(*(volatile u64 *)(addr)) = 1;
++	(*(volatile u64 *)(addr)) = val;
 +	wmb();
++	barrier();
++}
++
++static void sl_txt_reset(u64 error)
++{
++	sl_txt_write(TXTCR_ERRORCODE, error);
++	(void)sl_txt_read(TXTCR_E2STS);
++	sl_txt_write(TXTCR_CMD_UNLOCK_MEM_CONFIG, 1);
++	(void)sl_txt_read(TXTCR_E2STS);
++	sl_txt_write(TXTCR_CMD_RESET, 1);
 +}
 +
 +void sl_main(u8 *bootparams)
