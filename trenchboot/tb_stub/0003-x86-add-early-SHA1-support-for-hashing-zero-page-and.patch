@@ -1,4 +1,4 @@
-From 45ae72da1cd585d06fa0f7cd7f312da120ee8dc4 Mon Sep 17 00:00:00 2001
+From 6bc6193c5693ccd974a70ed81cee3d6ec6b6c80e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
@@ -7,9 +7,9 @@ Subject: [PATCH 3/8] x86: add early SHA1 support for hashing zero page and
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   2 +
- arch/x86/boot/compressed/early_sha1.c | 112 ++++++++++++++++++++++++++++++++++
- arch/x86/include/asm/sha1.h           |  29 +++++++++
- 3 files changed, 143 insertions(+)
+ arch/x86/boot/compressed/early_sha1.c | 117 ++++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/sha1.h           |  34 ++++++++++
+ 3 files changed, 153 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/include/asm/sha1.h
 
@@ -28,11 +28,16 @@ index 466f66c8a7f8..57f2f467cbb0 100644
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..344a08348e65
+index 000000000000..2e5383b6f00c
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,117 @@
 +/*
++ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ *
++ * Author(s):
++ *     Ross Philipson <ross.philipson@oracle.com>
++ *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
 + * as published by the Free Software Foundation; either version 2
@@ -146,11 +151,16 @@ index 000000000000..344a08348e65
 +}
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
-index 000000000000..cf894d498979
+index 000000000000..fed7be3c65a8
 --- /dev/null
 +++ b/arch/x86/include/asm/sha1.h
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,34 @@
 +/*
++ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ *
++ * Author(s):
++ *     Ross Philipson <ross.philipson@oracle.com>
++ *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
 + * as published by the Free Software Foundation; either version 2

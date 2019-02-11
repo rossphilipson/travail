@@ -1,4 +1,4 @@
-From 1b20de40267dfb8b9fddf485d8cc46aebe6f65d4 Mon Sep 17 00:00:00 2001
+From 4e44c8c75466c30e1f3c8c1b23d13d3d93bd209e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Trenchboot kernel late boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |  1 +
  arch/x86/kernel/setup.c   |  5 +++
- arch/x86/kernel/slaunch.c | 93 +++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 98 +++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |  5 +++
- 4 files changed, 104 insertions(+)
+ 4 files changed, 109 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -49,11 +49,16 @@ index b4866badb235..b359129cb408 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..af41d15352c3
+index 000000000000..07730676c1aa
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,98 @@
 +/*
++ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ *
++ * Author(s):
++ *     Ross Philipson <ross.philipson@oracle.com>
++ *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
 + * as published by the Free Software Foundation; either version 2
