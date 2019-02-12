@@ -1,7 +1,7 @@
-From d658e856788f1a76870a36ac85582f54b55dfd41 Mon Sep 17 00:00:00 2001
+From 8281d7c12c7882142235f1b7a0dc3b7e33cf9be8 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
-Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
+Subject: [PATCH] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  1 file changed, 176 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 07730676c1aa..a4ace73a37c4 100644
+index 07730676c1aa..727a9591cbc1 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
 @@ -21,6 +21,10 @@
@@ -102,7 +102,7 @@ index 07730676c1aa..a4ace73a37c4 100644
 +	long ret = 0;
 +	int entry = SL_DIR_ENTRY;
 +
-+	fs_entries[entry] = securityfs_create_dir("sl_evt_log", NULL);
++	fs_entries[entry] = securityfs_create_dir("slaunch", NULL);
 +	if (IS_ERR(fs_entries[entry])) {
 +		printk(KERN_ERR PREFIX
 +			"Error creating securityfs sl_evt_log directory\n");
@@ -207,5 +207,5 @@ index 07730676c1aa..a4ace73a37c4 100644
 +
 +__exitcall(slaunch_exit);
 -- 
-2.13.6
+2.11.0
 
