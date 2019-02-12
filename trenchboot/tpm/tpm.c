@@ -12,9 +12,7 @@
 #include "tpm2.h"
 #include "tpm2_constants.h"
 
-#ifdef CONF_STATIC_ENV
 static struct tpm tpm;
-#endif
 
 static void find_interface_and_family(struct tpm *t)
 {
@@ -41,14 +39,8 @@ static void find_interface_and_family(struct tpm *t)
 
 struct tpm *enable_tpm(void)
 {
-#ifdef CONF_STATIC_ENV
 	struct tpm *t = &tpm;
-#else
-	struct tpm *t = (struct tpm *)malloc(sizeof(struct tpm));
 
-	if (!t)
-		goto err;
-#endif
 	find_interface_and_family(t);
 
 	switch (t->intf) {
@@ -57,11 +49,11 @@ struct tpm *enable_tpm(void)
 		break;
 	case TPM_TIS:
 		if (!tis_init(t))
-			goto free;
+			goto err;
 		break;
 	case TPM_CRB:
 		if (!crb_init(t))
-			goto free;
+			goto err;
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
@@ -71,10 +63,7 @@ struct tpm *enable_tpm(void)
 	/* TODO: ACPI TPM discovery */
 
 	return t;
-free:
-#ifndef CONF_STATIC_ENV
-	free(t);
-#endif
+
 err:
 	return NULL;
 }
@@ -136,16 +125,7 @@ int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 		ret = tpm1_pcr_extend(t, &d);
 	} else if (t->family == TPM20) {
 		struct tpml_digest_values *d;
-#ifdef CONF_STATIC_ENV
 		u8 buf[MAX_TPM_EXTEND_SIZE];
-#else
-		u8 *buf = (u8 *)malloc(MAX_TPM_EXTEND_SIZE);
-
-		if (!buf) {
-			ret = -ENOMEM;
-			goto out;
-		}
-#endif
 
 		d = (struct tpml_digest_values *) buf;
 		d->count = 1;
@@ -171,19 +151,14 @@ int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 			memcpy(d->digests->digest, digest, SM3256_SIZE);
 			break;
 		default:
-			goto free;
+			ret = -EINVAL;
+			goto out;
 		}
 
 		ret = tpm2_extend_pcr(t, pcr, d);
-		goto free;
 	} else {
 		ret = -EINVAL;
-		goto out;
 	}
-free:
-#ifndef CONF_STATIC_ENV
-	free(buf);
-#endif
 out:
 	return ret;
 }
@@ -191,8 +166,4 @@ out:
 void free_tpm(struct tpm *t)
 {
 	tpm_relinquish_locality(t);
-
-#ifndef CONF_STATIC_ENV
-	free(t);
-#endif
 }
