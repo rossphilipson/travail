@@ -1,7 +1,7 @@
-From ab84ddc21eef6c8309170cd689fc59a77827e881 Mon Sep 17 00:00:00 2001
+From 36ae566a9383361c1e67e26bc82618b986b810c8 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
-Subject: [PATCH 1/8] x86: Trenchboot Kconfig and build tool changes
+Subject: [PATCH 1/9] x86: Trenchboot Kconfig and build tool changes
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -123,5 +123,5 @@ index a06cbf019744..2223ae15fa3a 100644
  	struct efi_info efi_info;			/* 0x1c0 */
  	__u32 alt_mem_k;				/* 0x1e0 */
 -- 
-2.13.6
+2.11.0
 

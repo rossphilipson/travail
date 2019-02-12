@@ -1,7 +1,7 @@
-From 870f45343eb93ab3fb20c6fbb08d2dc8ea925aeb Mon Sep 17 00:00:00 2001
+From ceff40ae3ce124d9616fda7412d7ec04249e6a2c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
-Subject: [PATCH 4/8] x86: add early TPM code for updating PCRs
+Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -1706,5 +1706,5 @@ index f5c03e9c3913..159eaf27f56e 100644
  #define SRKHANDLE                       0x40000000
  #define TPM_NONCE_SIZE                  20
 -- 
-2.13.6
+2.11.0
 

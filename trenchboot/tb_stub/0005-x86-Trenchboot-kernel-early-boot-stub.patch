@@ -1,7 +1,7 @@
-From 1fc77af3c2ce04c48f3fbc74905ed279ef609420 Mon Sep 17 00:00:00 2001
+From e0258981a1b48e0478d103f9050a1a1b7987b2a4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
-Subject: [PATCH 5/8] x86: Trenchboot kernel early boot stub
+Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -372,5 +372,5 @@ index 000000000000..0922b1966b88
 +	.fill 32, 1, 0
 +sl_stack_end:
 -- 
-2.13.6
+2.11.0
 

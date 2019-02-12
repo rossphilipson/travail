@@ -1,7 +1,7 @@
-From 204ff3970063f5f5966b64f3ee179cf5bafe659e Mon Sep 17 00:00:00 2001
+From 30cbbd0d50df96712092f822f73007f17d60ea07 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
-Subject: [PATCH 2/8] x86: Trenchboot main header file
+Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -232,5 +232,5 @@ index 000000000000..a7387c564b7e
 +
 +#endif /* _ASM_X86_SLAUNCH_H */
 -- 
-2.13.6
+2.11.0
 

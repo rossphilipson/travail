@@ -1,7 +1,7 @@
-From 5d86c56b5c4833d37f4df4d8adfe1ceb6f6491e9 Mon Sep 17 00:00:00 2001
+From 860d60e316ac449aff338531d4aa1cff5f1d053f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
-Subject: [PATCH 8/8] x86: Trenchboot SMP bringup support
+Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
 
 Note the AP bringup is very different becuase SKINIT and the ACM leave
 the APs in very different states post launch.
@@ -284,5 +284,5 @@ index 24bb7598774e..b1798c622ef8 100644
  
  	.bss
 -- 
-2.13.6
+2.11.0
 

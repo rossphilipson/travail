@@ -1,18 +1,29 @@
-From 8281d7c12c7882142235f1b7a0dc3b7e33cf9be8 Mon Sep 17 00:00:00 2001
+From cc88693f76fe0216f93793e01571fb1b42b18072 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
-Subject: [PATCH] x86: Secure Launch adding event log securityfs
+Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 176 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 176 insertions(+)
+ arch/x86/kernel/slaunch.c | 178 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 178 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 07730676c1aa..727a9591cbc1 100644
+index 07730676c1aa..bd53156ff1ca 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -21,6 +21,10 @@
+@@ -1,8 +1,10 @@
+ /*
+  * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2019 Apertus Solutions, LLC
+  *
+  * Author(s):
+  *     Ross Philipson <ross.philipson@oracle.com>
++ *     Daniel P. Smith <dpsmith@apertussolutions.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License
+@@ -21,6 +23,10 @@
  
  #include <linux/init.h>
  #include <linux/linkage.h>
@@ -23,7 +34,7 @@ index 07730676c1aa..727a9591cbc1 100644
  #include <asm/segment.h>
  #include <asm/boot.h>
  #include <asm/msr.h>
-@@ -30,6 +34,8 @@
+@@ -30,6 +36,8 @@
  #include <asm/setup.h>
  #include <asm/slaunch.h>
  
@@ -32,7 +43,7 @@ index 07730676c1aa..727a9591cbc1 100644
  /* This should be plenty of room */
  static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
  
-@@ -96,3 +102,173 @@ void slaunch_setup(void)
+@@ -96,3 +104,173 @@ void slaunch_setup(void)
  	else
  		BUG();
  }
