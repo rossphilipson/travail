@@ -1,18 +1,38 @@
-From 196d388495dc806151ec75c965fc5929d64386f3 Mon Sep 17 00:00:00 2001
+From d658e856788f1a76870a36ac85582f54b55dfd41 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
-Subject: [PATCH 9/9] slaunch: adding securityfs
+Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 190 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 190 insertions(+)
+ arch/x86/kernel/slaunch.c | 176 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 176 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index af41d15352c3..9e03f016a30f 100644
+index 07730676c1aa..a4ace73a37c4 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -91,3 +91,193 @@ void slaunch_setup(void)
+@@ -21,6 +21,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/linkage.h>
++#include <linux/mm.h>
++#include <linux/slab.h>
++#include <linux/uaccess.h>
++#include <linux/security.h>
+ #include <asm/segment.h>
+ #include <asm/boot.h>
+ #include <asm/msr.h>
+@@ -30,6 +34,8 @@
+ #include <asm/setup.h>
+ #include <asm/slaunch.h>
+ 
++#define PREFIX	"SLAUNCH: "
++
+ /* This should be plenty of room */
+ static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
+ 
+@@ -96,3 +102,173 @@ void slaunch_setup(void)
  	else
  		BUG();
  }
@@ -21,10 +41,9 @@ index af41d15352c3..9e03f016a30f 100644
 +	char *name;
 +	void __iomem *addr;
 +	size_t size;
-+}
++};
 +
 +static struct memfile sl_evtlog = {"eventlog", 0, 0};
-+static struct memfile sl_config = {"configuration", 0, 0};
 +
 +static ssize_t sl_memfile_read(struct memfile *file, char __user *outbuf, size_t count, loff_t *pos)
 +{
@@ -45,14 +64,14 @@ index af41d15352c3..9e03f016a30f 100644
 +	buf = kmalloc(count, GFP_KERNEL);
 +	if (!buf) {
 +		ret = -ENOMEM;
-+		goto iounmap;
++		goto free;
 +	}
 +
 +	memcpy_fromio(buf, file->addr + *pos, count);
 +	if (copy_to_user(outbuf, buf, count))
 +		goto free;
 +
-+	*ppos += count;
++	*pos += count;
 +
 +	ret = count;
 +
@@ -68,34 +87,25 @@ index af41d15352c3..9e03f016a30f 100644
 +	return sl_memfile_read(&sl_evtlog, buf, count, pos);
 +}
 +
-+static ssize_t sl_config_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
-+{
-+	return sl_memfile_read(&sl_config, buf, count, pos);
-+}
-+
 +static const struct file_operations sl_evtlog_ops = {
 +        .read = sl_evtlog_read,
 +	.llseek	= default_llseek,
 +};
 +
-+static const struct file_operations sl_config_ops = {
-+        .read = sl_config_read,
-+	.llseek	= default_llseek,
-+};
++#define SL_DIR_ENTRY	1 /* directoy node must be last */
++#define SL_FS_ENTRIES	2
 +
-+#define SL_DIR_ENTRY 2 /* directoy node must be last */
-+#define SL_FS_ENTRIES 3
-+
-+static struct dentry *fs_entries[FS_ENTRIES];
++static struct dentry *fs_entries[SL_FS_ENTRIES];
 +
 +static long slaunch_expose_securityfs(void)
 +{
 +	long ret = 0;
-+	char *filename;
 +	int entry = SL_DIR_ENTRY;
 +
-+	fs_entries[entry] = securityfs_create_dir(name, NULL);
++	fs_entries[entry] = securityfs_create_dir("sl_evt_log", NULL);
 +	if (IS_ERR(fs_entries[entry])) {
++		printk(KERN_ERR PREFIX
++			"Error creating securityfs sl_evt_log directory\n");
 +		ret = PTR_ERR(fs_entries[entry]);
 +		goto out;
 +	}
@@ -104,21 +114,12 @@ index af41d15352c3..9e03f016a30f 100644
 +		entry--;
 +		fs_entries[entry] = securityfs_create_file(sl_evtlog.name,
 +					   S_IRUSR | S_IRGRP,
-+					   fs_entries[FS_DIR_ENTRY], NULL,
++					   fs_entries[SL_DIR_ENTRY], NULL,
 +					   &sl_evtlog_ops);
 +		if (IS_ERR(fs_entries[entry])) {
-+			ret = PTR_ERR(fs_entries[entry]);
-+			goto out_dir;
-+		}
-+	}
-+
-+	if (sl_config.addr > 0) {
-+		entry--;
-+		fs_entries[entry] = securityfs_create_file(sl_config.name,
-+					   S_IRUSR | S_IRGRP,
-+					   fs_entries[FS_DIR_ENTRY], NULL,
-+					   &sl_config_ops);
-+		if (IS_ERR(fs_entries[entry])) {
++			printk(KERN_ERR PREFIX
++				"Error creating securityfs %s file\n",
++				sl_evtlog.name);
 +			ret = PTR_ERR(fs_entries[entry]);
 +			goto out_dir;
 +		}
@@ -136,64 +137,63 @@ index af41d15352c3..9e03f016a30f 100644
 +{
 +	int i;
 +
-+	for (i = 0; i < FS_ENTRIES; i++)
++	for (i = 0; i < SL_FS_ENTRIES; i++)
 +		securityfs_remove(fs_entries[i]);
-+}
 +
-+#define MAX_EVENT_LOG_SIZE       5*4*1024   /* 4k*5 */
++	if (sl_evtlog.addr) {
++		iounmap(sl_evtlog.addr);
++		sl_evtlog.addr = 0;
++		sl_evtlog.size = 0;
++	}
++}
 +
 +struct os_mle_data {
 +    uint32_t zero_page_addr;
 +    uint8_t  msb_key_hash[20];
-+    uint8_t  event_log_buffer[MAX_EVENT_LOG_SIZE];
++    uint8_t  event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __packed;
 +
-+static int slaunch_intel_evtlog(void)
++static void slaunch_intel_evtlog(void)
 +{
 +	void __iomem *heap, *config;
 +	struct os_mle_data *params;
-+	int err;
 +
-+	config = ioremap(TXT_PUB_CONFIG_REGS_BASE, NR_TXT_CONFIG_PAGES *
++	config = ioremap(TXT_PUB_CONFIG_REGS_BASE, TXT_NR_CONFIG_PAGES *
 +			 PAGE_SIZE);
-+	if (!config)
-+		return NULL;
++	if (!config) {
++		printk(KERN_ERR PREFIX "Error failed to ioremap TXT reqs\n");
++		return;
++	}
 +
 +	/* now map TXT heap */
 +	heap = ioremap(*(u64 *)(config + TXTCR_HEAP_BASE),
 +		    *(u64 *)(config + TXTCR_HEAP_SIZE));
 +	iounmap(config);
-+	if (!heap)
-+		return NULL;
++	if (!heap) {
++		printk(KERN_ERR PREFIX "Error failed to ioremap TXT heap\n");
++		return;
++	}
 +
 +	params = (struct os_mle_data *)txt_os_mle_data_start(heap);
 +
-+	sl_evtlog.size = MAX_EVENT_LOG_SIZE;
-+	sl_evtlog.addr = ioremap(*(u64 *)params->event_log_bufer,
-+			sl_evtlog.size;
++	sl_evtlog.size = TXT_MAX_EVENT_LOG_SIZE;
++	sl_evtlog.addr = ioremap(*(u64 *)params->event_log_buffer,
++				sl_evtlog.size);
 +}
 +
-+static int slaunch_amd_evtlog(void)
++static void slaunch_amd_evtlog(void)
 +{
-+	return 0;
++	/* TODO */
 +}
 +
-+static int __init slauch_late_init(void)
++static int __init slaunch_late_init(void)
 +{
-+	int err;
-+
 +	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
 +		slaunch_intel_evtlog();
 +	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
 +		slaunch_amd_evtlog();
 +	else
 +		BUG();
-+	
-+	if (boot_params.slaunch_info.sl_config_addr > 0) {
-+		sl_config.size = boot_params.slaunch_info.sl_config_size;	
-+		sl_config.addr = ioremap(boot_params.slaunch_info.sl_config_addr,
-+				sl_config.size);
-+	}
 +
 +	return slaunch_expose_securityfs();
 +}
@@ -207,5 +207,5 @@ index af41d15352c3..9e03f016a30f 100644
 +
 +__exitcall(slaunch_exit);
 -- 
-2.20.1
+2.13.6
 
