@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
+ * Copyright (c) 2019 Apertus Solutions, LLC
+ *
+ * Author(s):
+ *      Daniel P. Smith <dpsmith@apertussolutions.com>
  *
  * The definitions in this header are extracted and/or dervied from the
  * Trusted Computing Group's TPM 2.0 Library Specification Parts 1&2.

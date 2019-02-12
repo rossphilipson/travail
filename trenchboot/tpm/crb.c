@@ -1,6 +1,8 @@
 /*
- * Copyright (c) 2019 Daniel P. Smith, Apertus Solutions, LLC
+ * Copyright (c) 2019 Apertus Solutions, LLC
  *
+ * Author(s):
+ *      Daniel P. Smith <dpsmith@apertussolutions.com>
  */
 
 #include <tpm.h>

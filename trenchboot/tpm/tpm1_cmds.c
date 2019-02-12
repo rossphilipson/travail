@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
+ * Copyright (c) 2019 Apertus Solutions, LLC
+ *
+ * Author(s):
+ *      Daniel P. Smith <dpsmith@apertussolutions.com>
  *
  * The code in this file is based on the article "Writing a TPM Device Driver"
  * published on http://ptgmedia.pearsoncmg.com.
