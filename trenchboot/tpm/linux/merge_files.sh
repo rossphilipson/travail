@@ -43,7 +43,7 @@ echo "/*** tpm2_constants.h ***/" >> early_tpm.h
 ./process_file.awk -v header=1 ../tpm2_constants.h >> early_tpm.h
 echo "/*** tpm2_auth.h ***/" >> early_tpm.h
 ./process_file.awk -v header=1 ../tpm2_auth.h >> early_tpm.h
-echo "" >> tpm.h
+echo "" >> early_tpm.h
 echo "#endif" >> early_tpm.h
 echo "Finished early_tpm.h"
 
