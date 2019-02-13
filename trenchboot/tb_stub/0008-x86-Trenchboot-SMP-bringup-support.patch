@@ -1,4 +1,4 @@
-From 860d60e316ac449aff338531d4aa1cff5f1d053f Mon Sep 17 00:00:00 2001
+From 03820c98dded282e448e6c9fcf1678e6e7d34cd2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
@@ -31,7 +31,7 @@ index 63b3393bd98e..e26ff1cc50eb 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..fcff1153a3db 100644
+index f02ecaf97904..df94380a055e 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -94,8 +94,8 @@ index f02ecaf97904..fcff1153a3db 100644
 +
 +	/*
 +	 * Initialize MLE join structure. Get start IP and GDT info from
-+ 	 * rmpiggy to use in TXT AP startup
-+ 	 */
++	 * rmpiggy to use in TXT AP startup
++	 */
 +	mle_join.entry_point = real_mode_header->sl_trampoline_start32;
 +	mle_join.seg_sel = __KERNEL32_CS;
 +	mle_join.gdt_base = real_mode_header->tr_gdt;
@@ -284,5 +284,5 @@ index 24bb7598774e..b1798c622ef8 100644
  
  	.bss
 -- 
-2.11.0
+2.13.6
 

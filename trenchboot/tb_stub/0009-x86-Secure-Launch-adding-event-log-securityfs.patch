@@ -1,4 +1,4 @@
-From cc88693f76fe0216f93793e01571fb1b42b18072 Mon Sep 17 00:00:00 2001
+From 6ed79d50fde6589d6996b3e58d3b3c2f5a8d9261 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
 Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
@@ -218,5 +218,5 @@ index 07730676c1aa..bd53156ff1ca 100644
 +
 +__exitcall(slaunch_exit);
 -- 
-2.11.0
+2.13.6
 

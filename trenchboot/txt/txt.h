@@ -1,7 +1,10 @@
 /*
- * TODO copyright
+ * Intel TXT definitions header file.
  *
- *  Intel TXT definitions header file.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Author:
+ *     Ross Philipson <ross.philipson@oracle.com>
  */
 
 #ifndef X86_TXT_H

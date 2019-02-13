@@ -1,4 +1,4 @@
-From ceff40ae3ce124d9616fda7412d7ec04249e6a2c Mon Sep 17 00:00:00 2001
+From ef3a0411e1a49fc487ad42e68b00acd363fe7a01 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
@@ -6,11 +6,11 @@ Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1183 ++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/early_tpm.h |  354 ++++++++++
- arch/x86/include/asm/tpm.h           |  103 +++
+ arch/x86/boot/compressed/early_tpm.c | 1121 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.h |  355 +++++++++++
+ arch/x86/include/asm/tpm.h           |   90 +++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1646 insertions(+), 1 deletion(-)
+ 5 files changed, 1572 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -31,10 +31,10 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..928a4ca08534
+index 000000000000..8fef1457b374
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1183 @@
+@@ -0,0 +1,1121 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -66,12 +66,6 @@ index 000000000000..928a4ca08534
 +#include <asm/tpm.h>
 +
 +#include "early_tpm.h"
-+
-+/*
-+ * Use a static environment since memory management is not ready in the
-+ * early uncompressed kernel.
-+ */
-+#define CONF_STATIC_ENV
 +
 +static u8 locality = TPM_NO_LOCALITY;
 +
@@ -134,21 +128,12 @@ index 000000000000..928a4ca08534
 +	return b->len;
 +}
 +
-+#ifdef CONF_STATIC_ENV
 +static u8 tis_buff[STATIC_TIS_BUFFER_SIZE];
 +static struct tpmbuff tpm_buff;
-+#endif
 +
 +struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf intf, u8 locality)
 +{
-+#ifdef CONF_STATIC_ENV
 +	struct tpmbuff *b = &tpm_buff;
-+#else
-+	struct tpmbuff *b = (struct tpmbuff *)malloc(sizeof(struct tpmbuff));
-+
-+	if (!b)
-+		goto err;
-+#endif
 +
 +	switch (intf) {
 +	case TPM_DEVNODE:
@@ -159,15 +144,8 @@ index 000000000000..928a4ca08534
 +		if (b->head)
 +			goto reset;
 +
-+#ifdef CONF_STATIC_ENV
 +		b->head = (u8 *)&tis_buff;
 +		b->truesize = STATIC_TIS_BUFFER_SIZE;
-+#else
-+		b->head = (u8 *)malloc(PAGE_SIZE);
-+		if (!b->head)
-+			goto free_buff;
-+		b->truesize = PAGE_SIZE;
-+#endif
 +		break;
 +	case TPM_CRB:
 +		b->head = (u8 *)(u64)(TPM_MMIO_BASE + (locality << 12) \
@@ -191,27 +169,18 @@ index 000000000000..928a4ca08534
 +
 +	return b;
 +
-+#ifndef CONF_STATIC_ENV
-+free_buff:
-+	free(b);
-+#endif
 +err:
 +	return NULL;
 +}
 +
 +void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf intf)
 +{
-+
 +	switch (intf) {
 +	case TPM_DEVNODE:
 +		/* Not implemented yet */
 +		break;
 +	case TPM_TIS:
-+#ifdef CONF_STATIC_ENV
 +		b->head = NULL;
-+#else
-+		free(b->head);
-+#endif
 +		break;
 +	case TPM_CRB:
 +		b->head = NULL;
@@ -222,10 +191,6 @@ index 000000000000..928a4ca08534
 +	default:
 +		break;
 +	}
-+
-+#ifndef CONF_STATIC_ENV
-+	free(b);
-+#endif
 +}
 +
 +/*** tpmio.c ***/
@@ -467,7 +432,7 @@ index 000000000000..928a4ca08534
 +
 +	/* hdr->size = header + data */
 +	expected = hdr->size - expected;
-+	buf_ptr = buf->ops->put(buf, expected);
++	buf_ptr = tpmb_put(buf, expected);
 +	if (! buf_ptr)
 +		goto err;
 +
@@ -482,7 +447,7 @@ index 000000000000..928a4ca08534
 +		goto err;
 +
 +	/* read last byte */
-+	buf_ptr = buf->ops->put(buf, 1);
++	buf_ptr = tpmb_put(buf, 1);
 +	if (recv_data(buf_ptr, 1) != 1)
 +		goto err;
 +
@@ -501,6 +466,7 @@ index 000000000000..928a4ca08534
 +}
 +
 +/*** crb.c ***/
++
 +
 +
 +#define TPM_LOC_STATE		0x0000
@@ -904,6 +870,7 @@ index 000000000000..928a4ca08534
 +/*** tpm2_auth.c ***/
 +
 +
++
 +#define NULL_AUTH_SIZE 9
 +
 +u16 tpm2_null_auth_size(void)
@@ -1034,9 +1001,7 @@ index 000000000000..928a4ca08534
 +
 +
 +
-+#ifdef CONF_STATIC_ENV
 +static struct tpm tpm;
-+#endif
 +
 +static void find_interface_and_family(struct tpm *t)
 +{
@@ -1063,14 +1028,8 @@ index 000000000000..928a4ca08534
 +
 +struct tpm *enable_tpm(void)
 +{
-+#ifdef CONF_STATIC_ENV
 +	struct tpm *t = &tpm;
-+#else
-+	struct tpm *t = (struct tpm *)malloc(sizeof(struct tpm));
 +
-+	if (!t)
-+		goto err;
-+#endif
 +	find_interface_and_family(t);
 +
 +	switch (t->intf) {
@@ -1079,11 +1038,11 @@ index 000000000000..928a4ca08534
 +		break;
 +	case TPM_TIS:
 +		if (!tis_init(t))
-+			goto free;
++			goto err;
 +		break;
 +	case TPM_CRB:
 +		if (!crb_init(t))
-+			goto free;
++			goto err;
 +		break;
 +	case TPM_UEFI:
 +		/* Not implemented yet */
@@ -1093,10 +1052,7 @@ index 000000000000..928a4ca08534
 +	/* TODO: ACPI TPM discovery */
 +
 +	return t;
-+free:
-+#ifndef CONF_STATIC_ENV
-+	free(t);
-+#endif
++
 +err:
 +	return NULL;
 +}
@@ -1158,16 +1114,7 @@ index 000000000000..928a4ca08534
 +		ret = tpm1_pcr_extend(t, &d);
 +	} else if (t->family == TPM20) {
 +		struct tpml_digest_values *d;
-+#ifdef CONF_STATIC_ENV
 +		u8 buf[MAX_TPM_EXTEND_SIZE];
-+#else
-+		u8 *buf = (u8 *)malloc(MAX_TPM_EXTEND_SIZE);
-+
-+		if (!buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+#endif
 +
 +		d = (struct tpml_digest_values *) buf;
 +		d->count = 1;
@@ -1193,19 +1140,14 @@ index 000000000000..928a4ca08534
 +			memcpy(d->digests->digest, digest, SM3256_SIZE);
 +			break;
 +		default:
-+			goto free;
++			ret = -EINVAL;
++			goto out;
 +		}
 +
 +		ret = tpm2_extend_pcr(t, pcr, d);
-+		goto free;
 +	} else {
 +		ret = -EINVAL;
-+		goto out;
 +	}
-+free:
-+#ifndef CONF_STATIC_ENV
-+	free(buf);
-+#endif
 +out:
 +	return ret;
 +}
@@ -1213,17 +1155,13 @@ index 000000000000..928a4ca08534
 +void free_tpm(struct tpm *t)
 +{
 +	tpm_relinquish_locality(t);
-+
-+#ifndef CONF_STATIC_ENV
-+	free(t);
-+#endif
 +}
 diff --git a/arch/x86/boot/compressed/early_tpm.h b/arch/x86/boot/compressed/early_tpm.h
 new file mode 100644
-index 000000000000..76d44329696a
+index 000000000000..55d1e62b4568
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.h
-@@ -0,0 +1,354 @@
+@@ -0,0 +1,355 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -1577,13 +1515,14 @@ index 000000000000..76d44329696a
 +u16 tpm2_null_auth_size(void);
 +u16 tpm2_null_auth(u8 *b);
 +
++
 +#endif
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..aca94a582691
+index 000000000000..3bfa330ba7e3
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,90 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -1651,16 +1590,6 @@ index 000000000000..aca94a582691
 +/*** tpmbuff.h ***/
 +
 +
-+struct tpmbuff;
-+
-+struct tpmbuff_operations {
-+	u8 *(*reserve)(struct tpmbuff *b);
-+	void (*free)(struct tpmbuff *b);
-+	u8 *(*put)(struct tpmbuff *b, size_t size);
-+	size_t (*trim)(struct tpmbuff *b, size_t size);
-+	size_t (*size)(struct tpmbuff *b);
-+};
-+
 +/* mirroring Linux SKB */
 +struct tpmbuff {
 +	size_t truesize;
@@ -1672,8 +1601,6 @@ index 000000000000..aca94a582691
 +	u8 *data;
 +	u8 *tail;
 +	u8 *end;
-+
-+	struct tpmbuff_operations *ops;
 +};
 +
 +u8 *tpmb_reserve(struct tpmbuff *b);
@@ -1686,7 +1613,6 @@ index 000000000000..aca94a582691
 +
 +
 +#endif
-+
 diff --git a/include/linux/tpm_command.h b/include/linux/tpm_command.h
 index f5c03e9c3913..159eaf27f56e 100644
 --- a/include/linux/tpm_command.h
@@ -1706,5 +1632,5 @@ index f5c03e9c3913..159eaf27f56e 100644
  #define SRKHANDLE                       0x40000000
  #define TPM_NONCE_SIZE                  20
 -- 
-2.11.0
+2.13.6
 

@@ -1,4 +1,4 @@
-From e0258981a1b48e0478d103f9050a1a1b7987b2a4 Mon Sep 17 00:00:00 2001
+From 9d08e68aaf58df12a80863a5eb3505469a4b0e4f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  33 +++++++
- arch/x86/boot/compressed/sl_main.c | 111 ++++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c | 113 ++++++++++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 171 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 316 insertions(+), 1 deletion(-)
+ 4 files changed, 318 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -79,10 +79,10 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..f278709602c7
+index 000000000000..17abc84c65f5
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,113 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -145,6 +145,8 @@ index 000000000000..f278709602c7
 +	sl_txt_write(TXTCR_CMD_UNLOCK_MEM_CONFIG, 1);
 +	(void)sl_txt_read(TXTCR_E2STS);
 +	sl_txt_write(TXTCR_CMD_RESET, 1);
++	/* Should never get here */
++	__asm__ __volatile__("ud2");
 +}
 +
 +void sl_main(u8 *bootparams)
@@ -159,9 +161,9 @@ index 000000000000..f278709602c7
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +
 +	/*
-+ 	 * If enable_tpm fails there is no point going on. The entire secure
-+ 	 * environment depends on this and the other TPM operations succeeding.
-+ 	 */
++	 * If enable_tpm fails there is no point going on. The entire secure
++	 * environment depends on this and the other TPM operations succeeding.
++	 */
 +	tpm = enable_tpm();
 +	if (!tpm)
 +		sl_txt_reset(TXT_SLERROR_TPM_INIT);
@@ -372,5 +374,5 @@ index 000000000000..0922b1966b88
 +	.fill 32, 1, 0
 +sl_stack_end:
 -- 
-2.11.0
+2.13.6
 

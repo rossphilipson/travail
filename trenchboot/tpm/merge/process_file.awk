@@ -37,7 +37,7 @@ BEGIN {
                   if ($1 ~ /^#endif/)
                       skip = 1;
               }
-	      if ($1 == "static" && $2 == "u8" && $3 == "locality")
+              if ($1 == "static" && $2 == "u8" && $3 == "locality")
                   skip = 1;
               #if ($1 == "static" && $2 == "struct" && $3 == "tpmbuff")
               #    print "__attribute__ ((__section__ (\".data\")))"
