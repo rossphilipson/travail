@@ -18,17 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
  */
 
-#include <linux/types.h>
-#include <linux/init.h>
-#include <linux/linkage.h>
-#include <asm/io.h>
-#include <asm/segment.h>
-#include <asm/tpm.h>
-
-#include "early_tpm.h"
-
-static u8 locality = TPM_NO_LOCALITY;
+#ifndef _EARLY_TPM_H
+#define _EARLY_TPM_H
 

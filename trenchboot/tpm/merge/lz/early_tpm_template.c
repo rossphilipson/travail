@@ -21,12 +21,8 @@
  *
  */
 
-#include <linux/types.h>
-#include <linux/init.h>
-#include <linux/linkage.h>
-#include <asm/io.h>
-#include <asm/segment.h>
-#include <asm/tpm.h>
+#include <types.h>
+#include <tpm.h>
 
 #include "early_tpm.h"
 
