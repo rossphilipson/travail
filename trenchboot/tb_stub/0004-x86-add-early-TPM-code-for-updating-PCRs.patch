@@ -1,4 +1,4 @@
-From ef3a0411e1a49fc487ad42e68b00acd363fe7a01 Mon Sep 17 00:00:00 2001
+From 2bc5a68ed6354c6d78d05a32ccb4cdbedd6499b9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
@@ -6,11 +6,11 @@ Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1121 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.c | 1122 ++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/early_tpm.h |  355 +++++++++++
  arch/x86/include/asm/tpm.h           |   90 +++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1572 insertions(+), 1 deletion(-)
+ 5 files changed, 1573 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -31,10 +31,10 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..8fef1457b374
+index 000000000000..fb80543e8a7b
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1121 @@
+@@ -0,0 +1,1122 @@
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
@@ -1010,7 +1010,8 @@ index 000000000000..8fef1457b374
 +
 +	/* Sort out whether if it is 1.2 */
 +	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
-+	if (intf_cap.interface_version == TPM12_TIS_INTF_12) {
++	if ((intf_cap.interface_version == TPM12_TIS_INTF_12)||
++	    (intf_cap.interface_version == TPM12_TIS_INTF_13)) {
 +		t->family = TPM12;
 +		t->intf = TPM_TIS;
 +		return;
@@ -1158,7 +1159,7 @@ index 000000000000..8fef1457b374
 +}
 diff --git a/arch/x86/boot/compressed/early_tpm.h b/arch/x86/boot/compressed/early_tpm.h
 new file mode 100644
-index 000000000000..55d1e62b4568
+index 000000000000..9182e3ef058d
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.h
 @@ -0,0 +1,355 @@
@@ -1206,8 +1207,8 @@ index 000000000000..55d1e62b4568
 +};
 +
 +#define TPM_INTERFACE_ID_0	0x30
-+#define TPM_TIS_INTF_ACTIVE	0x000
-+#define TPM_CRB_INTF_ACTIVE	0x001
++#define TPM_TIS_INTF_ACTIVE	0x00
++#define TPM_CRB_INTF_ACTIVE	0x01
 +
 +struct tpm_interface_id {
 +	union {
@@ -1229,9 +1230,9 @@ index 000000000000..55d1e62b4568
 +} __attribute__ ((packed));
 +
 +#define TPM_INTF_CAPABILITY_0	0x14
-+#define TPM12_TIS_INTF_12	0x000
-+#define TPM12_TIS_INTF_13	0x010
-+#define TPM20_TIS_INTF_13	0x011
++#define TPM12_TIS_INTF_12	0x00
++#define TPM12_TIS_INTF_13	0x02
++#define TPM20_TIS_INTF_13	0x03
 +
 +struct tpm_intf_capability {
 +	union {

@@ -25,8 +25,8 @@ struct tpm_header {
 };
 
 #define TPM_INTERFACE_ID_0	0x30
-#define TPM_TIS_INTF_ACTIVE	0x000
-#define TPM_CRB_INTF_ACTIVE	0x001
+#define TPM_TIS_INTF_ACTIVE	0x00
+#define TPM_CRB_INTF_ACTIVE	0x01
 
 struct tpm_interface_id {
 	union {
@@ -48,9 +48,9 @@ struct tpm_interface_id {
 } __attribute__ ((packed));
 
 #define TPM_INTF_CAPABILITY_0	0x14
-#define TPM12_TIS_INTF_12	0x000
-#define TPM12_TIS_INTF_13	0x010
-#define TPM20_TIS_INTF_13	0x011
+#define TPM12_TIS_INTF_12	0x00
+#define TPM12_TIS_INTF_13	0x02
+#define TPM20_TIS_INTF_13	0x03
 
 struct tpm_intf_capability {
 	union {

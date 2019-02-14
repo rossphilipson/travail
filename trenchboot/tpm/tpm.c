@@ -24,7 +24,8 @@ static void find_interface_and_family(struct tpm *t)
 
 	/* Sort out whether if it is 1.2 */
 	intf_cap.val = tpm_read32(TPM_INTF_CAPABILITY_0);
-	if (intf_cap.interface_version == TPM12_TIS_INTF_12) {
+	if ((intf_cap.interface_version == TPM12_TIS_INTF_12)||
+	    (intf_cap.interface_version == TPM12_TIS_INTF_13)) {
 		t->family = TPM12;
 		t->intf = TPM_TIS;
 		return;
