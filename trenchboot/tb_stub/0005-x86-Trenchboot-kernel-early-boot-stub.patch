@@ -1,4 +1,4 @@
-From c383cb58386175f423b450efab0f35158cfd979c Mon Sep 17 00:00:00 2001
+From f7e070fef97d0fcd18091f91b4c348d6ef745d33 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -6,10 +6,10 @@ Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  45 ++++++++++
+ arch/x86/boot/compressed/head_64.S |  47 ++++++++++
  arch/x86/boot/compressed/sl_main.c | 113 ++++++++++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 171 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 330 insertions(+), 1 deletion(-)
+ 4 files changed, 332 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -27,7 +27,7 @@ index 1a089f7f7f79..50f1ff478db0 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..61712392531d 100644
+index 64037895b085..29efe57fb818 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -53,7 +53,7 @@ index 64037895b085..61712392531d 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
-@@ -520,6 +536,35 @@ relocated:
+@@ -520,6 +536,37 @@ relocated:
  	shrq	$3, %rcx
  	rep	stosq
  
@@ -62,6 +62,7 @@ index 64037895b085..61712392531d 100644
 +	pushq	%rcx
 +	pushq	%rax
 +	movq	%cr0, %rcx
++	pushq	%rcx
 +	movq	%cr0, %rax
 +	orq     $(X86_CR0_CD|X86_CR0_NW), %rax
 +	movq	%rax, %cr0
@@ -81,6 +82,7 @@ index 64037895b085..61712392531d 100644
 +	callq	sl_main
 +	popq	%rsi
 +
++	popq	%rcx
 +	movq	%rcx, %cr0
 +	popq	%rax
 +	popq	%rcx
