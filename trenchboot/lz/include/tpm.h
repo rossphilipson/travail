@@ -24,123 +24,67 @@
 
 #include <types.h>
 
-/* Section 2.2.3 */
-#define TPM_AUTH_DATA_USAGE uint8_t
-#define TPM_PAYLOAD_TYPE uint8_t
-#define TPM_VERSION_BYTE uint8_t
-#define TPM_TAG uint16_t
-#define TPM_PROTOCOL_ID uint16_t
-#define TPM_STARTUP_TYPE uint16_t
-#define TPM_ENC_SCHEME uint16_t
-#define TPM_SIG_SCHEME uint16_t
-#define TPM_MIGRATE_SCHEME uint16_t
-#define TPM_PHYSICAL_PRESENCE uint16_t
-#define TPM_ENTITY_TYPE uint16_t
-#define TPM_KEY_USAGE uint16_t
-#define TPM_EK_TYPE uint16_t
-#define TPM_STRUCTURE_TAG uint16_t
-#define TPM_PLATFORM_SPECIFIC uint16_t
-#define TPM_COMMAND_CODE uint32_t
-#define TPM_CAPABILITY_AREA uint32_t
-#define TPM_KEY_FLAGS uint32_t
-#define TPM_ALGORITHM_ID uint32_t
-#define TPM_MODIFIER_INDICATOR uint32_t
-#define TPM_ACTUAL_COUNT uint32_t
-#define TPM_TRANSPORT_ATTRIBUTES uint32_t
-#define TPM_AUTHHANDLE uint32_t
-#define TPM_DIRINDEX uint32_t
-#define TPM_KEY_HANDLE uint32_t
-#define TPM_PCRINDEX uint32_t
-#define TPM_RESULT uint32_t
-#define TPM_RESOURCE_TYPE uint32_t
-#define TPM_KEY_CONTROL uint32_t
-#define TPM_NV_INDEX uint32_t The
-#define TPM_FAMILY_ID uint32_t
-#define TPM_FAMILY_VERIFICATION uint32_t
-#define TPM_STARTUP_EFFECTS uint32_t
-#define TPM_SYM_MODE uint32_t
-#define TPM_FAMILY_FLAGS uint32_t
-#define TPM_DELEGATE_INDEX uint32_t
-#define TPM_CMK_DELEGATE uint32_t
-#define TPM_COUNT_ID uint32_t
-#define TPM_REDIT_COMMAND uint32_t
-#define TPM_TRANSHANDLE uint32_t
-#define TPM_HANDLE uint32_t
-#define TPM_FAMILY_OPERATION uint32_t
+#define TPM_HASH_ALG_SHA1    (u16)(0x0004)
+#define TPM_HASH_ALG_SHA256  (u16)(0x000B)
+#define TPM_HASH_ALG_SHA384  (u16)(0x000C)
+#define TPM_HASH_ALG_SHA512  (u16)(0x000D)
+#define TPM_HASH_ALG_SM3_256 (u16)(0x0012)
 
-/* Section 6 */
-#define TPM_TAG_RQU_COMMAND		0x00C1
-#define TPM_TAG_RQU_AUTH1_COMMAND	0x00C2
-#define TPM_TAG_RQU_AUTH2_COMMAND	0x00C3
-#define TPM_TAG_RSP_COMMAND		0x00C4
-#define TPM_TAG_RSP_AUTH1_COMMAND	0x00C5
-#define TPM_TAG_RSP_AUTH2_COMMAND	0x00C6
+/*** tpm.h ***/
 
-/* Section 16 */
-#define TPM_SUCCESS 0x0
 
-/* Section 17 */
-#define TPM_ORD_EXTEND			0x00000014
+#define TPM_NO_LOCALITY		0xFF
 
-#define SHA1_DIGEST_SIZE 20
-
-/* Section 5.4 */
-struct tpm_sha1_digest {
-	uint8_t digest[SHA1_DIGEST_SIZE];
-};
-struct tpm_digest {
-	TPM_PCRINDEX pcr;
-	union {
-		struct tpm_sha1_digest sha1;
-	} digest;
+enum tpm_hw_intf {
+	TPM_DEVNODE,
+	TPM_TIS,
+	TPM_CRB,
+	TPM_UEFI
 };
 
-#define TPM_DIGEST		struct tpm_digest
-#define TPM_CHOSENID_HASH	TPM_DIGEST
-#define TPM_COMPOSITE_HASH	TPM_DIGEST
-#define TPM_DIRVALUE		TPM_DIGEST
-#define TPM_HMAC		TPM_DIGEST
-#define TPM_PCRVALUE		TPM_DIGEST
-#define TPM_AUDITDIGEST		TPM_DIGEST
-#define TPM_DAA_TPM_SEED	TPM_DIGEST
-#define TPM_DAA_CONTEXT_SEED	TPM_DIGEST
-
-struct tpm_extend_cmd {
-	TPM_COMMAND_CODE ordinal;
-	TPM_PCRINDEX pcr_num;
-	TPM_DIGEST digest;
+enum tpm_family {
+	TPM12,
+	TPM20
 };
 
-struct tpm_extend_resp {
-	TPM_COMMAND_CODE ordinal;
-	TPM_PCRVALUE digest;
+struct tpmbuff;
+
+struct tpm {
+	u32 vendor;
+	enum tpm_family family;
+	enum tpm_hw_intf intf;
+	struct tpmbuff *buff;
 };
 
-struct tpm_cmd_buf {
-	TPM_TAG tag;
-	uint32_t size;
-	TPM_RESULT result;
-	union {
-		struct tpm_extend_cmd extend;
-	} cmd;
+struct tpm *enable_tpm(void);
+u8 tpm_request_locality(struct tpm *t, u8 l);
+void tpm_relinquish_locality(struct tpm *t);
+int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
+		u8 *digest);
+void free_tpm(struct tpm *t);
+/*** tpmbuff.h ***/
+
+
+/* mirroring Linux SKB */
+struct tpmbuff {
+	size_t truesize;
+	size_t len;
+
+	u8 locked;
+
+	u8 *head;
+	u8 *data;
+	u8 *tail;
+	u8 *end;
 };
 
-struct tpm_resp_buf {
-	TPM_TAG tag;
-	uint32_t size;
-	TPM_RESULT result;
-	union {
-		struct tpm_extend_resp extend;
-	} resp;
-};
+u8 *tpmb_reserve(struct tpmbuff *b);
+void tpmb_free(struct tpmbuff *b);
+u8 *tpmb_put(struct tpmbuff *b, size_t size);
+size_t tpmb_trim(struct tpmbuff *b, size_t size);
+size_t tpmb_size(struct tpmbuff *b);
+struct tpmbuff *alloc_tpmbuff(enum tpm_hw_intf i, u8 locality);;
+void free_tpmbuff(struct tpmbuff *b, enum tpm_hw_intf i);
 
-/* TPM Interface Specification functions */
-uint8_t tis_request_locality(uint8_t l);
-uint8_t tis_init(void);
-size_t tis_send(struct tpm_cmd_buf *buf);
-size_t tis_recv(struct tpm_resp_buf *buf);
-
-/* TPM Commands */
-uint8_t tpm_pcr_extend(struct tpm_digest *d);
 
 #endif

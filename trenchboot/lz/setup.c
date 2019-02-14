@@ -99,24 +99,28 @@ void setup2(void)
 	u32 *code32_start;
 	u32 *data, size;
 	void *pm_kernel_entry;
-	TPM_DIGEST tpm_digest;
+	struct tpm *tpm;
 
 	code32_start = (u32*)((u8*)zero_page + BP_CODE32_START);
 	pm_kernel_entry = (void*)((u64)(*code32_start));
 
-	tis_init();
-	tis_request_locality(2);
+	/*
+	 * TODO Note these functions can fail but there is no clear way to
+	 * report the error unless SKINIT has some resource to do this. For
+	 * now, if an error is returned, this code will most likely just crash.
+	 */
+	tpm = enable_tpm();
+	tpm_request_locality(tpm, 2);
 
 	/* extend TB Loader code segment into PCR17 */
 	data = (u32*)(uintptr_t)*code32_start;
 	size = lz_header->slaunch_loader_size;
 	sha1sum(&sha1ctx, data, size);
+	tpm_extend_pcr(tpm, 17, TPM_HASH_ALG_SHA1, &sha1ctx.buf[0]);
 
-	tpm_digest.pcr = 17;
-	memcpy(&(tpm_digest.digest), &(sha1ctx.buf), sizeof(SHA1_DIGEST_SIZE));
-	tpm_pcr_extend(&tpm_digest);
+	tpm_relinquish_locality(tpm);
+	free_tpm(tpm);
 
-	//tis_close(2);
 	/* End of the line, off to the protected mode entry into the kernel */
 	lz_exit(pm_kernel_entry, zero_page, lz_base);
 
