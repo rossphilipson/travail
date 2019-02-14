@@ -1,4 +1,7 @@
 /*
+ * Bits are from Linux. Copyrights, where present, come from the
+ * files the definitions came from.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,20 +20,17 @@
 #ifndef __PCI_H__
 #define __PCI_H__
 
+/* From include/uapi/linux/pci_regs.h */
+
 #define PCI_CONFIG_ADDR_PORT    (0x0cf8)
 #define PCI_CONFIG_DATA_PORT    (0x0cfc)
 
-#define PCI_CONF_HDR_IDX_VENDOR_ID                      0x0
-#define PCI_CONF_HDR_IDX_DEVICE_ID                      0x02
-#define PCI_CONF_HDR_IDX_COMMAND                        0x04
-#define PCI_CONF_HDR_IDX_STATUS                         0x06
-#define PCI_CONF_HDR_IDX_REVISION_ID                    0x08
-#define PCI_CONF_HDR_IDX_CLASS_CODE                     0x09
-#define PCI_CONF_HDR_IDX_HEADER_TYPE                    0x0E
-#define PCI_CONF_HDR_IDX_CAPABILITIES_POINTER           0x34
+#define PCI_CAPABILITY_LIST     0x34    /* Offset of first capability list entry */
 
-/* PCI capability ID for SVM DEV */
-#define PCI_CAPABILITIES_POINTER_ID_DEV                 0x0F
+/* PCI capability ID for SVM DEV - AMD Manual */
+#define PCI_CAPABILITIES_POINTER_ID_DEV    0x0F
+
+/* From include/uapi/linux/pci.h */
 
 /*
  * The PCI interface treats multi-function devices as independent
@@ -44,6 +44,8 @@
 #define PCI_SLOT(devfn)         (((devfn) >> 3) & 0x1f)
 #define PCI_FUNC(devfn)         ((devfn) & 0x07)
 
+
+/* From arch/x86/pci/direct.c definitions */
 
 int pci_conf1_read(unsigned int seg, unsigned int bus,
 		   unsigned int devfn, int reg, int len, u32 *value);

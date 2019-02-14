@@ -27,7 +27,7 @@ u32 dev_locate(void)
 	/* read capabilities pointer */
         pci_conf1_read(0, DEV_PCI_BUS,
 			PCI_DEVFN(DEV_PCI_DEVICE,DEV_PCI_FUNCTION),
-			PCI_CONF_HDR_IDX_CAPABILITIES_POINTER,
+			PCI_CAPABILITY_LIST,
 			4, &pci_cap_ptr);
 
 	if (INVALID_CAP(pci_cap_ptr))

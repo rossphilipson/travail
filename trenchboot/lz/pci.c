@@ -1,4 +1,8 @@
 /*
+ * Bits are from Linux. Copyrights, where present, come from the
+ * files the definitions came from. Code in this module is from
+ * arch/x86/pci/direct.c
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
