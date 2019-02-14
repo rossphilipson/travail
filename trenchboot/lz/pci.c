@@ -1,5 +1,5 @@
 /*
- * Bits are from Linux. Copyrights, where present, come from the
+ * These bits are from Linux. Copyrights, where present, come from the
  * files the definitions came from. Code in this module is from
  * arch/x86/pci/direct.c
  *
