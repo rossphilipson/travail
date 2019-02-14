@@ -1,4 +1,4 @@
-From 7f02237c7531143304003f37e833dcd45c26cda7 Mon Sep 17 00:00:00 2001
+From df917f507e48a7a6c8fdf45faec46c6ff878279b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
 Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
@@ -6,8 +6,8 @@ Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am  |  3 +++
- include/grub/slaunch.h | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
+ include/grub/slaunch.h | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
@@ -40,12 +40,13 @@ index 78ef05822..04d67011a 100644
  if COND_ia64_efi
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..bba307ac2
+index 000000000..3977dc926
 --- /dev/null
 +++ b/include/grub/slaunch.h
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
 + *  GRUB is free software: you can redistribute it and/or modify
 + *  it under the terms of the GNU General Public License as published by

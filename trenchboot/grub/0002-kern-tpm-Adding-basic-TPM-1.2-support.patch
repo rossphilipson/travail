@@ -1,4 +1,4 @@
-From fbe5ade7511c5f1a5f03fff0db3e451909487106 Mon Sep 17 00:00:00 2001
+From cce6fbce90ba1f46b692d99fe412b1019236534b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:26:21 -0500
 Subject: [PATCH 2/5] kern/tpm: Adding basic TPM 1.2 support

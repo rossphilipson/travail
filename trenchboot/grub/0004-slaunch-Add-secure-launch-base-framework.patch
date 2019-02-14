@@ -1,4 +1,4 @@
-From a15bdb2448e1b4d246562572283dabf7eaf2e568 Mon Sep 17 00:00:00 2001
+From 515128ef19bf41c22746bdb60b4e1ed36e57362c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
 Subject: [PATCH 4/5] slaunch: Add secure launch base framework
@@ -7,12 +7,12 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def            |   8 ++
  grub-core/loader/i386/linux.c          |  18 +++
- grub-core/loader/i386/slaunch.c        | 223 +++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c |  33 +++++
- grub-core/loader/i386/slaunch_txt.c    |  34 +++++
+ grub-core/loader/i386/slaunch.c        | 224 +++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_skinit.c |  34 +++++
+ grub-core/loader/i386/slaunch_txt.c    |  35 ++++++
  include/grub/file.h                    |   3 +
  include/grub/slaunch.h                 |  10 ++
- 7 files changed, 329 insertions(+)
+ 7 files changed, 332 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
@@ -88,12 +88,13 @@ index c408b10d8..216671f4a 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..4f04819ac
+index 000000000..ba2a5fc19
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,224 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
 + *  GRUB is free software: you can redistribute it and/or modify
 + *  it under the terms of the GNU General Public License as published by
@@ -317,12 +318,13 @@ index 000000000..4f04819ac
 +}
 diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
 new file mode 100644
-index 000000000..a020a88c7
+index 000000000..3c3f00f2b
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_skinit.c
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
 + *  GRUB is free software: you can redistribute it and/or modify
 + *  it under the terms of the GNU General Public License as published by
@@ -356,12 +358,13 @@ index 000000000..a020a88c7
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..f4f2b5fd2
+index 000000000..26fdd5306
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
 + *  GRUB is free software: you can redistribute it and/or modify
 + *  it under the terms of the GNU General Public License as published by
@@ -409,10 +412,10 @@ index 9aae46355..f391ef63b 100644
  
      /* --skip-sig is specified.  */
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
-index bba307ac2..ba64841bb 100644
+index 3977dc926..b9d5215a1 100644
 --- a/include/grub/slaunch.h
 +++ b/include/grub/slaunch.h
-@@ -41,6 +41,16 @@ struct grub_slaunch_params
+@@ -42,6 +42,16 @@ struct grub_slaunch_params
    grub_addr_t prot_mode_target;
  };
  
