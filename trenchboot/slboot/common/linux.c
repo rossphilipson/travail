@@ -365,8 +365,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
            (unsigned long)protected_mode_base);
 
     /* reset pointers to point into zero page at real mode base */
-    hdr = (linux_kernel_header_t *)(linux_image + KERNEL_HEADER_OFFSET);
-    slh = (slaunch_info_t *)(linux_image + SLAUNCH_INFO_OFFSET);
+    hdr = (linux_kernel_header_t *)(real_mode_base + KERNEL_HEADER_OFFSET);
+    slh = (slaunch_info_t *)(real_mode_base + SLAUNCH_INFO_OFFSET);
 
     /* copy back the updated kernel header */
     tb_memmove(hdr, &temp_hdr, sizeof(temp_hdr));
