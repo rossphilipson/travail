@@ -63,7 +63,7 @@ index 64037895b085..61712392531d 100644
 +	pushq	%rax
 +	movq	%cr0, %rcx
 +	movq	%cr0, %rax
-+	andq	$(~(X86_CR0_CD|X86_CR0_NW)), %rax
++	orq     $(X86_CR0_CD|X86_CR0_NW), %rax
 +	movq	%rax, %cr0
 +
 +	/*
