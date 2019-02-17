@@ -389,6 +389,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
               sinit_caps.tcg_event_log_format);
         os_sinit_data->capabilities.tcg_event_log_format = 1;
     }
+
     /* capabilities : require MLE pagetable in ECX on launch */
     /* TODO: when SINIT ready
      * os_sinit_data->capabilities.ecx_pgtbl = 1;
@@ -471,7 +472,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     //    return TB_ERR_SINIT_NOT_PRESENT;
     /* do some checks on it */
     // if ( !verify_acmod(g_sinit) )
-     //   return TB_ERR_ACMOD_VERIFY_FAILED;
+    //   return TB_ERR_ACMOD_VERIFY_FAILED;
 
     /* print some debug info */
     print_file_info();
@@ -490,28 +491,29 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     if ( !set_mtrrs_for_acmod(g_sinit) )
         return TB_ERR_FATAL;
 
-   /* deactivate current locality */
-   /* TODO why is it not done for 1.2 w/ release_locality() ? */
-   if (g_tpm_family == TPM_IF_20_CRB ) {
-       printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
-	if (!tpm_relinquish_locality_crb(0)){
-		printk(TBOOT_INFO"Relinquish CRB locality 0 failed...\n");
-		error_action(TB_ERR_TPM_NOT_READY);
-	}
-   }
+    /* deactivate current locality */
+    /* TODO why is it not done for 1.2 w/ release_locality() ? */
+    if (g_tpm_family == TPM_IF_20_CRB ) {
+        printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
+        if (!tpm_relinquish_locality_crb(0)){
+            printk(TBOOT_INFO"Relinquish CRB locality 0 failed...\n");
+            error_action(TB_ERR_TPM_NOT_READY);
+        }
+    }
 
-   /*{
-   tpm_reg_loc_ctrl_t    reg_loc_ctrl;
-   tpm_reg_loc_state_t  reg_loc_state;
+    /* TODO why are not doing this now?
+    {
+    tpm_reg_loc_ctrl_t    reg_loc_ctrl;
+    tpm_reg_loc_state_t  reg_loc_state;
 
-   reg_loc_ctrl._raw[0] = 0;
-   reg_loc_ctrl.relinquish = 1;
-   write_tpm_reg(0, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
-   printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
-   read_tpm_reg(0, TPM_REG_LOC_STATE, &reg_loc_state);
-   printk(TBOOT_INFO"CRB reg_loc_state.active_locality is 0x%x \n", reg_loc_state.active_locality);
-   printk(TBOOT_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
-   }*/
+    reg_loc_ctrl._raw[0] = 0;
+    reg_loc_ctrl.relinquish = 1;
+    write_tpm_reg(0, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
+    printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
+    read_tpm_reg(0, TPM_REG_LOC_STATE, &reg_loc_state);
+    printk(TBOOT_INFO"CRB reg_loc_state.active_locality is 0x%x \n", reg_loc_state.active_locality);
+    printk(TBOOT_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
+    }*/
 
     /*
      * Need to update the MLE header with the size of the MLE. The field is

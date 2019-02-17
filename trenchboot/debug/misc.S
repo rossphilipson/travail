@@ -20,3 +20,23 @@
 	pause
 	jmp 	1b
 
+/* MTRR stuff */
+	/* Disable all MTRRs and set cache default to UC */
+	pushq	%rcx
+	pushq	%rdx
+	xorq	%rax, %rax
+	xorq	%rdx, %rdx
+	movq	$MSR_MTRRdefType, %rcx
+	wrmsr
+	popq	%rdx
+	popq	%rcx
+
+	/* Enable MTRRs and set cache default to WB */
+	pushq	%rcx
+	pushq	%rdx
+	movq	$0x806, %rax
+	xorq	%rdx, %rdx
+	movq	$MSR_MTRRdefType, %rcx
+	wrmsr
+	popq	%rdx
+	popq	%rcx

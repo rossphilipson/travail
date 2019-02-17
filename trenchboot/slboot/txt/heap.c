@@ -160,7 +160,7 @@ void print_event_2(void *evt, uint16_t alg)
     if ( *((uint32_t *)next) > 24 && *((uint32_t *)next) != 0xFF ) {
          printk(TBOOT_DETA"\t\t\t           Wrong Event Log.\n");
          return;
-     }
+    }
 
     next += sizeof(uint32_t);
     printk(TBOOT_DETA"\t\t\t         Type: 0x%x\n", *((uint32_t *)next));
