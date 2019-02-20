@@ -1,20 +1,20 @@
-From b40b20a3cfbd53dfa95cff679e8f4c1a6a963c2a Mon Sep 17 00:00:00 2001
+From 020e49b72ea0a119c38c9dbc4441b919df91dd37 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 239 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 239 insertions(+)
+ arch/x86/include/asm/slaunch.h | 244 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 244 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..74771fa2944b
+index 000000000000..c01202d891f4
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,239 @@
+@@ -0,0 +1,244 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -87,6 +87,11 @@ index 000000000000..74771fa2944b
 +#define TXT_SLERROR_TPM_INIT		0xc0008002
 +#define TXT_SLERROR_TPM_GET_LOC		0xc0008003
 +#define TXT_SLERROR_TPM_EXTEND		0xc0008004
++#define TXT_SLERROR_MTRR_INV_VCNT	0xc0008005
++#define TXT_SLERROR_MTRR_INV_DEF_TYPE	0xc0008006
++#define TXT_SLERROR_MTRR_INV_BASE	0xc0008007
++#define TXT_SLERROR_MTRR_INV_MASK	0xc0008008
++#define TXT_SLERROR_MSR_INV_MISC_EN	0xc0008009
 +
 +#define SLAUNCH_INFO_OFFSET	0x0cc
 +#define SL_FLAGS_OFFSET		0x8
@@ -117,7 +122,7 @@ index 000000000000..74771fa2944b
 +struct txt_mtrr_state {
 +	u64	default_type_reg;
 +	u64	mtrr_vcnt;
-+	u64	mtrr_pair[TXT_MAX_VARIABLE_MTRRS];
++	struct txt_mtrr_pair mtrr_pair[TXT_MAX_VARIABLE_MTRRS];
 +} __attribute__((packed));
 +
 +struct txt_os_mle_data {
