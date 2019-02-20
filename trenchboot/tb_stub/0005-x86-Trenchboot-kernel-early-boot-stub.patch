@@ -1,4 +1,4 @@
-From 57df222fe01a796483635ddb778a217f0c8aeb35 Mon Sep 17 00:00:00 2001
+From a694197ed98c574fc01e7e8d6683caf5f543e7f2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -6,10 +6,10 @@ Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  46 ++++++++++
- arch/x86/boot/compressed/sl_main.c | 137 ++++++++++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 181 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 365 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/head_64.S |  46 ++++++++
+ arch/x86/boot/compressed/sl_main.c | 137 +++++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 236 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 420 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -235,10 +235,10 @@ index 000000000000..078fcafd3372
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..f0a032b9a126
+index 000000000000..10b12c8224cd
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,236 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -368,6 +368,61 @@ index 000000000000..f0a032b9a126
 +	addl	$8, %eax
 +	/* First 4 bytes of OS to MLE are the zero page */
 +	movl	(%eax), %esi
++
++	/*
++	 * On Intel, the original variable MTRRs and Misc Enable MSR are
++	 * restored on the BSP at early boot.
++	 *
++	 * TODO will the kernel use the BSP settings for the MTRRs and Misc
++	 * Enable MSR to restore the APs too.
++	 */
++	movl	%eax, %edi
++	pushl	%edi
++	addl	$(TXT_OS_MLE_MTRR_STATE), %edi
++	movl	(%edi), %ebx
++	pushl	%ebx /* default_type_reg lo */
++	addl	$4, %edi
++	movl	(%edi), %ebx
++	pushl	%ebx /* default_type_reg hi */
++	addl	$4, %edi
++	movl	(%edi), %ebx /* mtrr_vcnt lo, don't care about hi part */
++	addl	$8, %edi /* now at MTRR pair array */
++	/* Write the variable MTRRs */
++	movl	$(MTRRphysBase0), %ecx
++1:
++	cmpl	$0, %ebx
++	jz	2f
++
++	movl	(%edi), %eax /* MTRRphysBaseX lo */
++	addl	$4, %edi
++	movl	(%edi), %edx /* MTRRphysBaseX hi */
++	wrmsr
++	addl	$4, %edi
++	incl	%ecx
++	movl	(%edi), %eax /* MTRRphysMaskX lo */
++	addl	$4, %edi
++	movl	(%edi), %edx /* MTRRphysMaskX hi */
++	wrmsr
++	addl	$4, %edi
++	incl	%ecx
++
++	decl	%ebx
++	jmp	1b
++2:
++	/* Write the default MTRR register */
++	popl	%edx
++	popl	%eax
++	movl	$(MSR_MTRRdefType), %ecx
++	wrmsr
++
++	/* Return to beginning and write the misc enable msr */
++	popl	%edi
++	addl	$(TXT_OS_MLE_MISC_EN_MSR), %edi
++	movl	(%edi), %eax /* saved_misc_enable_msr lo */
++	addl	$4, %edi
++	movl	(%edi), %eax /* saved_misc_enable_msr hi */
++	movl	$(MSR_IA32_MISC_ENABLE), %ecx
++	wrmsr
 +
 +	/* Clear the TXT error registers for a clean start of day */
 +	movl	$0, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE)

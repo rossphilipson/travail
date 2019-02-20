@@ -1,20 +1,20 @@
-From 2e732706d9d71795b6d5f6d4572e8595c8a2f3ba Mon Sep 17 00:00:00 2001
+From b40b20a3cfbd53dfa95cff679e8f4c1a6a963c2a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 220 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 220 insertions(+)
+ arch/x86/include/asm/slaunch.h | 239 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 239 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..902a754828f6
+index 000000000000..74771fa2944b
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,239 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -73,8 +73,11 @@ index 000000000000..902a754828f6
 +#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
 +
 +#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
++#define TXT_MAX_VARIABLE_MTRRS		32
 +
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
++#define TXT_OS_MLE_MISC_EN_MSR		0x1c
++#define TXT_OS_MLE_MTRR_STATE		0x24
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -95,6 +98,8 @@ index 000000000000..902a754828f6
 +#define SL_FLAG_ARCH_SKINIT	0x00000002
 +#define SL_FLAG_ARCH_TXT	0x00000004
 +
++#define MTRRphysBase0		0x200
++
 +#ifndef __ASSEMBLY__
 +
 +struct txt_mle_join {
@@ -104,9 +109,23 @@ index 000000000000..902a754828f6
 +	u32	entry_point;           /* phys addr */
 +} __attribute__((packed));
 +
++struct txt_mtrr_pair {
++	u64	mtrr_physbase;
++	u64	mtrr_physmask;
++} __attribute__((packed));
++
++struct txt_mtrr_state {
++	u64	default_type_reg;
++	u64	mtrr_vcnt;
++	u64	mtrr_pair[TXT_MAX_VARIABLE_MTRRS];
++} __attribute__((packed));
++
 +struct txt_os_mle_data {
 +	u32	zero_page_addr;
++	u32	version;
 +	u8	msb_key_hash[20];
++	u64	saved_misc_enable_msr;
++	struct	txt_mtrr_state saved_bsp_mtrrs;
 +	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __attribute__((packed));
 +

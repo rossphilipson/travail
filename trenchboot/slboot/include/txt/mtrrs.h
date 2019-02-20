@@ -76,7 +76,7 @@ enum var_mtrr_t {
     MTRR_PHYS_MASK7_MSR = 0x20F
 };
 
-typedef union {
+typedef union __packed {
     uint64_t	raw;
     struct {
         uint64_t vcnt        : 8;    /* num variable MTRR pairs */
@@ -87,7 +87,7 @@ typedef union {
     };
 } mtrr_cap_t;
 
-typedef union {
+typedef union __packed {
     uint64_t	raw;
     struct {
         uint64_t type        : 8;
@@ -98,7 +98,7 @@ typedef union {
     };
 } mtrr_def_type_t;
 
-typedef union {
+typedef union __packed {
     uint64_t	raw;
     struct {
         uint64_t type      : 8;
@@ -108,7 +108,7 @@ typedef union {
     };
 } mtrr_physbase_t;
 
-typedef union {
+typedef union __packed {
     uint64_t	raw;
     struct {
         uint64_t reserved1 : 11;
@@ -118,17 +118,22 @@ typedef union {
     };
 } mtrr_physmask_t;
 
-/* current procs only have 8, so this should hold us for a while */
-#define MAX_VARIABLE_MTRRS      16
+typedef struct __packed {
+    mtrr_physbase_t  mtrr_physbase;
+    mtrr_physmask_t  mtrr_physmask;
+} mtrr_var_pait_t;
 
-typedef struct {
-    mtrr_def_type_t	    mtrr_def_type;
-    unsigned int        num_var_mtrrs;
-    mtrr_physbase_t     mtrr_physbases[MAX_VARIABLE_MTRRS];
-    mtrr_physmask_t     mtrr_physmasks[MAX_VARIABLE_MTRRS];
+/* current procs only have 10, so this should hold us for a while */
+#define MAX_VARIABLE_MTRRS      32
+
+typedef struct __packed {
+    mtrr_def_type_t  mtrr_def_type;
+    uint64_t         num_var_mtrrs;
+    mtrr_var_pait_t  mtrr_var_pair[MAX_VARIABLE_MTRRS];
 } mtrr_state_t;
 
 extern bool set_mtrrs_for_acmod(const acm_hdr_t *hdr);
+extern void save_mtrrs(mtrr_state_t *saved_state);
 extern void set_all_mtrrs(bool enable);
 extern bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type);
 

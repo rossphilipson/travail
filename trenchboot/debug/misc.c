@@ -18,6 +18,8 @@
     }
 
 /* Setup earlyprintk in sl_main() */
+#include "misc.h"
+
 extern char *vidmem;
 extern int vidport;
 extern int lines, cols;
@@ -31,7 +33,7 @@ void sl_main(u8 *bootparams)
 	struct tpm *tpm;
 	int ret;
 
-	boot_params = bootparams;
+	boot_params = (struct boot_params*)bootparams;
 
 	sanitize_boot_params(boot_params);
 
@@ -53,3 +55,35 @@ void sl_main(u8 *bootparams)
 
 	...
 }
+
+static void sl_txt_print_bsp_mtrrs(struct txt_mtrr_state *saved_bsp_mtrrs)
+{
+	u32 i;
+
+	error_putstr("***RJP*** MSR_MTRRdefType:\n");
+	error_puthex(saved_bsp_mtrrs->default_type_reg);
+	error_putstr("\n");
+
+	for (i = 0; i < saved_bsp_mtrrs->mtrr_vcnt; i++) {
+		error_putstr("***RJP*** MTRRphysBase_MSR:\n");
+		error_puthex(saved_bsp_mtrrs->mtrr_physbases[i]);
+		error_putstr("\n");
+		error_putstr("***RJP*** MTRRphysMask_MSR:\n");
+		error_puthex(saved_bsp_mtrrs->mtrr_physmasks[i]);
+		error_putstr("\n");
+	}
+}
+
+/* MTRR print block from kernel/cpu/mtrr/mtrr.c:mtrr_bp_init() */
+	{
+		u32 i;
+		u32 mask_lo, mask_hi, base_lo, base_hi;
+
+		for (i = 0; i < 10; i++)
+		{
+			rdmsr(MTRRphysBase_MSR(i), base_lo, base_hi);
+			rdmsr(MTRRphysMask_MSR(i), mask_lo, mask_hi);
+			printk(KERN_WARNING "***RJP*** base_hi: 0x%x base_lo: 0x%x mask_hi: 0x%x mask_lo: 0x%x\n",
+				base_hi, base_lo, mask_hi, mask_lo);
+		}
+	}

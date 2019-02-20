@@ -8,45 +8,53 @@ Questions:
    turns mem map into e820 on EFI boot)?
    * WRONG The GRUB loaders will have to setup the e820 using the final EFI memmap.
    * Actually the EFI memmap is passed via boot params and Linux handles it.
- - How/where to handle and measure cmdlines for other boot modules?
+ - How/where to handle and measure cmdlines and images for other boot modules?
    * This will happen in the IL security environment before next stages are
      booted.
-   * Using the concept of a custom XBI passed by the GRUB loader that has
-     all the information for booting the real OS.
+   * The module informtaion will come out of the slaunch config.
  - How to pass other modules to IL?
    * This will be done in the custom XBI.
    * Now called the IL Boot Protocol struct.
  - Where to measure other modules?
    * This will be done in the IL security environment (u-root).
+   * The slaunch config and modules will be read by IL sec env.
  - What to do about Runtime Services (not really booting EFI)?
    * TODO
  - TXT: What about the shared page?
-   * TODO (probably just goes away).
+   * It just goes away. See S3 and SEXIT.
  - TXT: What about S3 hooks?
-   * TODO (kicking this can down the road for now).
+   * TODO the best plan is to SEXIT so we don't have to deal with this.
  - TXT: What are we passing in the OS-MLE data?
    * Location of the Zero Page.
+   * TODO add a version for future compat.
    * TODO (this will become known as we go).
  - TXT/SKINIT: Reserving memory regions
    * TODO marks TXT heap, ACM etc as RESERVED. Other bits too?
    * TODO anything needed to be reserverd for SKINIT?
  - SKINIT: What post launch things need to be checked?
- - TXT: Restoring the LAPIC address, do we need to do this?
-   * TODO (so far it looks painful and hacky to do).
- - NMI: Perhaps delaying enabling until after the IDT is in place?
+ - TXT:
+   * TODO Restoring the LAPIC address, do we need to do this?
+     (so far it looks painful and hacky to do).
+ - NMI: Perhaps delaying enabling until after the IDT is in place? No...
    * If we get an NMI it is game over anyway. Just enable early as we are doing.
    * STGI on BSP done in early tb_stub. STGI on APs done in rmpiggy TB stub
  - MCE: Enabling.
    * The kernel takes care of is, do nothing.
  - early_ioremap: some things to consider.
-   * Do we need to make more room in the early fixmap?
-   * Can we map less TXT reg pages?
-   * Should the SMP code use early or late remap?
- - SEXIT:
-   * TODO much to consider here
+   * TODO Do we need to make more room in the early fixmap?
+   * TODO Can we map less TXT reg pages?
+   * TODOShould the SMP code use early or late remap?
  - S5:
    * TODO post launch setup the FADT so SLBOOT does not have access
      to it and being able to shutdown.
+ - Cap PCRs:
+   * TODO Need to do this late, just before kernel runs init.
+   * Should be able to use the real TPM drivers at this point.
+ - MTRRs:
+   * TODO look like we will need to preserve these for TXT
+ - Misc Enable Reg:
+   * TODO maybe also the misc feature register
+   * TODO has to be done on each AP
 
 Stages:
 ---------------------------------------------------------------------
