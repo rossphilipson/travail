@@ -1,20 +1,20 @@
-From 8278af46261b81184861eb30f320b1b54e80ecee Mon Sep 17 00:00:00 2001
+From 2e732706d9d71795b6d5f6d4572e8595c8a2f3ba Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 216 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 216 insertions(+)
+ arch/x86/include/asm/slaunch.h | 220 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 220 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..a7387c564b7e
+index 000000000000..902a754828f6
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,220 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -42,8 +42,8 @@ index 000000000000..a7387c564b7e
 +#define __SL32_CS	0x0008
 +#define __SL32_DS	0x0010
 +
-+#define CPU_AMD			1
-+#define CPU_INTEL		2
++#define SL_CPU_AMD		1
++#define SL_CPU_INTEL		2
 +
 +#define X86_GETSEC_SMCTRL	7
 +#define X86_GETSEC_WAKEUP	8
@@ -72,11 +72,9 @@ index 000000000000..a7387c564b7e
 +#define TXT_CAP_RLP_WAKE_GETSEC		0x0000001
 +#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
 +
-+#define TXT_MAX_EVENT_LOG_SIZE		5*4*1024   /* 4k*5 */
++#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
 +
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
-+#define TXT_OS_MLE_MSB_KEY_HASH		0x4
-+#define TXT_OS_MLE_EVENT_LOG_BUFFER	0x18
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -100,10 +98,16 @@ index 000000000000..a7387c564b7e
 +#ifndef __ASSEMBLY__
 +
 +struct txt_mle_join {
-+	uint32_t	gdt_limit;
-+	uint32_t	gdt_base;
-+	uint32_t	seg_sel;               /* cs (ds, es, ss are seg_sel+8) */
-+	uint32_t	entry_point;           /* phys addr */
++	u32	gdt_limit;
++	u32	gdt_base;
++	u32	seg_sel;               /* cs (ds, es, ss are seg_sel+8) */
++	u32	entry_point;           /* phys addr */
++} __attribute__((packed));
++
++struct txt_os_mle_data {
++	u32	zero_page_addr;
++	u8	msb_key_hash[20];
++	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __attribute__((packed));
 +
 +#include <asm/io.h>

@@ -1,15 +1,15 @@
-From 6ed79d50fde6589d6996b3e58d3b3c2f5a8d9261 Mon Sep 17 00:00:00 2001
+From d5462a8510b181419a6b2f65f72df3dcb3d9920c Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Thu, 18 May 2017 17:48:52 -0400
 Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 178 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 178 insertions(+)
+ arch/x86/kernel/slaunch.c | 172 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 172 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 07730676c1aa..bd53156ff1ca 100644
+index 07730676c1aa..c00477eb88b5 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
 @@ -1,8 +1,10 @@
@@ -43,7 +43,7 @@ index 07730676c1aa..bd53156ff1ca 100644
  /* This should be plenty of room */
  static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
  
-@@ -96,3 +104,173 @@ void slaunch_setup(void)
+@@ -96,3 +104,167 @@ void slaunch_setup(void)
  	else
  		BUG();
  }
@@ -158,16 +158,10 @@ index 07730676c1aa..bd53156ff1ca 100644
 +	}
 +}
 +
-+struct os_mle_data {
-+    uint32_t zero_page_addr;
-+    uint8_t  msb_key_hash[20];
-+    uint8_t  event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
-+} __packed;
-+
 +static void slaunch_intel_evtlog(void)
 +{
 +	void __iomem *heap, *config;
-+	struct os_mle_data *params;
++	struct txt_os_mle_data *params;
 +
 +	config = ioremap(TXT_PUB_CONFIG_REGS_BASE, TXT_NR_CONFIG_PAGES *
 +			 PAGE_SIZE);
@@ -185,7 +179,7 @@ index 07730676c1aa..bd53156ff1ca 100644
 +		return;
 +	}
 +
-+	params = (struct os_mle_data *)txt_os_mle_data_start(heap);
++	params = (struct txt_os_mle_data *)txt_os_mle_data_start(heap);
 +
 +	sl_evtlog.size = TXT_MAX_EVENT_LOG_SIZE;
 +	sl_evtlog.addr = ioremap(*(u64 *)params->event_log_buffer,
