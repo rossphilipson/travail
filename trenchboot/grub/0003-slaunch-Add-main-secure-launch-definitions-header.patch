@@ -1,4 +1,4 @@
-From df917f507e48a7a6c8fdf45faec46c6ff878279b Mon Sep 17 00:00:00 2001
+From f7bbf7e6e93ee49f350e5c14a8cc05c71b183356 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
 Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
@@ -40,7 +40,7 @@ index 78ef05822..04d67011a 100644
  if COND_ia64_efi
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..3977dc926
+index 000000000..84f3ffa0b
 --- /dev/null
 +++ b/include/grub/slaunch.h
 @@ -0,0 +1,50 @@
@@ -70,15 +70,15 @@ index 000000000..3977dc926
 +#include <grub/types.h>
 +#include <grub/i386/linux.h>
 +
-+#define GRUB_TB_BOOTPARAMS_OFFSET	0xcc
++#define GRUB_SL_BOOTPARAMS_OFFSET	0x12c
 +
-+struct grub_trenchboot_info
++struct grub_slaunch_info
 +{
-+  grub_uint32_t tb_entry;   /* Field updated by boot build tool */
-+  grub_uint32_t tb_mle_hdr; /* Field updated by boot build tool */
-+  grub_uint32_t tb_flags;
-+  grub_uint32_t tb_lo_pmr_min;
-+  grub_uint32_t tb_dev_map;
++  grub_uint32_t sl_version;
++  grub_uint32_t sl_entry;   /* Field updated by boot build tool */
++  grub_uint32_t sl_mle_hdr; /* Field updated by boot build tool */
++  grub_uint32_t sl_flags;
++  grub_uint32_t sl_dev_map;
 +} GRUB_PACKED;
 +
 +struct grub_slaunch_params
