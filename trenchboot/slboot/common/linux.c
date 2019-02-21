@@ -486,7 +486,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* Setup the secure launch inforation in the boot params */
     slh->sl_flags = SL_FLAG_ACTIVE;
     slh->sl_flags |= arch;
-    slh->sl_lo_pmr_min = g_min_ram;
+    slh->sl_version = SLAUNCH_INFO_VERSION;
+    printk(TBOOT_DETA"sl_flags addr: %p\n", &(slh->sl_flags));
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;

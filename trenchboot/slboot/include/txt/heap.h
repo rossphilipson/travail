@@ -269,6 +269,7 @@ typedef struct __packed {
     uint8_t      msb_key_hash[20];
     uint64_t     saved_misc_enable_msr; /* saved prior to SENTER */
     mtrr_state_t saved_mtrr_state;      /* saved prior to changes for SINIT */
+    uint64_t     lo_pmr_min;
     uint8_t      event_log_buffer[MAX_EVENT_LOG_SIZE];
 } os_mle_data_t;
 

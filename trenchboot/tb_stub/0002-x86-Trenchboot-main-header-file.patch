@@ -1,20 +1,20 @@
-From 020e49b72ea0a119c38c9dbc4441b919df91dd37 Mon Sep 17 00:00:00 2001
+From 88fa923817c41ec8a136127ad391b5e622d7366a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 244 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 244 insertions(+)
+ arch/x86/include/asm/slaunch.h | 245 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 245 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..c01202d891f4
+index 000000000000..6b4c25624968
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,245 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -93,8 +93,8 @@ index 000000000000..c01202d891f4
 +#define TXT_SLERROR_MTRR_INV_MASK	0xc0008008
 +#define TXT_SLERROR_MSR_INV_MISC_EN	0xc0008009
 +
-+#define SLAUNCH_INFO_OFFSET	0x0cc
-+#define SL_FLAGS_OFFSET		0x8
++#define SLAUNCH_INFO_VERSION	1
++#define SLAUNCH_INFO_OFFSET	0x12c
 +
 +#define BP_CMD_LINE_PTR		0x228
 +#define BP_CMDLINE_SIZE		0x238
@@ -131,6 +131,7 @@ index 000000000000..c01202d891f4
 +	u8	msb_key_hash[20];
 +	u64	saved_misc_enable_msr;
 +	struct	txt_mtrr_state saved_bsp_mtrrs;
++	u64	lo_pmr_min;
 +	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __attribute__((packed));
 +
