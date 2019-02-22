@@ -1,20 +1,20 @@
-From 0ec257f8f0bba7f6ee2be1b5d950c0e9bb03cff5 Mon Sep 17 00:00:00 2001
+From 3beb6781b740844daa105f26420a5ef910d843fb Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 251 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 251 insertions(+)
+ arch/x86/include/asm/slaunch.h | 254 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 254 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..e71f1b9109b6
+index 000000000000..7296f94749eb
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,254 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -97,6 +97,9 @@ index 000000000000..e71f1b9109b6
 +#define TXT_SLERROR_MTRR_INV_BASE	0xc0008007
 +#define TXT_SLERROR_MTRR_INV_MASK	0xc0008008
 +#define TXT_SLERROR_MSR_INV_MISC_EN	0xc0008009
++#define TXT_SLERROR_SLAUNCH_INACTIVE	0xc000800a
++#define TXT_SLERROR_SLAUNCH_NOARCH	0xc000800b
++#define TXT_SLERROR_SLAUNCH_INV_VER	0xc000800c
 +
 +#define SLAUNCH_INFO_VERSION	1
 +#define SLAUNCH_INFO_OFFSET	0x12c
