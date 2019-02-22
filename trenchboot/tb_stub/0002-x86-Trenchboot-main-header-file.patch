@@ -1,20 +1,20 @@
-From 88fa923817c41ec8a136127ad391b5e622d7366a Mon Sep 17 00:00:00 2001
+From 0ec257f8f0bba7f6ee2be1b5d950c0e9bb03cff5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 245 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 245 insertions(+)
+ arch/x86/include/asm/slaunch.h | 251 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 251 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..6b4c25624968
+index 000000000000..e71f1b9109b6
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,251 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -74,6 +74,11 @@ index 000000000000..6b4c25624968
 +
 +#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
 +#define TXT_MAX_VARIABLE_MTRRS		32
++
++#define TXT_BIOS_DATA_TABLE		1
++#define TXT_OS_MLE_DATA_TABLE		2
++#define TXT_OS_SINIT_DATA_TABLE		3
++#define TXT_SINIT_MLE_DATA_TABLE	4
 +
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
 +#define TXT_OS_MLE_MISC_EN_MSR		0x1c
@@ -255,6 +260,7 @@ index 000000000000..6b4c25624968
 +}
 +
 +void slaunch_setup(void);
++void __iomem *txt_early_get_heap_table(u32 type, u32 bytes);
 +struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar);
 +
 +#endif

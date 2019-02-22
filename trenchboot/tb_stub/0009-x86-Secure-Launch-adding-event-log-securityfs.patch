@@ -1,15 +1,15 @@
-From 7100350fbb5fe2db90003ad18245321513aa5ad1 Mon Sep 17 00:00:00 2001
+From da9ea205d6f11a6352317e4e80292dfa2f9bdf69 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
-Date: Thu, 18 May 2017 17:48:52 -0400
+Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 172 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 172 insertions(+)
+ arch/x86/kernel/slaunch.c | 243 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 243 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 07730676c1aa..c00477eb88b5 100644
+index 730f5050c50f..341215cd9145 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
 @@ -1,8 +1,10 @@
@@ -34,19 +34,79 @@ index 07730676c1aa..c00477eb88b5 100644
  #include <asm/segment.h>
  #include <asm/boot.h>
  #include <asm/msr.h>
-@@ -30,6 +36,8 @@
- #include <asm/setup.h>
- #include <asm/slaunch.h>
- 
-+#define PREFIX	"SLAUNCH: "
-+
- /* This should be plenty of room */
- static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
- 
-@@ -96,3 +104,167 @@ void slaunch_setup(void)
+@@ -148,3 +154,240 @@ void slaunch_setup(void)
  	else
  		BUG();
  }
++
++/* This should be plenty of room */
++static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
++
++struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar)
++{
++	if (memcmp(txt_dmar, "DMAR", 4))
++		return dmar;
++	return (struct acpi_table_header*)(&txt_dmar[0]);
++}
++
++static void slaunch_copy_dmar_table(void)
++{
++	void __iomem *txt;
++	void __iomem *heap;
++	void __iomem *sinit_mle_data;
++	u32 dmar_offset, dmar_size;
++	u64 base, size;
++
++	memset(&txt_dmar, 0, PAGE_SIZE);
++
++	txt = ioremap(TXT_PRIV_CONFIG_REGS_BASE,
++		      TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	if (!txt) {
++		printk(KERN_ERR PREFIX
++		       "Error ioremap of TXT registers\n");
++		/* TODO add TPM info log entry */
++		return;
++	}
++
++	memcpy_fromio(&base, txt + TXTCR_HEAP_BASE, sizeof(u64));
++	if (unlikely(base == ~0ULL)) {
++		printk(KERN_ERR PREFIX "Error invalid TXT heap base\n");
++		/* TODO add TPM info log entry */
++		iounmap(txt);
++		return;
++	}
++
++	memcpy_fromio(&size, txt + TXTCR_HEAP_SIZE, sizeof(u64));
++	if (unlikely(size == ~0ULL)) {
++		printk(KERN_ERR PREFIX "Error invalid TXT heap size\n");
++		/* TODO add TPM info log entry */
++		iounmap(txt);
++		return;
++	}
++
++	iounmap(txt);
++
++	heap = ioremap(base, size);
++	if (unlikely(!heap)) {
++		printk(KERN_ERR PREFIX "Error ioremap TXT heap failed\n");
++		/* TODO add TPM info log entry */
++		return;
++	}
++
++	sinit_mle_data = txt_sinit_mle_data_start(heap);
++	dmar_size = readl(sinit_mle_data + TXT_SINIT_MLE_DMAR_TABLE_SIZE);
++	dmar_offset = readl(sinit_mle_data + TXT_SINIT_MLE_DMAR_TABLE_OFFSET);
++
++	if (unlikely(dmar_size > PAGE_SIZE)) {
++		/* TODO add TPM info log entry */
++		iounmap(heap);
++		return;
++	}
++
++	memcpy_fromio(&txt_dmar[0], (void*)(sinit_mle_data + dmar_offset),
++		      dmar_size);
++	iounmap(heap);
++}
 +
 +struct memfile {
 +	char *name;
@@ -193,8 +253,12 @@ index 07730676c1aa..c00477eb88b5 100644
 +
 +static int __init slaunch_late_init(void)
 +{
-+	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
++	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT) {
++		/* Make a copy of the TXT heap provided DMAR for IOMMU later */
++		slaunch_copy_dmar_table();
++		/* Any errors from previous call will go in event log */
 +		slaunch_intel_evtlog();
++	}
 +	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
 +		slaunch_amd_evtlog();
 +	else
