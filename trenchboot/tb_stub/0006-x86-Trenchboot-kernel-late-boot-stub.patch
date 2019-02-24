@@ -1,4 +1,4 @@
-From 5d0c4bee7e5b5119aa9fc4d86bca7016b92459b0 Mon Sep 17 00:00:00 2001
+From 715422ec7b4e9572afb6247cab0f270a7c38dacb Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/9] x86: Trenchboot kernel late boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 ++
- arch/x86/kernel/slaunch.c | 150 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 148 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 ++
- 4 files changed, 161 insertions(+)
+ 4 files changed, 159 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -49,10 +49,10 @@ index b4866badb235..b359129cb408 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..730f5050c50f
+index 000000000000..7321f9ff1836
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,148 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -141,9 +141,7 @@ index 000000000000..730f5050c50f
 +			/* TODO add TPM info log entry */
 +			return NULL;
 +		}
-+
-+		memcpy_fromio(&size, heap, sizeof(u64));
-+		offset += size;
++		memcpy_fromio(&offset, heap, sizeof(u64));
 +		early_iounmap(heap, sizeof(u64));
 +	}
 +
