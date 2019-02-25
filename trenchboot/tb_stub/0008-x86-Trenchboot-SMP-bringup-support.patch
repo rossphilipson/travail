@@ -1,4 +1,4 @@
-From 104c401339a160312ad5e1e37b76e6edb03f4241 Mon Sep 17 00:00:00 2001
+From 17246230fdb9155081a042f0495098ec89d574cf Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
@@ -8,30 +8,29 @@ the APs in very different states post launch.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/realmode.h      |   5 ++
- arch/x86/kernel/smpboot.c            | 126 +++++++++++++++++++++++++++++++++++
- arch/x86/realmode/rm/header.S        |   5 ++
- arch/x86/realmode/rm/trampoline_64.S |  68 +++++++++++++++++++
- 4 files changed, 204 insertions(+)
+ arch/x86/include/asm/realmode.h          |  3 +++
+ arch/x86/kernel/smpboot.c                | 27 +++++++++++++++++++++++++++
+ arch/x86/realmode/rm/header.S            |  3 +++
+ arch/x86/realmode/rm/trampoline_64.S     |  9 +++++++++
+ arch/x86/realmode/rm/trampoline_common.S |  4 ++++
+ 5 files changed, 46 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
-index 63b3393bd98e..e26ff1cc50eb 100644
+index 63b3393bd98e..b7f28f25389b 100644
 --- a/arch/x86/include/asm/realmode.h
 +++ b/arch/x86/include/asm/realmode.h
-@@ -32,6 +32,11 @@ struct real_mode_header {
+@@ -32,6 +32,9 @@ struct real_mode_header {
  #endif
  	/* APM/BIOS reboot */
  	u32	machine_real_restart_asm;
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
-+	u32	sl_trampoline_start32;
-+	u32	tr_gdt;
-+	u32	tr_gdt_end;
++	u32	sl_flag_arch;
 +#endif
  #ifdef CONFIG_X86_64
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..58e74831e87b 100644
+index f02ecaf97904..4cc4be59b446 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -42,184 +41,69 @@ index f02ecaf97904..58e74831e87b 100644
  
  /* representing HT siblings of each logical CPU */
  DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
-@@ -740,6 +741,14 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
+@@ -728,6 +729,10 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
+ {
+ 	unsigned long send_status = 0, accept_status = 0;
+ 	int maxlvt, num_starts, j;
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	volatile u32 *sl_flag_arch =
++		(volatile u32 *) __va(real_mode_header->sl_flag_arch);
++#endif
+ 
+ 	maxlvt = lapic_get_maxlvt();
+ 
+@@ -740,6 +745,24 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
  		apic_read(APIC_ESR);
  	}
  
++#ifdef CONFIG_SECURE_LAUNCH_STUB
 +	/*
-+	 * Only here after a measured launch via SKINIT on AMD. SKINIT
-+	 * returns with INIT asserted on all the APs so do not send
-+	 * INIT here. The rest would be the normal SIPI process and then
-+	 * starting the AP in the realmode blob code.
++	 * On AMD, SKINIT returns with INIT asserted on all the APs so do
++	 * not send #INIT in this case. On Intel, the APs are woken earlier
++	 * in the Secure Launch process and put in the halt state so they
++	 * are waiting for an #INIT IPI
++	 *
++	 * The rest would be the normal SIPI process and then starting the
++	 * AP in the realmode blob code.
 +	 */
-+#ifndef CONFIG_SECURE_LAUNCH_STUB
++	if (!(boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)) {
++		*sl_flag_arch = SL_FLAG_ARCH_SKINIT;
++		goto skip_init;
++	}
++	else
++		*sl_flag_arch = SL_FLAG_ARCH_TXT;
++#endif
 +
  	pr_debug("Asserting INIT\n");
  
  	/*
-@@ -756,6 +765,8 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
+@@ -756,6 +779,10 @@ wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_eip)
  
  	udelay(init_udelay);
  
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++skip_init:
 +#endif
 +
  	pr_debug("Deasserting INIT\n");
  
  	/* Target chip */
-@@ -885,6 +896,95 @@ static int wakeup_cpu0_nmi(unsigned int cmd, struct pt_regs *regs)
- 	return NMI_DONE;
- }
- 
-+#ifdef CONFIG_SECURE_LAUNCH_STUB
-+
-+static atomic_t first_ap_only;
-+
-+static int
-+wakeup_cpu_via_intel_txt(int cpu)
-+{
-+	static struct txt_mle_join mle_join = {0};
-+	void __iomem *heap;
-+	void __iomem *txt;
-+	void __iomem *wake_page;
-+	u64 wake_paddr;
-+	u64 join;
-+	u32 caps;
-+
-+	/*
-+	 * For TXT, all APs will get woken up at the same time so this wakeup
-+	 * code only runs on the first AP CPU it is called for.
-+	 */
-+	if (atomic_read(&first_ap_only) == 1)
-+		return 0;
-+
-+	atomic_set(&first_ap_only, 1);
-+
-+	/*
-+	 * Initialize MLE join structure. Get start IP and GDT info from
-+	 * rmpiggy to use in TXT AP startup
-+	 */
-+	mle_join.entry_point = real_mode_header->sl_trampoline_start32;
-+	mle_join.seg_sel = __KERNEL32_CS;
-+	mle_join.gdt_base = real_mode_header->tr_gdt;
-+	mle_join.gdt_limit = real_mode_header->tr_gdt -
-+		    real_mode_header->tr_gdt - 1;
-+
-+	txt = early_ioremap(TXT_PRIV_CONFIG_REGS_BASE,
-+			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+	if (!txt) {
-+		printk(KERN_ERR
-+		       "Error SMP early_ioremap of TXT registers\n");
-+		return -1;
-+	}
-+
-+	join = virt_to_phys(&mle_join);
-+	memcpy_toio(txt + TXTCR_MLE_JOIN, &join, sizeof(u64));
-+	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+
-+
-+	/* Fish around in the TXT heap for capabilities/AP startup values */
-+	heap = txt_early_get_heap_table(TXT_OS_SINIT_DATA_TABLE,
-+					TXT_OS_SINIT_CAPABILITIES + 4);
-+	if (unlikely(!heap)) {
-+		printk(KERN_ERR
-+		       "Error SMP early_ioremap of TXT OS-SINIT heap\n");
-+		return -1;
-+	}
-+
-+	caps = readl(heap + TXT_OS_SINIT_CAPABILITIES);
-+	early_iounmap(heap, TXT_OS_SINIT_CAPABILITIES + 4);
-+
-+	heap = txt_early_get_heap_table(TXT_SINIT_MLE_DATA_TABLE,
-+					TXT_SINIT_MLE_RLP_WAKEUP_ADDR + 4);
-+	if (unlikely(!heap)) {
-+		printk(KERN_ERR
-+		       "Error SMP early_ioremap of TXT SINIT-MLE heap\n");
-+		return -1;
-+	}
-+
-+	wake_paddr = readl(heap + TXT_SINIT_MLE_RLP_WAKEUP_ADDR);
-+	early_iounmap(heap, TXT_SINIT_MLE_RLP_WAKEUP_ADDR + 4);
-+
-+	/* Usa appropriate startup mechanism specified by the capabilities */
-+	if (caps & TXT_CAP_RLP_WAKE_MONITOR) {
-+		wake_page = early_ioremap((wake_paddr & PAGE_MASK), PAGE_SIZE);
-+		if (!wake_page) {
-+			printk(KERN_ERR
-+			       "Error SMP early_ioremap of TXT wake MONITOR\n");
-+			return -1;
-+		}
-+
-+		writel(0x1, wake_page + (wake_paddr & (PAGE_SIZE - 1)));
-+		early_iounmap(wake_page, PAGE_SIZE);
-+	}
-+	else
-+		txt_getsec_wakeup();
-+
-+	return 0;
-+}
-+#endif
-+
- /*
-  * Wake up AP by INIT, INIT, STARTUP sequence.
-  *
-@@ -1010,6 +1110,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
- 	cpumask_clear_cpu(cpu, cpu_initialized_mask);
- 	smp_mb();
- 
-+#ifndef CONFIG_SECURE_LAUNCH_STUB
-+
- 	/*
- 	 * Wake up a CPU in difference cases:
- 	 * - Use the method in the APIC driver if it's defined
-@@ -1022,6 +1124,30 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
- 		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
- 						     cpu0_nmi_registered);
- 
-+#else
-+
-+	/*
-+	 * Halting and restarting the BSP is not supported in the Intermediate
-+	 * Loader. Also this code path should not be taken if Secure Launch is
-+	 * not active.
-+	 */
-+	BUG_ON(cpu == 0);
-+	BUG_ON(!(boot_params.slaunch_info.sl_flags & SL_FLAG_ACTIVE));
-+
-+	/*
-+	 * Custom APIC driver configuration is not currently supported on AMD
-+	 * and on Intel the startup is totally different.
-+	 */
-+	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
-+		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
-+						     cpu0_nmi_registered);
-+	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
-+		boot_error = wakeup_cpu_via_intel_txt(cpu);
-+	else
-+		BUG();
-+
-+#endif
-+
- 	if (!boot_error) {
- 		/*
- 		 * Wait 10s total for first sign of life from AP
 diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
-index 30b0d30d861a..eaefc007f242 100644
+index 30b0d30d861a..8c4e922e43eb 100644
 --- a/arch/x86/realmode/rm/header.S
 +++ b/arch/x86/realmode/rm/header.S
-@@ -31,6 +31,11 @@ GLOBAL(real_mode_header)
+@@ -31,6 +31,9 @@ GLOBAL(real_mode_header)
  #endif
  	/* APM/BIOS reboot */
  	.long	pa_machine_real_restart_asm
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
-+	.long	pa_sl_trampoline_start32
-+	.long	pa_tr_gdt
-+	.long	pa_tr_gdt_end
++	.long	pa_sl_flag_arch
 +#endif
  #ifdef CONFIG_X86_64
  	.long	__KERNEL32_CS
  #endif
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..b1798c622ef8 100644
+index 24bb7598774e..634c4edb92e2 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,7 @@
@@ -230,94 +114,33 @@ index 24bb7598774e..b1798c622ef8 100644
  #include "realmode.h"
  
  	.text
-@@ -42,6 +43,11 @@ ENTRY(trampoline_start)
+@@ -42,6 +43,14 @@ ENTRY(trampoline_start)
  	cli			# We should be safe anyway
  	wbinvd
  
-+	# Only here in RM code on AMD platforms post SKINIT launch
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
++	# On AMD post SKINIT the GIF needs to be set
++	cmpl	$(SL_FLAG_ARCH_SKINIT), sl_flag_arch
++	jnz	1f
 +	stgi
++1:
 +#endif
 +
  	LJMPW_RM(1f)
  1:
  	mov	%cs, %ax	# Code and data in the same place
-@@ -86,6 +92,65 @@ no_longmode:
- 	.section ".text32","ax"
- 	.code32
- 	.balign 4
-+#ifdef CONFIG_SECURE_LAUNCH_STUB
-+ENTRY(sl_trampoline_start32)
-+	/*
-+	 * Entry vectro for AP startup from TXT. On entry:
-+	 *  - Protected mode
-+	 *  - Paging disabled
-+	 *  - %ebx has linear address of sl_trampoline_start
-+	 *  - Only %cs is valid
-+	 *  - MCE/SMI/NMI are all disabled
-+	 * For the rest of the state of the world, see the Intel TXT manual
-+	 */
-+	cli
-+	cld
-+
-+	/*
-+	 * The %ebx provided is not terribly useful since it is the physical
-+	 * address of tb_trampoline_start and not the base of the image.
-+	 * Use pa_real_mode_base, which is fixed up, to get a run time
-+	 * base register to use for offsets to location.
-+	 */
-+	movl	$pa_real_mode_base, %ebx
-+
-+	lgdt	tr_gdt(%ebx)
-+	lidt	tr_idt(%ebx)
-+
-+	/* Going to use the real mode stack since it is there */
-+	movl	rm_stack_end(%ebx), %esp
-+
-+	/* Enable SMI with GETSET[SMCTRL] */
-+	pushl	%ebx
-+	xorl	%ebx, %ebx
-+	movl	$(X86_GETSEC_SMCTRL), %eax
-+	.byte 	0x0f, 0x37 /* GETSEC opcode */
-+	popl	%ebx
-+
-+	/* Enable NMI using an IRET-to-self */
-+	leal	.Lnmi_enabled(%ebx), %eax
-+	pushfl
-+	pushl	$(__KERNEL32_CS)
-+	pushl	%eax
-+	iret
-+
-+.Lnmi_enabled:
-+	addl	$12, %esp
-+
-+	movw	$__KERNEL_DS, %dx	# Data segment descriptor
-+
-+	/*
-+	 * This may seem a little odd but this is what %esp would have had in
-+	 * it on the jmp from real mode because all real mode fixups were done
-+	 * via the code segment.
-+	 */
-+	movl	$rm_stack_end, %esp
-+
-+	/* Jump to where the 16b code would have jumped */
-+	ljmpl	$__KERNEL32_CS, $pa_startup_32
-+#endif
-+
-+	.balign 4
- ENTRY(startup_32)
- 	movl	%edx, %ss
- 	addl	$pa_real_mode_base, %esp
-@@ -160,6 +225,9 @@ tr_gdt:
- 	.quad	0x00cf9b000000ffff	# __KERNEL32_CS
- 	.quad	0x00af9b000000ffff	# __KERNEL_CS
- 	.quad	0x00cf93000000ffff	# __KERNEL_DS
-+#ifdef CONFIG_SECURE_LAUNCH_STUB
-+	.globl tr_gdt_end
-+#endif
- tr_gdt_end:
- 
+diff --git a/arch/x86/realmode/rm/trampoline_common.S b/arch/x86/realmode/rm/trampoline_common.S
+index 7c706772ab59..1764a9d11594 100644
+--- a/arch/x86/realmode/rm/trampoline_common.S
++++ b/arch/x86/realmode/rm/trampoline_common.S
+@@ -6,3 +6,7 @@ tr_idt: .fill 1, 6, 0
  	.bss
+ 	.balign	4
+ GLOBAL(trampoline_status)	.space	4
++
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++GLOBAL(sl_flag_arch)		.space	4
++#endif
 -- 
 2.13.6
 
