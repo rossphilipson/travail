@@ -1,4 +1,4 @@
-From 3beb6781b740844daa105f26420a5ef910d843fb Mon Sep 17 00:00:00 2001
+From 9f6ac16f2dd6aef13867df27abe8ad8710fc324a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
@@ -11,7 +11,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..7296f94749eb
+index 000000000000..b2abc418dd20
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
 @@ -0,0 +1,254 @@
@@ -45,8 +45,8 @@ index 000000000000..7296f94749eb
 +#define SL_CPU_AMD		1
 +#define SL_CPU_INTEL		2
 +
-+#define X86_GETSEC_SMCTRL	7
-+#define X86_GETSEC_WAKEUP	8
++#define TXT_X86_GETSEC_SMCTRL	7
++#define TXT_X86_GETSEC_WAKEUP	8
 +
 +#define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
 +#define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
@@ -83,6 +83,7 @@ index 000000000000..7296f94749eb
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
 +#define TXT_OS_MLE_MISC_EN_MSR		0x1c
 +#define TXT_OS_MLE_MTRR_STATE		0x24
++#define TXT_OS_MLE_POST_LAUNCH_EBP	0x23c
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -100,6 +101,9 @@ index 000000000000..7296f94749eb
 +#define TXT_SLERROR_SLAUNCH_INACTIVE	0xc000800a
 +#define TXT_SLERROR_SLAUNCH_NOARCH	0xc000800b
 +#define TXT_SLERROR_SLAUNCH_INV_VER	0xc000800c
++
++#define TXT_MAX_CPUS			512
++#define TXT_BOOT_STACK_SIZE		24
 +
 +#define SLAUNCH_INFO_VERSION	1
 +#define SLAUNCH_INFO_OFFSET	0x12c
@@ -140,6 +144,7 @@ index 000000000000..7296f94749eb
 +	u64	saved_misc_enable_msr;
 +	struct	txt_mtrr_state saved_bsp_mtrrs;
 +	u64	lo_pmr_min;
++	u64	post_launch_ebp;
 +	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __attribute__((packed));
 +
@@ -255,11 +260,6 @@ index 000000000000..7296f94749eb
 +	return heap + txt_bios_data_size(heap) +
 +		txt_os_mle_data_size(heap) +
 +		txt_sinit_mle_data_size(heap) + sizeof(u64);
-+}
-+
-+static inline void txt_getsec_wakeup(void)
-+{
-+	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a"(X86_GETSEC_WAKEUP));
 +}
 +
 +void slaunch_setup(void);
