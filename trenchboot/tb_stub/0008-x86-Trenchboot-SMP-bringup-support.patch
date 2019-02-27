@@ -66,7 +66,7 @@ index f02ecaf97904..4cc4be59b446 100644
 +	 * The rest would be the normal SIPI process and then starting the
 +	 * AP in the realmode blob code.
 +	 */
-+	if (!(boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)) {
++	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT) {
 +		*sl_flag_arch = SL_FLAG_ARCH_SKINIT;
 +		goto skip_init;
 +	}
