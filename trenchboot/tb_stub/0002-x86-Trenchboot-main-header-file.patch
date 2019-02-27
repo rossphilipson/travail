@@ -1,4 +1,4 @@
-From e87833397de8288f54c6d4c8d92103f6762b9060 Mon Sep 17 00:00:00 2001
+From 3b9bc40e0f8abcb8f9886bf6d2ad6c57b5fd8353 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
@@ -11,7 +11,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 0000000..b6921a7
+index 000000000000..7c7557b37814
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
 @@ -0,0 +1,258 @@
@@ -69,8 +69,8 @@ index 0000000..b6921a7
 +#define TXTCR_CMD_NO_SECRETS		0x08e8
 +#define TXTCR_E2STS			0x08f0
 +
-+#define TXT_CAP_RLP_WAKE_GETSEC		0x0000001
-+#define TXT_CAP_RLP_WAKE_MONITOR	0x0000002
++#define TXT_CAP_RLP_WAKE_GETSEC		0
++#define TXT_CAP_RLP_WAKE_MONITOR	1
 +
 +#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
 +#define TXT_MAX_VARIABLE_MTRRS		32
@@ -274,5 +274,5 @@ index 0000000..b6921a7
 +
 +#endif /* _ASM_X86_SLAUNCH_H */
 -- 
-2.1.4
+2.13.6
 

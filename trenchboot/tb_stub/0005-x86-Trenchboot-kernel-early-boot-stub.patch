@@ -1,4 +1,4 @@
-From 8ae8a70d0cac67de274a934f6d363d69c6af8636 Mon Sep 17 00:00:00 2001
+From 55dc71350b85d1e4c113d2593346081adbcccb87 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -8,13 +8,13 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 +++++
  arch/x86/boot/compressed/sl_main.c | 249 +++++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 391 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 687 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 393 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 689 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 1a089f7..50f1ff4 100644
+index 1a089f7f7f79..50f1ff478db0 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -27,7 +27,7 @@ index 1a089f7..50f1ff4 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 6403789..4a0c76e 100644
+index 64037895b085..4a0c76ecce1a 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -92,7 +92,7 @@ index 6403789..4a0c76e 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 0000000..f965b72
+index 000000000000..f965b7211a57
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,249 @@
@@ -347,10 +347,10 @@ index 0000000..f965b72
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 0000000..b530e70
+index 000000000000..7b43dec2e3c6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,391 @@
+@@ -0,0 +1,393 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -459,10 +459,10 @@ index 0000000..b530e70
 +	jz	.Ldo_amd
 +
 +	/* Know it is Intel */
-+	movl	$(SL_CPU_INTEL), (sl_cpu_type)(%ebp)
++	movl	$(SL_CPU_INTEL), sl_cpu_type(%ebp)
 +
 +	/* Increment CPU count for BSP */
-+	incl	(sl_txt_cpu_count)(%ebp)
++	incl	sl_txt_cpu_count(%ebp)
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
 +	xorl	%ebx, %ebx
@@ -508,7 +508,7 @@ index 0000000..b530e70
 +
 +.Ldo_amd:
 +	/* Know it is AMD */
-+	movl	$(SL_CPU_AMD), (sl_cpu_type)(%ebp)
++	movl	$(SL_CPU_AMD), sl_cpu_type(%ebp)
 +
 +	/*
 +	 * Disable maskable interrups in EFLAGS then enable global interrupts
@@ -555,23 +555,24 @@ index 0000000..b530e70
 +	movl	%eax, %edi
 +
 +	/* Lock and get our stack index */
-+	xorl	%ecx, %ecx
-+	incl	%ecx
++	movl	$1, %ecx
 +.Lspin:
 +	xorl	%eax, %eax
 +	lock cmpxchgl	%ecx, sl_txt_spin_lock(%ebp)
 +	jnz	.Lspin
 +
-+	movl	sl_txt_stack_index(%ebp), %eax
++	leal	sl_txt_stack_index(%ebp), %ebx
++	movl	(%ebx), %eax
 +	incl	%eax
-+	movl	%eax, sl_txt_stack_index(%ebp)
++	movl	%eax, (%ebx)
 +
++	/* Unlock */
 +	movl	$0, sl_txt_spin_lock(%ebp)
 +
 +	/* Load our AP stack */
 +	movl	$(TXT_BOOT_STACK_SIZE), %edx
 +	mull	%edx
-+	movl	sl_stacks_end(%ebp), %edx
++	leal	sl_stacks_end(%ebp), %edx
 +	subl	%eax, %edx
 +	movl	%edx, %esp
 +
@@ -594,7 +595,7 @@ index 0000000..b530e70
 +	call	sl_txt_load_regs
 +
 +	/* Basically done, increment the CPU count and halt */
-+	lock incl	(sl_txt_cpu_count)(%ebp)
++	lock incl	sl_txt_cpu_count(%ebp)
 +
 +	hlt
 +ENDPROC(sl_txt_ap_entry)
@@ -703,6 +704,7 @@ index 0000000..b530e70
 +	jz	2f
 +	pause
 +	jmp	1b
++
 +2:
 +	ret
 +ENDPROC(sl_txt_wake_aps)
@@ -740,8 +742,8 @@ index 0000000..b530e70
 +	/* Small stacks for BSP and APs to work with */
 +	.balign 4
 +sl_stacks:
-+	.fill TXT_MAX_CPUS, TXT_BOOT_STACK_SIZE, 0
++	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
 -- 
-2.1.4
+2.13.6
 
