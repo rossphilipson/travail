@@ -1,20 +1,20 @@
-From 9f6ac16f2dd6aef13867df27abe8ad8710fc324a Mon Sep 17 00:00:00 2001
+From e87833397de8288f54c6d4c8d92103f6762b9060 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 254 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 254 insertions(+)
+ arch/x86/include/asm/slaunch.h | 258 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 258 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..b2abc418dd20
+index 0000000..b6921a7
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,258 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -80,6 +80,7 @@ index 000000000000..b2abc418dd20
 +#define TXT_OS_SINIT_DATA_TABLE		3
 +#define TXT_SINIT_MLE_DATA_TABLE	4
 +
++#define TXT_BIOS_NUM_LOG_PROCS		0x18
 +#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
 +#define TXT_OS_MLE_MISC_EN_MSR		0x1c
 +#define TXT_OS_MLE_MTRR_STATE		0x24
@@ -88,6 +89,9 @@ index 000000000000..b2abc418dd20
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
 +#define TXT_SINIT_MLE_DMAR_TABLE_OFFSET	0x8c
++
++#define TXT_SINIT_CAPS_WAKE_GETSEC	0
++#define TXT_SINIT_CAPS_WAKE_MONITOR	1
 +
 +#define TXT_SLERROR_GENERIC		0xc0008001
 +#define TXT_SLERROR_TPM_INIT		0xc0008002
@@ -270,5 +274,5 @@ index 000000000000..b2abc418dd20
 +
 +#endif /* _ASM_X86_SLAUNCH_H */
 -- 
-2.13.6
+2.1.4
 
