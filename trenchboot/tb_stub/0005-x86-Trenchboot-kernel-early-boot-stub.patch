@@ -598,7 +598,7 @@ index 0000000..d7d2ec3
 +	lock incl	sl_txt_cpu_count(%ebp)
 +
 +	movl	$(MSR_IA32_MISC_ENABLE), %ecx
-+	wrmsr
++	rdmsr
 +
 +	test	$(1 << MSR_IA32_MISC_ENABLE_MWAIT_BIT), %eax
 +	jz	.Lhalt
