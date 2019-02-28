@@ -1,4 +1,4 @@
-From 425f7fa8917c057b884f3016edb228ca26665045 Mon Sep 17 00:00:00 2001
+From 2b39445a0a91bea73a1e9d567dd32efde54feee6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 +++++
  arch/x86/boot/compressed/sl_main.c | 249 ++++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 410 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 706 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 411 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 707 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -347,10 +347,10 @@ index 0000000..f965b72
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 0000000..d7d2ec3
+index 0000000..fecf813
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,410 @@
+@@ -0,0 +1,411 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -594,11 +594,12 @@ index 0000000..d7d2ec3
 +	/* Fixup MTRRs and misc enable MSR on APs too */
 +	call	sl_txt_load_regs
 +
-+	/* Basically done, increment the CPU count and wait for INIT */
-+	lock incl	sl_txt_cpu_count(%ebp)
-+
++	/* Read MSR to determine if it will be MWAIT or HLT */
 +	movl	$(MSR_IA32_MISC_ENABLE), %ecx
 +	rdmsr
++
++	/* Basically done, increment the CPU count and wait for INIT */
++	lock incl	sl_txt_cpu_count(%ebp)
 +
 +	test	$(1 << MSR_IA32_MISC_ENABLE_MWAIT_BIT), %eax
 +	jz	.Lhalt
