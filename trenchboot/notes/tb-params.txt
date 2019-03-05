@@ -26,35 +26,14 @@ where the EFI map is turned into the GRUB map after EBS.
 
 -- Trenchboot Bootparams --
 
-The following specific Trenchboot values need to be setup in the boot params
-(the slaunch_info struct layout can be seen in
-arch/x86/include/uapi/asm/bootparam.h):
-
-sl_entry: This is actually filled in by the build tool at IL kernel build time
-          and is read by the loader to know where the protected mode secure
-          launch stub entry point location is. It is  used to calculate
-          code32_start.
+Trenchboot will have a single boot param:
+(arch/x86/include/uapi/asm/bootparam.h):
 
 sl_mle_hdr: This is actually filled in by the build tool at IL kernel build
             time and is read by the loader to know where the TXT MLE header
-            within the MLE. GRUB must fill in a number of values in this table
-            (see below).
-
-sl_lo_pmr_min: Special value for setting up the low PMR. This is TXT only and
-               is setup by the loader.
-
-sl_dev_map: The DEV map passed to the IL kernel by the LZ.
-
-sl_flags: The loader should set the late launch architecture and the active flag.
-
-sl_config_addr: Physical address of the JSON config file that is passed to the
-                IL kernel containing all boot information for starting the
-                real kernel. Setup by the loader.
-
-sl_config_size: Size of the JSON config file that is passed to the IL kernel.
-                Setup by the loader.
-
-The other values are used elsewhere, e.g. the landing zone fills in tb_dev_map.
+            within the MLE. GRUB must fill in a number of values in this
+            header. This header is also used by SKINIT (see below for both
+            usages).
 
 -- TXT Heap Params --
 
@@ -67,6 +46,20 @@ zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
 
 msb_key_hash: TODO Daniel has to fill this in. Setup by the loader.
 
+saved_misc_enable_msr: 64 bit saved value of the misc enable MSR that must
+                       be restored in early stub. Setup by the launch code.
+
+saved_mtrr_state: Array of pairs of 64 bit saved value of the misc variable
+                  MTRRs MSR values. Setup by the launch code.
+
+lo_pmr_min: Special value for setting up the low PMR. Setup by the loader.
+
+ap_wake_ebp: 64 bit area to save %ebp so the APs can locate themselves
+             when woken. Written by the BSP stub.
+
+ap_rm_entry: 64 bit area to store physical address for the realmode entry
+             thunk. Written by the TB SMP code.
+
 event_log_buffer: TODO Daniel has to fill this in. Setup by the loader.
 
 -- LZ Header --
@@ -74,6 +67,9 @@ event_log_buffer: TODO Daniel has to fill this in. Setup by the loader.
 The LZ header is offset 4 bytes in the landing zone. It has the following
 fields that GRUB must setup (the type lz_header_t defines the fields in
 lz/include/boot.h):
+
+slaunch_loader_base: The physical base of the IL used to hash the IL into
+                     PCR 17 in the LZ. Setup by the loader.
 
 slaunch_loader_size: The total size of the IL used to hash the IL into
                      PCR 17 in the LZ. Setup by the loader.
@@ -97,7 +93,7 @@ Version: At offset 20. Version number of this structure. Hardcoded to
          version 2.2 per the spec.
 
 EntryPoint: At offset 24. Linear (virt) entry point of MLE. This is really
-            the virtual offset to the tb_stub_entry entry point. Since the
+            the virtual offset to the sl_stub_entry entry point. Since the
             pages start at the beginning of the vmlinuz image in memory, this
             is just the offset from the start of vmlinuz to tb_stub_entry. So
             this can be hardcoded using the symbol name.
@@ -113,8 +109,8 @@ MleStart: At offset 32. Offset within MLE binary file of first byte
 
 MleEnd: At offset 36. Offset within MLE binary file of last byte
         + 1 of MLE, as specified in page table. Needs to be set to vmlinuz
-        image size + 1. Note since this is only intended for use by software,
-        it doesn't matter whether it is set so for simplicitly it is left 0.
+        image size + 1. The ACM validates this field so it must he set to the
+        size of the MLE. This is done by the loader.
 
 Capabilities: At offset 40. Bit vector of MLE-supported capabilities. Hardcoded
               to the flags we want.
@@ -124,3 +120,15 @@ CmdlineStart: At offset 44. Starting linear address of command line. Not used,
 
 CmdlineEnd: At offset 48. Ending linear address of command line. Not used,
             hardcoded to 0 per the spec.
+
+SKINIT also uses the MLE header. In particular it uses these fields:
+
+UUID: At offset 0. Hardcoded to specified value. Used to validate that it is
+      the MLE header.
+
+EntryPoint: At offset 24. For SKINIT, this is the physical offset of the
+            sl_stub entry point in the compressed IL kernel image. Setup
+            the same way for SKINIT.
+
+LZPhysAddr: (FirstValidPage) At offset 28. Used to hold the physical base
+            address of the landing zone. Setup by the LZ.
