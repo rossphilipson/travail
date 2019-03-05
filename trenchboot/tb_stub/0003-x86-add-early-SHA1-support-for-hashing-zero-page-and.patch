@@ -1,4 +1,4 @@
-From c07a4e8cd82ed1ace91cff5374de58fefa720871 Mon Sep 17 00:00:00 2001
+From 7ebc17e1b8d8829e299945812f2753aef5713354 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/9] x86: add early SHA1 support for hashing zero page and

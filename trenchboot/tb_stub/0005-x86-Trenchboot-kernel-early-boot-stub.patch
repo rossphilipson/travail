@@ -1,4 +1,4 @@
-From d50cc29eee16e16b6de9ca575b0ee2323d5c6c3f Mon Sep 17 00:00:00 2001
+From d6b616a90e278a09b3a2bfc57720907385de110f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -6,10 +6,10 @@ Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  46 +++++++
- arch/x86/boot/compressed/sl_main.c | 249 +++++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 236 +++++++++++++++++++++++++++++++++++
- 4 files changed, 532 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/head_64.S |  46 +++++
+ arch/x86/boot/compressed/sl_main.c | 249 +++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 397 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 693 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -347,10 +347,10 @@ index 000000000000..f965b7211a57
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..84246357b843
+index 000000000000..6e731ce9e92e
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,397 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -400,13 +400,19 @@ index 000000000000..84246357b843
 +
 +	.code32
 +ENTRY(sl_stub)
++	/*
++	 * On entry, %ebp has the base address from head_64.S
++	 * and only %cs is known good
++	 */
 +	cli
 +	cld
 +
-+	/* On entry %ebp has the base address from head_64.S, load the stack */
-+	leal	sl_stack_end(%ebp), %esp
++	/*
++	 * Take the first stack for the BSP. The AP stacks are only used
++	 * on Intel.
++	 */
++	leal	sl_stacks_end(%ebp), %esp
 +
-+	/* On entry, only %cs is known good */
 +	addl	%ebp, (sl_gdt + 2)(%ebp)
 +	lgdt	sl_gdt(%ebp)
 +
@@ -453,11 +459,14 @@ index 000000000000..84246357b843
 +	jz	.Ldo_amd
 +
 +	/* Know it is Intel */
-+	movl	$(SL_CPU_INTEL), (sl_cpu_type)(%ebp)
++	movl	$(SL_CPU_INTEL), sl_cpu_type(%ebp)
++
++	/* Increment CPU count for BSP */
++	incl	sl_txt_cpu_count(%ebp)
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
 +	xorl	%ebx, %ebx
-+	movl	$(X86_GETSEC_SMCTRL), %eax
++	movl	$(TXT_X86_GETSEC_SMCTRL), %eax
 +	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
 +	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
@@ -470,6 +479,10 @@ index 000000000000..84246357b843
 +.Lnmi_enabled:
 +	addl	$12, %esp
 +
++	/* Clear the TXT error registers for a clean start of day */
++	movl	$0, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE)
++	movl	$0xffffffff, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ESTS)
++
 +	/* On Intel, the zero page address is passed in the TXT heap */
 +	/* Read physical base of heap into EAX */
 +	movl	(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_HEAP_BASE), %eax
@@ -481,14 +494,122 @@ index 000000000000..84246357b843
 +	/* First 4 bytes of OS to MLE are the zero page */
 +	movl	(%eax), %esi
 +
++	/* Save ebp so the APs can find their way home */
++	movl	%ebp, TXT_OS_MLE_POST_LAUNCH_EBP(%eax)
++
++	/* Note only %esi and %ebp MUST be preserved across calls */
++	movl	%eax, %edi
++	call	sl_txt_load_regs
++
++	/* Wake up all APs and wait for them to halt */
++	call	sl_txt_wake_aps
++
++	jmp	.Lcpu_setup_done
++
++.Ldo_amd:
++	/* Know it is AMD */
++	movl	$(SL_CPU_AMD), sl_cpu_type(%ebp)
++
++	/*
++	 * Disable maskable interrups in EFLAGS then enable global interrupts
++	 * including SMI and NMI (GIF).
++	 */
++	cli
++	stgi
++
++	/* On AMD %esi is set up by the Landing Zone, just go on */
++
++.Lcpu_setup_done:
++	/*
++	 * Don't enable MCE at this point. The kernel will enable
++	 * it on the BSP later when it is ready.
++	 */
++
++	/* Keep SL segments for the early portion of the kernel boot */
++	orb	$(KEEP_SEGMENTS), BP_loadflags(%esi)
++
++	/* Done, jump to normal 32b pm entry */
++	jmp	startup_32
++ENDPROC(sl_stub)
++
++ENTRY(sl_txt_ap_entry)
++	cli
++	cld
++
++	/*
++	 * TXT has kindly loaded sl_gdt into GDTR and setup the segment
++	 * register. First order of business is to find where we are and
++	 * save it in ebp.
++	 */
++
++	/* Read physical base of heap into EAX */
++	movl	(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_HEAP_BASE), %eax
++	/* Read the size of the BIOS data into ECX (in first 8 bytes */
++	movl	(%eax), %ecx
++	/* Skip over BIOS data and size of OS to MLE */
++	addl	%ecx, %eax
++	addl	$8, %eax
++
++	/* Saved ebp from the BSP and stash OS-MLE pointer */
++	movl	TXT_OS_MLE_POST_LAUNCH_EBP(%eax), %ebp
++	movl	%eax, %edi
++
++	/* Lock and get our stack index */
++	movl	$1, %ecx
++.Lspin:
++	xorl	%eax, %eax
++	lock cmpxchgl	%ecx, sl_txt_spin_lock(%ebp)
++	jnz	.Lspin
++
++	leal	sl_txt_stack_index(%ebp), %ebx
++	movl	(%ebx), %eax
++	incl	%eax
++	movl	%eax, (%ebx)
++
++	/* Unlock */
++	movl	$0, sl_txt_spin_lock(%ebp)
++
++	/* Load our AP stack */
++	movl	$(TXT_BOOT_STACK_SIZE), %edx
++	mull	%edx
++	leal	sl_stacks_end(%ebp), %edx
++	subl	%eax, %edx
++	movl	%edx, %esp
++
++	/* Enable SMI with GETSET[SMCTRL] */
++	xorl	%ebx, %ebx
++	movl	$(TXT_X86_GETSEC_SMCTRL), %eax
++	.byte 	0x0f, 0x37 /* GETSEC opcode */
++
++	/* An IRET-to-self can be used to unmask NMIs which SENTER masked */
++	leal	.Lnmi_enabled_ap(%ebp), %eax
++	pushfl
++	pushl	$(__SL32_CS)
++	pushl	%eax
++	iret
++
++.Lnmi_enabled_ap:
++	addl	$12, %esp
++
++	/* Fixup MTRRs and misc enable MSR on APs too */
++	call	sl_txt_load_regs
++
++	/* Read MSR to determine if it will be MWAIT or HLT */
++	movl	$(MSR_IA32_MISC_ENABLE), %ecx
++	rdmsr
++
++	/* Basically done, increment the CPU count and wait for INIT */
++	lock incl	sl_txt_cpu_count(%ebp)
++
++	hlt
++ENDPROC(sl_txt_ap_entry)
++
++ENTRY(sl_txt_load_regs)
 +	/*
 +	 * On Intel, the original variable MTRRs and Misc Enable MSR are
-+	 * restored on the BSP at early boot.
-+	 *
-+	 * TODO will the kernel use the BSP settings for the MTRRs and Misc
-+	 * Enable MSR to restore the APs too.
++	 * restored on the BSP at early boot. Each AP will also restore
++	 * its MTRRs and Misc Enable MSR.
 +	 */
-+	movl	%eax, %edi
 +	pushl	%edi
 +	addl	$(TXT_OS_MLE_MTRR_STATE), %edi
 +	movl	(%edi), %ebx
@@ -536,57 +657,97 @@ index 000000000000..84246357b843
 +	movl	$(MSR_IA32_MISC_ENABLE), %ecx
 +	wrmsr
 +
-+	/* Clear the TXT error registers for a clean start of day */
-+	movl	$0, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE)
-+	movl	$0xffffffff, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ESTS)
++	ret
++ENDPROC(sl_txt_load_regs)
 +
-+	jmp	.Lcpu_setup_done
++ENTRY(sl_txt_wake_aps)
++	/* First setup the MLE join structure and load it into TXT reg */
++	leal	sl_gdt(%ebp), %eax
++	leal	sl_txt_ap_entry(%ebp), %ecx
++	leal	sl_txt_mle_join(%ebp), %edx
++	movl	%eax, 4(%edx)
++	movl	%ecx, 12(%edx)
++	movl	%edx, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_MLE_JOIN)
 +
-+.Ldo_amd:
-+	/* Know it is AMD */
-+	movl	$(SL_CPU_AMD), (sl_cpu_type)(%ebp)
++	/* Another TXT heap walk to find various values needed to wake APs */
++	movl	(TXT_PRIV_CONFIG_REGS_BASE + TXTCR_HEAP_BASE), %eax
++	/* At BIOS data size, find the number of logical processors */
++	movl	(TXT_BIOS_NUM_LOG_PROCS + 8)(%eax), %edx
++	/* Skip over BIOS data */
++	movl	(%eax), %ecx
++	addl	%ecx, %eax
++	/* Skip over OS to MLE */
++	movl	(%eax), %ecx
++	addl	%ecx, %eax
++	/* At OS-SNIT size, get capabilities to know how to wake up the APs */
++	movl	(TXT_OS_SINIT_CAPABILITIES + 8)(%eax), %ebx
++	/* Skip over OS to SNIT */
++	movl	(%eax), %ecx
++	addl	%ecx, %eax
++	/* At SNIT-MLE size, get the AP wake MONITOR address */
++	movl	(TXT_SINIT_MLE_RLP_WAKEUP_ADDR + 8)(%eax), %edi
 +
-+	/*
-+	 * Disable maskable interrups in EFLAGS then enable global interrupts
-+	 * including SMI and NMI (GIF).
-+	 */
-+	cli
-+	stgi
++	/* Determine how to wake up the APs */
++	testl	$(1 << TXT_SINIT_CAPS_WAKE_MONITOR), %ebx
++	jz	.Lwake_getsec
 +
-+	/* On AMD %esi is set up by the Landing Zone, just go on */
++	/* Wake using MWAIT MONITOR */
++	movl	$1, (%edi)
++	jmp	.Laps_awake
 +
-+.Lcpu_setup_done:
-+	/*
-+	 * Don't enable MCE at this point. The kernel will enable
-+	 * it on the BSP later when it is ready.
-+	 */
++.Lwake_getsec:
++	/* Wake using GETSEC(WAKEUP) */
++	xorl	%ebx, %ebx
++	movl	$(TXT_X86_GETSEC_WAKEUP), %eax
++	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
-+	/* Keep SL segments for the early portion of the kernel boot */
-+	orb	$(KEEP_SEGMENTS), BP_loadflags(%esi)
++.Laps_awake:
++	/* Wait for all of them to halt */
++1:
++	cmpl	sl_txt_cpu_count(%ebp), %edx
++	jz	2f
++	pause
++	jmp	1b
 +
-+	/* Done, jump to normal 32b pm entry */
-+	jmp	startup_32
-+ENDPROC(sl_stub)
++2:
++	ret
++ENDPROC(sl_txt_wake_aps)
 +
 +	.data
-+	.balign 16
++	.balign 4096
 +sl_gdt:
 +	.word	sl_gdt_end - sl_gdt - 1
 +	.long	sl_gdt
-+	.word	0
++	.word	0x0000
 +	.quad	0x00cf9a000000ffff	/* __SL32_CS */
 +	.quad	0x00cf92000000ffff	/* __SL32_DS */
 +sl_gdt_end:
++
++	.balign 16
++sl_txt_mle_join:
++	.long	sl_gdt_end - sl_gdt - 1	/* GDT limit */
++	.long	0x00000000		/* GDT base */
++	.long	__SL32_CS	/* Seg Sel - cs (ds, es, ss are seg_sel+8) */
++	.long	0x00000000	/* Entry point physical address */
 +
 +	.global	sl_cpu_type
 +sl_cpu_type:
 +	.long	0x00000000
 +
-+	/* Small stack to work with */
++sl_txt_spin_lock:
++	.long	0x00000000
++
++sl_txt_stack_index:
++	.long	0x00000000
++
++sl_txt_cpu_count:
++	.long	0x00000000
++
++	/* Small stacks for BSP and APs to work with */
 +	.balign 4
-+sl_stack:
-+	.fill 32, 1, 0
-+sl_stack_end:
++sl_stacks:
++	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
++sl_stacks_end:
 -- 
 2.13.6
 
