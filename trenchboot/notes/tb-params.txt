@@ -41,6 +41,9 @@ The TXT heap has an area called the OS to MLE data structure that is used to
 pass values from pre to post launch. The offsets are defined in
 arch/x86/include/asm/trenchboot.h. These are the fields:
 
+version: 32 bit number. Not really used yet since this is version but in
+         the future it can be used to identify what fields are available.
+
 zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
                 loader.
 

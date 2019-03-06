@@ -1,4 +1,4 @@
-From 47be39ef120abd699d5447011862bb01ecc67c35 Mon Sep 17 00:00:00 2001
+From 2efb5f972740814cdaa77693aece87c1f97e8730 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 +++++
  arch/x86/boot/compressed/sl_main.c | 218 ++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 397 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 662 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 398 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 663 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -316,10 +316,10 @@ index 000000000000..3c01dbd945a2
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..6e731ce9e92e
+index 000000000000..afd10793165d
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,397 @@
+@@ -0,0 +1,398 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -460,11 +460,12 @@ index 000000000000..6e731ce9e92e
 +	/* Skip over BIOS data and size of OS to MLE */
 +	addl	%ecx, %eax
 +	addl	$8, %eax
-+	/* First 4 bytes of OS to MLE are the zero page */
-+	movl	(%eax), %esi
++	/* First 4 bytes of OS to MLE are the version */
++	/* Second 4 bytes of OS to MLE are the zero page */
++	movl	TXT_OS_MLE_ZERO_PAGE_ADDR(%eax), %esi
 +
 +	/* Save ebp so the APs can find their way home */
-+	movl	%ebp, TXT_OS_MLE_POST_LAUNCH_EBP(%eax)
++	movl	%ebp, TXT_OS_MLE_AP_WAKE_EBP(%eax)
 +
 +	/* Note only %esi and %ebp MUST be preserved across calls */
 +	movl	%eax, %edi
@@ -520,7 +521,7 @@ index 000000000000..6e731ce9e92e
 +	addl	$8, %eax
 +
 +	/* Saved ebp from the BSP and stash OS-MLE pointer */
-+	movl	TXT_OS_MLE_POST_LAUNCH_EBP(%eax), %ebp
++	movl	TXT_OS_MLE_AP_WAKE_EBP(%eax), %ebp
 +	movl	%eax, %edi
 +
 +	/* Lock and get our stack index */
