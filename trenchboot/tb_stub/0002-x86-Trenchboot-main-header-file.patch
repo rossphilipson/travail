@@ -1,20 +1,20 @@
-From f411a291ead929da176018c0f4ada41cf4791bcc Mon Sep 17 00:00:00 2001
+From e6b2cfd3c54e105db362a113dd9880eec035534b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 259 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 259 insertions(+)
+ arch/x86/include/asm/slaunch.h | 209 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 209 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..24adadc91b5e
+index 000000000000..a33f24dcc892
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,209 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -75,6 +75,7 @@ index 000000000000..24adadc91b5e
 +
 +#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
 +#define TXT_MAX_VARIABLE_MTRRS		32
++#define TXT_OS_MLE_STRUCT_VERSION	1
 +
 +#define TXT_BIOS_DATA_TABLE		1
 +#define TXT_OS_MLE_DATA_TABLE		2
@@ -82,10 +83,12 @@ index 000000000000..24adadc91b5e
 +#define TXT_SINIT_MLE_DATA_TABLE	4
 +
 +#define TXT_BIOS_NUM_LOG_PROCS		0x18
-+#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x0
++#define TXT_OS_MLE_VERSION		0x0
++#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x4
 +#define TXT_OS_MLE_MISC_EN_MSR		0x1c
 +#define TXT_OS_MLE_MTRR_STATE		0x24
-+#define TXT_OS_MLE_POST_LAUNCH_EBP	0x23c
++#define TXT_OS_MLE_AP_WAKE_EBP		0x23c
++#define TXT_OS_MLE_AP_RM_ENTRY		0x244
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
@@ -142,71 +145,18 @@ index 000000000000..24adadc91b5e
 +} __attribute__((packed));
 +
 +struct txt_os_mle_data {
-+	u32	zero_page_addr;
 +	u32	version;
++	u32	zero_page_addr;
 +	u8	msb_key_hash[20];
 +	u64	saved_misc_enable_msr;
 +	struct	txt_mtrr_state saved_bsp_mtrrs;
 +	u64	lo_pmr_min;
-+	u64	post_launch_ebp;
++	u64	ap_wake_ebp;
++	u64	ap_rm_entry;
 +	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
 +} __attribute__((packed));
 +
 +#include <asm/io.h>
-+
-+static inline u64 txt_read_reg(u32 reg, int pub)
-+{
-+	u64 val = ~0ULL;
-+	void __iomem *addr;
-+
-+	addr = early_ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE :
-+			      TXT_PRIV_CONFIG_REGS_BASE),
-+			     TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+	if (!addr)
-+		return val;
-+
-+	memcpy_fromio(&val, addr + reg, sizeof(u64));
-+
-+	early_iounmap(addr, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+	return val;
-+}
-+
-+static inline void txt_write_reg(u32 reg, u64 val, int pub)
-+{
-+	void __iomem *addr;
-+
-+	addr = early_ioremap((pub ? TXT_PUB_CONFIG_REGS_BASE :
-+			      TXT_PRIV_CONFIG_REGS_BASE),
-+			     TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+	if (addr) {
-+		memcpy_toio(addr + reg, &val, sizeof(u64));
-+		early_iounmap(addr, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
-+	}
-+}
-+
-+static inline void __iomem *txt_get_heap(void)
-+{
-+	u64 base, size;
-+
-+	base = txt_read_reg(TXTCR_HEAP_BASE, 0);
-+	size = txt_read_reg(TXTCR_HEAP_SIZE, 0);
-+	if ((base == ~0ULL)||(size == ~0ULL))
-+		return NULL;
-+
-+	return early_ioremap(base, size);
-+}
-+
-+static inline void txt_put_heap(void __iomem *heap)
-+{
-+	u64 size;
-+
-+	size = txt_read_reg(TXTCR_HEAP_SIZE, 0);
-+	if (size == ~0ULL)
-+		return;
-+
-+	if (heap)
-+		early_iounmap(heap, size);
-+}
 +
 +static inline u64 txt_bios_data_size(void __iomem *heap)
 +{
