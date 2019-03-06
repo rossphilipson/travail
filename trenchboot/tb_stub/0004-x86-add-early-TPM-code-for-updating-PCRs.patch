@@ -1,4 +1,4 @@
-From e8d2fa13116853533c19cdffcee800c2b4aa3ffa Mon Sep 17 00:00:00 2001
+From 0b89e51726b756003fa6988da684537beae63a97 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
@@ -6,11 +6,11 @@ Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1122 ++++++++++++++++++++++++++++++++++
- arch/x86/boot/compressed/early_tpm.h |  355 +++++++++++
- arch/x86/include/asm/tpm.h           |   90 +++
+ arch/x86/boot/compressed/early_tpm.c | 1108 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.h |  342 +++++++++++
+ arch/x86/include/asm/tpm.h           |   77 +++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1573 insertions(+), 1 deletion(-)
+ 5 files changed, 1533 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -31,31 +31,17 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..fb80543e8a7b
+index 000000000000..516e536483bf
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1122 @@
+@@ -0,0 +1,1108 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
 + * The definitions in this header are extracted from:
 + *  - Trusted Computing Group's "TPM Main Specification", Parts 1-3.
 + *  - Trusted Computing Group's TPM 2.0 Library Specification Parts 1&2.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ *
 + */
 +
 +#include <linux/types.h>
@@ -1159,30 +1145,17 @@ index 000000000000..fb80543e8a7b
 +}
 diff --git a/arch/x86/boot/compressed/early_tpm.h b/arch/x86/boot/compressed/early_tpm.h
 new file mode 100644
-index 000000000000..9182e3ef058d
+index 000000000000..5096da3851f6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.h
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,342 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
 + * The definitions in this header are extracted from:
 + *  - Trusted Computing Group's "TPM Main Specification", Parts 1-3.
 + *  - Trusted Computing Group's TPM 2.0 Library Specification Parts 1&2.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
 +#ifndef BOOT_COMPRESSED_EARLY_TPM_H
@@ -1520,33 +1493,20 @@ index 000000000000..9182e3ef058d
 +#endif
 diff --git a/arch/x86/include/asm/tpm.h b/arch/x86/include/asm/tpm.h
 new file mode 100644
-index 000000000000..3bfa330ba7e3
+index 000000000000..fc4ee8982a4c
 --- /dev/null
 +++ b/arch/x86/include/asm/tpm.h
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,77 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _ASM_X86_TPM_H
++#define _ASM_X86_TPM_H
++
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
 + *
 + * The definitions in this header are extracted from the Trusted Computing
 + * Group's "TPM Main Specification", Parts 1-3.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
-+
-+#ifndef _ASM_X86_TPM_H
-+#define _ASM_X86_TPM_H
 +
 +#include <linux/types.h>
 +

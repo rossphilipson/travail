@@ -1,4 +1,4 @@
-From 2efb5f972740814cdaa77693aece87c1f97e8730 Mon Sep 17 00:00:00 2001
+From 26365db15c2e8c1815ce143f3330dcdb8624aa48 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 +++++
- arch/x86/boot/compressed/sl_main.c | 218 ++++++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 398 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 663 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 386 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 635 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -92,29 +92,13 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..3c01dbd945a2
+index 000000000000..66c0e90beb74
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,202 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-+ *
-+ * Author(s):
-+ *     Ross Philipson <ross.philipson@oracle.com>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
 +#include <linux/init.h>
@@ -316,29 +300,17 @@ index 000000000000..3c01dbd945a2
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..afd10793165d
+index 000000000000..95cc3f1a5cbc
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,398 @@
+@@ -0,0 +1,386 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
 + * Author(s):
 + *     Ross Philipson <ross.philipson@oracle.com>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +	.code32
 +	.text

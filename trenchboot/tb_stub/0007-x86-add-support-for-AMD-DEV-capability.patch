@@ -1,4 +1,4 @@
-From 3b2863be86b3e25587837e901554f06ecb84cae1 Mon Sep 17 00:00:00 2001
+From 68ce6b0f1b3845a2909f0a558856a3efd63d08b0 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/9] x86: add support for AMD DEV capability
@@ -9,11 +9,11 @@ allows page level memory access to HyperTransport buses.
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/Kconfig               |   5 ++
- arch/x86/include/asm/amd_dev.h |  71 ++++++++++++++++
+ arch/x86/include/asm/amd_dev.h |  57 ++++++++++++++
  arch/x86/kernel/Makefile       |   2 +
- arch/x86/kernel/amd_dev.c      | 181 +++++++++++++++++++++++++++++++++++++++++
- arch/x86/realmode/init.c       |  27 ++++++
- 5 files changed, 286 insertions(+)
+ arch/x86/kernel/amd_dev.c      | 167 +++++++++++++++++++++++++++++++++++++++++
+ arch/x86/realmode/init.c       |  27 +++++++
+ 5 files changed, 258 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
@@ -42,34 +42,20 @@ index a017c7b3adf0..badcb1a38c17 100644
  config RAPIDIO
 diff --git a/arch/x86/include/asm/amd_dev.h b/arch/x86/include/asm/amd_dev.h
 new file mode 100644
-index 000000000000..a70f7ccee025
+index 000000000000..0a994ae51dac
 --- /dev/null
 +++ b/arch/x86/include/asm/amd_dev.h
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,57 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _ASM_X86_AMD_DEV_H
++#define _ASM_X86_AMD_DEV_H
++
 +/*
 + * Copyright (c) 2019 Apertus Solutions, LLC
 + *
 + * Author(s):
 + * 	Daniel P. Smith <dpsmith@apertussolutions.com>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
-+/* SPDX-License-Identifier: GPL-2.0 */
-+
-+#ifndef _ASM_X86_AMD_DEV_H
-+#define _ASM_X86_AMD_DEV_H
 +
 +#include <linux/types.h>
 +
@@ -132,30 +118,16 @@ index 798a7dc44c83..d4cc0081d369 100644
  obj-$(CONFIG_PARAVIRT_SPINLOCKS)+= paravirt-spinlocks.o
 diff --git a/arch/x86/kernel/amd_dev.c b/arch/x86/kernel/amd_dev.c
 new file mode 100644
-index 000000000000..9f66dfee0356
+index 000000000000..2af6be0c8dad
 --- /dev/null
 +++ b/arch/x86/kernel/amd_dev.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,167 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Apertus Solutions, LLC
 + *
 + * Author(s):
 + *	Daniel P. Smith <dpsmith@apertussolutions.com>
-+ *
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
 +#include <linux/types.h>

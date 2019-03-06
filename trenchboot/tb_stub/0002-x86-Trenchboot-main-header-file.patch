@@ -1,43 +1,29 @@
-From e6b2cfd3c54e105db362a113dd9880eec035534b Mon Sep 17 00:00:00 2001
+From c8f3e0a894a0efc1cc55a7dd378b322299ea8cc2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 209 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 209 insertions(+)
+ arch/x86/include/asm/slaunch.h | 195 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 195 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..a33f24dcc892
+index 000000000000..4ef62d4673d4
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,209 @@
-+/*
-+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-+ *
-+ * Author(s):
-+ *     Ross Philipson <ross.philipson@oracle.com>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ */
-+
+@@ -0,0 +1,195 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
++
++/*
++ * Secure Launch main definitions file.
++ *
++ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ */
 +
 +#define __SL32_CS	0x0008
 +#define __SL32_DS	0x0010
