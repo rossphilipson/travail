@@ -1,4 +1,4 @@
-From 1ff9d4f8e0a6f19c0d02b7dbc0a8eee9b038917e Mon Sep 17 00:00:00 2001
+From 114e4515bcfaf1b77ce9228c700d02adab5cf983 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
@@ -30,7 +30,7 @@ index 63b3393bd98e..b7f28f25389b 100644
  	u32	machine_real_restart_seg;
  #endif
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index f02ecaf97904..4cc4be59b446 100644
+index 6489067b78a4..136a7242885f 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -66,7 +66,7 @@ index f02ecaf97904..4cc4be59b446 100644
 +	 * The rest would be the normal SIPI process and then starting the
 +	 * AP in the realmode blob code.
 +	 */
-+	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT) {
++	if (slaunch_get_flags() & SL_FLAG_ARCH_SKINIT) {
 +		*sl_flag_arch = SL_FLAG_ARCH_SKINIT;
 +		goto skip_init;
 +	}

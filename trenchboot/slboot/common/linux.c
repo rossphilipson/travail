@@ -81,15 +81,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
                         const void *initrd_image, size_t initrd_size)
 {
     linux_kernel_header_t *hdr;
-    slaunch_info_t *slh;
     linux_kernel_header_t temp_hdr;
     uint32_t real_mode_base, protected_mode_base;
     unsigned long real_mode_size, protected_mode_size;
         /* Note: real_mode_size + protected_mode_size = linux_size */
     uint32_t initrd_base;
     int vid_mode = 0;
-    uint32_t regs[4];
-    uint32_t arch;
 
     /* Check param */
     if ( linux_image == NULL ) {
@@ -108,44 +105,9 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     hdr = (linux_kernel_header_t *)(linux_image + KERNEL_HEADER_OFFSET);
-    slh = (slaunch_info_t *)(linux_image + SLAUNCH_INFO_OFFSET);
 
     if ( hdr == NULL ) {
         printk(TBOOT_ERR"Error: Linux kernel header is zero.\n");
-        return false;
-    }
-
-    if ( slh == NULL ) {
-        printk(TBOOT_ERR"Error: Secure launch info is zero.\n");
-        return false;
-    }
-
-    if ( slh->sl_entry == 0 ) {
-        printk(TBOOT_ERR"Error: Secure launch entry not set.\n");
-        return false;
-    }
-
-    if ( slh->sl_mle_hdr == 0 ) {
-        printk(TBOOT_ERR"Error: Secure launch MLE header not set.\n");
-        return false;
-    }
-
-    do_cpuid(0, regs);
-    if ( regs[1] == 0x756e6547      /* "Genu" */
-         && regs[2] == 0x6c65746e   /* "ntel" */
-         && regs[3] == 0x49656e69 ) /* "ineI" */
-        arch = SL_FLAG_ARCH_TXT;
-    else if ( regs[1] == 0x68747541 /* "Auth" */
-         && regs[2] == 0x444d4163   /* "cAMD" */
-         && regs[3] == 0x69746e65 ) /* "enti" */
-        arch = SL_FLAG_ARCH_SKINIT;
-    else {
-        printk(TBOOT_ERR"Error: platform is neither Intel or AMD\n");
-        return false;
-    }
-
-    if ( (arch == SL_FLAG_ARCH_TXT)&&(g_min_ram == 0) ) {
-        printk(TBOOT_ERR"Error: Min ram setting for TXT must be > 0.\n");
         return false;
     }
 
@@ -366,7 +328,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* reset pointers to point into zero page at real mode base */
     hdr = (linux_kernel_header_t *)(real_mode_base + KERNEL_HEADER_OFFSET);
-    slh = (slaunch_info_t *)(real_mode_base + SLAUNCH_INFO_OFFSET);
 
     /* copy back the updated kernel header */
     tb_memmove(hdr, &temp_hdr, sizeof(temp_hdr));
@@ -482,12 +443,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         screen->orig_video_isVGA = 1;      /* use VGA text screen setups */
         screen->orig_y = 24;               /* start display text @ screen end*/
     }
-
-    /* Setup the secure launch inforation in the boot params */
-    slh->sl_flags = SL_FLAG_ACTIVE;
-    slh->sl_flags |= arch;
-    slh->sl_version = SLAUNCH_INFO_VERSION;
-    printk(TBOOT_DETA"sl_flags addr: %p\n", &(slh->sl_flags));
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;

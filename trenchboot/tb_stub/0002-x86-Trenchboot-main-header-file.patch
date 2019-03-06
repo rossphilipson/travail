@@ -1,20 +1,20 @@
-From 3b9bc40e0f8abcb8f9886bf6d2ad6c57b5fd8353 Mon Sep 17 00:00:00 2001
+From f411a291ead929da176018c0f4ada41cf4791bcc Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 258 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 258 insertions(+)
+ arch/x86/include/asm/slaunch.h | 259 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 259 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..7c7557b37814
+index 000000000000..24adadc91b5e
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,259 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -57,6 +57,7 @@ index 000000000000..7c7557b37814
 +#define TXTCR_ESTS			0x0008
 +#define TXTCR_ERRORCODE			0x0030
 +#define TXTCR_CMD_RESET			0x0038
++#define TXTCR_DIDVID			0x0110
 +#define TXTCR_CMD_UNLOCK_MEM_CONFIG	0x0218
 +#define TXTCR_MLE_JOIN			0x0290
 +#define TXTCR_HEAP_BASE			0x0300
@@ -102,15 +103,14 @@ index 000000000000..7c7557b37814
 +#define TXT_SLERROR_MTRR_INV_BASE	0xc0008007
 +#define TXT_SLERROR_MTRR_INV_MASK	0xc0008008
 +#define TXT_SLERROR_MSR_INV_MISC_EN	0xc0008009
-+#define TXT_SLERROR_SLAUNCH_INACTIVE	0xc000800a
-+#define TXT_SLERROR_SLAUNCH_NOARCH	0xc000800b
-+#define TXT_SLERROR_SLAUNCH_INV_VER	0xc000800c
 +
 +#define TXT_MAX_CPUS			512
 +#define TXT_BOOT_STACK_SIZE		24
 +
-+#define SLAUNCH_INFO_VERSION	1
-+#define SLAUNCH_INFO_OFFSET	0x12c
++#define SKINIT_LZ_OFFSET		28
++#define SKINIT_DEV_MAP_OFFSET		0x7000
++
++#define SLAUNCH_INFO_OFFSET	0x268
 +
 +#define BP_CMD_LINE_PTR		0x228
 +#define BP_CMDLINE_SIZE		0x238
@@ -267,6 +267,7 @@ index 000000000000..7c7557b37814
 +}
 +
 +void slaunch_setup(void);
++u32 slaunch_get_flags(void);
 +void __iomem *txt_early_get_heap_table(u32 type, u32 bytes);
 +struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar);
 +

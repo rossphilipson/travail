@@ -39,7 +39,6 @@
 #define SECTOR_SIZE (1 << 9)      /* 0x200 = 512B */
 
 #define KERNEL_HEADER_OFFSET    0x1F1
-#define SLAUNCH_INFO_OFFSET     0x12C
 
 /* linux kernel header */
 typedef struct __attribute__ ((packed)) {
@@ -105,16 +104,8 @@ typedef struct __attribute__ ((packed)) {
     uint64_t pref_address;
     uint32_t init_size;
     uint32_t handover_offset;
+    uint32_t slaunch_header;
 } linux_kernel_header_t;
-
-typedef struct __attribute__((packed)) {
-        #define SLAUNCH_INFO_VERSION  1
-    uint32_t sl_version;
-    uint32_t sl_entry;   /* Field updated by boot build tool */
-    uint32_t sl_mle_hdr; /* Field updated by boot build tool */
-    uint32_t sl_flags;
-    uint32_t sl_dev_map;
-} slaunch_info_t;
 
 typedef struct __attribute__ ((packed)) {
     uint8_t               screen_info[0x040-0x000];                 /* 0x000 */
@@ -126,8 +117,7 @@ typedef struct __attribute__ ((packed)) {
     uint8_t               hd0_info[16];     /* obsolete! */         /* 0x080 */
     uint8_t               hd1_info[16];     /* obsolete! */         /* 0x090 */
     uint8_t               sys_desc_table[0x0b0-0x0a0];              /* 0x0a0 */
-    uint8_t               _pad4[124];                               /* 0x0b0 */
-    slaunch_info_t        slaunch_info;                             /* 0x12c */
+    uint8_t               _pad4[144];                               /* 0x0b0 */
     uint8_t               edid_info[0x1c0-0x140];                   /* 0x140 */
     uint8_t               efi_info[0x1e0-0x1c0];                    /* 0x1c0 */
     uint8_t               alt_mem_k[0x1e4-0x1e0];                   /* 0x1e0 */

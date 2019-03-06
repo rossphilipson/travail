@@ -1,4 +1,4 @@
-From 2960dff7694da6f5b74c79f122976a2d48df7902 Mon Sep 17 00:00:00 2001
+From a650912004f08e4ae895501f05aa64de976f60b7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/9] x86: Trenchboot kernel late boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 ++
- arch/x86/kernel/slaunch.c | 148 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 187 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 ++
- 4 files changed, 159 insertions(+)
+ 4 files changed, 198 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -49,10 +49,10 @@ index b4866badb235..b359129cb408 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..7321f9ff1836
+index 000000000000..795080eecaed
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,187 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -86,6 +86,13 @@ index 000000000000..7321f9ff1836
 +#include <asm/slaunch.h>
 +
 +#define PREFIX	"SLAUNCH: "
++
++u32 sl_flags = 0;
++
++u32 slaunch_get_flags(void)
++{
++	return sl_flags;
++}
 +
 +void __iomem *txt_early_get_heap_table(u32 type, u32 bytes)
 +{
@@ -169,6 +176,20 @@ index 000000000000..7321f9ff1836
 +		printk(KERN_ERR PREFIX
 +		       "Error early_ioremap of TXT registers\n");
 +		/* TODO add TPM info log entry */
++		sl_flags = 0;
++		return;
++	}
++
++	/*
++	 * Try to read the Intel VID from the TXT private registers to see if
++	 * TXT is active and the measured launch happened.
++	 */
++	memcpy_fromio(&val, txt + TXTCR_DIDVID, sizeof(u64));
++	if ((u16)(val & 0xffff) != 0x8086) {
++		printk(KERN_ERR PREFIX
++		       "Invalid TXT vendor ID\n");
++		/* TODO add TPM info log entry */
++		sl_flags = 0;
 +		return;
 +	}
 +
@@ -187,19 +208,37 @@ index 000000000000..7321f9ff1836
 +
 +static void slaunch_setup_amd(void)
 +{
++	/* TODO how to know we launched via SKINIT */
 +	/* TODO validate the DEV tables and devices */
 +}
 +
 +void slaunch_setup(void)
 +{
-+	BUG_ON(!(boot_params.slaunch_info.sl_flags & SL_FLAG_ACTIVE));
++	u32 vendor[4];
 +
-+	if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)
++	/*
++	 * First assume Secure Launch is enabled and this is a
++	 * supported platform.
++	 */
++	sl_flags = SL_FLAG_ACTIVE;
++
++	cpuid(0, &vendor[0], &vendor[1], &vendor[2], &vendor[3]);
++
++	if (vendor[1] == 0x756e6547 &&        /* "Genu" */
++	    vendor[2] == 0x6c65746e &&        /* "ntel" */
++	    vendor[3] == 0x49656e69) {        /* "ineI" */
++		sl_flags |= SL_FLAG_ARCH_TXT;
 +		slaunch_setup_intel();
-+	else if (boot_params.slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT)
++	} else if (vendor[1] == 0x68747541 && /* "Auth" */
++		   vendor[2] == 0x444d4163 && /* "cAMD" */
++		   vendor[3] == 0x69746e65) { /* "enti" */
++		sl_flags |= SL_FLAG_ARCH_SKINIT;
 +		slaunch_setup_amd();
-+	else
-+		BUG();
++	} else {
++		printk(KERN_ERR PREFIX
++		       "Invalid platform: not Intel or AMD\n");
++		return;
++	}
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
 index d9c748b6f9e4..5e9fc61da18e 100644

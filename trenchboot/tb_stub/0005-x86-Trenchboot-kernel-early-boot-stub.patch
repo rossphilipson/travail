@@ -1,4 +1,4 @@
-From d6b616a90e278a09b3a2bfc57720907385de110f Mon Sep 17 00:00:00 2001
+From 47be39ef120abd699d5447011862bb01ecc67c35 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 +++++
- arch/x86/boot/compressed/sl_main.c | 249 +++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c | 218 ++++++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 397 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 693 insertions(+), 1 deletion(-)
+ 4 files changed, 662 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -92,10 +92,10 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..f965b7211a57
+index 000000000000..3c01dbd945a2
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,249 @@
+@@ -0,0 +1,218 @@
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + *
@@ -215,32 +215,6 @@ index 000000000000..f965b7211a57
 +		sl_txt_reset(TXT_SLERROR_MSR_INV_MISC_EN);
 +}
 +
-+static void sl_verify_boot_params(struct boot_params *bp)
-+{
-+	if (!(bp->slaunch_info.sl_flags & SL_FLAG_ACTIVE)) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_SLAUNCH_INACTIVE);
-+		else
-+			sl_skinit_reset();
-+	}
-+
-+	if (!(bp->slaunch_info.sl_flags & SL_FLAG_ARCH_SKINIT) &&
-+	    !(bp->slaunch_info.sl_flags & SL_FLAG_ARCH_TXT)) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_SLAUNCH_NOARCH);
-+		else
-+			sl_skinit_reset();
-+	}
-+
-+	if (bp->slaunch_info.sl_version != SLAUNCH_INFO_VERSION) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_SLAUNCH_INV_VER);
-+		else
-+			sl_skinit_reset();
-+	}
-+
-+}
-+
 +void sl_main(u8 *bootparams)
 +{
 +	struct sha1_state sctx = {0};
@@ -248,7 +222,6 @@ index 000000000000..f965b7211a57
 +	u32 cmdline_len;
 +	u64 cmdline_addr;
 +	struct tpm *tpm;
-+	struct boot_params *bp;
 +	int ret;
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
@@ -304,10 +277,6 @@ index 000000000000..f965b7211a57
 +
 +	tpm_relinquish_locality(tpm);
 +	free_tpm(tpm);
-+
-+	/* Now safe to use boot params, sanity check some things */
-+	bp = (struct boot_params*)bootparams;
-+	sl_verify_boot_params(bp);
 +
 +	if (sl_cpu_type == SL_CPU_INTEL) {
 +		struct txt_os_mle_data *os_mle_data;

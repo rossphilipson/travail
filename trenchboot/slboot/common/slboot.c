@@ -73,6 +73,7 @@ extern void verify_IA32_se_svn_status(const acm_hdr_t *acm_hdr);
 /* loader context struct saved so that post_launch() can use it */
 __data loader_ctx g_loader_ctx = { NULL, 0 };
 __data loader_ctx *g_ldr_ctx = &g_loader_ctx;
+__data uint32_t g_architecture = 0;
 
 static uint32_t g_default_error_action = TB_SHUTDOWN_HALT;
 
@@ -100,6 +101,27 @@ static bool prepare_cpu(void)
     return txt_prepare_cpu();
 }
 
+static bool platform_architecture(void)
+{
+    uint32_t regs[4];
+
+    do_cpuid(0, regs);
+    if ( regs[1] == 0x756e6547      /* "Genu" */
+         && regs[2] == 0x6c65746e   /* "ntel" */
+         && regs[3] == 0x49656e69 ) /* "ineI" */
+        g_architecture = SL_FLAG_ARCH_TXT;
+    else if ( regs[1] == 0x68747541 /* "Auth" */
+         && regs[2] == 0x444d4163   /* "cAMD" */
+         && regs[3] == 0x69746e65 ) /* "enti" */
+        g_architecture = SL_FLAG_ARCH_SKINIT;
+    else {
+        printk(TBOOT_ERR"Error: platform is neither Intel or AMD\n");
+        return false;
+    }
+
+    return true;
+}
+
 #define ICR_LOW 0x300
 
 static void startup_rlps(void)
@@ -117,6 +139,9 @@ static void startup_rlps(void)
 static void launch_racm(void)
 {
     tb_error_t err;
+
+    if ( !platform_architecture() )
+        error_action(TB_ERR_FATAL);
 
     /* bsp check & tpm check done by caller */
     /* SMX must be supported */
@@ -187,6 +212,9 @@ void begin_launch(void *addr, uint32_t magic)
        if (g_ldr_ctx->type == 2)
        print_loader_ctx(g_ldr_ctx);
     */
+
+    if ( !platform_architecture() )
+        error_action(TB_ERR_FATAL);
 
     /* we should only be executing on the BSP */
     if ( !(rdmsr(MSR_APICBASE) & APICBASE_BSP) ) {

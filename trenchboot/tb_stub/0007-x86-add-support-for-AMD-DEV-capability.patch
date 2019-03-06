@@ -1,4 +1,4 @@
-From 08380deb7a26f8163b4f9825ffa70724a97ffbbc Mon Sep 17 00:00:00 2001
+From 3b2863be86b3e25587837e901554f06ecb84cae1 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 19 Oct 2018 08:59:16 -0400
 Subject: [PATCH 7/9] x86: add support for AMD DEV capability
@@ -12,16 +12,16 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  arch/x86/include/asm/amd_dev.h |  71 ++++++++++++++++
  arch/x86/kernel/Makefile       |   2 +
  arch/x86/kernel/amd_dev.c      | 181 +++++++++++++++++++++++++++++++++++++++++
- arch/x86/realmode/init.c       |  10 +++
- 5 files changed, 269 insertions(+)
+ arch/x86/realmode/init.c       |  27 ++++++
+ 5 files changed, 286 insertions(+)
  create mode 100644 arch/x86/include/asm/amd_dev.h
  create mode 100644 arch/x86/kernel/amd_dev.c
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index a2fcb4a79199..1193cfaac12b 100644
+index a017c7b3adf0..badcb1a38c17 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1956,6 +1956,7 @@ config EFI_MIXED
+@@ -1946,6 +1946,7 @@ config EFI_MIXED
  config SECURE_LAUNCH_STUB
  	bool "Secure Launch stub support"
  	depends on X86_64
@@ -29,7 +29,7 @@ index a2fcb4a79199..1193cfaac12b 100644
  	---help---
  	  This kernel feature allows a bzImage to be loaded directly
  	  through Intel TXT or AMD SKINIT measured launch.
-@@ -2827,6 +2828,10 @@ config AMD_NB
+@@ -2817,6 +2818,10 @@ config AMD_NB
  	def_bool y
  	depends on CPU_SUP_AMD && PCI
  
@@ -318,29 +318,52 @@ index 000000000000..9f66dfee0356
 +	return err;
 +}
 diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
-index d10105825d57..d9db936d5c77 100644
+index d10105825d57..b7f30a54e888 100644
 --- a/arch/x86/realmode/init.c
 +++ b/arch/x86/realmode/init.c
-@@ -9,6 +9,11 @@
+@@ -9,12 +9,36 @@
  #include <asm/realmode.h>
  #include <asm/tlbflush.h>
  
 +#ifdef CONFIG_AMD_DEV
 +#include <asm/setup.h>
++#include <asm/slaunch.h>
 +#include <asm/amd_dev.h>
 +#endif
 +
  struct real_mode_header *real_mode_header;
  u32 *trampoline_cr4_features;
  
-@@ -42,6 +47,11 @@ void __init reserve_real_mode(void)
+ /* Hold the pgd entry used on booting additional CPUs */
+ pgd_t trampoline_pgd_entry;
+ 
++#ifdef CONFIG_AMD_DEV
++void __init setup_amd_dev(phys_addr_t mem, size_t size)
++{
++	void *lz;
++	void *dev_map;
++
++	/* Locate the dev map in the LZ */
++	lz = __va(boot_params.hdr.code32_start +
++		boot_params.hdr.slaunch_header +
++		SKINIT_LZ_OFFSET);
++	dev_map = __va((u64)(*(u32*)lz)) + SKINIT_DEV_MAP_OFFSET;
++
++	/* DEV protect this region before use*/
++	/* TODO the dev code needs to be fixed to use 64b addresses */
++	amd_dev_protect_pages(0, mem, size, (u32)(u64)dev_map);
++}
++#endif
++
+ void __init set_real_mode_mem(phys_addr_t mem, size_t size)
+ {
+ 	void *base = __va(mem);
+@@ -42,6 +66,9 @@ void __init reserve_real_mode(void)
  	}
  
  	memblock_reserve(mem, size);
 +#ifdef CONFIG_AMD_DEV
-+	/* DEV protect this region before use*/
-+	amd_dev_protect_pages(0, mem, size,
-+			boot_params.slaunch_info.sl_dev_map);
++	setup_amd_dev(mem, size);
 +#endif
  	set_real_mode_mem(mem, size);
  }

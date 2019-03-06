@@ -363,7 +363,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_sinit_data->mle_ptab = (uint64_t)(unsigned long)ptab_base;
     os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
     /* this is linear addr (offset from MLE base) of mle header */
-    os_sinit_data->mle_hdr_base = g_il_kernel_setup.boot_params->slaunch_info.sl_mle_hdr;
+    os_sinit_data->mle_hdr_base = g_il_kernel_setup.boot_params->hdr.slaunch_header;
 
     /* VT-d PMRs */
     uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
@@ -527,7 +527,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
      * the 9th dword in.
      */
     mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base +
-                       g_il_kernel_setup.boot_params->slaunch_info.sl_mle_hdr);
+                       g_il_kernel_setup.boot_params->hdr.slaunch_header);
     *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
 
     printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");

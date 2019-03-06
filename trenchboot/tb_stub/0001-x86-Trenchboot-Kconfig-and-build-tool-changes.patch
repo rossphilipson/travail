@@ -1,22 +1,22 @@
-From 9e3ea006ac19edb5cb0f04dea3da176ce8555d5f Mon Sep 17 00:00:00 2001
+From f9bf5563b6ee1b54c409897663535ca6af063cee Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/9] x86: Trenchboot Kconfig and build tool changes
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                       |  7 +++++++
- arch/x86/boot/Makefile                 |  2 +-
- arch/x86/boot/tools/build.c            | 19 +++++++++++++++++++
- arch/x86/include/asm/bootparam_utils.h |  2 +-
- arch/x86/include/uapi/asm/bootparam.h  | 11 ++++++++++-
- 5 files changed, 38 insertions(+), 3 deletions(-)
+ arch/x86/Kconfig                      |  7 +++++++
+ arch/x86/boot/Makefile                |  2 +-
+ arch/x86/boot/header.S                |  1 +
+ arch/x86/boot/tools/build.c           | 16 ++++++++++++++++
+ arch/x86/include/uapi/asm/bootparam.h |  1 +
+ 5 files changed, 26 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1a0be022f91d..a2fcb4a79199 100644
+index 44c6a82b7ce5..a017c7b3adf0 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1953,6 +1953,13 @@ config EFI_MIXED
+@@ -1943,6 +1943,13 @@ config EFI_MIXED
  
  	   If unsure, say N.
  
@@ -31,7 +31,7 @@ index 1a0be022f91d..a2fcb4a79199 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 9b5adae9cc40..6198f58777fa 100644
+index 9b5adae9cc40..bb56c34d9cf1 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -39,103 +39,82 @@ index 9b5adae9cc40..6198f58777fa 100644
  SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
  
 -sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
-+sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|sl_stub_entry\|sl_mle_header\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
++sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|sl_mle_header\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
  
  quiet_cmd_zoffset = ZOFFSET $@
        cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
+diff --git a/arch/x86/boot/header.S b/arch/x86/boot/header.S
+index 850b8762e889..05e7c402084a 100644
+--- a/arch/x86/boot/header.S
++++ b/arch/x86/boot/header.S
+@@ -557,6 +557,7 @@ pref_address:		.quad LOAD_PHYSICAL_ADDR	# preferred load addr
+ 
+ init_size:		.long INIT_SIZE		# kernel initialization size
+ handover_offset:	.long 0			# Filled in by build.c
++slaunch_header:		.long 0			# Filled in by build.c
+ 
+ # End of setup header #####################################################
+ 
 diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
-index d4e6cd4577e5..0ffaba162ade 100644
+index bf0e82400358..ef52dec9188f 100644
 --- a/arch/x86/boot/tools/build.c
 +++ b/arch/x86/boot/tools/build.c
-@@ -56,6 +56,8 @@ u8 buf[SETUP_SECT_MAX*512];
+@@ -56,6 +56,7 @@ u8 buf[SETUP_SECT_MAX*512];
  unsigned long efi32_stub_entry;
  unsigned long efi64_stub_entry;
  unsigned long efi_pe_entry;
-+unsigned long sl_stub_entry;
 +unsigned long sl_mle_header;
  unsigned long startup_64;
  
  /*----------------------------------------------------------------------*/
-@@ -288,6 +290,19 @@ static inline int reserve_pecoff_reloc_section(int c)
+@@ -288,6 +289,18 @@ static inline int reserve_pecoff_reloc_section(int c)
  }
  #endif /* CONFIG_EFI_STUB */
  
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
 +
-+static void slaunch_stub_fields_update(void)
++static void slaunch_stub_entry_update(void)
 +{
-+	put_unaligned_le32(sl_stub_entry, &buf[0x130]);
-+	put_unaligned_le32(sl_mle_header, &buf[0x134]);
++	put_unaligned_le32(sl_mle_header, &buf[0x268]);
 +}
 +
 +#else
 +
-+static void slaunch_stub_fields_update(void) {}
++static void slaunch_stub_entry_update(void) {}
 +
 +#endif /* CONFIG_SECURE_LAUNCH_STUB */
  
  /*
   * Parse zoffset.h and find the entry points. We could just #include zoffset.h
-@@ -320,6 +335,8 @@ static void parse_zoffset(char *fname)
+@@ -320,6 +333,7 @@ static void parse_zoffset(char *fname)
  		PARSE_ZOFS(p, efi32_stub_entry);
  		PARSE_ZOFS(p, efi64_stub_entry);
  		PARSE_ZOFS(p, efi_pe_entry);
-+		PARSE_ZOFS(p, sl_stub_entry);
 +		PARSE_ZOFS(p, sl_mle_header);
  		PARSE_ZOFS(p, startup_64);
  
  		p = strchr(p, '\n');
-@@ -402,6 +419,8 @@ int main(int argc, char ** argv)
+@@ -409,6 +423,8 @@ int main(int argc, char ** argv)
  
  	efi_stub_entry_update();
  
-+	slaunch_stub_fields_update();
++	slaunch_stub_entry_update();
 +
  	crc = partial_crc32(buf, i, crc);
  	if (fwrite(buf, 1, i, dest) != i)
  		die("Writing setup failed");
-diff --git a/arch/x86/include/asm/bootparam_utils.h b/arch/x86/include/asm/bootparam_utils.h
-index a07ffd23e4dd..b6afa1619336 100644
---- a/arch/x86/include/asm/bootparam_utils.h
-+++ b/arch/x86/include/asm/bootparam_utils.h
-@@ -37,7 +37,7 @@ static void sanitize_boot_params(struct boot_params *boot_params)
- 	if (boot_params->sentinel) {
- 		/* fields in boot_params are left uninitialized, clear them */
- 		memset(&boot_params->ext_ramdisk_image, 0,
--		       (char *)&boot_params->efi_info -
-+		       (char *)&boot_params->slaunch_info -
- 			(char *)&boot_params->ext_ramdisk_image);
- 		memset(&boot_params->kbd_status, 0,
- 		       (char *)&boot_params->hdr -
 diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
-index a06cbf019744..b2c5d397ff9c 100644
+index a06cbf019744..9bf73f5ad01c 100644
 --- a/arch/x86/include/uapi/asm/bootparam.h
 +++ b/arch/x86/include/uapi/asm/bootparam.h
-@@ -112,6 +112,14 @@ struct efi_info {
- 	__u32 efi_memmap_hi;
- };
+@@ -86,6 +86,7 @@ struct setup_header {
+ 	__u64	pref_address;
+ 	__u32	init_size;
+ 	__u32	handover_offset;
++	__u32	slaunch_header;
+ } __attribute__((packed));
  
-+struct slaunch_info {
-+	__u32 sl_version;
-+	__u32 sl_entry;   /* Field updated by boot build tool */
-+	__u32 sl_mle_hdr; /* Field updated by boot build tool */
-+	__u32 sl_flags;
-+	__u32 sl_dev_map;
-+} __attribute__((packed));
-+
- /*
-  * This is the maximum number of entries in struct boot_params::e820_table
-  * (the zeropage), which is part of the x86 boot protocol ABI:
-@@ -163,7 +171,8 @@ struct boot_params {
- 	__u32 ext_ramdisk_image;			/* 0x0c0 */
- 	__u32 ext_ramdisk_size;				/* 0x0c4 */
- 	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
--	__u8  _pad4[116];				/* 0x0cc */
-+	__u8  _pad4[96];				/* 0x0cc */
-+	struct slaunch_info slaunch_info;		/* 0x12c */
- 	struct edid_info edid_info;			/* 0x140 */
- 	struct efi_info efi_info;			/* 0x1c0 */
- 	__u32 alt_mem_k;				/* 0x1e0 */
+ struct sys_desc_table {
 -- 
 2.13.6
 
