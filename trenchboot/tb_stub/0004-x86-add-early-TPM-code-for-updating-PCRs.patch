@@ -3,7 +3,7 @@ From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/9] x86: add early TPM code for updating PCRs
 
-Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
  arch/x86/boot/compressed/early_tpm.c | 1108 ++++++++++++++++++++++++++++++++++
