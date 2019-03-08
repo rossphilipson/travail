@@ -1,0 +1,32 @@
+[RFC] Secure Launch boot protocol
+
+All,
+
+As is noted in the patch that follows, the open source project called
+Trenchboot aims to make Linux directly bootable into a secure late launch
+environment via Intel TXT or AMD SKINIT. This new feature is referred to as
+Secure Launch as seen in the subject lines. In addition to changes to the
+Linux kernel to support this feature, boot loaders will also have additional
+functionality to initiate the secure late launch.
+
+The patch that follows introduces a new boot parameter. There are of course
+other patches that add further functionality to achieve our aims including the
+changes to boot loaders that consume this parameter. This posting is as an early
+RFC to elicit feedback on whether this is an acceptable approach for our boot
+protocol and an acceptable usage of boot parameters.
+
+The project is in its early stages; it is hosted here:
+
+https://github.com/trenchboot
+
+For an overview of the Secure Launch architecture:
+
+https://github.com/TrenchBoot/documentation/blob/master/documentation/Architecture.md"
+
+Links:
+
+https://www.intel.com/content/dam/www/public/us/en/documents/guides/intel-txt-software-development-guide.pdf
+https://www.amd.com/system/files/TechDocs/24593.pdf
+
+Thank you,
+Ross Philipson
