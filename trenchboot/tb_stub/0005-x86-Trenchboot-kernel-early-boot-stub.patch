@@ -1,4 +1,4 @@
-From 8d4b06216cddb06f8061058653fe6c6f67a4524f Mon Sep 17 00:00:00 2001
+From 61adb50323d4bdd48088e945a4e3a77bfef3771e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,14 +7,14 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 488 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 737 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 202 ++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 484 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 733 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 1a089f7f7f79..50f1ff478db0 100644
+index 1a089f7..50f1ff4 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -27,7 +27,7 @@ index 1a089f7f7f79..50f1ff478db0 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..4a0c76ecce1a 100644
+index 6403789..4a0c76e 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -92,7 +92,7 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..66c0e90beb74
+index 0000000..66c0e90
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,202 @@
@@ -300,10 +300,10 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..00463adc5909
+index 0000000..74025c2
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,488 @@
+@@ -0,0 +1,484 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -507,13 +507,13 @@ index 000000000000..00463adc5909
 +	leal	sl_idt_table(%ebp), %ecx
 +	xorl	%edx, %edx
 +
-+
 +1:
 +	cmpw	$(NR_VECTORS), %dx
 +	jnz	1f
 +
 +	cmpw	$(TXT_AP_WAKE_IPI_VEC), %dx
 +	jz	2f
++
 +	/* Load default reset vector */
 +	movl	%eax, %esi
 +	movw	%si, (%ecx)
@@ -583,10 +583,6 @@ index 000000000000..00463adc5909
 +
 +	/* Fixup MTRRs and misc enable MSR on APs too */
 +	call	sl_txt_load_regs
-+
-+	/* Read MSR to determine if it will be MWAIT or HLT */
-+	movl	$(MSR_IA32_MISC_ENABLE), %ecx
-+	rdmsr
 +
 +	/* Basically done, increment the CPU count and wait for IPI */
 +	xorl	%ebx, %ebx
@@ -793,5 +789,5 @@ index 000000000000..00463adc5909
 +	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
 -- 
-2.13.6
+2.1.4
 
