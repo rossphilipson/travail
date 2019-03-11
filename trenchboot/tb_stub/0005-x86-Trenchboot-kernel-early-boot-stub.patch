@@ -1,4 +1,4 @@
-From 37e4a0cc4467643a2731fb8f11bec030fae81998 Mon Sep 17 00:00:00 2001
+From 8d4b06216cddb06f8061058653fe6c6f67a4524f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
  arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 486 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 735 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 488 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 737 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -300,10 +300,10 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..14925efc0d30
+index 000000000000..00463adc5909
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,486 @@
+@@ -0,0 +1,488 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -519,6 +519,7 @@ index 000000000000..14925efc0d30
 +	movw	%si, (%ecx)
 +	shrl	$16, %esi
 +	movw	%si, 6(%ecx)
++	jmp	3f
 +
 +2:
 +	/* Load wake IPI vector */
@@ -527,13 +528,14 @@ index 000000000000..14925efc0d30
 +	shrl	$16, %esi
 +	movw	%si, 6(%ecx)
 +
++3:
 +	cmpw	$(MCE_VECTOR), %dx
-+	jnz	3f
++	jnz	4f
 +
 +	/* Fixup MCE vectore to be a trap */
 +	movw	$0x8f00, 4(%ecx) /* Present, DPL=0, 32b Vector, Trap */
 +
-+3:
++4:
 +	incw	%dx
 +	addl	$8, %ecx
 +	jmp	1b
