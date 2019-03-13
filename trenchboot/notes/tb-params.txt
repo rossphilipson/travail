@@ -47,7 +47,7 @@ version: 32 bit number. Not really used yet since this is version but in
 zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
                 loader.
 
-msb_key_hash: TODO Daniel has to fill this in. Setup by the loader.
+msb_key_hash: 20 bytes. TODO Daniel has to fill this in. Setup by the loader.
 
 saved_misc_enable_msr: 64 bit saved value of the misc enable MSR that must
                        be restored in early stub. Setup by the launch code.
@@ -60,7 +60,7 @@ lo_pmr_min: Special value for setting up the low PMR. Setup by the loader.
 ap_wake_ebp: 64 bit area to save %ebp so the APs can locate themselves
              when woken. Written by the BSP stub.
 
-ap_rm_entry: 64 bit area to store physical address for the realmode entry
+ap_pm_entry: 64 bit area to store physical address for the prot mode entry
              thunk. Written by the TB SMP code.
 
 event_log_buffer: TODO Daniel has to fill this in. Setup by the loader.
@@ -71,16 +71,16 @@ The LZ header is offset 4 bytes in the landing zone. It has the following
 fields that GRUB must setup (the type lz_header_t defines the fields in
 lz/include/boot.h):
 
-slaunch_loader_base: The physical base of the IL used to hash the IL into
-                     PCR 17 in the LZ. Setup by the loader.
+uuid: 16 byte header identifier.
 
 slaunch_loader_size: The total size of the IL used to hash the IL into
                      PCR 17 in the LZ. Setup by the loader.
 
 zero_page_addr: 32 bit address of the zero page in low memory. Setup by the
-                loader.
+                loader. Having the boot params allows the LZ to find the
+                base of the IL.
 
-msb_key_hash: TODO Daniel has to fill this in. Setup by the loader.
+msb_key_hash: 20 bytes. TODO Daniel has to fill this in. Setup by the loader.
 
 -- MLE Header --
 
