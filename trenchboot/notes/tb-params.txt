@@ -29,11 +29,11 @@ where the EFI map is turned into the GRUB map after EBS.
 Trenchboot will have a single boot param in the setup_header:
 (arch/x86/include/uapi/asm/bootparam.h):
 
-sl_mle_hdr: This 32b value is filled in by the build tool at IL kernel build
-            time and is read by the loader to know where the TXT MLE header
-            within the MLE. GRUB must fill in a number of values in this
-            header. This header is also used by SKINIT (see below for both
-            usages).
+mle_hdr: This 32b value is filled in by the build tool at IL kernel build
+         time and is read by the loader to know where the TXT MLE header
+         within the MLE. GRUB must fill in a number of values in this
+         header. This header is also used by SKINIT (see below for both
+         usages).
 
 -- TXT Heap Params --
 
