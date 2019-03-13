@@ -1,20 +1,20 @@
-From e2b01028f5fc5a933f7dc22a3bcd03bde90901b8 Mon Sep 17 00:00:00 2001
+From 835d613d6a2b33431c018b8cb03b271ff512a08f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 199 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 199 insertions(+)
+ arch/x86/include/asm/slaunch.h | 197 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 197 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..efbd9d8a3322
+index 000000000000..fefb8be4afb3
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,197 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -27,8 +27,6 @@ index 000000000000..efbd9d8a3322
 +
 +#define __SL32_CS	0x0008
 +#define __SL32_DS	0x0010
-+#define __SL16_CS	0x0018
-+#define __SL16_DS	0x0020
 +
 +#define SL_CPU_AMD		1
 +#define SL_CPU_INTEL		2
