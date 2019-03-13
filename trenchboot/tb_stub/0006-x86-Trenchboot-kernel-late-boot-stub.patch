@@ -1,4 +1,4 @@
-From 066d63838b761fb26061309f682611097e4e444e Mon Sep 17 00:00:00 2001
+From dc6a8b901355a887cfe52fdacc7c5bfddaeeec62 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/9] x86: Trenchboot kernel late boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 ++
- arch/x86/kernel/slaunch.c | 187 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 195 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 ++
- 4 files changed, 198 insertions(+)
+ 4 files changed, 206 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -49,33 +49,23 @@ index b4866badb235..b359129cb408 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..795080eecaed
+index 000000000000..094c18f26980
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,195 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2019 Apertus Solutions, LLC
 + *
 + * Author(s):
-+ *     Ross Philipson <ross.philipson@oracle.com>
++ *     Daniel P. Smith <dpsmith@apertussolutions.com>
 + *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
 +#include <linux/init.h>
 +#include <linux/linkage.h>
++#include <linux/memblock.h>
 +#include <asm/segment.h>
 +#include <asm/boot.h>
 +#include <asm/msr.h>
@@ -169,6 +159,7 @@ index 000000000000..795080eecaed
 +{
 +	void __iomem *txt;
 +	u64 val = 0x1ULL;
++	phys_addr_t base;
 +
 +	txt = early_ioremap(TXT_PRIV_CONFIG_REGS_BASE,
 +			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
@@ -203,6 +194,23 @@ index 000000000000..795080eecaed
 +
 +	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +
++	/*
++	 * Protect the secure launch area in the .text section of the
++	 * protected mode enty area where the APs are idling. Note the
++	 * size we care about is far smaller than a page.
++	 */
++	base = boot_params.hdr.code32_start +
++		boot_params.hdr.slaunch_header;
++	if (memblock_reserve(base, PAGE_SIZE)) {
++		printk(KERN_ERR PREFIX
++		       "Secure Launch could not reserve AP wake region\n");
++		/* TODO add TPM info log entry */
++		sl_flags = 0;
++		return;
++	}
++
++	/* TODO protect TXT priv-regs, heap and SINIT */
++	/* TODO process MDRs and reserve mem regions */
 +	/* TODO validate the PMRs */
 +}
 +

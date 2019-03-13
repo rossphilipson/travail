@@ -1,41 +1,18 @@
-From 93ecfb7d0f9c6ff8f45e7aabd9c4087dca5d03c7 Mon Sep 17 00:00:00 2001
+From c41115eb02de25ea40fc22527724eb94249ac0e9 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 259 +++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 244 insertions(+), 15 deletions(-)
+ arch/x86/kernel/slaunch.c | 241 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 241 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 795080eecaed..29e8b6bee73d 100644
+index 094c18f26980..1ea68172d39d 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -1,26 +1,18 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
- /*
-  * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-+ * Copyright (c) 2019 Apertus Solutions, LLC
-  *
-  * Author(s):
-- *     Ross Philipson <ross.philipson@oracle.com>
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public License
-- * as published by the Free Software Foundation; either version 2
-- * of the License, or (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ *     Daniel P. Smith <dpsmith@apertussolutions.com>
-  */
+@@ -10,6 +10,10 @@
  
  #include <linux/init.h>
  #include <linux/linkage.h>
@@ -43,10 +20,10 @@ index 795080eecaed..29e8b6bee73d 100644
 +#include <linux/slab.h>
 +#include <linux/uaccess.h>
 +#include <linux/security.h>
+ #include <linux/memblock.h>
  #include <asm/segment.h>
  #include <asm/boot.h>
- #include <asm/msr.h>
-@@ -185,3 +177,240 @@ void slaunch_setup(void)
+@@ -193,3 +197,240 @@ void slaunch_setup(void)
  		return;
  	}
  }

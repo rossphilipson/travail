@@ -271,7 +271,7 @@ typedef struct __packed {
     mtrr_state_t saved_mtrr_state;      /* saved prior to changes for SINIT */
     uint64_t     lo_pmr_min;
     uint64_t     ap_wake_ebp;
-    uint64_t     ap_rm_entry;
+    uint64_t     ap_pm_entry;
     uint8_t      event_log_buffer[MAX_EVENT_LOG_SIZE];
 } os_mle_data_t;
 

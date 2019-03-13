@@ -1,4 +1,4 @@
-From 61adb50323d4bdd48088e945a4e3a77bfef3771e Mon Sep 17 00:00:00 2001
+From d6f52ad6f9ae46b8cbeb53aedb3faeaae8702e4d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,14 +7,14 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 202 ++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 484 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 733 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 493 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 742 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 1a089f7..50f1ff4 100644
+index 1a089f7f7f79..50f1ff478db0 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -27,7 +27,7 @@ index 1a089f7..50f1ff4 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 6403789..4a0c76e 100644
+index 64037895b085..4a0c76ecce1a 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -92,7 +92,7 @@ index 6403789..4a0c76e 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 0000000..66c0e90
+index 000000000000..66c0e90beb74
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,202 @@
@@ -300,10 +300,10 @@ index 0000000..66c0e90
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 0000000..74025c2
+index 000000000000..5b30518b1488
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,484 @@
+@@ -0,0 +1,493 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -443,6 +443,10 @@ index 0000000..74025c2
 +
 +	/* Save ebp so the APs can find their way home */
 +	movl	%ebp, TXT_OS_MLE_AP_WAKE_EBP(%eax)
++
++	/* Store the AP PM entry address location that is update later */
++	leal	sl_ap_pm_entry_addr(%ebp), %ecx
++	movl	%ecx, TXT_OS_MLE_AP_PM_ENTRY(%eax)
 +
 +	/* Note only %esi and %ebp MUST be preserved across calls */
 +	movl	%eax, %edi
@@ -595,6 +599,11 @@ index 0000000..74025c2
 +	pause
 +	jmp	1b
 +2:
++
++	.byte	0xea
++sl_ap_pm_entry_addr:
++	.long	0x00000000
++	.word	__SL32_CS
 +ENDPROC(sl_txt_ap_entry)
 +
 +ENTRY(sl_txt_load_regs)
@@ -789,5 +798,5 @@ index 0000000..74025c2
 +	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
 -- 
-2.1.4
+2.13.6
 

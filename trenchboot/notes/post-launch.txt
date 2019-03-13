@@ -9,6 +9,7 @@ Questions:
    * WRONG The GRUB loaders will have to setup the e820 using the final EFI memmap.
    * Actually the EFI memmap is passed via boot params and Linux handles it.
    * TODO can TB turn around and allow an EFI like launch?
+   * TODO determine if the memmap is turned into e820 in all cases.
  - How/where to handle and measure cmdlines and images for other boot modules?
    * This will happen in the IL security environment before next stages are
      booted.
@@ -28,7 +29,9 @@ Questions:
  - TXT: What are we passing in the OS-MLE data?
    * See tb-params.txt
  - TXT/SKINIT: Reserving memory regions
-   * TODO marks TXT heap, ACM etc as RESERVED. Other bits too (is this post launch?)
+   * TODO mark TXT heap, ACM etc as RESERVED. Other bits too (post launch.
+     This is really needed when the IL is the main kernel (SEXIT would make
+     it not needed).
    * TODO anything needed to be reserverd for SKINIT?
  - SKINIT: What post launch things need to be checked?
  - TXT:
