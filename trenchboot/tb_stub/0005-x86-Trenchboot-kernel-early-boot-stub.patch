@@ -1,4 +1,4 @@
-From 24dbd472376b727963ea99391900fb446c13dfc5 Mon Sep 17 00:00:00 2001
+From 0d36808784aee8f4f76012c989217f739665fce4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 485 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 734 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 202 ++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 466 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 715 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -300,10 +300,10 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..7e581b4327d6
+index 000000000000..e57bcb697b12
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,485 @@
+@@ -0,0 +1,466 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -505,46 +505,7 @@ index 000000000000..7e581b4327d6
 +	movl	TXT_OS_MLE_AP_WAKE_EBP(%eax), %ebp
 +	movl	%eax, %edi
 +
-+	/* Setup our IDT */
-+	leal	sl_txt_int_reset(%ebp), %eax
-+	leal	sl_txt_int_ipi_wake(%ebp), %ebx
-+	leal	sl_idt_table(%ebp), %ecx
-+	xorl	%edx, %edx
-+
-+1:
-+	cmpw	$(NR_VECTORS), %dx
-+	jz	1f
-+
-+	cmpw	$(TXT_AP_WAKE_IPI_VEC), %dx
-+	jz	2f
-+
-+	/* Load default reset vector */
-+	movl	%eax, %esi
-+	movw	%si, (%ecx)
-+	shrl	$16, %esi
-+	movw	%si, 6(%ecx)
-+	jmp	3f
-+
-+2:
-+	/* Load wake IPI vector */
-+	movl	%ebx, %esi
-+	movw	%si, (%ecx)
-+	shrl	$16, %esi
-+	movw	%si, 6(%ecx)
-+
-+3:
-+	cmpw	$(MCE_VECTOR), %dx
-+	jnz	4f
-+
-+	/* Fixup MCE vectore to be a trap */
-+	movw	$0x8f00, 4(%ecx) /* Present, DPL=0, 32b Vector, Trap */
-+
-+4:
-+	incw	%dx
-+	addl	$8, %ecx
-+	jmp	1b
-+
-+1:
++	/* Load the IDT */
 +	addl	%ebp, (sl_idt_desc + 2)(%ebp)
 +	lidt	sl_idt_desc(%ebp)
 +
@@ -663,7 +624,27 @@ index 000000000000..7e581b4327d6
 +ENDPROC(sl_txt_load_regs)
 +
 +ENTRY(sl_txt_wake_aps)
-+	/* First setup the MLE join structure and load it into TXT reg */
++	/* First setup the IDT for the APs to use */
++	leal	sl_txt_int_ipi_wake(%ebp), %ebx
++	leal	sl_idt_table(%ebp), %ecx
++	xorl	%edx, %edx
++
++1:
++	cmpw	$(NR_VECTORS), %dx
++	jz	2f
++
++	/* Load wake IPI vector */
++	movl	%ebx, %eax
++	movw	%ax, (%ecx)
++	shrl	$16, %eax
++	movw	%ax, 6(%ecx)
++
++	incw	%dx
++	addl	$8, %ecx
++	jmp	1b
++
++2:
++	/* Next setup the MLE join structure and load it into TXT reg */
 +	leal	sl_gdt(%ebp), %eax
 +	leal	sl_txt_ap_entry(%ebp), %ecx
 +	leal	sl_txt_mle_join(%ebp), %edx
