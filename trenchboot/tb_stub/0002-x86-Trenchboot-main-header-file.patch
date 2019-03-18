@@ -1,4 +1,4 @@
-From 835d613d6a2b33431c018b8cb03b271ff512a08f Mon Sep 17 00:00:00 2001
+From 1e39e77f6124597b8700364ae4655ecb75478ab1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file

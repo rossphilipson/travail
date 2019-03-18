@@ -1,4 +1,4 @@
-From 8f1f1538149d4aebf547ea94b71639817bc3c7f8 Mon Sep 17 00:00:00 2001
+From 24dbd472376b727963ea99391900fb446c13dfc5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -300,7 +300,7 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..d325297a3be4
+index 000000000000..7e581b4327d6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
 @@ -0,0 +1,485 @@
@@ -513,7 +513,7 @@ index 000000000000..d325297a3be4
 +
 +1:
 +	cmpw	$(NR_VECTORS), %dx
-+	jnz	1f
++	jz	1f
 +
 +	cmpw	$(TXT_AP_WAKE_IPI_VEC), %dx
 +	jz	2f

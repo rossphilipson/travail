@@ -1,4 +1,4 @@
-From dc6a8b901355a887cfe52fdacc7c5bfddaeeec62 Mon Sep 17 00:00:00 2001
+From e2d3246efb537e9cb250e6b94df647b94676ce45 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/9] x86: Trenchboot kernel late boot stub
