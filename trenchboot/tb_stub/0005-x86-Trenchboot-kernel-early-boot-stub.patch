@@ -760,7 +760,7 @@ index 000000000000..799c914c8f48
 +	.quad	0x0000000000000000	/* NULL */
 +	.quad	0x00cf9a000000ffff	/* __SL32_CS */
 +	.quad	0x00cf92000000ffff	/* __SL32_DS */
-+	.quad	0x008f89000000ffff	/* TSS */
++	.quad	0x008f89000000ffff	/* __SL32_TSS */
 +sl_gdt_end:
 +
 +	.balign 16
