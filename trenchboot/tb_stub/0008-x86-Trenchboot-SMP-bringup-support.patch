@@ -1,4 +1,4 @@
-From 4139e3df6f1984baf00c03eaa9ff8ec0f08bffe6 Mon Sep 17 00:00:00 2001
+From c79cbe7a108d40c4360ea6fd0ffede250c6fa98d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
@@ -29,7 +29,7 @@ index 63b3393bd98e..e2b71fb9dc85 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 6489067b78a4..bc83c3632f23 100644
+index 6489067b78a4..c2151e199a5d 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -85,8 +85,8 @@ index 6489067b78a4..bc83c3632f23 100644
 +	if (slaunch_fixup_jump_vector())
 +		return -1;
 +
-+	/* Send IPI to idling AP and wake it up */
-+	apic_icr_write(APIC_DM_FIXED | TXT_AP_WAKE_IPI_VEC, apicid);
++	/* Send NMI IPI to idling AP and wake it up */
++	apic_icr_write(APIC_DM_NMI, apicid);
 +
 +	if (init_udelay == 0)
 +		udelay(10);

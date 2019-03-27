@@ -1,4 +1,4 @@
-From 100ecf1643e45ba9f076c47d0c5020e40aca9935 Mon Sep 17 00:00:00 2001
+From 6aae7bad63b7f6e8401530ef8de1ab680b3ccb74 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
  arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 515 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 764 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 504 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 753 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -300,10 +300,10 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..8296d4712447
+index 000000000000..4133a87f15b6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,504 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -552,11 +552,6 @@ index 000000000000..8296d4712447
 +.Lsl_ap_cs:
 +	addl	$8, %esp
 +
-+	/*xorl	%eax, %eax
-+	lldt	%ax
-+	movl    $__SL32_TSS, %eax
-+	ltr	%ax*/
-+
 +	/* Load the IDT */
 +	lidt	sl_idt_desc(%ebp)
 +
@@ -596,11 +591,6 @@ index 000000000000..8296d4712447
 +	pause
 +	jmp	1b
 +2:
-+
-+	/* Restore whatever the APIC mode was before, %edx unchanged */
-+	movl	$(MSR_IA32_APICBASE), %ecx
-+	movl	%edi, %eax
-+	wrmsr
 +
 +	.byte	0xea
 +sl_ap_pm_entry_addr:
@@ -775,7 +765,6 @@ index 000000000000..8296d4712447
 +	.quad	0x0000000000000000	/* NULL */
 +	.quad	0x00cf9a000000ffff	/* __SL32_CS */
 +	.quad	0x00cf92000000ffff	/* __SL32_DS */
-+	.quad	0x008f89000000ffff	/* __SL32_TSS */
 +sl_gdt_end:
 +
 +	.balign 16

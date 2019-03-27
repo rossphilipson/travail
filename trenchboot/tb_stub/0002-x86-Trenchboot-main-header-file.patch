@@ -1,20 +1,20 @@
-From 0ad558ecb77d20c6437de17e58f37a64b076be82 Mon Sep 17 00:00:00 2001
+From 22a56a0ee2cc620d0f7ca2a9ac9d137e3c8ffc0e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 198 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 198 insertions(+)
+ arch/x86/include/asm/slaunch.h | 196 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 196 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..d30b05d93652
+index 000000000000..286c2d978665
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,196 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -27,7 +27,6 @@ index 000000000000..d30b05d93652
 +
 +#define __SL32_CS	0x0008
 +#define __SL32_DS	0x0010
-+#define __SL32_TSS	0x0018
 +
 +#define SL_CPU_AMD		1
 +#define SL_CPU_INTEL		2
@@ -97,7 +96,6 @@ index 000000000000..d30b05d93652
 +
 +#define TXT_MAX_CPUS			512
 +#define TXT_BOOT_STACK_SIZE		24
-+#define TXT_AP_WAKE_IPI_VEC		0x40
 +
 +#define SKINIT_LZ_OFFSET		28
 +#define SKINIT_DEV_MAP_OFFSET		0x7000
