@@ -18,6 +18,9 @@
 #include <asm/slaunch.h>
 
 /* Can't include apiddef.h in asm */
+#define APIC_BASE_MSR	0x800
+#define XAPIC_ENABLE	(1 << 11)
+#define X2APIC_ENABLE	(1 << 10)
 #define	APIC_EOI	0xB0
 #define	APIC_EOI_ACK	0x0
 
@@ -269,6 +272,13 @@ ENTRY(sl_txt_ap_entry)
 	/* Fixup MTRRs and misc enable MSR on APs too */
 	call	sl_txt_load_regs
 
+	/* Put APs in X2APIC mode like the BSP */
+	movl	$(MSR_IA32_APICBASE), %ecx
+	rdmsr
+	movl	%eax, %edi
+	orl	$(XAPIC_ENABLE|X2APIC_ENABLE), %eax
+	wrmsr
+
 	/* Basically done, increment the CPU count and wait for IPI */
 	xorl	%ebx, %ebx
 	sti
@@ -280,6 +290,11 @@ ENTRY(sl_txt_ap_entry)
 	pause
 	jmp	1b
 2:
+
+	/* Restore whatever the APIC mode was before, %edx unchanged */
+	movl	$(MSR_IA32_APICBASE), %ecx
+	movl	%edi, %eax
+	wrmsr
 
 	.byte	0xea
 sl_ap_pm_entry_addr:
@@ -422,11 +437,11 @@ ENDPROC(sl_txt_wake_aps)
 ENTRY(sl_txt_int_ipi_wake)
 	movl	$1, %ebx
 
-	movl	$(MSR_IA32_APICBASE), %ecx
-	rdmsr
-	andl	$(MSR_IA32_APICBASE_BASE), %eax
-	addl	$(APIC_EOI), %eax
-	movl	$(APIC_EOI_ACK), (%eax)
+	movl	$(APIC_EOI), %ecx
+	shrl	$4, %ecx
+	addl	$(APIC_BASE_MSR), %ecx
+	movl	$(APIC_EOI_ACK), %eax
+	wrmsr
 
 	iret
 ENDPROC(sl_txt_int_ipi_wake)
