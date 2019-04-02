@@ -7,7 +7,7 @@ PHDRS
 }
 SECTIONS
 {
-  . = 0x0800000;
+  . = 0x02C00000;
 
   .text : {
 	*(.slboot_multiboot_header)

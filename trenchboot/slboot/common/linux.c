@@ -314,17 +314,18 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* load real-mode part */
     tb_memmove((void *)real_mode_base, linux_image, real_mode_size);
-    printk(TBOOT_DETA"Kernel (real mode) from 0x%lx to 0x%lx\n",
+    printk(TBOOT_DETA"Kernel (real mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)linux_image,
-           (unsigned long)real_mode_base);
-    printk(TBOOT_DETA"gggg: 0x%x\n", *((uint32_t*)real_mode_base));
+           (unsigned long)real_mode_base,
+           (unsigned long)real_mode_size);
 
     /* load protected-mode part */
     tb_memmove((void *)protected_mode_base, linux_image + real_mode_size,
             protected_mode_size);
-    printk(TBOOT_DETA"Kernel (protected mode) from 0x%lx to 0x%lx\n",
+    printk(TBOOT_DETA"Kernel (protected mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)(linux_image + real_mode_size),
-           (unsigned long)protected_mode_base);
+           (unsigned long)protected_mode_base,
+           (unsigned long)protected_mode_size);
 
     /* reset pointers to point into zero page at real mode base */
     hdr = (linux_kernel_header_t *)(real_mode_base + KERNEL_HEADER_OFFSET);
