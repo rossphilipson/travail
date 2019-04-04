@@ -1,4 +1,4 @@
-From 6528a03b0eed45356d128c41362f32ba375a5914 Mon Sep 17 00:00:00 2001
+From 5048fe1cd166360ed6be4852adffbee64aa411f6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 202 ++++++++++++++
+ arch/x86/boot/compressed/sl_main.c | 220 ++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 522 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 771 insertions(+), 1 deletion(-)
+ 4 files changed, 789 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -92,10 +92,10 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..66c0e90beb74
+index 000000000000..35cd03678e5c
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,220 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -206,6 +206,7 @@ index 000000000000..66c0e90beb74
 +	u32 cmdline_len;
 +	u64 cmdline_addr;
 +	struct tpm *tpm;
++	struct boot_params *bp;
 +	int ret;
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
@@ -259,8 +260,22 @@ index 000000000000..66c0e90beb74
 +			sl_skinit_reset();
 +	}
 +
-+	tpm_relinquish_locality(tpm);
-+	free_tpm(tpm);
++	/* Now safe to use boot params, measure any external initrd */
++	bp = (struct boot_params*)bootparams;
++	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0) {
++		early_sha1_init(&sctx);
++		early_sha1_update(&sctx, (u8*)bp->hdr.ramdisk_image,
++				  bp->hdr.ramdisk_size);
++		early_sha1_finalize(&sctx);
++		early_sha1_finish(&sctx, &sha1_hash[0]);
++		ret = tpm_extend_pcr(tpm, 17, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
++		if (ret) {
++			if (sl_cpu_type == SL_CPU_INTEL)
++				sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
++			else
++				sl_skinit_reset();
++		}
++	}
 +
 +	if (sl_cpu_type == SL_CPU_INTEL) {
 +		struct txt_os_mle_data *os_mle_data;
@@ -297,6 +312,9 @@ index 000000000000..66c0e90beb74
 +		 */
 +		sl_txt_validate_msrs(os_mle_data);
 +	}
++
++	tpm_relinquish_locality(tpm);
++	free_tpm(tpm);
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
