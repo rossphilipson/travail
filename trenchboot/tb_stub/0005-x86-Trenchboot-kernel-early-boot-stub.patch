@@ -1,4 +1,4 @@
-From 6aae7bad63b7f6e8401530ef8de1ab680b3ccb74 Mon Sep 17 00:00:00 2001
+From 6528a03b0eed45356d128c41362f32ba375a5914 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 202 +++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 504 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 753 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 202 ++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 522 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 771 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -300,10 +300,10 @@ index 000000000000..66c0e90beb74
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..4133a87f15b6
+index 000000000000..ff15b965a56a
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,504 @@
+@@ -0,0 +1,522 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -329,6 +329,9 @@ index 000000000000..4133a87f15b6
 +#define X2APIC_ENABLE	(1 << 10)
 +#define	APIC_EOI	0xB0
 +#define	APIC_EOI_ACK	0x0
++
++/* Can't include traps.h in asm */
++#define X86_TRAP_NMI	2
 +
 +	/* The MLE Header per the TXT Specification, section 4.1 */
 +	.global	sl_mle_header
@@ -580,9 +583,12 @@ index 000000000000..4133a87f15b6
 +	orl	$(XAPIC_ENABLE|X2APIC_ENABLE), %eax
 +	wrmsr
 +
-+	/* Basically done, increment the CPU count and wait for IPI */
++	/*
++	 * Basically done, increment the CPU count and wait for NMI IPI.
++	 * Leave all other interrupts masked since we do no expect anything
++	 * but an NMI.
++	 */
 +	xorl	%ebx, %ebx
-+	sti
 +	lock incl	sl_txt_cpu_count(%ebp)
 +
 +1:
@@ -656,25 +662,37 @@ index 000000000000..4133a87f15b6
 +
 +ENTRY(sl_txt_wake_aps)
 +	/* First setup the IDT for the APs to use */
-+	leal	sl_txt_int_ipi_wake(%ebp), %ebx
++	leal	sl_txt_int_reset(%ebp), %ebx
 +	leal	sl_idt(%ebp), %ecx
 +	xorl	%edx, %edx
 +
 +1:
 +	cmpw	$(NR_VECTORS), %dx
++	jz	.Lidt_done
++
++	cmpw	$(X86_TRAP_NMI), %dx
 +	jz	2f
 +
-+	/* Load wake IPI vector */
++	/* Load all other fixed vectors with reset handler (SNO) */
 +	movl	%ebx, %eax
 +	movw	%ax, (%ecx)
 +	shrl	$16, %eax
 +	movw	%ax, 6(%ecx)
++	jmp	3f
 +
++2:
++	/* Load single wake NMI IPI vector */
++	leal	sl_txt_int_ipi_wake(%ebp), %eax
++	movw	%ax, (%ecx)
++	shrl	$16, %eax
++	movw	%ax, 6(%ecx)
++
++3:
 +	incw	%dx
 +	addl	$8, %ecx
 +	jmp	1b
 +
-+2:
++.Lidt_done:
 +	/* Fixup descriptor */
 +	addl	%ebp, (sl_idt_desc + 2)(%ebp)
 +
