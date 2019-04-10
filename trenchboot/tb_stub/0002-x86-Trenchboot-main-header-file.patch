@@ -1,20 +1,20 @@
-From 22a56a0ee2cc620d0f7ca2a9ac9d137e3c8ffc0e Mon Sep 17 00:00:00 2001
+From 3213593da30cccd256f6298eb4a3e291125cae66 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/9] x86: Trenchboot main header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 196 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 196 insertions(+)
+ arch/x86/include/asm/slaunch.h | 193 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 193 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..286c2d978665
+index 000000000000..6d10854c1a52
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,193 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -101,9 +101,6 @@ index 000000000000..286c2d978665
 +#define SKINIT_DEV_MAP_OFFSET		0x7000
 +
 +#define SLAUNCH_INFO_OFFSET	0x268
-+
-+#define BP_CMD_LINE_PTR		0x228
-+#define BP_CMDLINE_SIZE		0x238
 +
 +#define SL_FLAG_ACTIVE		0x00000001
 +#define SL_FLAG_ARCH_SKINIT	0x00000002

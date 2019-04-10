@@ -1,4 +1,4 @@
-From 5048fe1cd166360ed6be4852adffbee64aa411f6 Mon Sep 17 00:00:00 2001
+From b205f951b72d65b545b694eef17f4b9f59bbd6c2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/9] x86: Trenchboot kernel early boot stub
@@ -7,9 +7,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 220 ++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c | 219 ++++++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 522 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 789 insertions(+), 1 deletion(-)
+ 4 files changed, 788 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -92,10 +92,10 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..35cd03678e5c
+index 000000000000..99de3cac4bc2
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,219 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -203,8 +203,6 @@ index 000000000000..35cd03678e5c
 +{
 +	struct sha1_state sctx = {0};
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
-+	u32 cmdline_len;
-+	u64 cmdline_addr;
 +	struct tpm *tpm;
 +	struct boot_params *bp;
 +	int ret;
@@ -230,7 +228,7 @@ index 000000000000..35cd03678e5c
 +			sl_skinit_reset();
 +	}
 +
-+	/* Hash the zero page/boot params */
++	/* Measure the zero page/boot params */
 +	early_sha1_init(&sctx);
 +	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
 +	early_sha1_finalize(&sctx);
@@ -243,13 +241,14 @@ index 000000000000..35cd03678e5c
 +			sl_skinit_reset();
 +	}
 +
-+	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+	cmdline_len = *((u32*)(bootparams + BP_CMDLINE_SIZE));
-+	cmdline_addr = *((u32*)(bootparams + BP_CMD_LINE_PTR));
++	/* Now safe to use boot params */
++	bp = (struct boot_params*)bootparams;
 +
-+	/* Hash the command line */
++	/* Measure the command line */
++	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8*)cmdline_addr, cmdline_len);
++	early_sha1_update(&sctx, (u8*)((u64)bp->hdr.cmd_line_ptr),
++			  bp->hdr.cmdline_size);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
@@ -260,11 +259,11 @@ index 000000000000..35cd03678e5c
 +			sl_skinit_reset();
 +	}
 +
-+	/* Now safe to use boot params, measure any external initrd */
-+	bp = (struct boot_params*)bootparams;
++	/* Measure any external initrd */
 +	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0) {
++		memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +		early_sha1_init(&sctx);
-+		early_sha1_update(&sctx, (u8*)bp->hdr.ramdisk_image,
++		early_sha1_update(&sctx, (u8*)((u64)bp->hdr.ramdisk_image),
 +				  bp->hdr.ramdisk_size);
 +		early_sha1_finalize(&sctx);
 +		early_sha1_finish(&sctx, &sha1_hash[0]);
