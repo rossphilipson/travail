@@ -1,7 +1,10 @@
-From 3213593da30cccd256f6298eb4a3e291125cae66 Mon Sep 17 00:00:00 2001
+From fe50d17fb2216f059007d6305f47c3ff0bc300a1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
-Subject: [PATCH 2/9] x86: Trenchboot main header file
+Subject: [PATCH 2/9] x86: Secure Launch main header file
+
+Introduce the main Secure Launch header file used in the early SL stub and
+the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---

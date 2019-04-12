@@ -1,7 +1,13 @@
-From 560aa037e093a395ebebea164ca680eb12fe3234 Mon Sep 17 00:00:00 2001
+From bef535435251eeb688876e85b5915ad5bad76b6f Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 9/9] x86: Secure Launch adding event log securityfs
+
+The late init functionality registers securityfs nodes to allow fetching
+of the late launch TPM log and other platform specific operations. TXT also
+stores a copy of the DMAR ACPI table to protect it from tampering during the
+late launch. This copy of the table will be made available to the ACPI drivers
+instead of the one found in the firmware.
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---

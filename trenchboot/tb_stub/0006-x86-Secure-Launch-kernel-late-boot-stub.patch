@@ -1,7 +1,16 @@
-From e2d3246efb537e9cb250e6b94df647b94676ce45 Mon Sep 17 00:00:00 2001
+From ca4d93164aa6dc06a26797ec0c04378011cfa89e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
-Subject: [PATCH 6/9] x86: Trenchboot kernel late boot stub
+Subject: [PATCH 6/9] x86: Secure Launch kernel late boot stub
+
+The routine slaunch_setup is called out of the x86 specific setup_arch
+routine during early kernel boot. After determining what platform is present,
+various operations specific to that platform occur. This includes finalizing
+setting for the platform late launch and verifying that memory protections
+are in place.
+
+For TXT, this code also reserves the original compressed kernel setup area
+where the APs were left looping so that this memory cannot be used.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---

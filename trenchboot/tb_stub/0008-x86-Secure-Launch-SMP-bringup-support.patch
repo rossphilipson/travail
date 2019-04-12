@@ -1,10 +1,23 @@
-From c79cbe7a108d40c4360ea6fd0ffede250c6fa98d Mon Sep 17 00:00:00 2001
+From 52d4c733c1884af984522b182d32107fa3bcf007 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
-Subject: [PATCH 8/9] x86: Trenchboot SMP bringup support
+Subject: [PATCH 8/9] x86: Secure Launch SMP bringup support
 
-Note the AP bringup is very different becuase SKINIT and the ACM leave
-the APs in very different states post launch.
+On Intel, the APs are left in a well documented state after TXT performs the
+late launch. Specifically they cannot have #INIT asserted on them so a standard
+startup via INIT/SIPI/SIPI cannot be performed. Instead the early SL stub code
+parked the APs in a pause/jmp loop waiting for an NMI. The modified SMP boot
+code is called for the Secure Launch case. The jump address for the RM piggy
+entry point is fixed up in the jump where the APs are waiting and an NMI IPI
+is sent to the AP. The AP vectors to the Secure Launch entry point in the RM
+piggy which mimics what the real mode code would do then jumps the the standard
+RM piggy protected mode entry point.
+
+For AMD things are quite different. The SKINIT instruction leaves the APs
+halted with #INIT asserted. So the normal SMP boot code can just issue the
+INIT/SIPI/SIPI sequence on the APs. The only change is that all interrupts are
+globally disabled on AMD APs and must be re-enabled with the STGI instruction.
+This is done in the entry to the RM piggy.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
