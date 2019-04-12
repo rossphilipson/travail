@@ -1,0 +1,73 @@
+x86: Trenchboot secure late launch Linux kernel support
+
+The basic idea of the Trenchboot project is to allow a Linux kernel to be
+directly "late launched" establising a Dynamic Root of Trust Measurement
+(DRTM). The late launch will be initiated by boot loader with assocaited
+support added to it, for example the first capable target will be GRUB2.
+The process of establishing a DRTM involves measuring everything
+that is intended to be run (kernel image, initrd, etc) and everything that
+will configure that kernel to run (command line, boot params, etc) into
+specific PCRs in the TPM. Another key aspect is the late launch is rooted
+in hardware. On Intel this is done using TXT and on AMD it is done using
+SKINIT. Information on these technologies can be readily found online.
+
+To make a kernel able to be launched from TXT or SKINIT, a stub must be built
+into the setup section of the compressed kernel to handle the sepcific state
+that the late launch process leaves the BSP in. This is a lot like the EFI stub
+that is found in the same area. Also this stub must measure everything that is
+going to be used as early as possible. This stub code and subsequent code must
+also deal with the specific state that the late launch leaves the APs in.
+
+A quick note on terminology. The open source project itself is called
+Trenchboot which is hosted on Github (links below). The technology is
+referred to as "Secure Launch" within the kernel code. So the prefixes
+sl_/SL_ or slaunch/SLAUNCH will be seen in the code. The stub code discussed
+above is referred to as the SL stub.
+
+The basic flow is:
+
+ - Entry from the late launch jumps to the SL stub
+ - SL stub fixes up the world on the BSP
+ - For TXT, SL stub wakes the APs, fixes up their worlds
+ - For TXT, APs are left waiting in a pause/jmp loop for an NMI to wake them
+ - SL stub jumps to startup_32
+ - Kernel boot proceeds normally
+ - During early setup, SL code runs to finish some validation and setup tasks
+ - The SMP bringup code is modified to wake the APs
+ - Kernel boot finishes booting normally
+
+This is an initial internal posting of the kernel support patches for
+Trenchboot. The code is functional using TXT and will boot to user mode
+following a secure late launch. A few things to note:
+
+ - There are still bits and pieces missing, specifically in patch 6 (further
+   validation, memory reservation, etc).
+ - We are focusing on Intel TXT first per OCI's wishes so some of the AMD bits
+   are not implemented yet though others are.
+ - Patch 1 will change once we hammer out the final details of the boot
+   protocol and changes to the boot params with the x86 maintainers.
+
+We wanted to get this code out for review once it was working. Anyway, please
+have a look.
+
+Links:
+
+The Trenchboot project including documentation:
+
+https://github.com/trenchboot
+
+Our internal OCI Confluence page:
+
+https://confluence.oci.oraclecorp.com/pages/viewpage.action?spaceKey=linux&title=TrenchBoot
+
+AMD SKINIT is documented in the System Programming manual:
+
+https://www.amd.com/system/files/TechDocs/24593.pdf
+
+Intel TXT is documented in its own specification and in the SDM Instruction Set volume:
+
+https://www.intel.com/content/dam/www/public/us/en/documents/guides/intel-txt-software-development-guide.pdf
+https://software.intel.com/en-us/articles/intel-sdm
+
+Thanks
+Ross
