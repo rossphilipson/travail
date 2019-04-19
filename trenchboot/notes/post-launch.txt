@@ -43,14 +43,14 @@ Questions:
  - MCE: Enabling.
    * The kernel takes care of is, do nothing.
  - early_ioremap: some things to consider.
-   * TODO Do we need to make more room in the early fixmap?
-   * TODO Can we map less TXT reg pages?
-   * TODO Should the SMP code use early or late remap?
+   * XXXX-TODO Do we need to make more room in the early fixmap? No, see next item.
+   * XXXX-TODO Can we map less TXT reg pages? Not really a problem actually.
+   * The SMP code uses early remap via txt_early_get_heap_table
    * Currently walking the heap is done in chunks due to size limits on
      how much can be early_ioremap'ed.
  - S5:
-   * TODO post launch setup the FADT so SLBOOT does not have access
-     to it and being able to shutdown.
+   * XXXX-TODO post launch setup the FADT so SLBOOT does not have access
+     to it and being able to shutdown. This is not really a problem when we move to GRUB.
  - Cap PCRs:
    * TODO Need to do this late, just before kernel runs init.
    * Should be able to use the real TPM drivers at this point.
