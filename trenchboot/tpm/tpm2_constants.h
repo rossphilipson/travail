@@ -12,7 +12,7 @@
 #ifndef _TPM2_CONSTANTS_H
 #define _TPM2_CONSTANTS_H
 
-// Table 9  Definition of (UINT16) TPM_ALG_ID Constants <IN/OUT, S>
+/* Table 9  Definition of (UINT16) TPM_ALG_ID Constants <IN/OUT, S> */
 #define TPM_ALG_ERROR                (u16)(0x0000)
 #define TPM_ALG_RSA                  (u16)(0x0001)
 #define TPM_ALG_SHA                  (u16)(0x0004)
@@ -52,14 +52,14 @@
 #define TPM_ALG_FIRST                (u16)(0x0001)
 #define TPM_ALG_LAST                 (u16)(0x0044)
 
-// Table 12  Definition of (UINT32) TPM_CC Constants (Numeric Order) <IN/OUT, S>
+/* Table 12  Definition of (UINT32) TPM_CC Constants (Numeric Order) <IN/OUT, S> */
 #define TPM_CC_PCR_EXTEND (u32)(0x00000182)
 
-// Table 19  Definition of (UINT16) TPM_ST Constants <IN/OUT, S>
+/* Table 19  Definition of (UINT16) TPM_ST Constants <IN/OUT, S> */
 #define TPM_ST_NO_SESSIONS (u16)(0x8001)
 #define TPM_ST_SESSIONS (u16)(0x8002)
 
-// Table 28  Definition of (TPM_HANDLE) TPM_RH Constants <S>
+/* Table 28  Definition of (TPM_HANDLE) TPM_RH Constants <S> */
 #define TPM_RS_PW (u32)(0x40000009)
 
 #endif

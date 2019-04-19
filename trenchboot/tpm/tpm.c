@@ -72,22 +72,26 @@ err:
 	return NULL;
 }
 
-u8 tpm_request_locality(struct tpm *t, u8 l)
+i8 tpm_request_locality(struct tpm *t, u8 l)
 {
+	i8 err = 0;
+
 	switch (t->intf) {
 	case TPM_DEVNODE:
 		/* Not implemented yet */
 		break;
 	case TPM_TIS:
-		tis_request_locality(l);
+		err = tis_request_locality(l);
 		break;
 	case TPM_CRB:
-		crb_request_locality(l);
+		err = crb_request_locality(l);
 		break;
 	case TPM_UEFI:
 		/* Not implemented yet */
 		break;
 	}
+
+	return err;
 }
 
 void tpm_relinquish_locality(struct tpm *t)

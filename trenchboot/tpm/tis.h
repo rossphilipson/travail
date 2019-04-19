@@ -16,8 +16,18 @@
 #include <tpm.h>
 
 #define STATIC_TIS_BUFFER_SIZE 1024
+
+static inline bool tis_data_available(int locality) 
+{ 
+        int status; 
+
+        status = tpm_read8(STS(locality)); 
+        return ((status & (STS_DATA_AVAIL | STS_VALID)) == 
+		(STS_DATA_AVAIL | STS_VALID)) 
+} 
+
 /* TPM Interface Specification functions */
-u8 tis_request_locality(u8 l);
+i8 tis_request_locality(u8 l);
 void tis_relinquish_locality(void);
 u8 tis_init(struct tpm *t);
 size_t tis_send(struct tpmbuff *buf);

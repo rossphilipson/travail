@@ -35,6 +35,9 @@ u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
 
 	cmd = (struct tpm_extend_cmd *)
 		tpmb_put(b, sizeof(struct tpm_extend_cmd));
+	if (cmd == NULL)
+		goto free;
+
 	cmd->pcr_num = d->pcr;
 	memcpy(&(cmd->digest), &(d->digest), sizeof(TPM_DIGEST));
 
@@ -65,6 +68,8 @@ u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
 	hdr = (struct tpm_header *)b->head;
 	resp = (struct tpm_extend_resp *)
 		tpmb_put(b, sizeof(struct tpm_extend_resp));
+	if (resp == NULL)
+		goto free;
 
 	switch (t->intf) {
 	case TPM_DEVNODE:

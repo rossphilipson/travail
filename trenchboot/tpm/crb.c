@@ -44,7 +44,7 @@ struct tpm_loc_state {
 			u8 tpm_reg_valid_sts:1;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 struct tpm_loc_ctrl {
 	union {
@@ -57,7 +57,7 @@ struct tpm_loc_ctrl {
 			u32 _reserved:28;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 struct tpm_loc_sts {
 	union {
@@ -68,7 +68,7 @@ struct tpm_loc_sts {
 			u32 _reserved:30;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 struct tpm_crb_ctrl_req {
 	union {
@@ -79,7 +79,7 @@ struct tpm_crb_ctrl_req {
 			u32 _reserved:30;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 struct tpm_crb_ctrl_sts {
 	union {
@@ -90,7 +90,7 @@ struct tpm_crb_ctrl_sts {
 			u32 _reserved:30;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 struct tpm_crb_intf_id_ext {
 	union {
@@ -100,7 +100,7 @@ struct tpm_crb_intf_id_ext {
 			u32 did:16;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 /* Durations derived from Table 15 of the PTP but is purely an artifact of this
  * implementation */
@@ -166,11 +166,7 @@ static u8 is_ready(void)
 	struct tpm_crb_ctrl_sts ctl_sts;
 
 	ctl_sts.val = tpm_read32(REGISTER(locality,TPM_CRB_CTRL_STS));
-	if (ctl_sts.tpm_idle == 1) {
-		return 0;
-	}
-
-	return 1;
+	return ctl_sts.val == 0;
 }
 
 static u8 is_cmd_exec(void)
@@ -226,7 +222,7 @@ static void crb_relinquish_locality_internal(u16 l)
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 }
 
-u8 crb_request_locality(u8 l)
+i8 crb_request_locality(u8 l)
 {
 	struct tpm_loc_state loc_state;
 	struct tpm_loc_ctrl loc_ctrl;
@@ -238,7 +234,7 @@ u8 crb_request_locality(u8 l)
 	if (loc_state.loc_assigned == 1) {
 		if (loc_state.active_locality == l) {
 			locality = l;
-                        return locality;
+                        return 0;
                 }
 
 		crb_relinquish_locality_internal(loc_state.loc_assigned);
@@ -248,11 +244,13 @@ u8 crb_request_locality(u8 l)
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 
 	loc_sts.val = tpm_read32(REGISTER(l, TPM_LOC_STS));
-	if (loc_sts.granted != 1)
-		return TPM_NO_LOCALITY;
+	if (loc_sts.granted != 1) {
+		locality = TPM_NO_LOCALITY;
+		return -EAGAIN;
+	}
 
 	locality = l;
-	return locality;
+	return 0;
 }
 
 void crb_relinquish_locality(void)
