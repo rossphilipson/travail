@@ -1,7 +1,7 @@
-From e04ca53074c0ab77db9ddaa6750ebfaea6e73ba5 Mon Sep 17 00:00:00 2001
+From 5130061415cd503818b780d27050930c0571ea8a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
-Subject: [PATCH 1/9] x86: Secure Launch Kconfig and build tool changes
+Subject: [PATCH 1/8] x86: Secure Launch Kconfig and build tool changes
 
 Initial bits to bring in Secure Launch functionality. Add a Kconfig
 for compiling in/out the Secure Launch code. Set the offset of the MLE

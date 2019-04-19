@@ -1,7 +1,7 @@
-From f5aac952b02939c3ad55c23cc59e1b5907b79a3e Mon Sep 17 00:00:00 2001
+From 958bc9b03464bb68e1d8dfc99a9f0f2571daf0a0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
-Subject: [PATCH 3/9] x86: Add early SHA1 support for measuring zero page and
+Subject: [PATCH 3/8] x86: Add early SHA1 support for measuring zero page and
  command line
 
 The SHA1 algorithm is necessary to measure configuration information into

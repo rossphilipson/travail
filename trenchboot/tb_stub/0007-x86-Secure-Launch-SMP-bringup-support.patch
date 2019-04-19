@@ -1,7 +1,7 @@
-From 52d4c733c1884af984522b182d32107fa3bcf007 Mon Sep 17 00:00:00 2001
+From ff6cc5ce2a819c55c65e9c4ec1cc6835f109d520 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
-Subject: [PATCH 8/9] x86: Secure Launch SMP bringup support
+Subject: [PATCH 7/8] x86: Secure Launch SMP bringup support
 
 On Intel, the APs are left in a well documented state after TXT performs the
 late launch. Specifically they cannot have #INIT asserted on them so a standard
@@ -13,19 +13,13 @@ is sent to the AP. The AP vectors to the Secure Launch entry point in the RM
 piggy which mimics what the real mode code would do then jumps the the standard
 RM piggy protected mode entry point.
 
-For AMD things are quite different. The SKINIT instruction leaves the APs
-halted with #INIT asserted. So the normal SMP boot code can just issue the
-INIT/SIPI/SIPI sequence on the APs. The only change is that all interrupts are
-globally disabled on AMD APs and must be re-enabled with the STGI instruction.
-This is done in the entry to the RM piggy.
-
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/kernel/smpboot.c            | 83 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/smpboot.c            | 80 ++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 45 +++++++++++++++++++
- 4 files changed, 134 insertions(+)
+ arch/x86/realmode/rm/trampoline_64.S | 40 ++++++++++++++++++
+ 4 files changed, 126 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..e2b71fb9dc85 100644
@@ -42,7 +36,7 @@ index 63b3393bd98e..e2b71fb9dc85 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 6489067b78a4..c2151e199a5d 100644
+index 6489067b78a4..6a32000b9af6 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -136,22 +130,19 @@ index 6489067b78a4..c2151e199a5d 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1021,6 +1091,19 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1021,6 +1091,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	else
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
 +#else
 +	/*
-+	 * Custom APIC driver configuration is not currently supported on AMD
-+	 * and on Intel the startup is totally different.
++	 * On Intel, the startup is totally different.
 +	 */
-+	if (slaunch_get_flags() & SL_FLAG_ARCH_SKINIT)
-+		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
-+						     cpu0_nmi_registered);
-+	else if (slaunch_get_flags() & SL_FLAG_ARCH_TXT)
++	if (slaunch_get_flags() & SL_FLAG_ARCH_TXT)
 +		boot_error = slaunch_wakeup_cpu_from_txt(cpu, apicid);
 +	else
-+		BUG();
++		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
++						     cpu0_nmi_registered);
 +#endif
  
  	if (!boot_error) {
@@ -171,7 +162,7 @@ index 30b0d30d861a..169396e3e64c 100644
  
  	/* End signature, used to verify integrity */
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb7598774e..1919d2f8cb85 100644
+index 24bb7598774e..1b8075147949 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
 @@ -32,6 +32,7 @@
@@ -182,19 +173,7 @@ index 24bb7598774e..1919d2f8cb85 100644
  #include "realmode.h"
  
  	.text
-@@ -42,6 +43,11 @@ ENTRY(trampoline_start)
- 	cli			# We should be safe anyway
- 	wbinvd
- 
-+	# Only here in RM code on AMD platforms post SKINIT launch
-+#ifdef CONFIG_SECURE_LAUNCH_STUB
-+	stgi
-+#endif
-+
- 	LJMPW_RM(1f)
- 1:
- 	mov	%cs, %ax	# Code and data in the same place
-@@ -86,6 +92,45 @@ no_longmode:
+@@ -86,6 +87,45 @@ no_longmode:
  	.section ".text32","ax"
  	.code32
  	.balign 4

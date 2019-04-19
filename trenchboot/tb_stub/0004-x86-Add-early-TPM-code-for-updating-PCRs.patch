@@ -1,7 +1,7 @@
-From 04e9e0ebac738c01eedb2f34ffd397ca902cb6f2 Mon Sep 17 00:00:00 2001
+From f1cf69f7bb19d4a9f62eb604238912dd880f1fd9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
-Subject: [PATCH 4/9] x86: Add early TPM code for updating PCRs
+Subject: [PATCH 4/8] x86: Add early TPM code for updating PCRs
 
 This adds a basic TPM 1.2/2.0 driver allow hashes to be extended into
 the TPM during early kernel boot. This driver is necessary because the

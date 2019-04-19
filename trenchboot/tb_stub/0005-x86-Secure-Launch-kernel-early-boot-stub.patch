@@ -1,10 +1,10 @@
-From 8e3d532077735552eff1d1adf21194520c1f6579 Mon Sep 17 00:00:00 2001
+From 8d2adf2cc512faba61781d90c2d261ae3ed70510 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
-Subject: [PATCH 5/9] x86: Secure Launch kernel early boot stub
+Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
 
-The Secure Launch (SL) stub provides the entry point for Intel TXT or
-AMD SKINIT to vector to during the late launch. The symbol sl_stub_entry is
+The Secure Launch (SL) stub provides the entry point for Intel TXT (and later
+AMD SKINIT) to vector to during the late launch. The symbol sl_stub_entry is
 that entry point and is conveyed launching code using the MLE (Measured Launch
 Environment) header represented by the symbol sl_mle_header. The offset of the
 MLE is written to the boot params at buld time. The routine sl_stub contains
@@ -19,9 +19,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 219 ++++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 522 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 788 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_main.c | 184 +++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 515 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 746 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -104,10 +104,10 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..99de3cac4bc2
+index 000000000000..07538dc17e72
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,184 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -125,8 +125,6 @@ index 000000000000..99de3cac4bc2
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/slaunch.h>
-+
-+extern u32 sl_cpu_type;
 +
 +static u64 sl_txt_read(u32 reg)
 +{
@@ -159,12 +157,6 @@ index 000000000000..99de3cac4bc2
 +	sl_txt_write(TXTCR_CMD_RESET, 1);
 +	for ( ; ; )
 +		__asm__ __volatile__ ("pause");
-+}
-+
-+static void sl_skinit_reset(void)
-+{
-+	/* TODO not sure what else to do here. Is there an error reg */
-+	__asm__ __volatile__ ("ud2");
 +}
 +
 +static u64 sl_rdmsr(u32 reg)
@@ -217,6 +209,10 @@ index 000000000000..99de3cac4bc2
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
 +	struct tpm *tpm;
 +	struct boot_params *bp;
++	struct txt_os_mle_data *os_mle_data;
++	u64 *txt_heap;
++	u64 bios_data_size;
++	u32 os_mle_len;
 +	int ret;
 +
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
@@ -226,19 +222,11 @@ index 000000000000..99de3cac4bc2
 +	 * environment depends on this and the other TPM operations succeeding.
 +	 */
 +	tpm = enable_tpm();
-+	if (!tpm) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_TPM_INIT);
-+		else
-+			sl_skinit_reset();
-+	}
++	if (!tpm)
++		sl_txt_reset(TXT_SLERROR_TPM_INIT);
 +
-+	if (tpm_request_locality(tpm, 2) == TPM_NO_LOCALITY) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_TPM_GET_LOC);
-+		else
-+			sl_skinit_reset();
-+	}
++	if (tpm_request_locality(tpm, 2) == TPM_NO_LOCALITY)
++		sl_txt_reset(TXT_SLERROR_TPM_GET_LOC);
 +
 +	/* Measure the zero page/boot params */
 +	early_sha1_init(&sctx);
@@ -246,12 +234,8 @@ index 000000000000..99de3cac4bc2
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
-+		else
-+			sl_skinit_reset();
-+	}
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	/* Now safe to use boot params */
 +	bp = (struct boot_params*)bootparams;
@@ -264,12 +248,8 @@ index 000000000000..99de3cac4bc2
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret) {
-+		if (sl_cpu_type == SL_CPU_INTEL)
-+			sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
-+		else
-+			sl_skinit_reset();
-+	}
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	/* Measure any external initrd */
 +	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0) {
@@ -280,59 +260,44 @@ index 000000000000..99de3cac4bc2
 +		early_sha1_finalize(&sctx);
 +		early_sha1_finish(&sctx, &sha1_hash[0]);
 +		ret = tpm_extend_pcr(tpm, 17, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+		if (ret) {
-+			if (sl_cpu_type == SL_CPU_INTEL)
-+				sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
-+			else
-+				sl_skinit_reset();
-+		}
++		if (ret)
++			sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +	}
 +
-+	if (sl_cpu_type == SL_CPU_INTEL) {
-+		struct txt_os_mle_data *os_mle_data;
-+		u64 *txt_heap;
-+		u64 bios_data_size;
-+		u32 os_mle_len;
++	/*
++	 * Some extra work to do on Intel, have to measure the OS-MLE
++	 * heap area.
++	 */
++	txt_heap = (void*)sl_txt_read(TXTCR_HEAP_BASE);
++	bios_data_size = *txt_heap;
++	os_mle_data = (struct txt_os_mle_data*)
++			((u8*)txt_heap + bios_data_size + sizeof(u64));
 +
-+		/*
-+		 * Some extra work to do on Intel, have to measure the OS-MLE
-+		 * heap area.
-+		 */
-+		txt_heap = (void*)sl_txt_read(TXTCR_HEAP_BASE);
-+		bios_data_size = *txt_heap;
-+		os_mle_data = (struct txt_os_mle_data*)
-+				((u8*)txt_heap + bios_data_size + sizeof(u64));
++	/* Measure OS-MLE data up to the TPM log into 18 */
++	os_mle_len = offsetof(struct txt_os_mle_data, event_log_buffer);
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx, (u8*)os_mle_data, os_mle_len);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
-+		/* Measure OS-MLE data up to the TPM log into 18 */
-+		os_mle_len = offsetof(struct txt_os_mle_data, event_log_buffer);
-+		early_sha1_init(&sctx);
-+		early_sha1_update(&sctx, (u8*)os_mle_data, os_mle_len);
-+		early_sha1_finalize(&sctx);
-+		early_sha1_finish(&sctx, &sha1_hash[0]);
-+		ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+		if (ret) {
-+			if (sl_cpu_type == SL_CPU_INTEL)
-+				sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
-+			else
-+				sl_skinit_reset();
-+		}
-+
-+		/*
-+		 * Now that the OS-MLE data is measured, ensure the MTRR and
-+		 * misc enable MSRs are what we expect.
-+		 */
-+		sl_txt_validate_msrs(os_mle_data);
-+	}
++	/*
++	 * Now that the OS-MLE data is measured, ensure the MTRR and
++	 * misc enable MSRs are what we expect.
++	 */
++	sl_txt_validate_msrs(os_mle_data);
 +
 +	tpm_relinquish_locality(tpm);
 +	free_tpm(tpm);
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..ff15b965a56a
+index 000000000000..df429ace8a21
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,522 @@
+@@ -0,0 +1,515 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -494,15 +459,8 @@ index 000000000000..ff15b965a56a
 +	jmp	.Lcpu_setup_done
 +
 +.Ldo_amd:
-+	/* Know it is AMD */
-+	movl	$(SL_CPU_AMD), sl_cpu_type(%ebp)
-+
-+	/*
-+	 * Disable maskable interrups in EFLAGS then enable global interrupts
-+	 * including SMI and NMI (GIF).
-+	 */
-+	cli
-+	stgi
++	/* AMD is not yet supported */
++	ud2
 +
 +	/* On AMD %esi is set up by the Landing Zone, just go on */
 +

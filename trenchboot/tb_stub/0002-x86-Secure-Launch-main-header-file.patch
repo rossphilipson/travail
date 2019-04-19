@@ -1,23 +1,23 @@
-From fe50d17fb2216f059007d6305f47c3ff0bc300a1 Mon Sep 17 00:00:00 2001
+From f96d682a57ac8ceea49b5cf7b6634b5581245bba Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
-Subject: [PATCH 2/9] x86: Secure Launch main header file
+Subject: [PATCH 2/8] x86: Secure Launch main header file
 
 Introduce the main Secure Launch header file used in the early SL stub and
 the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 193 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 193 insertions(+)
+ arch/x86/include/asm/slaunch.h | 190 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 190 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..6d10854c1a52
+index 000000000000..478b2ac5c71c
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,190 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -99,9 +99,6 @@ index 000000000000..6d10854c1a52
 +
 +#define TXT_MAX_CPUS			512
 +#define TXT_BOOT_STACK_SIZE		24
-+
-+#define SKINIT_LZ_OFFSET		28
-+#define SKINIT_DEV_MAP_OFFSET		0x7000
 +
 +#define SLAUNCH_INFO_OFFSET	0x268
 +

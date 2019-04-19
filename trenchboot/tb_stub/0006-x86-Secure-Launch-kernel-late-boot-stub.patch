@@ -1,7 +1,7 @@
-From ca4d93164aa6dc06a26797ec0c04378011cfa89e Mon Sep 17 00:00:00 2001
+From 6bdda6844ae016c39b3cfd089b1b9f5220f58ef1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
-Subject: [PATCH 6/9] x86: Secure Launch kernel late boot stub
+Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
 
 The routine slaunch_setup is called out of the x86 specific setup_arch
 routine during early kernel boot. After determining what platform is present,
@@ -16,9 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 ++
- arch/x86/kernel/slaunch.c | 195 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 190 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 ++
- 4 files changed, 206 insertions(+)
+ 4 files changed, 201 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,10 +58,10 @@ index b4866badb235..b359129cb408 100644
  	generic_apic_probe();
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..094c18f26980
+index 000000000000..2d373c0b45a8
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,190 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -86,7 +86,7 @@ index 000000000000..094c18f26980
 +
 +#define PREFIX	"SLAUNCH: "
 +
-+u32 sl_flags = 0;
++static u32 sl_flags = 0;
 +
 +u32 slaunch_get_flags(void)
 +{
@@ -223,12 +223,6 @@ index 000000000000..094c18f26980
 +	/* TODO validate the PMRs */
 +}
 +
-+static void slaunch_setup_amd(void)
-+{
-+	/* TODO how to know we launched via SKINIT */
-+	/* TODO validate the DEV tables and devices */
-+}
-+
 +void slaunch_setup(void)
 +{
 +	u32 vendor[4];
@@ -249,8 +243,9 @@ index 000000000000..094c18f26980
 +	} else if (vendor[1] == 0x68747541 && /* "Auth" */
 +		   vendor[2] == 0x444d4163 && /* "cAMD" */
 +		   vendor[3] == 0x69746e65) { /* "enti" */
-+		sl_flags |= SL_FLAG_ARCH_SKINIT;
-+		slaunch_setup_amd();
++		printk(KERN_ERR PREFIX
++		       "Invalid platform: AMD not supported\n");
++		return;
 +	} else {
 +		printk(KERN_ERR PREFIX
 +		       "Invalid platform: not Intel or AMD\n");
