@@ -222,7 +222,7 @@ static void crb_relinquish_locality_internal(u16 l)
 	tpm_write32(REGISTER(l, TPM_LOC_CTRL), loc_ctrl.val);
 }
 
-i8 crb_request_locality(u8 l)
+s8 crb_request_locality(u8 l)
 {
 	struct tpm_loc_state loc_state;
 	struct tpm_loc_ctrl loc_ctrl;
