@@ -33,6 +33,7 @@ Questions:
      This is really needed when the IL is the main kernel (SEXIT would make
      it not needed).
    * TODO anything needed to be reserverd for SKINIT?
+   * TODO reservations across kexec (e820__range_update_kexec)
  - SKINIT: What post launch things need to be checked?
  - TXT:
    * TODO Restoring the LAPIC address, do we need to do this?

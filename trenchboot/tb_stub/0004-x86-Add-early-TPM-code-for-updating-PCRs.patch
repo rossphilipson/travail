@@ -1,4 +1,4 @@
-From f1cf69f7bb19d4a9f62eb604238912dd880f1fd9 Mon Sep 17 00:00:00 2001
+From 24932dbe45139ea73bcaef1e4d21b440285959c9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: Add early TPM code for updating PCRs

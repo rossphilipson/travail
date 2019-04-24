@@ -1,4 +1,4 @@
-From ff6cc5ce2a819c55c65e9c4ec1cc6835f109d520 Mon Sep 17 00:00:00 2001
+From 11d99f70800a158981cc964a21069719e5a52d9a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 7/8] x86: Secure Launch SMP bringup support

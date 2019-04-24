@@ -1,4 +1,4 @@
-From f1c6087181092ffbedbac859a01ca03ba83a20dc Mon Sep 17 00:00:00 2001
+From cf464c358003be68bc16e397b1e0a1f88e4ca58a Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 8/8] x86: Secure Launch adding event log securityfs
@@ -11,26 +11,16 @@ instead of the one found in the firmware.
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 238 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 238 insertions(+)
+ arch/x86/kernel/slaunch.c | 234 ++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c      |   5 +
+ 2 files changed, 239 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 2d373c0b45a8..bdbdba83b09a 100644
+index cd2a31e8b42a..c63f31bc181e 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -10,6 +10,10 @@
- 
- #include <linux/init.h>
- #include <linux/linkage.h>
-+#include <linux/mm.h>
-+#include <linux/slab.h>
-+#include <linux/uaccess.h>
-+#include <linux/security.h>
- #include <linux/memblock.h>
- #include <asm/segment.h>
- #include <asm/boot.h>
-@@ -188,3 +192,237 @@ void slaunch_setup(void)
- 		return;
+@@ -271,3 +271,237 @@ void slaunch_setup(void)
+ 		panic("Invalid platform: not Intel or AMD\n");
  	}
  }
 +
@@ -267,6 +257,30 @@ index 2d373c0b45a8..bdbdba83b09a 100644
 +late_initcall(slaunch_late_init);
 +
 +__exitcall(slaunch_exit);
+diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
+index d9c748b6f9e4..5e9fc61da18e 100644
+--- a/drivers/iommu/dmar.c
++++ b/drivers/iommu/dmar.c
+@@ -41,6 +41,7 @@
+ #include <linux/iommu.h>
+ #include <asm/irq_remapping.h>
+ #include <asm/iommu_table.h>
++#include <asm/slaunch.h>
+ 
+ #include "irq_remapping.h"
+ 
+@@ -632,7 +633,11 @@ parse_dmar_table(void)
+ 	 * ACPI tables may not be DMA protected by tboot, so use DMAR copy
+ 	 * SINIT saved in SinitMleData in TXT heap (which is DMA protected)
+ 	 */
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	dmar_tbl = slaunch_get_dmar_table(dmar_tbl);
++#else
+ 	dmar_tbl = tboot_get_dmar_table(dmar_tbl);
++#endif
+ 
+ 	dmar = (struct acpi_table_dmar *)dmar_tbl;
+ 	if (!dmar)
 -- 
 2.13.6
 
