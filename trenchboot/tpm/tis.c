@@ -9,27 +9,11 @@
  *
  */
 
-#include <boot.h>
 #include <tpm.h>
 #include <tpmbuff.h>
 
 #include "tpm_common.h"
-
-/* macros to access registers at locality ’’l’’ */
-#define ACCESS(l)			(0x0000 | ((l) << 12))
-#define STS(l)				(0x0018 | ((l) << 12))
-#define DATA_FIFO(l)			(0x0024 | ((l) << 12))
-#define DID_VID(l)			(0x0F00 | ((l) << 12))
-/* access bits */
-#define ACCESS_ACTIVE_LOCALITY		0x20 /* (R)*/
-#define ACCESS_RELINQUISH_LOCALITY	0x20 /* (W) */
-#define ACCESS_REQUEST_USE		0x02 /* (W) */
-/* status bits */
-#define STS_VALID			0x80 /* (R) */
-#define STS_COMMAND_READY		0x40 /* (R) */
-#define STS_DATA_AVAIL			0x10 /* (R) */
-#define STS_DATA_EXPECT			0x08 /* (R) */
-#define STS_GO				0x20 /* (W) */
+#include "tis.h"
 
 static u8 locality = TPM_NO_LOCALITY;
 
@@ -48,18 +32,23 @@ static u32 burst_wait(void)
 	return count;
 }
 
-u8 tis_request_locality(u8 l)
+void tis_relinquish_locality(void)
+{
+        if (locality < TPM_MAX_LOCALITY)
+		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
+
+        locality = TPM_NO_LOCALITY;
+}
+
+s8 tis_request_locality(u8 l)
 {
         if (l > TPM_MAX_LOCALITY)
-                return TPM_NO_LOCALITY;
+                return -EINVAL;
 
 	if (l == locality)
-		return locality;
+		return 0;
 
-        if (locality < TPM_MAX_LOCALITY) {
-                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
-                locality = TPM_NO_LOCALITY;
-        }
+	tis_relinquish_locality();
 
         tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
 
@@ -67,15 +56,7 @@ u8 tis_request_locality(u8 l)
         if (tpm_read8(ACCESS(l)) & ACCESS_ACTIVE_LOCALITY)
                 locality = l;
 
-        return locality;
-}
-
-void tis_relinquish_locality(void)
-{
-        if (locality < TPM_MAX_LOCALITY)
-		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
-
-        locality = TPM_NO_LOCALITY;
+        return 0;
 }
 
 u8 tis_init(struct tpm *t)
@@ -87,7 +68,7 @@ u8 tis_init(struct tpm *t)
 
         locality = TPM_NO_LOCALITY;
 
-        if (tis_request_locality(0) == TPM_NO_LOCALITY)
+        if (tis_request_locality(0) != 0)
                 return 0;
 
         t->vendor = tpm_read32(DID_VID(0));
@@ -128,6 +109,7 @@ size_t tis_send(struct tpmbuff *buf)
 
 	/* write last byte */
 	tpm_write8(buf_ptr[buf->len - 1], DATA_FIFO(locality));
+	count++;
 
 	/* make sure it stuck */
 	for (status = 0; (status & STS_VALID) == 0; )
@@ -150,18 +132,13 @@ static size_t recv_data(unsigned char *buf, size_t len)
 
 	bufptr = (u8 *)buf;
 
-	status = tpm_read8(STS(locality));
-	while ((status & (STS_DATA_AVAIL | STS_VALID))
-			== (STS_DATA_AVAIL | STS_VALID)
-			&& size < len) {
+	while (tis_data_available(locality) && size < len) {
 		burstcnt = burst_wait();
 		for (; burstcnt > 0 && size < len; burstcnt--) {
 			*bufptr = tpm_read8(DATA_FIFO(locality));
 			bufptr++;
 			size++;
 		}
-
-		status = tpm_read8(STS(locality));
 	}
 
 	return size;
@@ -177,9 +154,7 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* ensure that there is data available */
-	status = tpm_read8(STS(locality));
-	if ((status & (STS_DATA_AVAIL | STS_VALID))
-			!= (STS_DATA_AVAIL | STS_VALID))
+	if (! tis_data_available(locality))
 		goto err;
 
 	/* read header */
@@ -204,20 +179,15 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* check for receive underflow */
-	status = tpm_read8(STS(locality));
-	if ((status & (STS_DATA_AVAIL | STS_VALID))
-			!= (STS_DATA_AVAIL | STS_VALID))
+	if (! tis_data_available(locality))
 		goto err;
 
 	/* read last byte */
-	buf_ptr = tpmb_put(buf, 1);
 	if (recv_data(buf_ptr, 1) != 1)
 		goto err;
 
 	/* make sure we read everything */
-	status = tpm_read8(STS(locality));
-	if ((status & (STS_DATA_AVAIL | STS_VALID))
-			== (STS_DATA_AVAIL | STS_VALID)) {
+	if (tis_data_available(locality)) {
 		goto err;
 	}
 

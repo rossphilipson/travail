@@ -83,9 +83,19 @@ int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 		return ret;
 
 	cmd.handles = (u32 *)tpmb_put(b, sizeof(u32));
+	if (cmd.handles == NULL) {
+		tpmb_free(b);
+		return -ENOMEM;
+	}
+
 	*cmd.handles = cpu_to_be32(pcr);
 
 	cmd.auth = (struct tpm2b *)tpmb_put(b, tpm2_null_auth_size());
+	if (cmd.auth == NULL) {
+		tpmb_free(b);
+		return -ENOMEM;
+	}
+
 	cmd.auth->size = tpm2_null_auth(cmd.auth->buffer);
 	cmd.auth->size = cpu_to_be16(cmd.auth->size);
 
@@ -94,7 +104,13 @@ int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 		tpmb_free(b);
 		return -EINVAL;
 	}
+
 	cmd.params = (u8 *)tpmb_put(b, size);
+	if (cmd.params == NULL) {
+		tpmb_free(b);
+		return -ENOMEM;
+	}
+
 	memcpy(cmd.params, digests, size);
 
 	cmd.header->size = cpu_to_be16(tpmb_size(b));
@@ -115,6 +131,5 @@ int tpm2_extend_pcr(struct tpm *t, u32 pcr,
 	}
 
 	tpmb_free(b);
-
 	return ret;
 }

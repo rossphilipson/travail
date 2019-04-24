@@ -9,6 +9,10 @@
 #ifndef _TPM_COMMON_H
 #define _TPM_COMMON_H
 
+#ifndef __packed
+#define __packed __attribute__ ((packed))
+#endif
+
 #define TPM_MMIO_BASE		0xFED40000
 #define TPM_MAX_LOCALITY	4
 
@@ -45,7 +49,7 @@ struct tpm_interface_id {
 			u32 reserved3:8;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 #define TPM_INTF_CAPABILITY_0	0x14
 #define TPM12_TIS_INTF_12	0x00
@@ -71,7 +75,7 @@ struct tpm_intf_capability {
 			u32 reserved2:1;
 		};
 	};
-} __attribute__ ((packed));
+} __packed;
 
 void tpm_io_delay(void);
 void tpm_udelay(int loops);
