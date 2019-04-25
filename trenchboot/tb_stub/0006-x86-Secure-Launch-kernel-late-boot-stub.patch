@@ -1,4 +1,4 @@
-From 0c56dbeda475039576b7a19565a7777eff688db6 Mon Sep 17 00:00:00 2001
+From 57b3d55ef80374d1d5c4f82b834a55fb77391439 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -16,8 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 273 ++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 279 insertions(+)
+ arch/x86/kernel/slaunch.c | 342 ++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c      |   5 +
+ 4 files changed, 353 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -57,10 +58,10 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..cd2a31e8b42a
+index 000000000000..9e6f2879461c
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,342 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -92,9 +93,21 @@ index 000000000000..cd2a31e8b42a
 +
 +static u32 sl_flags = 0;
 +
++/* This should be plenty of room */
++static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
++
 +u32 slaunch_get_flags(void)
 +{
 +	return sl_flags;
++}
++
++struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar)
++{
++	/* The DMAR is only stashed and provided via TXT on Intel systems */
++	if (memcmp(txt_dmar, "DMAR", 4))
++		return dmar;
++
++	return (struct acpi_table_header*)(&txt_dmar[0]);
 +}
 +
 +static void slaunch_txt_reset(void __iomem *txt, const char *msg, u64 error)
@@ -229,9 +242,9 @@ index 000000000000..cd2a31e8b42a
 +	if (!heap)
 +		slaunch_txt_reset(txt,
 +				  "Error early_ioremap of MDRs\n",
-+				  TXT_SLERROR_HEAP_MDRS);
++				  TXT_SLERROR_HEAP_MDRS_MAP);
 +
-+	mdr = (struct txt_memory_descriptor_record *)(heap + mdrvals[1]);
++	mdr = (struct txt_memory_descriptor_record *)(heap + mdrvals[1] - 8);
 +
 +	for (i = 0; i < mdrvals[0]; i++, mdr++) {
 +		/* Spec says some entries can have length 0, ignore them */
@@ -244,8 +257,61 @@ index 000000000000..cd2a31e8b42a
 +		      (mdrvals[0]*sizeof(struct txt_memory_descriptor_record)));
 +
 +out:
-+	if (updated)
++	if (updated) {
 +		e820__update_table(e820_table);
++		printk(KERN_INFO "TXT altered physical RAM map:\n");
++		e820__print_table("TXT-reserve");
++	}
++}
++
++/*
++ * TXT stashes a safe copy of the DMAR ACPI table to prevent tampering.
++ * It is stored in the TXT heap. Fetch it from there and make it available
++ * to the IOMMU driver.
++ */
++static void slaunch_copy_dmar_table(void __iomem *txt)
++{
++	void __iomem *heap;
++	u32 dmarvals[2];
++	u64 base, size;
++
++	memset(&txt_dmar, 0, PAGE_SIZE);
++
++	memcpy_fromio(&base, txt + TXTCR_HEAP_BASE, sizeof(u64));
++	memcpy_fromio(&size, txt + TXTCR_HEAP_SIZE, sizeof(u64));
++
++	heap = txt_early_get_heap_table(TXT_SINIT_MLE_DATA_TABLE,
++					TXT_SINIT_MLE_DMAR_TABLE_SIZE + 8);
++	if (!heap)
++		slaunch_txt_reset(txt,
++				  "Error early_ioremap of DMAR values\n",
++				  TXT_SLERROR_HEAP_DMAR_VALS);
++	memcpy_fromio(&dmarvals[0], heap + TXT_SINIT_MLE_DMAR_TABLE_SIZE,
++		      sizeof(u64));
++
++	early_iounmap(heap, TXT_SINIT_MLE_DMAR_TABLE_SIZE + 8);
++
++	if (!dmarvals[0] || !dmarvals[1])
++		slaunch_txt_reset(txt,
++				  "Error invalid DMAR table values\n",
++				  TXT_SLERROR_HEAP_INVALID_DMAR);
++
++	if (unlikely(dmarvals[0] > PAGE_SIZE))
++		slaunch_txt_reset(txt,
++				  "Error DMAR too big to store\n",
++				  TXT_SLERROR_HEAP_DMAR_SIZE);
++
++
++	heap = txt_early_get_heap_table(TXT_SINIT_MLE_DATA_TABLE, dmarvals[0]);
++	if (!heap)
++		slaunch_txt_reset(txt,
++				  "Error early_ioremap of DMAR\n",
++				  TXT_SLERROR_HEAP_DMAR_MAP);
++
++	memcpy_fromio(&txt_dmar[0], (void*)(heap + dmarvals[1] - 8),
++		      dmarvals[0]);
++
++	early_iounmap(heap, dmarvals[0]);
 +}
 +
 +/*
@@ -304,9 +370,13 @@ index 000000000000..cd2a31e8b42a
 +				  "Failed to reserve TXT AP wake area\n",
 +				  TXT_SLERROR_RESERVE_AP_WAKE);
 +
-+	/* TODO validate the PMRs */
++	slaunch_copy_dmar_table(txt);
 +
 +	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++
++	/* TODO validate the PMRs */
++
++	printk(KERN_INFO "Intel TXT setup complete\n");
 +}
 +
 +void slaunch_setup(void)
@@ -334,6 +404,30 @@ index 000000000000..cd2a31e8b42a
 +		panic("Invalid platform: not Intel or AMD\n");
 +	}
 +}
+diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
+index d9c748b6f9e4..5e9fc61da18e 100644
+--- a/drivers/iommu/dmar.c
++++ b/drivers/iommu/dmar.c
+@@ -41,6 +41,7 @@
+ #include <linux/iommu.h>
+ #include <asm/irq_remapping.h>
+ #include <asm/iommu_table.h>
++#include <asm/slaunch.h>
+ 
+ #include "irq_remapping.h"
+ 
+@@ -632,7 +633,11 @@ parse_dmar_table(void)
+ 	 * ACPI tables may not be DMA protected by tboot, so use DMAR copy
+ 	 * SINIT saved in SinitMleData in TXT heap (which is DMA protected)
+ 	 */
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	dmar_tbl = slaunch_get_dmar_table(dmar_tbl);
++#else
+ 	dmar_tbl = tboot_get_dmar_table(dmar_tbl);
++#endif
+ 
+ 	dmar = (struct acpi_table_dmar *)dmar_tbl;
+ 	if (!dmar)
 -- 
 2.13.6
 

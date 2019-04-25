@@ -1,4 +1,4 @@
-From a6d46763aebdc85271aa6a1a1d3e7b9771d3bf89 Mon Sep 17 00:00:00 2001
+From e832069d32099bf2c04db0c1591037d6f2ab3018 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
@@ -8,16 +8,16 @@ the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 205 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 205 insertions(+)
+ arch/x86/include/asm/slaunch.h | 209 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 209 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..8ff537fdb099
+index 000000000000..2b70979c4139
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,205 @@
+@@ -0,0 +1,209 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -103,7 +103,11 @@ index 000000000000..8ff537fdb099
 +#define TXT_SLERROR_HEAP_WALK		0xc000800c
 +#define TXT_SLERROR_HEAP_MAP		0xc000800d
 +#define TXT_SLERROR_HEAP_MDR_VALS	0xc000800e
-+#define TXT_SLERROR_HEAP_MDRS		0xc000800f
++#define TXT_SLERROR_HEAP_MDRS_MAP	0xc000800f
++#define TXT_SLERROR_HEAP_DMAR_VALS	0xc0008010
++#define TXT_SLERROR_HEAP_INVALID_DMAR	0xc0008011
++#define TXT_SLERROR_HEAP_DMAR_SIZE	0xc0008012
++#define TXT_SLERROR_HEAP_DMAR_MAP	0xc0008013
 +
 +#define TXT_MAX_CPUS			512
 +#define TXT_BOOT_STACK_SIZE		24
