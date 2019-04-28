@@ -72,9 +72,9 @@ err:
 	return NULL;
 }
 
-i8 tpm_request_locality(struct tpm *t, u8 l)
+s8 tpm_request_locality(struct tpm *t, u8 l)
 {
-	i8 err = 0;
+	s8 err = 0;
 
 	switch (t->intf) {
 	case TPM_DEVNODE:
