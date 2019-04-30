@@ -63,6 +63,11 @@ Questions:
  - Measuring other things?
    * TODO Need to measure any setup_data chain (this would include ext e820).
    * TODO Need to measure any EFI memmap.
+ - PMRs
+   * TODO is the min ram logic sound?
+   * TODO does starting the IOMMU driver disable them? Does it then protect memory?
+   * TODO do we need to disable the IOMMU driver in IL?
+   * TODO do we need to pass the saved DMAR to the real kernel?
 
 Stages:
 ---------------------------------------------------------------------
@@ -130,6 +135,7 @@ We have control over the way the IL kernel is built.
     https://launchpadlibrarian.net/374105894/0001-UBUNTU-Config-azure-CONFIG_HOTPLUG_CPU-n.patch
   - Possibly have more control over setting BP_kernel_alignment and BP_init_size
     in the early tb_stub
+  - TODO cannot make these assumptions!!!!!!!!!!!!
 
 TXT Specific:
 ---------------------------------------------------------------------
