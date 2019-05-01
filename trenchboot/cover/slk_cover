@@ -75,16 +75,21 @@ Ross
 ---
 
 0001-x86-Secure-Launch-Kconfig-and-build-tool-changes.patch
+ NOTE: This patch is still waiting to be updated with the final implementation
+       of the boot params.
  v2:
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:
    - Added offsets, struct and error codes for e820 TXT reservations.
+   - Added comments from code review.
+   - Use asm-offsets for OS-MLE structure (and offsetof in C code).
 
 0003-x86-Add-early-SHA1-support-for-measuring-zero-page-a.patch
  v2:
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
+ NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
  v2:
    - General code fixes found in review of v1.
    - Cleanup from running checkpatch.
@@ -98,7 +103,6 @@ Ross
    - Removed unfinished AMD support for now.
    - Fixed error handling in the late SL stub code.
    - Added e820 reservations for TXT specific memory ranges.
-   - Removed changes to dmar.c.
    - Added VTd PMR validation for TXT.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
@@ -108,5 +112,4 @@ Ross
 0008-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
    - Removed unfinished AMD support for now.
-   - Added changes to dmar.c
 
