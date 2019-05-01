@@ -18,16 +18,17 @@
 #include "tpm2_constants.h"
 
 
-/* Table 192  Definition of TPM2B_TEMPLATE Structure:
- *   Using this as the base structure similar to the spec
+/*
+ * Table 192  Definition of TPM2B_TEMPLATE Structure:
+ * Using this as the base structure similar to the spec
  */
 struct tpm2b {
 	u16 size;
 	u8 buffer[0];
 };
 
-// Table 32  Definition of TPMA_SESSION Bits <  IN/OUT>
-struct tpma_session{
+/* Table 32  Definition of TPMA_SESSION Bits <  IN/OUT> */
+struct tpma_session {
 	u8 continue_session  : 1;
 	u8 audit_exclusive   : 1;
 	u8 audit_reset       : 1;
@@ -38,20 +39,20 @@ struct tpma_session{
 };
 
 
-// Table 72  Definition of TPMT_HA Structure <  IN/OUT>
+/* Table 72  Definition of TPMT_HA Structure <  IN/OUT> */
 struct tpmt_ha {
 	u16 alg;	/* TPMI_ALG_HASH	*/
 	u8 digest[0];	/* TPMU_HA		*/
 };
 
-// Table 100  Definition of TPML_DIGEST_VALUES Structure
+/* Table 100  Definition of TPML_DIGEST_VALUES Structure */
 struct tpml_digest_values {
 	u32 count;
 	struct tpmt_ha digests[0];
 };
 
 
-// Table 124  Definition of TPMS_AUTH_COMMAND Structure <  IN>
+/* Table 124  Definition of TPMS_AUTH_COMMAND Structure <  IN> */
 struct tpms_auth_cmd {
 	u32 *handle;
 	struct tpm2b *nonce;
@@ -59,7 +60,7 @@ struct tpms_auth_cmd {
 	struct tpm2b *hmac;
 };
 
-// Table 125  Definition of TPMS_AUTH_RESPONSE Structure <  OUT>
+/* Table 125  Definition of TPMS_AUTH_RESPONSE Structure <  OUT> */
 struct tpms_auth_resp {
 	struct tpm2b *nonce;
 	struct tpma_session *attributes;

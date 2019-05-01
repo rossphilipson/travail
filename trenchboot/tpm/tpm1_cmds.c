@@ -25,7 +25,7 @@ u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
 	struct tpm_extend_resp *resp;
 	size_t bytes;
 
-	if (! tpmb_reserve(b))
+	if (!tpmb_reserve(b))
 		goto out;
 
 	hdr = (struct tpm_header *)b->head;
@@ -62,7 +62,7 @@ u8 tpm1_pcr_extend(struct tpm *t, struct tpm_digest *d)
 	tpmb_free(b);
 
 	/* Reset buffer for receive */
-	if (! tpmb_reserve(b))
+	if (!tpmb_reserve(b))
 		goto out;
 
 	hdr = (struct tpm_header *)b->head;

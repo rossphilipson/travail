@@ -32,6 +32,8 @@ BEGIN {
               if ($1 ~ /^#include/)
                   skip = 1;
               if (header == 1) {
+                  if ($1 ~ /^#ifndef/ && $2 ~ /__packed/)
+                      skip = 4;
                   if ($1 ~ /^#ifndef/)
                       skip = 2;
                   if ($1 ~ /^#endif/)

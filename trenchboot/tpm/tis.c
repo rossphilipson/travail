@@ -34,48 +34,48 @@ static u32 burst_wait(void)
 
 void tis_relinquish_locality(void)
 {
-        if (locality < TPM_MAX_LOCALITY)
+	if (locality < TPM_MAX_LOCALITY)
 		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(locality));
 
-        locality = TPM_NO_LOCALITY;
+	locality = TPM_NO_LOCALITY;
 }
 
 s8 tis_request_locality(u8 l)
 {
-        if (l > TPM_MAX_LOCALITY)
-                return -EINVAL;
+	if (l > TPM_MAX_LOCALITY)
+		return -EINVAL;
 
 	if (l == locality)
 		return 0;
 
 	tis_relinquish_locality();
 
-        tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
+	tpm_write8(ACCESS_REQUEST_USE, ACCESS(l));
 
-        /* wait for locality to be granted */
-        if (tpm_read8(ACCESS(l)) & ACCESS_ACTIVE_LOCALITY)
-                locality = l;
+	/* wait for locality to be granted */
+	if (tpm_read8(ACCESS(l)) & ACCESS_ACTIVE_LOCALITY)
+		locality = l;
 
-        return 0;
+	return 0;
 }
 
 u8 tis_init(struct tpm *t)
 {
-        u8 i;
+	u8 i;
 
-        for (i=0; i <= TPM_MAX_LOCALITY; i++)
-                tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
+	for (i = 0; i <= TPM_MAX_LOCALITY; i++)
+		tpm_write8(ACCESS_RELINQUISH_LOCALITY, ACCESS(i));
 
-        locality = TPM_NO_LOCALITY;
+	locality = TPM_NO_LOCALITY;
 
-        if (tis_request_locality(0) != 0)
-                return 0;
+	if (tis_request_locality(0) != 0)
+		return 0;
 
-        t->vendor = tpm_read32(DID_VID(0));
-        if ((t->vendor & 0xFFFF) == 0xFFFF)
-                return 0;
+	t->vendor = tpm_read32(DID_VID(0));
+	if ((t->vendor & 0xFFFF) == 0xFFFF)
+		return 0;
 
-        return 1;
+	return 1;
 }
 
 size_t tis_send(struct tpmbuff *buf)
@@ -154,7 +154,7 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* ensure that there is data available */
-	if (! tis_data_available(locality))
+	if (!tis_data_available(locality))
 		goto err;
 
 	/* read header */
@@ -171,7 +171,7 @@ size_t tis_recv(struct tpmbuff *buf)
 	/* hdr->size = header + data */
 	expected = hdr->size - expected;
 	buf_ptr = tpmb_put(buf, expected);
-	if (! buf_ptr)
+	if (!buf_ptr)
 		goto err;
 
 	/* read all data, except last byte */
@@ -179,7 +179,7 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* check for receive underflow */
-	if (! tis_data_available(locality))
+	if (!tis_data_available(locality))
 		goto err;
 
 	/* read last byte */
@@ -187,9 +187,8 @@ size_t tis_recv(struct tpmbuff *buf)
 		goto err;
 
 	/* make sure we read everything */
-	if (tis_data_available(locality)) {
+	if (tis_data_available(locality))
 		goto err;
-	}
 
 	tpm_write8(STS_COMMAND_READY, STS(locality));
 

@@ -52,7 +52,10 @@
 #define TPM_ALG_FIRST                (u16)(0x0001)
 #define TPM_ALG_LAST                 (u16)(0x0044)
 
-/* Table 12  Definition of (UINT32) TPM_CC Constants (Numeric Order) <IN/OUT, S> */
+/*
+ * Table 12  Definition of (UINT32) TPM_CC Constants (Numeric Order)
+ * <IN/OUT, S>
+ */
 #define TPM_CC_PCR_EXTEND (u32)(0x00000182)
 
 /* Table 19  Definition of (UINT16) TPM_ST Constants <IN/OUT, S> */

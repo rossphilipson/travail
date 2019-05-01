@@ -86,6 +86,8 @@ Ross
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  v2:
+   - General code fixes found in review of v1.
+   - Cleanup from running checkpatch.
 
 0005-x86-Secure-Launch-kernel-early-boot-stub.patch
  v2:
@@ -96,7 +98,8 @@ Ross
    - Removed unfinished AMD support for now.
    - Fixed error handling in the late SL stub code.
    - Added e820 reservations for TXT specific memory ranges.
-   - Removed changed to dmar.c
+   - Removed changes to dmar.c.
+   - Added VTd PMR validation for TXT.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:

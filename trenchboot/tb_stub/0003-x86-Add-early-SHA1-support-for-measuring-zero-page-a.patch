@@ -1,4 +1,4 @@
-From 425027730843e3caa2bc767ff7bf99c4a6357396 Mon Sep 17 00:00:00 2001
+From 3b5910bd37e83f1947d5f836230e2bf95f2d202a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: Add early SHA1 support for measuring zero page and
