@@ -78,6 +78,7 @@ Ross
  NOTE: This patch is still waiting to be updated with the final implementation
        of the boot params.
  v2:
+   - Set bool default=n and add to the description.
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:

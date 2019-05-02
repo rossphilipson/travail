@@ -1,4 +1,4 @@
-From 8c9902b53506691efbbde6b6394147b6db05154e Mon Sep 17 00:00:00 2001
+From df43e0255aa5d83745fc63f6560f80b6b75f299c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Secure Launch Kconfig and build tool changes
@@ -10,27 +10,31 @@ the pre-launch environment loader code to locate it.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/Kconfig                      |  7 +++++++
+ arch/x86/Kconfig                      | 11 +++++++++++
  arch/x86/boot/Makefile                |  2 +-
  arch/x86/boot/header.S                |  1 +
  arch/x86/boot/tools/build.c           | 16 ++++++++++++++++
  arch/x86/include/uapi/asm/bootparam.h |  1 +
- 5 files changed, 26 insertions(+), 1 deletion(-)
+ 5 files changed, 30 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 44c6a82b7ce5..a017c7b3adf0 100644
+index 44c6a82b7ce5..3398311b43b7 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1943,6 +1943,13 @@ config EFI_MIXED
+@@ -1943,6 +1943,17 @@ config EFI_MIXED
  
  	   If unsure, say N.
  
 +config SECURE_LAUNCH_STUB
 +	bool "Secure Launch stub support"
++	default n
 +	depends on X86_64
-+	---help---
-+	  This kernel feature allows a bzImage to be loaded directly
-+	  through Intel TXT or AMD SKINIT measured launch.
++	help
++	  This Secure Launch kernel feature allows a bzImage to be loaded
++	  directly through Intel TXT or AMD SKINIT measured launch. This
++	  allows extablishing a Dynamic Root of Trust Measurement (DRTM)
++	  of all the modules and configuration information used for
++	  boooting the operating system.
 +
  config SECCOMP
  	def_bool y
