@@ -1,4 +1,4 @@
-From 238041c3db8a95f436d8489dc7447b3f37f00b07 Mon Sep 17 00:00:00 2001
+From 5707cec8efbcb1824cdda26055b024df2ac9018e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
@@ -8,16 +8,16 @@ the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 220 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 220 insertions(+)
+ arch/x86/include/asm/slaunch.h | 281 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 281 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..977dfd3e49dc
+index 000000000000..03fe51f34fd1
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,281 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -34,14 +34,35 @@ index 000000000000..977dfd3e49dc
 +#define SL_CPU_AMD		1
 +#define SL_CPU_INTEL		2
 +
-+#define TXT_X86_GETSEC_SMCTRL	7
-+#define TXT_X86_GETSEC_WAKEUP	8
 +
++/*
++ * Intel Safer Mode Extensions (SMX)
++ *
++ * Intel SMX provides a programming interface to establish a Measured Launched
++ * Environment (MLE). The measurement and protection mechanisms supported by the
++ * capabilities of an Intel Trusted Execution Technology (TXT) platform. SMX is
++ * the processor’s programming interface in an Intel TXT platform.
++ *
++ * See Intel SDM Volume 2 - 6.1 "Safer Mode Extensions Reference"
++ */
++
++/*
++ * SMX GETSEC Leaf Functions
++ */
++#define SMX_X86_GETSEC_SMCTRL	7
++#define SMX_X86_GETSEC_WAKEUP	8
++
++/*
++ * Intel Trusted Execution Technology MMIO Registers Banks
++ */
 +#define TXT_PUB_CONFIG_REGS_BASE	0xfed30000
 +#define TXT_PRIV_CONFIG_REGS_BASE	0xfed20000
 +#define TXT_NR_CONFIG_PAGES     ((TXT_PUB_CONFIG_REGS_BASE - \
 +				  TXT_PRIV_CONFIG_REGS_BASE) >> PAGE_SHIFT)
 +
++/*
++ * Intel Trusted Execution Technology (TXT) Registers
++ */
 +#define TXTCR_STS			0x0000
 +#define TXTCR_ESTS			0x0008
 +#define TXTCR_ERRORCODE			0x0030
@@ -61,40 +82,54 @@ index 000000000000..977dfd3e49dc
 +#define TXTCR_CMD_NO_SECRETS		0x08e8
 +#define TXTCR_E2STS			0x08f0
 +
-+#define TXT_CAP_RLP_WAKE_GETSEC		0
-+#define TXT_CAP_RLP_WAKE_MONITOR	1
++/*
++ * SINIT/MLE Capabilities Field Bit Definitions
++ */
++#define TXT_SINIT_MLE_CAP_WAKE_GETSEC	0
++#define TXT_SINIT_MLE_CAP_WAKE_MONITOR	1
 +
++/*
++ * OS/MLE Secure Launch Specific Definitions
++ */
 +#define TXT_MAX_EVENT_LOG_SIZE		(5*4*1024)   /* 4k*5 */
 +#define TXT_MAX_VARIABLE_MTRRS		32
 +#define TXT_OS_MLE_STRUCT_VERSION	1
 +
-+#define TXT_BIOS_DATA_TABLE		1
-+#define TXT_OS_MLE_DATA_TABLE		2
-+#define TXT_OS_SINIT_DATA_TABLE		3
-+#define TXT_SINIT_MLE_DATA_TABLE	4
-+
++/*
++ * TXT Heap BIOS Table Field Offsets
++ */
 +#define TXT_BIOS_NUM_LOG_PROCS		0x18
-+#define TXT_OS_MLE_VERSION		0x0
-+#define TXT_OS_MLE_ZERO_PAGE_ADDR	0x4
-+#define TXT_OS_MLE_MISC_EN_MSR		0x1c
-+#define TXT_OS_MLE_MTRR_STATE		0x24
-+#define TXT_OS_MLE_LO_PMR_MIN		0x234
-+#define TXT_OS_MLE_AP_WAKE_EBP		0x23c
-+#define TXT_OS_MLE_AP_PM_ENTRY		0x244
++
++/*
++ * TXT Heap OS/SINIT Table Field Offsets
++ */
 +#define TXT_OS_SINIT_LO_PMR_BASE	0x20
 +#define TXT_OS_SINIT_LO_PMR_SIZE	0x28
 +#define TXT_OS_SINIT_HI_PMR_BASE	0x30
 +#define TXT_OS_SINIT_HI_PMR_SIZE	0x38
 +#define TXT_OS_SINIT_CAPABILITIES	0x50
++
++/*
++ * TXT Heap SINIT/MLE Table Field Offsets
++ */
 +#define TXT_SINIT_MLE_RLP_WAKEUP_ADDR	0x78
 +#define TXT_SINIT_MLE_NUMBER_MDRS	0x80
 +#define TXT_SINIT_MLE_MDRS_OFFSET	0x84
 +#define TXT_SINIT_MLE_DMAR_TABLE_SIZE	0x88
 +#define TXT_SINIT_MLE_DMAR_TABLE_OFFSET	0x8c
 +
-+#define TXT_SINIT_CAPS_WAKE_GETSEC	0
-+#define TXT_SINIT_CAPS_WAKE_MONITOR	1
++/*
++ * TXT Heap Table Enumeration
++ */
++#define TXT_BIOS_DATA_TABLE		1
++#define TXT_OS_MLE_DATA_TABLE		2
++#define TXT_OS_SINIT_DATA_TABLE		3
++#define TXT_SINIT_MLE_DATA_TABLE	4
 +
++/*
++ * Secure Launch Defined Error Codes
++ * Used in MLE-initiated TXT resets
++ */
 +#define TXT_SLERROR_GENERIC		0xc0008001
 +#define TXT_SLERROR_TPM_INIT		0xc0008002
 +#define TXT_SLERROR_TPM_GET_LOC		0xc0008003
@@ -120,37 +155,54 @@ index 000000000000..977dfd3e49dc
 +#define TXT_SLERROR_LO_PMR_BASE		0xc0008017
 +#define TXT_SLERROR_LO_PMR_MLE		0xc0008018
 +
++/*
++ * Secure Launch Defined Limits
++ */
 +#define TXT_MAX_CPUS			512
 +#define TXT_BOOT_STACK_SIZE		24
 +
++/*
++ * TODO this will change when patch 0001 changes
++ */
 +#define SLAUNCH_INFO_OFFSET	0x268
 +
++/*
++ * Secure Launch Defined Flags
++ */
 +#define SL_FLAG_ACTIVE		0x00000001
 +#define SL_FLAG_ARCH_SKINIT	0x00000002
 +#define SL_FLAG_ARCH_TXT	0x00000004
 +
-+#define MTRRphysBase0		0x200
-+
 +#ifndef __ASSEMBLY__
 +
++/*
++ * TXT data structure used by a responsive local processor (RLP) to start
++ * execution in response to a GETSEC[WAKEUP].
++ */
 +struct txt_mle_join {
 +	u32	gdt_limit;
 +	u32	gdt_base;
 +	u32	seg_sel;               /* cs (ds, es, ss are seg_sel+8) */
 +	u32	entry_point;           /* phys addr */
-+} __attribute__((packed));
++} __packed;
 +
++/*
++ * Secure Launch defined MTRR saving structures
++ */
 +struct txt_mtrr_pair {
 +	u64	mtrr_physbase;
 +	u64	mtrr_physmask;
-+} __attribute__((packed));
++} __packed;
 +
 +struct txt_mtrr_state {
 +	u64	default_type_reg;
 +	u64	mtrr_vcnt;
 +	struct txt_mtrr_pair mtrr_pair[TXT_MAX_VARIABLE_MTRRS];
-+} __attribute__((packed));
++} __packed;
 +
++/*
++ * Secure Launch defined OS/MLE TXT Heap table
++ */
 +struct txt_os_mle_data {
 +	u32	version;
 +	u32	zero_page_addr;
@@ -161,17 +213,23 @@ index 000000000000..977dfd3e49dc
 +	u64	ap_wake_ebp;
 +	u64	ap_pm_entry;
 +	u8	event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
-+} __attribute__((packed));
++} __packed;
 +
++/*
++ * TXT data reporting structure for memory types
++ */
 +struct txt_memory_descriptor_record {
 +	u64	address;
 +	u64	length;
 +	u8	type;
 +	u8	reserved[7];
-+} __attribute__((packed));
++} __packed;
 +
 +#include <asm/io.h>
 +
++/*
++ * Functions to extract data from the Intel TXT Heap Memory
++ */
 +static inline u64 txt_bios_data_size(void __iomem *heap)
 +{
 +	u64 val;
@@ -230,6 +288,9 @@ index 000000000000..977dfd3e49dc
 +		txt_sinit_mle_data_size(heap) + sizeof(u64);
 +}
 +
++/*
++ * External functions
++ */
 +void slaunch_setup(void);
 +u32 slaunch_get_flags(void);
 +void __iomem *txt_early_get_heap_table(u32 type, u32 bytes);

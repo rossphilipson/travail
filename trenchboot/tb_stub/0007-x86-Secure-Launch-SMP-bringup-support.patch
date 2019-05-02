@@ -1,4 +1,4 @@
-From 11d99f70800a158981cc964a21069719e5a52d9a Mon Sep 17 00:00:00 2001
+From 05d2ae84a380204a522bab4c89ac8d07f2405c01 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 7/8] x86: Secure Launch SMP bringup support
@@ -16,10 +16,10 @@ RM piggy protected mode entry point.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/kernel/smpboot.c            | 80 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/smpboot.c            | 82 ++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/rm/header.S        |  3 ++
  arch/x86/realmode/rm/trampoline_64.S | 40 ++++++++++++++++++
- 4 files changed, 126 insertions(+)
+ 4 files changed, 128 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..e2b71fb9dc85 100644
@@ -36,7 +36,7 @@ index 63b3393bd98e..e2b71fb9dc85 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 6489067b78a4..6a32000b9af6 100644
+index 6489067b78a4..fe506a00bf92 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -47,7 +47,7 @@ index 6489067b78a4..6a32000b9af6 100644
  
  /* representing HT siblings of each logical CPU */
  DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
-@@ -954,6 +955,74 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
+@@ -954,6 +955,76 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
  #endif
  }
  
@@ -60,6 +60,8 @@ index 6489067b78a4..6a32000b9af6 100644
 +	void __iomem *txt_heap;
 +	uint32_t ap_jmp_vector;
 +	uint32_t *ap_jmp_ptr;
++	uint32_t ap_pm_entry_offset =
++			offsetof(struct txt_os_mle_data, ap_pm_entry);
 +
 +	if (atomic_read(&first_ap_only) == 1)
 +		return 0;
@@ -67,15 +69,15 @@ index 6489067b78a4..6a32000b9af6 100644
 +	atomic_set(&first_ap_only, 1);
 +
 +	txt_heap = txt_early_get_heap_table(TXT_OS_MLE_DATA_TABLE,
-+					    TXT_OS_MLE_AP_PM_ENTRY + 4);
++					    ap_pm_entry_offset + 4);
 +	if (unlikely(!txt_heap)) {
 +		printk(KERN_ERR
 +		       "Error SMP early_ioremap of TXT OS-SINIT heap\n");
 +		return -1;
 +	}
 +
-+	ap_jmp_vector = readl(txt_heap + TXT_OS_MLE_AP_PM_ENTRY);
-+	early_iounmap(txt_heap, TXT_OS_MLE_AP_PM_ENTRY + 4);
++	ap_jmp_vector = readl(txt_heap + ap_pm_entry_offset);
++	early_iounmap(txt_heap, ap_pm_entry_offset + 4);
 +
 +	ap_jmp_ptr = (uint32_t*)__va(ap_jmp_vector);
 +	*ap_jmp_ptr = real_mode_header->sl_trampoline_start32;
@@ -122,7 +124,7 @@ index 6489067b78a4..6a32000b9af6 100644
  /*
   * NOTE - on most systems this is a PHYSICAL apic ID, but on multiquad
   * (ie clustered apic addressing mode), this is a LOGICAL apic ID.
-@@ -1010,6 +1079,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1081,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -130,7 +132,7 @@ index 6489067b78a4..6a32000b9af6 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1021,6 +1091,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1021,6 +1093,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	else
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);

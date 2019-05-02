@@ -1,4 +1,4 @@
-From c3cd6e54fdd2678ef0db76135fadf117a8b15234 Mon Sep 17 00:00:00 2001
+From 16ea2e2ff68645166f17017c1801b28da5104cd0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -20,8 +20,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  46 ++++
  arch/x86/boot/compressed/sl_main.c | 184 +++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 515 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 746 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 518 +++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/asm-offsets.c      |  10 +
+ 5 files changed, 759 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -294,10 +295,10 @@ index 000000000000..07538dc17e72
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..df429ace8a21
+index 000000000000..040e56f9e59b
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,518 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -326,6 +327,9 @@ index 000000000000..df429ace8a21
 +
 +/* Can't include traps.h in asm */
 +#define X86_TRAP_NMI	2
++
++/* Can't include mtrr.h in asm */
++#define MTRRphysBase0	0x200
 +
 +	/* The MLE Header per the TXT Specification, section 4.1 */
 +	.global	sl_mle_header
@@ -413,7 +417,7 @@ index 000000000000..df429ace8a21
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
 +	xorl	%ebx, %ebx
-+	movl	$(TXT_X86_GETSEC_SMCTRL), %eax
++	movl	$(SMX_X86_GETSEC_SMCTRL), %eax
 +	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
 +	/* IRET-to-self can be used to enable NMIs which SENTER disabled */
@@ -440,14 +444,14 @@ index 000000000000..df429ace8a21
 +	addl	$8, %eax
 +	/* First 4 bytes of OS to MLE are the version */
 +	/* Second 4 bytes of OS to MLE are the zero page */
-+	movl	TXT_OS_MLE_ZERO_PAGE_ADDR(%eax), %esi
++	movl	SL_zero_page_addr(%eax), %esi
 +
 +	/* Save ebp so the APs can find their way home */
-+	movl	%ebp, TXT_OS_MLE_AP_WAKE_EBP(%eax)
++	movl	%ebp, SL_ap_wake_ebp(%eax)
 +
 +	/* Store the AP PM entry address location that is update later */
 +	leal	sl_ap_pm_entry_addr(%ebp), %ecx
-+	movl	%ecx, TXT_OS_MLE_AP_PM_ENTRY(%eax)
++	movl	%ecx, SL_ap_pm_entry(%eax)
 +
 +	/* Note only %esi and %ebp MUST be preserved across calls */
 +	movl	%eax, %edi
@@ -499,7 +503,7 @@ index 000000000000..df429ace8a21
 +	addl	$8, %eax
 +
 +	/* Saved ebp from the BSP and stash OS-MLE pointer */
-+	movl	TXT_OS_MLE_AP_WAKE_EBP(%eax), %ebp
++	movl	SL_ap_wake_ebp(%eax), %ebp
 +	movl	%eax, %edi
 +
 +	/* Lock and get our stack index */
@@ -547,7 +551,7 @@ index 000000000000..df429ace8a21
 +
 +	/* Enable SMI with GETSET[SMCTRL] */
 +	xorl	%ebx, %ebx
-+	movl	$(TXT_X86_GETSEC_SMCTRL), %eax
++	movl	$(SMX_X86_GETSEC_SMCTRL), %eax
 +	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
 +	/* IRET-to-self can be used to enable NMIs which SENTER disabled */
@@ -598,7 +602,7 @@ index 000000000000..df429ace8a21
 +	 * its MTRRs and Misc Enable MSR.
 +	 */
 +	pushl	%edi
-+	addl	$(TXT_OS_MLE_MTRR_STATE), %edi
++	addl	$(SL_saved_bsp_mtrrs), %edi
 +	movl	(%edi), %ebx
 +	pushl	%ebx /* default_type_reg lo */
 +	addl	$4, %edi
@@ -637,7 +641,7 @@ index 000000000000..df429ace8a21
 +
 +	/* Return to beginning and write the misc enable msr */
 +	popl	%edi
-+	addl	$(TXT_OS_MLE_MISC_EN_MSR), %edi
++	addl	$(SL_saved_misc_enable_msr), %edi
 +	movl	(%edi), %eax /* saved_misc_enable_msr lo */
 +	addl	$4, %edi
 +	movl	(%edi), %edx /* saved_misc_enable_msr hi */
@@ -710,7 +714,7 @@ index 000000000000..df429ace8a21
 +	movl	(TXT_SINIT_MLE_RLP_WAKEUP_ADDR + 8)(%eax), %edi
 +
 +	/* Determine how to wake up the APs */
-+	testl	$(1 << TXT_SINIT_CAPS_WAKE_MONITOR), %ebx
++	testl	$(1 << TXT_SINIT_MLE_CAP_WAKE_MONITOR), %ebx
 +	jz	.Lwake_getsec
 +
 +	/* Wake using MWAIT MONITOR */
@@ -720,7 +724,7 @@ index 000000000000..df429ace8a21
 +.Lwake_getsec:
 +	/* Wake using GETSEC(WAKEUP) */
 +	xorl	%ebx, %ebx
-+	movl	$(TXT_X86_GETSEC_WAKEUP), %eax
++	movl	$(SMX_X86_GETSEC_WAKEUP), %eax
 +	.byte 	0x0f, 0x37 /* GETSEC opcode */
 +
 +.Laps_awake:
@@ -813,6 +817,32 @@ index 000000000000..df429ace8a21
 +sl_stacks:
 +	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
+diff --git a/arch/x86/kernel/asm-offsets.c b/arch/x86/kernel/asm-offsets.c
+index 01de31db300d..12cbca8a4f95 100644
+--- a/arch/x86/kernel/asm-offsets.c
++++ b/arch/x86/kernel/asm-offsets.c
+@@ -18,6 +18,7 @@
+ #include <asm/bootparam.h>
+ #include <asm/suspend.h>
+ #include <asm/tlbflush.h>
++#include <asm/slaunch.h>
+ 
+ #ifdef CONFIG_XEN
+ #include <xen/interface/xen.h>
+@@ -108,4 +109,13 @@ void common(void) {
+ 	/* Offset for sp0 and sp1 into the tss_struct */
+ 	OFFSET(TSS_sp0, tss_struct, x86_tss.sp0);
+ 	OFFSET(TSS_sp1, tss_struct, x86_tss.sp1);
++
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++	BLANK();
++	OFFSET(SL_zero_page_addr, txt_os_mle_data, zero_page_addr);
++	OFFSET(SL_saved_misc_enable_msr, txt_os_mle_data, saved_misc_enable_msr);
++	OFFSET(SL_saved_bsp_mtrrs, txt_os_mle_data, saved_bsp_mtrrs);
++	OFFSET(SL_ap_wake_ebp, txt_os_mle_data, ap_wake_ebp);
++	OFFSET(SL_ap_pm_entry, txt_os_mle_data, ap_pm_entry);
++#endif
+ }
 -- 
 2.13.6
 
