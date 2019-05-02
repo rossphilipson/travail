@@ -1,25 +1,32 @@
-From 3b5910bd37e83f1947d5f836230e2bf95f2d202a Mon Sep 17 00:00:00 2001
+From e5e928d724cfbc4047ca81504a7a8335f4a75766 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
-Subject: [PATCH 3/8] x86: Add early SHA1 support for measuring zero page and
- command line
+Subject: [PATCH 3/8] x86: Add early SHA1 support for Secure Launch early
+ measurements
 
 The SHA1 algorithm is necessary to measure configuration information into
 the TPM as early as possible before using the values. This implementation
 uses the established approach of #including the SHA1 library directly in
 the code since the compressed kernel is not uncompressed at this point.
 
+The code here has its origins in the code in include/crypto/sha1_base.h.
+That code could not be pulled directly into the setup portion of the
+compressed kernel because of other dependencies it pulls in. So this is
+a modified copy of that code that still leverages the core SHA1
+algorithm.
+
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Reviewed-by: Alexandre Chartre <alexandre.chartre@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   2 +
- arch/x86/boot/compressed/early_sha1.c | 101 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_sha1.c | 105 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  18 ++++++
- 3 files changed, 121 insertions(+)
+ 3 files changed, 125 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/include/asm/sha1.h
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
-index 466f66c8a7f8..57f2f467cbb0 100644
+index 466f66c..57f2f46 100644
 --- a/arch/x86/boot/compressed/Makefile
 +++ b/arch/x86/boot/compressed/Makefile
 @@ -90,6 +90,8 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
@@ -33,11 +40,11 @@ index 466f66c8a7f8..57f2f467cbb0 100644
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..893c5beb8e45
+index 0000000..53ecd12
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
-@@ -0,0 +1,101 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
+@@ -0,0 +1,105 @@
++// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + */
@@ -61,6 +68,10 @@ index 000000000000..893c5beb8e45
 +		src += SHA1_BLOCK_SIZE;
 +	}
 +	memset(temp, 0, sizeof(temp));
++	/*
++	 * As this is cryptographic code, prevent the memset 0 from being
++	 * optimized out potentially leaving secrets in memory.
++	 */
 +	wmb();
 +}
 +
@@ -140,7 +151,7 @@ index 000000000000..893c5beb8e45
 +}
 diff --git a/arch/x86/include/asm/sha1.h b/arch/x86/include/asm/sha1.h
 new file mode 100644
-index 000000000000..9b2552908487
+index 0000000..9b25529
 --- /dev/null
 +++ b/arch/x86/include/asm/sha1.h
 @@ -0,0 +1,18 @@
@@ -163,5 +174,5 @@ index 000000000000..9b2552908487
 +
 +#endif /* _ASM_X86_SHA1_H */
 -- 
-2.13.6
+2.1.4
 

@@ -88,6 +88,8 @@ Ross
 
 0003-x86-Add-early-SHA1-support-for-measuring-zero-page-a.patch
  v2:
+   - Added comment about where the code originated in include/crypto/sha1_base.h.
+   - Fixed a few warnings found by checkpatch.
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
