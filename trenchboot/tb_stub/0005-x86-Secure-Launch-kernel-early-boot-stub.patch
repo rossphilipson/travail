@@ -1,19 +1,20 @@
-From 16ea2e2ff68645166f17017c1801b28da5104cd0 Mon Sep 17 00:00:00 2001
+From 46c99fa0be855016fcded63a7ba7ca39dde8df99 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
 
-The Secure Launch (SL) stub provides the entry point for Intel TXT (and later
-AMD SKINIT) to vector to during the late launch. The symbol sl_stub_entry is
-that entry point and is conveyed launching code using the MLE (Measured Launch
-Environment) header represented by the symbol sl_mle_header. The offset of the
-MLE is written to the boot params at buld time. The routine sl_stub contains
-the very early late launch setup code responsible for setting up the basic
-environment to allow the normal kernel startup_32 code to proceed. It is also
-responsible for properly waking and handling the APs on Intel platforms. The
-routine sl_main which runs after entering 64b mode is responsible for measuring
-configuration information before it is used like the boot params, the kernel
-command line, the TXT heap, etc.
+The Secure Launch (SL) stub provides the entry point for Intel TXT (and
+later AMD SKINIT) to vector to during the late launch. The symbol
+sl_stub_entry is that entry point and is conveyed launching code using
+the MLE (Measured Launch Environment) header represented by the symbol
+sl_mle_header. The offset of the MLE is written to the boot params at
+buld time. The routine sl_stub contains the very early late launch setup
+code responsible for setting up the basic environment to allow the normal
+kernel startup_32 code to proceed. It is also responsible for properly
+waking and handling the APs on Intel platforms. The routine sl_main which
+runs after entering 64b mode is responsible for measuring configuration
+information before it is used like the boot params, the kernel command
+line, the TXT heap, etc.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
@@ -295,7 +296,7 @@ index 000000000000..07538dc17e72
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..040e56f9e59b
+index 000000000000..b2ffa21a6ac1
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
 @@ -0,0 +1,518 @@
@@ -393,14 +394,14 @@ index 000000000000..040e56f9e59b
 +	/* Assume CPU is AMD to start */
 +	movl	$(SL_CPU_AMD), %edi
 +
-+	/* Now see if it is Intel */
++	/* Now see if it is GenuineIntel */
 +	movl	$0x0, %eax
 +	cpuid
-+	cmpl	$0x756e6547, %ebx # GenuineIntel?
++	cmpl	$(INTEL_CPUID_MFGID_EBX), %ebx
 +	jnz	.Lcpu_check_done
-+	cmpl	$0x49656e69, %edx
++	cmpl	$(INTEL_CPUID_MFGID_EDX), %edx
 +	jnz	.Lcpu_check_done
-+	cmpl	$0x6c65746e, %ecx
++	cmpl	$(INTEL_CPUID_MFGID_ECX), %ecx
 +	jnz	.Lcpu_check_done
 +	movl	$(SL_CPU_INTEL), %edi
 +

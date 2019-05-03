@@ -35,6 +35,9 @@ Questions:
    * TODO anything needed to be reserverd for SKINIT?
    * TODO reservations across kexec (e820__range_update_kexec)
  - SKINIT: What post launch things need to be checked?
+   * TODO How to check in SKINIT "mode".
+   * MAYBE Can you check the SL_DEV_EN bit in the DEV_CR control register? It
+     looks like this bit is set to 1 by SKINIT (from Alex)
  - TXT:
    * TODO Restoring the LAPIC address, do we need to do this?
      (so far it looks painful and hacky to do).

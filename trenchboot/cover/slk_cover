@@ -85,6 +85,7 @@ Ross
    - Added offsets, struct and error codes for e820 TXT reservations.
    - Added comments from code review.
    - Use asm-offsets for OS-MLE structure (and offsetof in C code).
+   - Defines for Intel and AMD manufacturer CPUID.
 
 0003-x86-Add-early-SHA1-support-for-measuring-zero-page-a.patch
  v2:
@@ -94,7 +95,7 @@ Ross
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
  v2:
-   - General code fixes found in review of v1.
+   - General code fixes found in review of v1 from Daniel Smith.
    - Cleanup from running checkpatch.
 
 0005-x86-Secure-Launch-kernel-early-boot-stub.patch
@@ -107,6 +108,9 @@ Ross
    - Fixed error handling in the late SL stub code.
    - Added e820 reservations for TXT specific memory ranges.
    - Added VTd PMR validation for TXT.
+   - Fixed the DMAR copying code to happen earlier before IOMMU driver loads.
+   - Check for offset == 0 during heap walk.
+   - Cleanup from running checkpatch.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:

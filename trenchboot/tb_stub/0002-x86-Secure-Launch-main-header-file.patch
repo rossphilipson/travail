@@ -1,23 +1,23 @@
-From 5707cec8efbcb1824cdda26055b024df2ac9018e Mon Sep 17 00:00:00 2001
+From bfb29be2df063751561726f8a0d9e79886069e35 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
 
-Introduce the main Secure Launch header file used in the early SL stub and
-the early setup code.
+Introduce the main Secure Launch header file used in the early SL stub
+and the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 281 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 281 insertions(+)
+ arch/x86/include/asm/slaunch.h | 289 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 289 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..03fe51f34fd1
+index 000000000000..8aa0dd428c7a
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,289 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -31,9 +31,16 @@ index 000000000000..03fe51f34fd1
 +#define __SL32_CS	0x0008
 +#define __SL32_DS	0x0010
 +
-+#define SL_CPU_AMD		1
-+#define SL_CPU_INTEL		2
++#define SL_CPU_AMD	1
++#define SL_CPU_INTEL	2
 +
++#define INTEL_CPUID_MFGID_EBX	0x756e6547 /* Genu */
++#define INTEL_CPUID_MFGID_EDX	0x49656e69 /* ineI */
++#define INTEL_CPUID_MFGID_ECX	0x6c65746e /* ntel */
++
++#define AMD_CPUID_MFGID_EBX	0x68747541 /* Auth */
++#define AMD_CPUID_MFGID_EDX	0x69746e65 /* enti */
++#define AMD_CPUID_MFGID_ECX	0x444d4163 /* cAMD */
 +
 +/*
 + * Intel Safer Mode Extensions (SMX)
@@ -154,6 +161,7 @@ index 000000000000..03fe51f34fd1
 +#define TXT_SLERROR_HI_PMR_SIZE		0xc0008016
 +#define TXT_SLERROR_LO_PMR_BASE		0xc0008017
 +#define TXT_SLERROR_LO_PMR_MLE		0xc0008018
++#define TXT_SLERROR_HEAP_ZERO_OFFSET	0xc0008019
 +
 +/*
 + * Secure Launch Defined Limits

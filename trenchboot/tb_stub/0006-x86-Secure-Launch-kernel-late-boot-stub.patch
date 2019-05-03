@@ -1,24 +1,24 @@
-From 9ff7cb0e2d8d0e0b902ae58716a5211d2a578511 Mon Sep 17 00:00:00 2001
+From d5394edb252bd4e99aec35505df511585664b4a7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
 
 The routine slaunch_setup is called out of the x86 specific setup_arch
-routine during early kernel boot. After determining what platform is present,
-various operations specific to that platform occur. This includes finalizing
-setting for the platform late launch and verifying that memory protections
-are in place.
+routine during early kernel boot. After determining what platform is
+present, various operations specific to that platform occur. This
+includes finalizing setting for the platform late launch and verifying
+that memory protections are in place.
 
-For TXT, this code also reserves the original compressed kernel setup area
-where the APs were left looping so that this memory cannot be used.
+For TXT, this code also reserves the original compressed kernel setup
+area where the APs were left looping so that this memory cannot be used.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 417 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 426 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 +
- 4 files changed, 428 insertions(+)
+ 4 files changed, 437 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,11 +58,11 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..e5975a40c5cd
+index 000000000000..3baddffe805a
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,417 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
+@@ -0,0 +1,426 @@
++// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + * Copyright (c) 2019 Apertus Solutions, LLC
@@ -92,10 +92,10 @@ index 000000000000..e5975a40c5cd
 +
 +#define PREFIX	"SLAUNCH: "
 +
-+static u32 sl_flags = 0;
++static u32 sl_flags;
 +
 +/* This should be plenty of room */
-+static u8 txt_dmar[PAGE_SIZE] __attribute__((aligned(16)));
++static u8 txt_dmar[PAGE_SIZE] __aligned(16);
 +
 +u32 slaunch_get_flags(void)
 +{
@@ -108,7 +108,7 @@ index 000000000000..e5975a40c5cd
 +	if (memcmp(txt_dmar, "DMAR", 4))
 +		return dmar;
 +
-+	return (struct acpi_table_header*)(&txt_dmar[0]);
++	return (struct acpi_table_header *)(&txt_dmar[0]);
 +}
 +
 +static void slaunch_txt_reset(void __iomem *txt, const char *msg, u64 error)
@@ -138,11 +138,8 @@ index 000000000000..e5975a40c5cd
 +	u64 base, size, offset = 0;
 +	int i;
 +
-+	if (type > TXT_SINIT_MLE_DATA_TABLE) {
-+		printk(KERN_ERR PREFIX
-+		       "Error invalid type for early heap walk\n");
-+		return NULL;
-+	}
++	if (type > TXT_SINIT_MLE_DATA_TABLE)
++		panic("Error invalid type for early heap walk\n");
 +
 +	txt = early_ioremap(TXT_PRIV_CONFIG_REGS_BASE,
 +			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
@@ -154,6 +151,7 @@ index 000000000000..e5975a40c5cd
 +	memcpy_fromio(&base, txt + TXTCR_HEAP_BASE, sizeof(u64));
 +	memcpy_fromio(&size, txt + TXTCR_HEAP_SIZE, sizeof(u64));
 +
++	/* Iterate over heap tables looking for table of "type" */
 +	for (i = 0; i < type; i++) {
 +		base += offset;
 +		heap = early_ioremap(base, sizeof(u64));
@@ -163,6 +161,16 @@ index 000000000000..e5975a40c5cd
 +				TXT_SLERROR_HEAP_WALK);
 +
 +		memcpy_fromio(&offset, heap, sizeof(u64));
++
++		/*
++		 * After the first iteration, any offset of zero is invalid and
++		 * implies the TXT heap is corrupted.
++		 */
++		if (!offset)
++			slaunch_txt_reset(txt,
++				"Error invalid 0 offset in heap walk\n",
++				TXT_SLERROR_HEAP_ZERO_OFFSET);
++
 +		early_iounmap(heap, sizeof(u64));
 +	}
 +
@@ -308,7 +316,8 @@ index 000000000000..e5975a40c5cd
 +	if (!mdrvals[MDRS_NUM])
 +		goto out;
 +
-+	mdrslen = (mdrvals[MDRS_NUM]*sizeof(struct txt_memory_descriptor_record));
++	mdrslen = (mdrvals[MDRS_NUM]*
++		   sizeof(struct txt_memory_descriptor_record));
 +
 +	heap = txt_early_get_heap_table(TXT_SINIT_MLE_DATA_TABLE,
 +					mdrvals[MDRS_OFFSET] + mdrslen);
@@ -332,7 +341,7 @@ index 000000000000..e5975a40c5cd
 +out:
 +	if (updated) {
 +		e820__update_table(e820_table);
-+		printk(KERN_INFO "TXT altered physical RAM map:\n");
++		pr_info("TXT altered physical RAM map:\n");
 +		e820__print_table("TXT-reserve");
 +	}
 +}
@@ -383,7 +392,7 @@ index 000000000000..e5975a40c5cd
 +				  TXT_SLERROR_HEAP_DMAR_MAP);
 +
 +	memcpy_fromio(&txt_dmar[DMAR_SIZE],
-+		      (void*)(heap + dmarvals[DMAR_OFFSET] - 8),
++		      (void *)(heap + dmarvals[DMAR_OFFSET] - 8),
 +		      dmarvals[DMAR_SIZE]);
 +
 +	early_iounmap(heap, dmarvals[DMAR_SIZE]);
@@ -451,7 +460,7 @@ index 000000000000..e5975a40c5cd
 +
 +	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +
-+	printk(KERN_INFO "Intel TXT setup complete\n");
++	pr_info("Intel TXT setup complete\n");
 +}
 +
 +void slaunch_setup(void)
@@ -466,14 +475,14 @@ index 000000000000..e5975a40c5cd
 +
 +	cpuid(0, &vendor[0], &vendor[1], &vendor[2], &vendor[3]);
 +
-+	if (vendor[1] == 0x756e6547 &&        /* "Genu" */
-+	    vendor[2] == 0x6c65746e &&        /* "ntel" */
-+	    vendor[3] == 0x49656e69) {        /* "ineI" */
++	if (vendor[1] == INTEL_CPUID_MFGID_EBX &&
++	    vendor[2] == INTEL_CPUID_MFGID_ECX &&
++	    vendor[3] == INTEL_CPUID_MFGID_EDX) {
 +		sl_flags |= SL_FLAG_ARCH_TXT;
 +		slaunch_setup_intel();
-+	} else if (vendor[1] == 0x68747541 && /* "Auth" */
-+		   vendor[2] == 0x444d4163 && /* "cAMD" */
-+		   vendor[3] == 0x69746e65) { /* "enti" */
++	} else if (vendor[1] == AMD_CPUID_MFGID_EBX &&
++		   vendor[2] == AMD_CPUID_MFGID_ECX &&
++		   vendor[3] == AMD_CPUID_MFGID_EDX) {
 +		panic("Invalid platform: AMD not supported\n");
 +	} else {
 +		panic("Invalid platform: not Intel or AMD\n");
