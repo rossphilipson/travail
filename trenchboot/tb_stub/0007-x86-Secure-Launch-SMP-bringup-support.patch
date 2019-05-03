@@ -1,25 +1,27 @@
-From 05d2ae84a380204a522bab4c89ac8d07f2405c01 Mon Sep 17 00:00:00 2001
+From fb618fad82375b091a8dc487aecf28a4159ee99f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 7/8] x86: Secure Launch SMP bringup support
 
-On Intel, the APs are left in a well documented state after TXT performs the
-late launch. Specifically they cannot have #INIT asserted on them so a standard
-startup via INIT/SIPI/SIPI cannot be performed. Instead the early SL stub code
-parked the APs in a pause/jmp loop waiting for an NMI. The modified SMP boot
-code is called for the Secure Launch case. The jump address for the RM piggy
-entry point is fixed up in the jump where the APs are waiting and an NMI IPI
-is sent to the AP. The AP vectors to the Secure Launch entry point in the RM
-piggy which mimics what the real mode code would do then jumps the the standard
-RM piggy protected mode entry point.
+On Intel, the APs are left in a well documented state after TXT performs
+the late launch. Specifically they cannot have #INIT asserted on them so
+a standard startup via INIT/SIPI/SIPI cannot be performed. Instead the
+early SL stub code parked the APs in a pause/jmp loop waiting for an NMI.
+The modified SMP boot code is called for the Secure Launch case. The
+jump address for the RM piggy entry point is fixed up in the jump where
+the APs are waiting and an NMI IPI is sent to the AP. The AP vectors to
+the Secure Launch entry point in the RM piggy which mimics what the real
+mode code would do then jumps the the standard RM piggy protected mode
+entry point.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 ---
  arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/kernel/smpboot.c            | 82 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/smpboot.c            | 92 ++++++++++++++++++++++++++++++++++++
  arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 40 ++++++++++++++++++
- 4 files changed, 128 insertions(+)
+ arch/x86/realmode/rm/trampoline_64.S | 40 ++++++++++++++++
+ 4 files changed, 138 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..e2b71fb9dc85 100644
@@ -36,7 +38,7 @@ index 63b3393bd98e..e2b71fb9dc85 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 6489067b78a4..fe506a00bf92 100644
+index 6489067b78a4..b626b977105e 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -47,13 +49,17 @@ index 6489067b78a4..fe506a00bf92 100644
  
  /* representing HT siblings of each logical CPU */
  DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
-@@ -954,6 +955,76 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
+@@ -954,6 +955,86 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
  #endif
  }
  
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
-+static atomic_t first_ap_only;
++static atomic_t first_ap_only = {1};
 +
++/*
++ * Called to fix the long jump address for the waiting APs to vector to
++ * the correct startup location in the Secure Launch stub in the rmpiggy.
++ */
 +static int
 +slaunch_fixup_jump_vector(void)
 +{
@@ -63,28 +69,34 @@ index 6489067b78a4..fe506a00bf92 100644
 +	uint32_t ap_pm_entry_offset =
 +			offsetof(struct txt_os_mle_data, ap_pm_entry);
 +
-+	if (atomic_read(&first_ap_only) == 1)
++	if (!atomic_dec_and_test(&first_ap_only))
 +		return 0;
-+
-+	atomic_set(&first_ap_only, 1);
 +
 +	txt_heap = txt_early_get_heap_table(TXT_OS_MLE_DATA_TABLE,
 +					    ap_pm_entry_offset + 4);
 +	if (unlikely(!txt_heap)) {
-+		printk(KERN_ERR
-+		       "Error SMP early_ioremap of TXT OS-SINIT heap\n");
++		pr_err("Error SMP early_ioremap of TXT OS-SINIT heap\n");
 +		return -1;
 +	}
 +
 +	ap_jmp_vector = readl(txt_heap + ap_pm_entry_offset);
 +	early_iounmap(txt_heap, ap_pm_entry_offset + 4);
 +
-+	ap_jmp_ptr = (uint32_t*)__va(ap_jmp_vector);
++	ap_jmp_ptr = (uint32_t *)__va(ap_jmp_vector);
 +	*ap_jmp_ptr = real_mode_header->sl_trampoline_start32;
++
++	pr_info("TXT AP long jump address updated\n");
 +
 +	return 0;
 +}
 +
++/*
++ * TXT AP startup is quite different than normal. The APs cannot have #INIT
++ * asserted on them or receive SIPIs. The early Secure Launch code has parked
++ * the APs in a pause loop waiting to receive an NMI. This will wake the APs
++ * and have them jump to the protected mode code in the rmpiggy where the rest
++ * of the SMP boot of the AP will proceed normally.
++ */
 +static int
 +slaunch_wakeup_cpu_from_txt(int cpu, int apicid)
 +{
@@ -124,7 +136,7 @@ index 6489067b78a4..fe506a00bf92 100644
  /*
   * NOTE - on most systems this is a PHYSICAL apic ID, but on multiquad
   * (ie clustered apic addressing mode), this is a LOGICAL apic ID.
-@@ -1010,6 +1081,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1091,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -132,7 +144,7 @@ index 6489067b78a4..fe506a00bf92 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1021,6 +1093,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1021,6 +1103,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	else
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
