@@ -20,6 +20,7 @@
 /* Setup earlyprintk in sl_main() */
 #include "misc.h"
 
+/* Make sure to un-static them in misc.c */
 extern char *vidmem;
 extern int vidport;
 extern int lines, cols;

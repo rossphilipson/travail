@@ -101,6 +101,10 @@ Ross
 0005-x86-Secure-Launch-kernel-early-boot-stub.patch
  v2:
    - Removed unfinished AMD support for now.
+   - Remove cache disable code, TXT left it al UC anyway.
+   - Remove incorrect stack adds after i/lrets.
+   - Fix the manufacturer jump logic in sl_stub.S
+   - Fix some cast issues and related in sl_main.c
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:

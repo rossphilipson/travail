@@ -1,4 +1,4 @@
-From 46c99fa0be855016fcded63a7ba7ca39dde8df99 Mon Sep 17 00:00:00 2001
+From fb7c468517670945868313a6ce8b01fa8ea4a951 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -8,7 +8,7 @@ later AMD SKINIT) to vector to during the late launch. The symbol
 sl_stub_entry is that entry point and is conveyed launching code using
 the MLE (Measured Launch Environment) header represented by the symbol
 sl_mle_header. The offset of the MLE is written to the boot params at
-buld time. The routine sl_stub contains the very early late launch setup
+build time. The routine sl_stub contains the very early late launch setup
 code responsible for setting up the basic environment to allow the normal
 kernel startup_32 code to proceed. It is also responsible for properly
 waking and handling the APs on Intel platforms. The routine sl_main which
@@ -19,11 +19,11 @@ line, the TXT heap, etc.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  46 ++++
- arch/x86/boot/compressed/sl_main.c | 184 +++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 518 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/head_64.S |  33 +++
+ arch/x86/boot/compressed/sl_main.c | 186 ++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 505 +++++++++++++++++++++++++++++++++++++
  arch/x86/kernel/asm-offsets.c      |  10 +
- 5 files changed, 759 insertions(+), 1 deletion(-)
+ 5 files changed, 735 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -41,7 +41,7 @@ index 1a089f7f7f79..50f1ff478db0 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..4a0c76ecce1a 100644
+index 64037895b085..9ddae11fe9a6 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
 @@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
@@ -67,20 +67,11 @@ index 64037895b085..4a0c76ecce1a 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
-@@ -520,6 +536,36 @@ relocated:
+@@ -520,6 +536,23 @@ relocated:
  	shrq	$3, %rcx
  	rep	stosq
  
 +#ifdef CONFIG_SECURE_LAUNCH_STUB
-+	/* Disable all caching for MMIO operations */
-+	pushq	%rax
-+	movq	%cr0, %rax
-+	pushq	%rax
-+	orq	$(X86_CR0_CD), %rax
-+	andq	$(~X86_CR0_NW), %rax
-+	movq	%rax, %cr0
-+	wbinvd
-+
 +	/*
 +	 * Have to do the final early sl stub work in 64b area.
 +	 *
@@ -95,10 +86,6 @@ index 64037895b085..4a0c76ecce1a 100644
 +	movq	%rsi, %rdi
 +	callq	sl_main
 +	popq	%rsi
-+
-+	popq	%rax
-+	movq	%rax, %cr0
-+	popq	%rax
 +#endif
 +
  /*
@@ -106,11 +93,11 @@ index 64037895b085..4a0c76ecce1a 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..07538dc17e72
+index 000000000000..ac08acc1a232
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,184 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
+@@ -0,0 +1,186 @@
++// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 + */
@@ -130,11 +117,12 @@ index 000000000000..07538dc17e72
 +
 +static u64 sl_txt_read(u32 reg)
 +{
-+	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
++	void *addr = (void *)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
 +	u64 val;
 +
 +	barrier();
-+	val = (*(volatile u64*)(addr));
++	val = *(u64 *)(addr);
++	/* Memory barrier for MMIO read as done in readb() */
 +	rmb();
 +
 +	return val;
@@ -142,20 +130,22 @@ index 000000000000..07538dc17e72
 +
 +static void sl_txt_write(u32 reg, u64 val)
 +{
-+	void *addr = (void*)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
++	void *addr = (void *)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg);
 +
 +	barrier();
-+	(*(volatile u64 *)(addr)) = val;
++	*(u64 *)(addr) = val;
++	/* Memory barrier for MMIO read as done in readb() */
 +	wmb();
 +	barrier();
 +}
 +
 +static void sl_txt_reset(u64 error)
 +{
++	/* Reading the E2STS register acts as a barrier for TXT registers */
 +	sl_txt_write(TXTCR_ERRORCODE, error);
-+	(void)sl_txt_read(TXTCR_E2STS);
++	sl_txt_read(TXTCR_E2STS);
 +	sl_txt_write(TXTCR_CMD_UNLOCK_MEM_CONFIG, 1);
-+	(void)sl_txt_read(TXTCR_E2STS);
++	sl_txt_read(TXTCR_E2STS);
 +	sl_txt_write(TXTCR_CMD_RESET, 1);
 +	for ( ; ; )
 +		__asm__ __volatile__ ("pause");
@@ -163,12 +153,11 @@ index 000000000000..07538dc17e72
 +
 +static u64 sl_rdmsr(u32 reg)
 +{
-+	u32 lo, hi;
-+	u64 val;
++	u64 lo, hi;
 +
 +	__asm__ __volatile__ ("rdmsr"  : "=a" (lo), "=d" (hi) : "c" (reg));
-+	val = hi;
-+	return ((val << 32) & 0xffffffff00000000) | lo;
++
++	return (hi << 32) | lo;
 +}
 +
 +static void sl_txt_validate_msrs(struct txt_os_mle_data *os_mle_data)
@@ -240,12 +229,12 @@ index 000000000000..07538dc17e72
 +		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	/* Now safe to use boot params */
-+	bp = (struct boot_params*)bootparams;
++	bp = (struct boot_params *)bootparams;
 +
 +	/* Measure the command line */
 +	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8*)((u64)bp->hdr.cmd_line_ptr),
++	early_sha1_update(&sctx, (u8 *)((u64)bp->hdr.cmd_line_ptr),
 +			  bp->hdr.cmdline_size);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
@@ -257,7 +246,7 @@ index 000000000000..07538dc17e72
 +	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0) {
 +		memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +		early_sha1_init(&sctx);
-+		early_sha1_update(&sctx, (u8*)((u64)bp->hdr.ramdisk_image),
++		early_sha1_update(&sctx, (u8 *)((u64)bp->hdr.ramdisk_image),
 +				  bp->hdr.ramdisk_size);
 +		early_sha1_finalize(&sctx);
 +		early_sha1_finish(&sctx, &sha1_hash[0]);
@@ -272,13 +261,13 @@ index 000000000000..07538dc17e72
 +	 */
 +	txt_heap = (void*)sl_txt_read(TXTCR_HEAP_BASE);
 +	bios_data_size = *txt_heap;
-+	os_mle_data = (struct txt_os_mle_data*)
++	os_mle_data = (struct txt_os_mle_data *)
 +			((u8*)txt_heap + bios_data_size + sizeof(u64));
 +
 +	/* Measure OS-MLE data up to the TPM log into 18 */
 +	os_mle_len = offsetof(struct txt_os_mle_data, event_log_buffer);
 +	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8*)os_mle_data, os_mle_len);
++	early_sha1_update(&sctx, (u8 *)os_mle_data, os_mle_len);
 +	early_sha1_finalize(&sctx);
 +	early_sha1_finish(&sctx, &sha1_hash[0]);
 +	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
@@ -296,10 +285,10 @@ index 000000000000..07538dc17e72
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..b2ffa21a6ac1
+index 000000000000..4bf34801418e
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,518 @@
+@@ -0,0 +1,505 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -381,8 +370,6 @@ index 000000000000..b2ffa21a6ac1
 +	lret
 +
 +.Lsl_cs:
-+	addl	$8, %esp
-+
 +	/* Before going any further, make sure this is the BSP */
 +	movl	$(MSR_IA32_APICBASE), %ecx
 +	rdmsr
@@ -394,21 +381,16 @@ index 000000000000..b2ffa21a6ac1
 +	/* Assume CPU is AMD to start */
 +	movl	$(SL_CPU_AMD), %edi
 +
-+	/* Now see if it is GenuineIntel */
-+	movl	$0x0, %eax
++	/* Now see if it is GenuineIntel. CPUID 0 returns the manufacturer */
++	xorl	%eax, %eax
 +	cpuid
 +	cmpl	$(INTEL_CPUID_MFGID_EBX), %ebx
-+	jnz	.Lcpu_check_done
++	jnz	.Ldo_amd
 +	cmpl	$(INTEL_CPUID_MFGID_EDX), %edx
-+	jnz	.Lcpu_check_done
++	jnz	.Ldo_amd
 +	cmpl	$(INTEL_CPUID_MFGID_ECX), %ecx
-+	jnz	.Lcpu_check_done
++	jnz	.Ldo_amd
 +	movl	$(SL_CPU_INTEL), %edi
-+
-+.Lcpu_check_done:
-+	/* Now that we know what CPU it is, do vendor specific operations */
-+	cmpl	$(SL_CPU_AMD), %edi
-+	jz	.Ldo_amd
 +
 +	/* Know it is Intel */
 +	movl	$(SL_CPU_INTEL), sl_cpu_type(%ebp)
@@ -429,8 +411,6 @@ index 000000000000..b2ffa21a6ac1
 +	iret
 +
 +.Lnmi_enabled:
-+	addl	$12, %esp
-+
 +	/* Clear the TXT error registers for a clean start of day */
 +	movl	$0, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ERRORCODE)
 +	movl	$0xffffffff, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_ESTS)
@@ -545,8 +525,6 @@ index 000000000000..b2ffa21a6ac1
 +	lret
 +
 +.Lsl_ap_cs:
-+	addl	$8, %esp
-+
 +	/* Load the IDT */
 +	lidt	sl_idt_desc(%ebp)
 +
@@ -563,8 +541,6 @@ index 000000000000..b2ffa21a6ac1
 +	iret
 +
 +.Lnmi_enabled_ap:
-+	addl	$12, %esp
-+
 +	/* Fixup MTRRs and misc enable MSR on APs too */
 +	call	sl_txt_load_regs
 +
