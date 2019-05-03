@@ -1,4 +1,4 @@
-From 56b3a42a436e22460d5250e11b6fd752572c6fab Mon Sep 17 00:00:00 2001
+From 607744c53f322729a3f8f436c363cda655ea22d4 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 8/8] x86: Secure Launch adding event log securityfs
@@ -12,7 +12,7 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  1 file changed, 161 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 3baddffe805a..9d0542f72411 100644
+index 3d03ead1edb7..376bd71b3ce3 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
 @@ -424,3 +424,164 @@ void slaunch_setup(void)

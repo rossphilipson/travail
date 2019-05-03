@@ -1,4 +1,4 @@
-From d5394edb252bd4e99aec35505df511585664b4a7 Mon Sep 17 00:00:00 2001
+From ff97c1a651c83fbb2f8eff73b87f1516dce1d375 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -58,7 +58,7 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..3baddffe805a
+index 000000000000..3d03ead1edb7
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
 @@ -0,0 +1,426 @@
@@ -405,7 +405,6 @@ index 000000000000..3baddffe805a
 +{
 +	void __iomem *txt;
 +	u64 val = 0x1ULL;
-+	phys_addr_t base;
 +
 +	txt = early_ioremap(TXT_PRIV_CONFIG_REGS_BASE,
 +			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
@@ -440,18 +439,6 @@ index 000000000000..3baddffe805a
 +	memcpy_toio(txt + TXTCR_CMD_OPEN_LOCALITY1, &val, sizeof(u64));
 +	memcpy_fromio(&val, txt + TXTCR_E2STS, sizeof(u64));
 +
-+	/*
-+	 * Protect the secure launch area in the .text section of the
-+	 * protected mode enty area where the APs are idling. Note the
-+	 * size we care about is far smaller than a page.
-+	 */
-+	base = boot_params.hdr.code32_start +
-+		boot_params.hdr.slaunch_header;
-+	if (memblock_reserve(base, PAGE_SIZE))
-+		slaunch_txt_reset(txt,
-+				  "Failed to reserve TXT AP wake area\n",
-+				  TXT_SLERROR_RESERVE_AP_WAKE);
-+
 +	slaunch_verify_pmrs(txt);
 +
 +	slaunch_txt_reserve(txt);
@@ -465,6 +452,7 @@ index 000000000000..3baddffe805a
 +
 +void slaunch_setup(void)
 +{
++	phys_addr_t base;
 +	u32 vendor[4];
 +
 +	/*
@@ -473,6 +461,18 @@ index 000000000000..3baddffe805a
 +	 */
 +	sl_flags = SL_FLAG_ACTIVE;
 +
++	/*
++	 * Protect the Secure Launch area in the .text section of the
++	 * protected mode enty area where the MLE header is located and where
++	 * the APs are idling. Note the size we care about is far smaller than
++	 * a page.
++	 */
++	base = boot_params.hdr.code32_start +
++		boot_params.hdr.slaunch_header;
++	if (memblock_reserve(base, PAGE_SIZE))
++		panic("Failed to reserve MLE header/AP wake area\n");
++
++	/* Get manufacturer string with CPUID 0 */
 +	cpuid(0, &vendor[0], &vendor[1], &vendor[2], &vendor[3]);
 +
 +	if (vendor[1] == INTEL_CPUID_MFGID_EBX &&

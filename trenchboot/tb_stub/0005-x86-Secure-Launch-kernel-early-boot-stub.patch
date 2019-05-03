@@ -1,4 +1,4 @@
-From fb7c468517670945868313a6ce8b01fa8ea4a951 Mon Sep 17 00:00:00 2001
+From 9dc0351497a14dd553d3b6f1884bb7cb23d695de Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -19,11 +19,11 @@ line, the TXT heap, etc.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  33 +++
- arch/x86/boot/compressed/sl_main.c | 186 ++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 505 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/head_64.S |  32 +++
+ arch/x86/boot/compressed/sl_main.c | 171 +++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 509 +++++++++++++++++++++++++++++++++++++
  arch/x86/kernel/asm-offsets.c      |  10 +
- 5 files changed, 735 insertions(+), 1 deletion(-)
+ 5 files changed, 723 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -41,10 +41,10 @@ index 1a089f7f7f79..50f1ff478db0 100644
  # The compressed kernel is built with -fPIC/-fPIE so that a boot loader
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/head_64.S b/arch/x86/boot/compressed/head_64.S
-index 64037895b085..9ddae11fe9a6 100644
+index 64037895b085..af38654f30ba 100644
 --- a/arch/x86/boot/compressed/head_64.S
 +++ b/arch/x86/boot/compressed/head_64.S
-@@ -248,6 +248,22 @@ ENTRY(efi32_stub_entry)
+@@ -248,6 +248,21 @@ ENTRY(efi32_stub_entry)
  ENDPROC(efi32_stub_entry)
  #endif
  
@@ -55,8 +55,7 @@ index 64037895b085..9ddae11fe9a6 100644
 +	 * find the beginning of where we are loaded, sub off from the
 +	 * beginning.
 +	 */
-+	movl	%ebx, %ebp
-+	subl	$(sl_stub_entry - startup_32), %ebp
++	leal	(startup_32 - sl_stub_entry)(%ebx), %ebp
 +
 +	/* More room to work in sl_stub in the text section */
 +	jmp	sl_stub
@@ -67,7 +66,7 @@ index 64037895b085..9ddae11fe9a6 100644
  	.code64
  	.org 0x200
  ENTRY(startup_64)
-@@ -520,6 +536,23 @@ relocated:
+@@ -520,6 +535,23 @@ relocated:
  	shrq	$3, %rcx
  	rep	stosq
  
@@ -93,10 +92,10 @@ index 64037895b085..9ddae11fe9a6 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..ac08acc1a232
+index 000000000000..46098fb1cffd
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,171 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -194,19 +193,30 @@ index 000000000000..ac08acc1a232
 +		sl_txt_reset(TXT_SLERROR_MSR_INV_MISC_EN);
 +}
 +
-+void sl_main(u8 *bootparams)
++void sl_tpm_extend_pcr(struct tpm *tpm, u32 pcr, const u8 *data, u32 len)
 +{
 +	struct sha1_state sctx = {0};
 +	u8 sha1_hash[SHA1_DIGEST_SIZE];
++	int ret;
++
++	memset(&sha1_hash[0], 0, SHA1_DIGEST_SIZE);
++	early_sha1_init(&sctx);
++	early_sha1_update(&sctx, data, len);
++	early_sha1_finalize(&sctx);
++	early_sha1_finish(&sctx, &sha1_hash[0]);
++	ret = tpm_extend_pcr(tpm, pcr, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
++	if (ret)
++		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
++}
++
++void sl_main(u8 *bootparams)
++{
 +	struct tpm *tpm;
 +	struct boot_params *bp;
 +	struct txt_os_mle_data *os_mle_data;
 +	u64 *txt_heap;
 +	u64 bios_data_size;
 +	u32 os_mle_len;
-+	int ret;
-+
-+	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
 +
 +	/*
 +	 * If enable_tpm fails there is no point going on. The entire secure
@@ -220,59 +230,33 @@ index 000000000000..ac08acc1a232
 +		sl_txt_reset(TXT_SLERROR_TPM_GET_LOC);
 +
 +	/* Measure the zero page/boot params */
-+	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, bootparams, PAGE_SIZE);
-+	early_sha1_finalize(&sctx);
-+	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret)
-+		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
++	sl_tpm_extend_pcr(tpm, SL_CONFIG_PCR18, bootparams, PAGE_SIZE);
 +
 +	/* Now safe to use boot params */
 +	bp = (struct boot_params *)bootparams;
 +
 +	/* Measure the command line */
-+	memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8 *)((u64)bp->hdr.cmd_line_ptr),
++	sl_tpm_extend_pcr(tpm, SL_CONFIG_PCR18,
++			  (u8 *)((u64)bp->hdr.cmd_line_ptr),
 +			  bp->hdr.cmdline_size);
-+	early_sha1_finalize(&sctx);
-+	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret)
-+		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
 +
 +	/* Measure any external initrd */
-+	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0) {
-+		memset(sha1_hash, 0, SHA1_DIGEST_SIZE);
-+		early_sha1_init(&sctx);
-+		early_sha1_update(&sctx, (u8 *)((u64)bp->hdr.ramdisk_image),
++	if (bp->hdr.ramdisk_image != 0 && bp->hdr.ramdisk_size != 0)
++		sl_tpm_extend_pcr(tpm, SL_IMAGE_PCR17,
++				  (u8 *)((u64)bp->hdr.ramdisk_image),
 +				  bp->hdr.ramdisk_size);
-+		early_sha1_finalize(&sctx);
-+		early_sha1_finish(&sctx, &sha1_hash[0]);
-+		ret = tpm_extend_pcr(tpm, 17, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+		if (ret)
-+			sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
-+	}
-+
 +	/*
 +	 * Some extra work to do on Intel, have to measure the OS-MLE
 +	 * heap area.
 +	 */
-+	txt_heap = (void*)sl_txt_read(TXTCR_HEAP_BASE);
++	txt_heap = (void *)sl_txt_read(TXTCR_HEAP_BASE);
 +	bios_data_size = *txt_heap;
 +	os_mle_data = (struct txt_os_mle_data *)
-+			((u8*)txt_heap + bios_data_size + sizeof(u64));
++			((u8 *)txt_heap + bios_data_size + sizeof(u64));
 +
 +	/* Measure OS-MLE data up to the TPM log into 18 */
 +	os_mle_len = offsetof(struct txt_os_mle_data, event_log_buffer);
-+	early_sha1_init(&sctx);
-+	early_sha1_update(&sctx, (u8 *)os_mle_data, os_mle_len);
-+	early_sha1_finalize(&sctx);
-+	early_sha1_finish(&sctx, &sha1_hash[0]);
-+	ret = tpm_extend_pcr(tpm, 18, TPM_HASH_ALG_SHA1, &sha1_hash[0]);
-+	if (ret)
-+		sl_txt_reset(TXT_SLERROR_TPM_EXTEND);
++	sl_tpm_extend_pcr(tpm, SL_CONFIG_PCR18, (u8 *)os_mle_data, os_mle_len);
 +
 +	/*
 +	 * Now that the OS-MLE data is measured, ensure the MTRR and
@@ -285,17 +269,14 @@ index 000000000000..ac08acc1a232
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..4bf34801418e
+index 000000000000..f31e961f6244
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,505 @@
+@@ -0,0 +1,509 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-+ *
-+ * Author(s):
-+ *     Ross Philipson <ross.philipson@oracle.com>
 + */
 +	.code32
 +	.text
@@ -566,6 +547,13 @@ index 000000000000..4bf34801418e
 +	jmp	1b
 +2:
 +
++	/*
++	 * This is the long absolute jump to the 32b Secure Launch protected
++	 * mode stub code in the rmpiggy. The jump address will be fixed in
++	 * the SMP boot code when the first AP is brought up. This whole area
++	 * is protected from being stomped on with memblock_reserve() later
++	 * in slaunch_setup().
++	 */
 +	.byte	0xea
 +sl_ap_pm_entry_addr:
 +	.long	0x00000000
