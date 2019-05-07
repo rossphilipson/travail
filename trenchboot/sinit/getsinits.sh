@@ -14,7 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-OPENXT_MIRROR="https://mirror.openxt.org/openxt"
+#OPENXT_MIRROR="https://mirror.openxt.org/openxt"
+OPENXT_MIRROR="https://openxt.ainfosec.com/mirror/"
 
 wget "${OPENXT_MIRROR}/GM45_GS45_PM45-SINIT_51.zip"
 wget "${OPENXT_MIRROR}/Q45_Q43-SINIT_51.zip"

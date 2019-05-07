@@ -109,6 +109,7 @@ Ross
    - Fix some cast issues and related in sl_main.c
    - Moved SHA1 and PCR extend code to a common function.
    - Protect the MLE area on all platforms.
+   - Use defines and asm-offsets for numeric values in sl_stub
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:

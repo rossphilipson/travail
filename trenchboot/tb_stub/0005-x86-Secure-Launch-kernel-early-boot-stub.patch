@@ -1,4 +1,4 @@
-From 9dc0351497a14dd553d3b6f1884bb7cb23d695de Mon Sep 17 00:00:00 2001
+From 6762f0a4919ea48d68aae12b54e226e411730590 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -21,9 +21,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  32 +++
  arch/x86/boot/compressed/sl_main.c | 171 +++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 509 +++++++++++++++++++++++++++++++++++++
- arch/x86/kernel/asm-offsets.c      |  10 +
- 5 files changed, 723 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/sl_stub.S | 510 +++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/asm-offsets.c      |  12 +
+ 5 files changed, 726 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -269,10 +269,10 @@ index 000000000000..46098fb1cffd
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..f31e961f6244
+index 000000000000..e83dc80214ca
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,509 @@
+@@ -0,0 +1,510 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -301,6 +301,9 @@ index 000000000000..f31e961f6244
 +
 +/* Can't include mtrr.h in asm */
 +#define MTRRphysBase0	0x200
++
++#define IDT_VECTOR_LO_BITS	0
++#define IDT_VECTOR_HI_BITS	6
 +
 +	/* The MLE Header per the TXT Specification, section 4.1 */
 +	.global	sl_mle_header
@@ -475,10 +478,9 @@ index 000000000000..f31e961f6244
 +	lock cmpxchgl	%ecx, sl_txt_spin_lock(%ebp)
 +	jnz	.Lspin
 +
-+	leal	sl_txt_stack_index(%ebp), %ebx
-+	movl	(%ebx), %eax
-+	incl	%eax
-+	movl	%eax, (%ebx)
++	/* Invcrement the stack index and use the next value inside lock */
++	incl	sl_txt_stack_index(%ebp)
++	movl	sl_txt_stack_index(%ebp), %eax
 +
 +	/* Unlock */
 +	movl	$0, sl_txt_spin_lock(%ebp)
@@ -528,7 +530,6 @@ index 000000000000..f31e961f6244
 +	/* Put APs in X2APIC mode like the BSP */
 +	movl	$(MSR_IA32_APICBASE), %ecx
 +	rdmsr
-+	movl	%eax, %edi
 +	orl	$(XAPIC_ENABLE|X2APIC_ENABLE), %eax
 +	wrmsr
 +
@@ -631,17 +632,17 @@ index 000000000000..f31e961f6244
 +
 +	/* Load all other fixed vectors with reset handler (SNO) */
 +	movl	%ebx, %eax
-+	movw	%ax, (%ecx)
++	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
 +	shrl	$16, %eax
-+	movw	%ax, 6(%ecx)
++	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
 +	jmp	3f
 +
 +2:
 +	/* Load single wake NMI IPI vector */
 +	leal	sl_txt_int_ipi_wake(%ebp), %eax
-+	movw	%ax, (%ecx)
++	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
 +	shrl	$16, %eax
-+	movw	%ax, 6(%ecx)
++	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
 +
 +3:
 +	incw	%dx
@@ -656,8 +657,8 @@ index 000000000000..f31e961f6244
 +	leal	sl_gdt(%ebp), %eax
 +	leal	sl_txt_ap_entry(%ebp), %ecx
 +	leal	sl_txt_mle_join(%ebp), %edx
-+	movl	%eax, 4(%edx)
-+	movl	%ecx, 12(%edx)
++	movl	%eax, SL_ap_gdt_base(%edx)
++	movl	%ecx, SL_ap_entry_point(%edx)
 +	movl	%edx, (TXT_PRIV_CONFIG_REGS_BASE + TXTCR_MLE_JOIN)
 +
 +	/* Another TXT heap walk to find various values needed to wake APs */
@@ -783,7 +784,7 @@ index 000000000000..f31e961f6244
 +	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
 diff --git a/arch/x86/kernel/asm-offsets.c b/arch/x86/kernel/asm-offsets.c
-index 01de31db300d..12cbca8a4f95 100644
+index 01de31db300d..24ecd7781857 100644
 --- a/arch/x86/kernel/asm-offsets.c
 +++ b/arch/x86/kernel/asm-offsets.c
 @@ -18,6 +18,7 @@
@@ -794,7 +795,7 @@ index 01de31db300d..12cbca8a4f95 100644
  
  #ifdef CONFIG_XEN
  #include <xen/interface/xen.h>
-@@ -108,4 +109,13 @@ void common(void) {
+@@ -108,4 +109,15 @@ void common(void) {
  	/* Offset for sp0 and sp1 into the tss_struct */
  	OFFSET(TSS_sp0, tss_struct, x86_tss.sp0);
  	OFFSET(TSS_sp1, tss_struct, x86_tss.sp1);
@@ -806,6 +807,8 @@ index 01de31db300d..12cbca8a4f95 100644
 +	OFFSET(SL_saved_bsp_mtrrs, txt_os_mle_data, saved_bsp_mtrrs);
 +	OFFSET(SL_ap_wake_ebp, txt_os_mle_data, ap_wake_ebp);
 +	OFFSET(SL_ap_pm_entry, txt_os_mle_data, ap_pm_entry);
++	OFFSET(SL_ap_gdt_base, txt_mle_join, ap_gdt_base);
++	OFFSET(SL_ap_entry_point, txt_mle_join, ap_entry_point);
 +#endif
  }
 -- 

@@ -1,4 +1,4 @@
-From 56835a28457fdacc7d66916da14978d920d0506c Mon Sep 17 00:00:00 2001
+From 0ac978d011784aa652beaa7c43547a2c7809813f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
@@ -14,7 +14,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..6b9c1c962515
+index 000000000000..0daa0f116bb8
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
 @@ -0,0 +1,295 @@
@@ -194,10 +194,10 @@ index 000000000000..6b9c1c962515
 + * execution in response to a GETSEC[WAKEUP].
 + */
 +struct txt_mle_join {
-+	u32	gdt_limit;
-+	u32	gdt_base;
-+	u32	seg_sel;               /* cs (ds, es, ss are seg_sel+8) */
-+	u32	entry_point;           /* phys addr */
++	u32	ap_gdt_limit;
++	u32	ap_gdt_base;
++	u32	ap_seg_sel;	/* cs (ds, es, ss are seg_sel+8) */
++	u32	ap_entry_point;	/* phys addr */
 +} __packed;
 +
 +/*
