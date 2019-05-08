@@ -1,4 +1,4 @@
-From 6762f0a4919ea48d68aae12b54e226e411730590 Mon Sep 17 00:00:00 2001
+From d0d8896e6c712f641a51673563d704b66e253c22 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -21,9 +21,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  32 +++
  arch/x86/boot/compressed/sl_main.c | 171 +++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 510 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 509 +++++++++++++++++++++++++++++++++++++
  arch/x86/kernel/asm-offsets.c      |  12 +
- 5 files changed, 726 insertions(+), 1 deletion(-)
+ 5 files changed, 725 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -269,10 +269,10 @@ index 000000000000..46098fb1cffd
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 000000000000..e83dc80214ca
+index 000000000000..eda64c2efc8d
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,510 @@
+@@ -0,0 +1,509 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -405,8 +405,8 @@ index 000000000000..e83dc80214ca
 +	/* Read the size of the BIOS data into ECX (in first 8 bytes */
 +	movl	(%eax), %ecx
 +	/* Skip over BIOS data and size of OS to MLE */
-+	addl	%ecx, %eax
-+	addl	$8, %eax
++	leal	8(%eax, %ecx), %eax
++
 +	/* First 4 bytes of OS to MLE are the version */
 +	/* Second 4 bytes of OS to MLE are the zero page */
 +	movl	SL_zero_page_addr(%eax), %esi
@@ -464,8 +464,7 @@ index 000000000000..e83dc80214ca
 +	/* Read the size of the BIOS data into ECX (in first 8 bytes */
 +	movl	(%eax), %ecx
 +	/* Skip over BIOS data and size of OS to MLE */
-+	addl	%ecx, %eax
-+	addl	$8, %eax
++	leal	8(%eax, %ecx), %eax
 +
 +	/* Saved ebp from the BSP and stash OS-MLE pointer */
 +	movl	SL_ap_wake_ebp(%eax), %ebp
