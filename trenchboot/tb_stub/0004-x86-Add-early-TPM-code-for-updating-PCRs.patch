@@ -1,4 +1,4 @@
-From cbb7cc81bd90b661078ff07f6bf618f9e0c8f65c Mon Sep 17 00:00:00 2001
+From 26734410a21f306ceae4b9906d7481756e35b578 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
 Subject: [PATCH 4/8] x86: Add early TPM code for updating PCRs
@@ -35,7 +35,7 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..d8f9af3b8c4e
+index 000000000000..17d3e5fd89f7
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
 @@ -0,0 +1,1086 @@
@@ -198,7 +198,7 @@ index 000000000000..d8f9af3b8c4e
 +	u8 val;
 +
 +	barrier();
-+	val = (*(volatile u8 *)(addr));
++	val = *(u8 *)(addr);
 +	/* Memory barrier for MMIO read as done in readb() */
 +	rmb();
 +
@@ -210,7 +210,7 @@ index 000000000000..d8f9af3b8c4e
 +	void *addr = (void *)(u64)(TPM_MMIO_BASE | field);
 +
 +	barrier();
-+	(*(volatile u8 *)(addr)) = val;
++	*(u8 *)(addr) = val;
 +	/* Memory barrier for MMIO write as done in writeb() */
 +	wmb();
 +}
@@ -221,7 +221,7 @@ index 000000000000..d8f9af3b8c4e
 +	u32 val;
 +
 +	barrier();
-+	val = (*(volatile u32 *)(addr));
++	val = *(u32 *)(addr);
 +	/* Memory barrier for MMIO read as done in readl() */
 +	rmb();
 +
@@ -233,7 +233,7 @@ index 000000000000..d8f9af3b8c4e
 +	void *addr = (void *)(u64)(TPM_MMIO_BASE | field);
 +
 +	barrier();
-+	(*(volatile u32 *)(addr)) = val;
++	*(u32 *)(addr) = val;
 +	/* Memory barrier for MMIO write as done in writel() */
 +	wmb();
 +}

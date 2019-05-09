@@ -21,7 +21,7 @@ u8 tpm_read8(u32 field)
 	u8 val;
 
 	barrier();
-	val = (*(volatile u8 *)(addr));
+	val = *(u8 *)(addr);
 	/* Memory barrier for MMIO read as done in readb() */
 	rmb();
 
@@ -33,7 +33,7 @@ void tpm_write8(unsigned char val, u32 field)
 	void *addr = (void *)(u64)(TPM_MMIO_BASE | field);
 
 	barrier();
-	(*(volatile u8 *)(addr)) = val;
+	*(u8 *)(addr) = val;
 	/* Memory barrier for MMIO write as done in writeb() */
 	wmb();
 }
@@ -44,7 +44,7 @@ u32 tpm_read32(u32 field)
 	u32 val;
 
 	barrier();
-	val = (*(volatile u32 *)(addr));
+	val = *(u32 *)(addr);
 	/* Memory barrier for MMIO read as done in readl() */
 	rmb();
 
@@ -56,7 +56,7 @@ void tpm_write32(u32 val, u32 field)
 	void *addr = (void *)(u64)(TPM_MMIO_BASE | field);
 
 	barrier();
-	(*(volatile u32 *)(addr)) = val;
+	*(u32 *)(addr) = val;
 	/* Memory barrier for MMIO write as done in writel() */
 	wmb();
 }
