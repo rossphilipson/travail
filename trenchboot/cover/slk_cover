@@ -124,10 +124,12 @@ Ross
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
    - Removed unfinished AMD support for now.
+   - Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
+   - Added comments to TXT AP functions.
 
 0008-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
    - Removed unfinished AMD support for now.
-   - Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
-   - Added comments to TXT AP functions.
+   - Cleanup from running checkpatch.
+   - Removed sl_memfile_read and use built in simple_read_from_buffer
 

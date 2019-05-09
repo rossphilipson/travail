@@ -1,4 +1,4 @@
-From ff97c1a651c83fbb2f8eff73b87f1516dce1d375 Mon Sep 17 00:00:00 2001
+From 62c9196ed2f784b66c89b68eb3f9127d109d7516 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -16,9 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 426 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 427 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 +
- 4 files changed, 437 insertions(+)
+ 4 files changed, 438 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,10 +58,10 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..3d03ead1edb7
+index 000000000000..46fd6816e250
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,426 @@
+@@ -0,0 +1,427 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -72,6 +72,7 @@ index 000000000000..3d03ead1edb7
 + *
 + */
 +
++#include <linux/fs.h>
 +#include <linux/init.h>
 +#include <linux/linkage.h>
 +#include <linux/mm.h>
@@ -271,7 +272,7 @@ index 000000000000..3d03ead1edb7
 +#define MDRS_OFFSET	1
 +
 +/*
-+ * For Intel, certaion reqions of memory must be marked as reserved in the e820
++ * For Intel, certain reqions of memory must be marked as reserved in the e820
 + * memory map if they are not already. This includes the TXT HEAP, the ACM area,
 + * the TXT private register bank. Normally these are properly reserved by
 + * firmware but if it was not done, do it now.

@@ -1,4 +1,4 @@
-From 607744c53f322729a3f8f436c363cda655ea22d4 Mon Sep 17 00:00:00 2001
+From 746d5d3f2269e245bf37e1a0839d1031071c2bcb Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 8/8] x86: Secure Launch adding event log securityfs
@@ -8,18 +8,21 @@ of the late launch TPM log and other platform specific operations.
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 161 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 161 insertions(+)
+ arch/x86/kernel/slaunch.c | 127 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 127 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index 3d03ead1edb7..376bd71b3ce3 100644
+index 46fd6816e250..ec56ca362555 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -424,3 +424,164 @@ void slaunch_setup(void)
+@@ -425,3 +425,130 @@ void slaunch_setup(void)
  		panic("Invalid platform: not Intel or AMD\n");
  	}
  }
 +
++/*
++ * Securityfs exposure
++ */
 +struct memfile {
 +	char *name;
 +	void __iomem *addr;
@@ -27,52 +30,17 @@ index 3d03ead1edb7..376bd71b3ce3 100644
 +};
 +
 +static struct memfile sl_evtlog = {"eventlog", 0, 0};
-+static void __iomem *txt_heap = NULL;
++static void __iomem *txt_heap;
 +
-+static ssize_t sl_memfile_read(struct memfile *file, char __user *outbuf, size_t count, loff_t *pos)
++static ssize_t sl_evtlog_read(struct file *file, char __user *buf,
++			      size_t count, loff_t *pos)
 +{
-+	void *buf;
-+	int ret = -EFAULT;
-+
-+	if (!file->addr)
-+		goto err;
-+
-+	if (*pos >= file->size) {
-+		ret = 0;
-+		goto err;
-+	}
-+
-+	if (*pos + count > file->size)
-+		count = file->size - *pos;
-+
-+	buf = kmalloc(count, GFP_KERNEL);
-+	if (!buf) {
-+		ret = -ENOMEM;
-+		goto free;
-+	}
-+
-+	memcpy_fromio(buf, file->addr + *pos, count);
-+	if (copy_to_user(outbuf, buf, count))
-+		goto free;
-+
-+	*pos += count;
-+
-+	ret = count;
-+
-+free:
-+	kfree(buf);
-+
-+err:
-+	return ret;
-+}
-+
-+static ssize_t sl_evtlog_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
-+{
-+	return sl_memfile_read(&sl_evtlog, buf, count, pos);
++	return simple_read_from_buffer(buf, count, pos,
++		sl_evtlog.addr, sl_evtlog.size);
 +}
 +
 +static const struct file_operations sl_evtlog_ops = {
-+        .read = sl_evtlog_read,
++	.read = sl_evtlog_read,
 +	.llseek	= default_llseek,
 +};
 +
@@ -88,8 +56,7 @@ index 3d03ead1edb7..376bd71b3ce3 100644
 +
 +	fs_entries[entry] = securityfs_create_dir("slaunch", NULL);
 +	if (IS_ERR(fs_entries[entry])) {
-+		printk(KERN_ERR PREFIX
-+			"Error creating securityfs sl_evt_log directory\n");
++		pr_err("Error creating securityfs sl_evt_log directory\n");
 +		ret = PTR_ERR(fs_entries[entry]);
 +		goto err;
 +	}
@@ -101,8 +68,7 @@ index 3d03ead1edb7..376bd71b3ce3 100644
 +					   fs_entries[SL_DIR_ENTRY], NULL,
 +					   &sl_evtlog_ops);
 +		if (IS_ERR(fs_entries[entry])) {
-+			printk(KERN_ERR PREFIX
-+				"Error creating securityfs %s file\n",
++			pr_err("Error creating securityfs %s file\n",
 +				sl_evtlog.name);
 +			ret = PTR_ERR(fs_entries[entry]);
 +			goto err_dir;
@@ -143,7 +109,7 @@ index 3d03ead1edb7..376bd71b3ce3 100644
 +	config = ioremap(TXT_PUB_CONFIG_REGS_BASE, TXT_NR_CONFIG_PAGES *
 +			 PAGE_SIZE);
 +	if (!config) {
-+		printk(KERN_ERR PREFIX "Error failed to ioremap TXT reqs\n");
++		pr_err("Error failed to ioremap TXT reqs\n");
 +		return;
 +	}
 +
@@ -152,14 +118,14 @@ index 3d03ead1edb7..376bd71b3ce3 100644
 +		    *(u64 *)(config + TXTCR_HEAP_SIZE));
 +	iounmap(config);
 +	if (!txt_heap) {
-+		printk(KERN_ERR PREFIX "Error failed to ioremap TXT heap\n");
++		pr_err("Error failed to ioremap TXT heap\n");
 +		return;
 +	}
 +
 +	params = (struct txt_os_mle_data *)txt_os_mle_data_start(txt_heap);
 +
 +	sl_evtlog.size = TXT_MAX_EVENT_LOG_SIZE;
-+	sl_evtlog.addr = (void __iomem*)&params->event_log_buffer[0];
++	sl_evtlog.addr = (void __iomem *)&params->event_log_buffer[0];
 +}
 +
 +static int __init slaunch_late_init(void)
