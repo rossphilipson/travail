@@ -1,4 +1,4 @@
-From 00ba6aef2d35343021b497f1534aed1c5174de03 Mon Sep 17 00:00:00 2001
+From c440ff36d4da4e1fea60598912b7fef58dcb939e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/5] x86: Secure Launch early TPM and SHA1 test patch
@@ -7,10 +7,11 @@ Test routine in early kernel for the eary TPM and SHA1 code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/boot/compressed/Makefile  |  2 +-
- arch/x86/boot/compressed/head_64.S | 17 +++++++++
- arch/x86/boot/compressed/sl_main.c | 72 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 90 insertions(+), 1 deletion(-)
+ arch/x86/boot/compressed/Makefile  |   2 +-
+ arch/x86/boot/compressed/head_64.S |  17 +++++++
+ arch/x86/boot/compressed/misc.c    |   6 +--
+ arch/x86/boot/compressed/sl_main.c | 102 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 123 insertions(+), 4 deletions(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
@@ -54,12 +55,29 @@ index 64037895b085..879b53375884 100644
  /*
   * Do the extraction, and jump to the new kernel..
   */
+diff --git a/arch/x86/boot/compressed/misc.c b/arch/x86/boot/compressed/misc.c
+index 8dd1d5ccae58..c55d03f7d265 100644
+--- a/arch/x86/boot/compressed/misc.c
++++ b/arch/x86/boot/compressed/misc.c
+@@ -49,9 +49,9 @@ struct boot_params *boot_params;
+ memptr free_mem_ptr;
+ memptr free_mem_end_ptr;
+ 
+-static char *vidmem;
+-static int vidport;
+-static int lines, cols;
++char *vidmem;
++int vidport;
++int lines, cols;
+ 
+ #ifdef CONFIG_KERNEL_GZIP
+ #include "../../../../lib/decompress_inflate.c"
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..c61097497c41
+index 000000000000..53061a12cfa6
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,102 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -77,10 +95,14 @@ index 000000000000..c61097497c41
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/slaunch.h>
++/* Setup earlyprintk in sl_main() */
++#include "misc.h"
 +
 +static void sl_reset(u64 error)
 +{
-+	/* TODO trace error */
++	error_putstr("SLTEST error:\n");
++	error_puthex((u32)error);
++
 +	__asm__ __volatile__ ("ud2");
 +}
 +
@@ -100,10 +122,36 @@ index 000000000000..c61097497c41
 +		sl_reset(TXT_SLERROR_TPM_EXTEND);
 +}
 +
++/* Make sure to un-static them in misc.c */
++extern char *vidmem;
++extern int vidport;
++extern int lines, cols;
++
 +void sl_main(u8 *bootparams)
 +{
 +	struct tpm *tpm;
 +	struct boot_params *bp;
++
++	/* Setup for early serial */
++	boot_params = (struct boot_params*)bootparams;
++
++	sanitize_boot_params(boot_params);
++
++	if (boot_params->screen_info.orig_video_mode == 7) {
++		vidmem = (char *) 0xb0000;
++		vidport = 0x3b4;
++	} else {
++		vidmem = (char *) 0xb8000;
++		vidport = 0x3d4;
++	}
++
++	lines = boot_params->screen_info.orig_video_lines;
++	cols = boot_params->screen_info.orig_video_cols;
++
++	/* Move here from extract_kernel() */
++	console_init();
++	error_putstr("SLTEST string and hex:\n");
++	error_puthex(0x55aa55aa);
 +
 +	tpm = enable_tpm();
 +	if (!tpm)
