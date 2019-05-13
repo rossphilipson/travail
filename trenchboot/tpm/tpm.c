@@ -118,7 +118,8 @@ int tpm_extend_pcr(struct tpm *t, u32 pcr, u16 algo,
 {
 	int ret = 0;
 
-	if (t->family == TPM12) {
+	if (t->family == TPM12 ||
+	    (t->family == TPM20 && t->intf == TPM_TIS)) {
 		struct tpm_digest d;
 
 		if (algo != TPM_ALG_SHA1) {

@@ -1,4 +1,4 @@
-From c440ff36d4da4e1fea60598912b7fef58dcb939e Mon Sep 17 00:00:00 2001
+From 680479b8eda2f1383c477b1d7e0fb6cfc7b7b4a9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/5] x86: Secure Launch early TPM and SHA1 test patch
@@ -8,10 +8,10 @@ Test routine in early kernel for the eary TPM and SHA1 code.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
- arch/x86/boot/compressed/head_64.S |  17 +++++++
+ arch/x86/boot/compressed/head_64.S |  17 ++++++
  arch/x86/boot/compressed/misc.c    |   6 +--
- arch/x86/boot/compressed/sl_main.c | 102 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 123 insertions(+), 4 deletions(-)
+ arch/x86/boot/compressed/sl_main.c | 103 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 124 insertions(+), 4 deletions(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
 
 diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
@@ -74,10 +74,10 @@ index 8dd1d5ccae58..c55d03f7d265 100644
  #include "../../../../lib/decompress_inflate.c"
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..53061a12cfa6
+index 000000000000..8161525e1500
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,103 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -152,6 +152,7 @@ index 000000000000..53061a12cfa6
 +	console_init();
 +	error_putstr("SLTEST string and hex:\n");
 +	error_puthex(0x55aa55aa);
++	error_putstr("\n");
 +
 +	tpm = enable_tpm();
 +	if (!tpm)

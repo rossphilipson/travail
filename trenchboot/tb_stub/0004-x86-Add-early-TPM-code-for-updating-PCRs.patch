@@ -1,7 +1,7 @@
-From 26734410a21f306ceae4b9906d7481756e35b578 Mon Sep 17 00:00:00 2001
+From 295790f4a861ab3f2a231349d107b58a1df547b3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:13:01 -0400
-Subject: [PATCH 4/8] x86: Add early TPM code for updating PCRs
+Subject: [PATCH 4/5] x86: Add early TPM code for updating PCRs
 
 This adds a basic TPM 1.2/2.0 driver allow hashes to be extended into
 the TPM during early kernel boot. This driver is necessary because the
@@ -10,11 +10,11 @@ TPM drivers in the compressed kernel are not yet available.
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  arch/x86/boot/compressed/Makefile    |    3 +-
- arch/x86/boot/compressed/early_tpm.c | 1086 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.c | 1087 ++++++++++++++++++++++++++++++++++
  arch/x86/boot/compressed/early_tpm.h |  367 ++++++++++++
  arch/x86/include/asm/tpm.h           |   75 +++
  include/linux/tpm_command.h          |    4 +
- 5 files changed, 1534 insertions(+), 1 deletion(-)
+ 5 files changed, 1535 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/early_tpm.c
  create mode 100644 arch/x86/boot/compressed/early_tpm.h
  create mode 100644 arch/x86/include/asm/tpm.h
@@ -35,10 +35,10 @@ index 57f2f467cbb0..1a089f7f7f79 100644
  # can place it anywhere in memory and it will still run. However, since
 diff --git a/arch/x86/boot/compressed/early_tpm.c b/arch/x86/boot/compressed/early_tpm.c
 new file mode 100644
-index 000000000000..17d3e5fd89f7
+index 000000000000..9e2ebc1bfb78
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_tpm.c
-@@ -0,0 +1,1086 @@
+@@ -0,0 +1,1087 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2018 Daniel P. Smith, Apertus Solutions, LLC
@@ -1068,7 +1068,8 @@ index 000000000000..17d3e5fd89f7
 +{
 +	int ret = 0;
 +
-+	if (t->family == TPM12) {
++	if (t->family == TPM12 ||
++	    (t->family == TPM20 && t->intf == TPM_TIS)) {
 +		struct tpm_digest d;
 +
 +		if (algo != TPM_ALG_SHA1) {
