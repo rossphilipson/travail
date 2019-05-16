@@ -2,18 +2,15 @@
 
 The Linux boot process is rather complicated and has a lot of lagacy baggage
 that it carries around. This is an attempt to collect some of that process
-in one place. Note this is only concerned with x86 platforms.
+in one place. Note this is only concerned with x86 platforms. These notes deal
+with legacy booting of Linux.
 
-First consider there are 4 ways of booting a Linux kernel:
+First consider there are 2 ways of booting a legacy Linux kernel:
 
 1. Starting directly from real mode and jumping to the real mode boot sector.
 2. Jumping to the 32b entry point(s) names startup_32 from a boot loader.
-3. Jumping to the EFI stub code using the EFI Handover Protocol.
-4. Mocking up a PE header and allowing EFI firmware to treat Linux as an
-   EFI bootable image.
 
-For Trenchboot purposes, we are primarily concerned with #2. A section later
-on will give a few more details about #3 and #4.
+See linux-efi-boot.txt for details on an EFI boot of the Linux kernel.
 
 -- Layout --
 
@@ -48,7 +45,7 @@ The first 64K of the bzImage is called the real mode boot sector and is copied
 to 0x90000 (called Kernel boot sector here). The Boot loader is the real
 mode entry point that jumps to the Kernel setup address.
 
-The Protected-mode kernel is loaded at 0x100000 and can be entered as in either
+The Protected-mode kernel is loaded at 0x100000 and can be entered in either
 32b or 64b modes. This is the uncompressed code that wraps the main Linux kernel
 compressed payload (called the piggy) and the payload itself. More on this in
 the section named Protected Mode Kernel below.
@@ -74,13 +71,17 @@ arch/x86/include/uapi/asm/bootparam.h. Their current status is discussed here:
 
 https://github.com/torvalds/linux/blob/master/Documentation/x86/zero-page.txt
 
-The values for the Boot Params and Real-mode Header are used regardless of
-which of the modes of entry discussed above are used. The values are populated
-in various ways:
+The Real-mode Header is setup in the Linux kernel at build time and is intended
+to convey configuration setting to the boot loader. This is done in various
+ways:
  - Hard coded
- - Written by the boot loader program (for our purposes GRUB)
  - Written at build time by the utility program arch/x86/boot/tools/build
- - Written by code in the protected mode or EFI entry points.
+
+The values for the Boot Params are setup at boot time primarily by the boot
+loader to convey configuration information and settings to the kernel. The
+values are populated in various ways:
+ - Written by the boot loader program (for our purposes GRUB)
+ - Written by code in the protected mode entry points.
 
 The real mode Setup Code does a bunch of legacy setup and then jumps to the
 Protected-mode kernel which is method #1 above. This would include BIOS calls
@@ -103,27 +104,8 @@ This is the bulk of the kernel. It comes in two logical parts:
 
 #1 part is basically the code in arch/x86/boot/compressed. The #2 method of
 booting from the list above enters at startup_32/64 in protected mode with the
-Boot Params address in %esi.
-
--- EFI --
-
-As noted above (methods #3 and #4) are two ways of booting Linux as an EFI
-binary.
-
-#3 is the more straight forward approach. Again in the code in
-arch/x86/boot/compressed/head_32/64.S, there are EFI entry points called
-efi32_stub_entry and efi64_stub_entry. These entry points are setup in the
-handover_offset of the Real-mode Kernel Header. See the "EFI HANDOVER PROTOCOL"
-section in the link above for details. Note a 64b kernel can be entered through
-either the 32b and 64b entry pointsi. The Linux kernel can be enntered by a
-loader that understands the EFI Handover Protocol.
-
-#4 is mutch more of a kludge. Basically part of the Boot Params area (starting
-at offset 0x82) has enough of a PE header to trick EFI into thing this is a
-PE COFF binary so it will attempt to load it. The entry point efi_pe_entry
-is writtne into the PE header at the proper offset (commented w/
-AddressOfEntryPoint). The Linux kernel can be entered directly by the EFI
-Boot Manager code.
+Zero Page address in %esi. Together the entire image is called the compressed
+kernel.
 
 -- Build Tool --
 
@@ -132,15 +114,9 @@ is used to fixup Real-Mode Kernel Header that is built into
 arch/x86/boot/setup.bin and the Protected Mode Kernel binary which is
 arch/x86/boot/compressed/vmlinux.bin. Both files are read as well as
 arch/x86/boot/zoffset.h. The latter file is parsed to find the entry
-point offsets. The EFI entry points discussed above are written into
-setup.bin as well as some other values. The checksum is updated in vmlinux.bin
-and then both are mashed together and written out as bzImage.
-
-Some particulars:
- - update_pecoff_text() writes the efi_pe_entry value into [pe_header + 0x1c]
-   (where pe_header is the offset of the PE header at 0x82 mentioned above).
- - efi_stub_entry_update() writes the efiXX_stub_entry value into offset
-   0x268, the handover_offset.
+point offsets like startup_32/64 which are written to setup.bin as well as some
+other values. The checksum is updated in vmlinux.bin and then both are mashed
+together and written out as bzImage.
 
 -- GRUB --
 
@@ -283,7 +259,7 @@ BP_init_size is 0x17f9000 which is about 25M. This is the size needed for the
 entire kernel image to be copied to and decompressed in place.
 
 Following the math, %ebx first gets set to a value 25M minus the size of the
-kernel image which is about 5.2M (mote most of that is the payload, the extre
+kernel image which is about 5.2M (note most of that is the payload, the extra
 .2M is all the uncompressed code and other sections in the image). Remember
 that _end is effectively the length of the kernel image. Then %rbp is added to
 that offset in %rbx putting it that many bytes into the target address for the

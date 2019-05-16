@@ -1,0 +1,82 @@
+---- Linux EFI Kernel Boot ----
+
+The Linux boot process is rather complicated and has a lot of lagacy baggage
+that it carries around. This is an attempt to collect some of that process
+These notes cover the various ways the Linux kernel can be booted in an EFI
+environment. Note this is only concerned with x86 platforms.
+
+NOTE: The notes in linux-boot.txt should be read first since they contain
+core information of boot parameters and other aspects of a Linux kernel load
+and boot that are relevant here.
+
+First consider there are 4 ways of booting a Linux kernel:
+
+1. Jumping to the 32b entry point(s) names startup_32 from a boot loader that
+   did EBS and passed the EFI boot parameters to the kernel.
+2. Jumping to the EFI stub code using the EFI Handover Protocol.
+3. Mocking up a PE header and allowing EFI firmware to treat Linux as an
+   EFI bootable image.
+4. Mixed mode where 32b EFI firmware launches a 64b kernel through different
+   stub code.
+
+-- EFI --
+
+Methods #3/2/4 above enter the kernel without calling exit boot services first.
+Only #3 is an actual direct EFI boot from EFI firmware. Method #1 exits boot
+services first and does a protected mode entry of the Linux kernel. Each will
+be covered in detail.
+
+Method #1:
+----------
+
+This method requires an EFI boot loader (like GRUB using the basic "linux"
+command) to launch the Linux kernel through one of the standard protected mode
+entry points (startup_32/64). The main difference is the handling of boot
+parameters. See the section on this below. The boot itself is mostly like
+a legacy boot.
+
+Method #2:
+----------
+
+This is a fairly straight forward approach. In the code in
+arch/x86/boot/compressed/head_32/64.S, there is are EFI entry points called
+efi64_stub_entry and efi64_stub_entry resprectively. The desired entry point is
+setup in the handover_offset of the Real-mode Kernel Header. See the
+"EFI HANDOVER PROTOCOL" section in the link here for details:
+
+https://www.kernel.org/doc/Documentation/x86/boot.txt
+
+The Linux kernel can be enntered by a loader that understands the EFI Handover
+Protocol. Whether the 32b or 64b entry point is used depends on the kernel.
+
+The build tool routine efi_stub_entry_update() writes the efiXX_stub_entry
+value into offset 0x268, the handover_offset.
+
+Method #3:
+----------
+
+This method is making the Linux kernel look like an EFI bootable PE
+executable. Basically part of the Boot Params area (starting at offset 0x82)
+has enough of a PE header to trick EFI into thinking this is a PE COFF binary
+so it will attempt to load it. The entry point efi_pe_entry is writtne into
+the PE header at the proper offset (commented w/ AddressOfEntryPoint). The
+Linux kernel can be entered directly by the EFI Boot Manager code.
+
+The build tool routine update_pecoff_text() writes the efi_pe_entry value
+into [pe_header + 0x1c] (where pe_header is the offset of the PE header at
+0x82 mentioned above).
+
+Method #4:
+----------
+
+These notes are not going to go into great details on this one. This feature
+basically lets 32b EFI firmware boot a 64b kernel.
+
+-- EFI Boot Parameters --
+
+EFI information is passed to the main kernel via boot parameters. They are
+defined in struct efi_info in arch/x86/include/uapi/asm/bootparam.h. This
+information is primarily:
+ - The EFI system table pointer which provide the EFI Runtime Services and
+   the Configuration and Properties Tables.
+ - The final EFI memory map that 
