@@ -80,3 +80,14 @@ information is primarily:
  - The EFI system table pointer which provide the EFI Runtime Services and
    the Configuration and Properties Tables.
  - The final EFI memory map that 
+
+include/grub/i386/linux.h
+grub-core/loader/i386/linux.c
+  grub_linux_boot_mmap_fill
+grub-core/mmap/mmap.c
+  grub_mmap_iterate
+grub-core/mmap/efi/mmap.c
+  grub_machine_mmap_iterate
+  grub_efi_mmap_iterate
+grub-core/kern/efi/mm.c
+  grub_efi_get_memory_map
