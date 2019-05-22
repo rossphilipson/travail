@@ -1,31 +1,30 @@
-From 3c7268d8eddd9341b8c85c1c4c25ed1753119690 Mon Sep 17 00:00:00 2001
+From 36ea4370ca162dc540ea1e306ae108fc932f2c51 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
 Subject: [PATCH 3/4] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def         |   8 ++
- grub-core/loader/i386/linux.c       |  18 +++
- grub-core/loader/i386/slaunch.c     | 224 ++++++++++++++++++++++++++++++++++++
+ grub-core/Makefile.core.def         |   7 ++
+ grub-core/loader/i386/linux.c       |  18 ++++
+ grub-core/loader/i386/slaunch.c     | 208 ++++++++++++++++++++++++++++++++++++
  grub-core/loader/i386/slaunch_txt.c |  35 ++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 288 insertions(+)
+ 5 files changed, 271 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 474a63e68..9badefd27 100644
+index 474a63e68..2e8e10197 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1792,6 +1792,14 @@ module = {
+@@ -1792,6 +1792,13 @@ module = {
  };
  
  module = {
 +  name = slaunch;
 +  x86 = loader/i386/slaunch.c;
 +  x86 = loader/i386/slaunch_txt.c;
-+  x86 = loader/i386/slaunch_skinit.c;
 +  enable = x86;
 +};
 +
@@ -85,10 +84,10 @@ index d0501e229..8db9b1f34 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..ba2a5fc19
+index 000000000..fde64b8b6
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,208 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -208,22 +207,6 @@ index 000000000..ba2a5fc19
 +
 +      grub_linux_slaunch_set (grub_slaunch_boot_txt);
 +    }
-+  else if (grub_memcmp (argv[0], "skinit", 6) == 0)
-+    {
-+      if (grub_memcmp (manufacturer, "AuthenticAMD", 12) != 0)
-+        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("AMD platform required for SKINIT"));
-+
-+      grub_cpuid (GRUB_AMD_CPUID_FEATURES, eax, ebx, ecx, edx);
-+      if (! (ecx & GRUB_SVM_CPUID_FEATURE) )
-+        return grub_error (GRUB_ERR_BAD_DEVICE, N_("CPU does not support AMD SVM"));
-+
-+      /* Check whether SVM feature is disabled in BIOS */
-+      msr_value = grub_rdmsr (GRUB_MSR_AMD64_VM_CR);
-+      if (msr_value & GRUB_MSR_SVM_VM_CR_SVM_DISABLE)
-+        return grub_error (GRUB_ERR_BAD_DEVICE, "BIOS has AMD SVM disabled");
-+
-+      grub_linux_slaunch_set (grub_slaunch_boot_skinit);
-+    }
 +  else
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
 +
@@ -315,7 +298,7 @@ index 000000000..ba2a5fc19
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..26fdd5306
+index 000000000..b1165911b
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
 @@ -0,0 +1,35 @@
@@ -344,7 +327,7 @@ index 000000000..26fdd5306
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
-+#include <grub/cpu/txt.h>
++#include <grub/i386/txt.h>
 +#include <grub/slaunch.h>
 +
 +grub_err_t
