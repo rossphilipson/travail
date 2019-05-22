@@ -1,27 +1,24 @@
-From 515128ef19bf41c22746bdb60b4e1ed36e57362c Mon Sep 17 00:00:00 2001
+From 3c7268d8eddd9341b8c85c1c4c25ed1753119690 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
-Subject: [PATCH 4/5] slaunch: Add secure launch base framework
+Subject: [PATCH 3/4] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def            |   8 ++
- grub-core/loader/i386/linux.c          |  18 +++
- grub-core/loader/i386/slaunch.c        | 224 +++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_skinit.c |  34 +++++
- grub-core/loader/i386/slaunch_txt.c    |  35 ++++++
- include/grub/file.h                    |   3 +
- include/grub/slaunch.h                 |  10 ++
- 7 files changed, 332 insertions(+)
+ grub-core/Makefile.core.def         |   8 ++
+ grub-core/loader/i386/linux.c       |  18 +++
+ grub-core/loader/i386/slaunch.c     | 224 ++++++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c |  35 ++++++
+ include/grub/file.h                 |   3 +
+ 5 files changed, 288 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
- create mode 100644 grub-core/loader/i386/slaunch_skinit.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index d7f515c85..e5ee48ebc 100644
+index 474a63e68..9badefd27 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1730,6 +1730,14 @@ module = {
+@@ -1792,6 +1792,14 @@ module = {
  };
  
  module = {
@@ -37,7 +34,7 @@ index d7f515c85..e5ee48ebc 100644
    efi = loader/efi/fdt.c;
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index c408b10d8..216671f4a 100644
+index d0501e229..8db9b1f34 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
@@ -46,9 +43,9 @@ index c408b10d8..216671f4a 100644
  #include <grub/lib/cmdline.h>
 +#include <grub/slaunch.h>
  #include <grub/linux.h>
+ #include <grub/machine/kernel.h>
  
- GRUB_MOD_LICENSE ("GPLv3+");
-@@ -79,6 +80,8 @@ static grub_efi_uintn_t efi_mmap_size;
+@@ -80,6 +81,8 @@ static grub_efi_uintn_t efi_mmap_size;
  #else
  static const grub_size_t efi_mmap_size = 0;
  #endif
@@ -57,7 +54,7 @@ index c408b10d8..216671f4a 100644
  
  /* FIXME */
  #if 0
-@@ -95,6 +98,12 @@ static struct idt_descriptor idt_desc =
+@@ -96,6 +99,12 @@ static struct idt_descriptor idt_desc =
    };
  #endif
  
@@ -70,7 +67,7 @@ index c408b10d8..216671f4a 100644
  static inline grub_size_t
  page_align (grub_size_t size)
  {
-@@ -611,6 +620,15 @@ grub_linux_boot (void)
+@@ -616,6 +625,15 @@ grub_linux_boot (void)
    }
  #endif
  
@@ -316,46 +313,6 @@ index 000000000..ba2a5fc19
 +  grub_unregister_command (cmd_slaunch_module);
 +  grub_unregister_command (cmd_slaunch);
 +}
-diff --git a/grub-core/loader/i386/slaunch_skinit.c b/grub-core/loader/i386/slaunch_skinit.c
-new file mode 100644
-index 000000000..3c3f00f2b
---- /dev/null
-+++ b/grub-core/loader/i386/slaunch_skinit.c
-@@ -0,0 +1,34 @@
-+/*
-+ *  GRUB  --  GRand Unified Bootloader
-+ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-+ *
-+ *  GRUB is free software: you can redistribute it and/or modify
-+ *  it under the terms of the GNU General Public License as published by
-+ *  the Free Software Foundation, either version 3 of the License, or
-+ *  (at your option) any later version.
-+ *
-+ *  GRUB is distributed in the hope that it will be useful,
-+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *  GNU General Public License for more details.
-+ *
-+ *  You should have received a copy of the GNU General Public License
-+ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
-+ */
-+
-+#include <grub/loader.h>
-+#include <grub/memory.h>
-+#include <grub/normal.h>
-+#include <grub/err.h>
-+#include <grub/misc.h>
-+#include <grub/types.h>
-+#include <grub/dl.h>
-+#include <grub/slaunch.h>
-+
-+grub_err_t
-+grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams)
-+{
-+  slparams = slparams;
-+
-+  return GRUB_ERR_NONE;
-+}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
 index 000000000..26fdd5306
@@ -398,10 +355,10 @@ index 000000000..26fdd5306
 +  return GRUB_ERR_NONE;
 +}
 diff --git a/include/grub/file.h b/include/grub/file.h
-index 9aae46355..f391ef63b 100644
+index 31567483c..f08fcda74 100644
 --- a/include/grub/file.h
 +++ b/include/grub/file.h
-@@ -123,6 +123,9 @@ enum grub_file_type
+@@ -128,6 +128,9 @@ enum grub_file_type
  
      GRUB_FILE_TYPE_VERIFY_SIGNATURE,
  
@@ -411,27 +368,6 @@ index 9aae46355..f391ef63b 100644
      GRUB_FILE_TYPE_MASK = 0xffff,
  
      /* --skip-sig is specified.  */
-diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
-index 3977dc926..b9d5215a1 100644
---- a/include/grub/slaunch.h
-+++ b/include/grub/slaunch.h
-@@ -42,6 +42,16 @@ struct grub_slaunch_params
-   grub_addr_t prot_mode_target;
- };
- 
-+struct grub_slaunch_module
-+{
-+  struct grub_slaunch_module *next;
-+  grub_uint8_t *addr;
-+  grub_addr_t target;
-+  grub_size_t size;
-+};
-+
-+struct grub_slaunch_module *grub_slaunch_get_modules (void);
-+
- grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
- grub_err_t grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams);
- 
 -- 
 2.13.6
 

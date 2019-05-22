@@ -1,7 +1,7 @@
-From 949deab3eefc2d84b03535bf8cc76f26d43f15d2 Mon Sep 17 00:00:00 2001
+From 8497c1638f8b9d912357ddfafa279a004229a05a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
-Subject: [PATCH 5/5] txt: Add Intel TXT definitions header file
+Subject: [PATCH 4/4] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---

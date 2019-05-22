@@ -1,7 +1,7 @@
-From b719764b0e5b2df782278eeb5e79e05d05b92b1d Mon Sep 17 00:00:00 2001
+From 92f2b0cb671a8427654c2543ea352b069584b483 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 11:27:21 -0500
-Subject: [PATCH 1/5] i386: Add basic platform support for secure launch
+Subject: [PATCH 1/4] i386: Add basic platform support for secure launch
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---

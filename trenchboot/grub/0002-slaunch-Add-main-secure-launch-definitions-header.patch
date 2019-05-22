@@ -1,49 +1,49 @@
-From f7bbf7e6e93ee49f350e5c14a8cc05c71b183356 Mon Sep 17 00:00:00 2001
+From 573936992bad12e7cc3b2a9d3fa89c73f193215b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
-Subject: [PATCH 3/5] slaunch: Add main secure launch definitions header
+Subject: [PATCH 2/4] slaunch: Add main secure launch definitions header
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am  |  3 +++
- include/grub/slaunch.h | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 53 insertions(+)
+ include/grub/slaunch.h | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 62 insertions(+)
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 78ef05822..04d67011a 100644
+index 3ea8e7ff4..fa8c330ab 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
-@@ -100,6 +100,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
+@@ -99,6 +99,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
+ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
  KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
- KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/tis.h
 +KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
  endif
  
- if COND_i386_efi
-@@ -109,6 +110,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
+ if COND_i386_xen_pvh
+@@ -118,6 +119,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
+@@ -179,6 +181,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
 +KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
- endif
- 
- if COND_i386_coreboot
-@@ -165,6 +167,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
- endif
- 
- if COND_ia64_efi
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..84f3ffa0b
+index 000000000..f0f9ccb09
 --- /dev/null
 +++ b/include/grub/slaunch.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,59 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -88,8 +88,17 @@ index 000000000..84f3ffa0b
 +  grub_addr_t prot_mode_target;
 +};
 +
++struct grub_slaunch_module
++{
++  struct grub_slaunch_module *next;
++  grub_uint8_t *addr;
++  grub_addr_t target;
++  grub_size_t size;
++};
++
++struct grub_slaunch_module *grub_slaunch_get_modules (void);
++
 +grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
-+grub_err_t grub_slaunch_boot_skinit (struct grub_slaunch_params *slparams);
 +
 +void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*));
 +
