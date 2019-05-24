@@ -52,7 +52,8 @@
 #define acpi_printk(...)    /* */
 #endif
 
-static struct acpi_rsdp *rsdp;
+static struct acpi_rsdp *rsdp = NULL;
+__data struct acpi_rsdp g_rsdp;
 
 static inline struct acpi_rsdt *get_rsdt(void)
 {
@@ -132,15 +133,13 @@ static bool find_rsdp(void)
     return false;
 }
 
-struct acpi_rsdp
-*get_rsdp(loader_ctx *lctx)
+static struct acpi_rsdp
+*get_rsdp_internal(loader_ctx *lctx)
 {
-    if (rsdp != NULL)
-        return rsdp;
-    if (true == find_rsdp())
+    if (find_rsdp())
         return rsdp;
     /* so far we're striking out.  Must have been an EFI lauch */
-    if (false == is_loader_launch_efi(lctx)){
+    if (!is_loader_launch_efi(lctx)){
         /* uncle */
         return NULL;
     }
@@ -150,10 +149,65 @@ struct acpi_rsdp
     return NULL;
 }
 
+/* TODO why is this such a mess
+static void fix_cs(void)
+{
+    uint8_t sum;
+    uint32_t len;
+    struct acpi_rsdp *r;
+    uint8_t *ptr;
+
+    g_rsdp.rsdp1.checksum = 0;
+    g_rsdp.rsdp_extchecksum = 0;
+
+    len = RSDP_CHKSUM_LEN;
+    ptr = (uint8_t*)(&g_rsdp);
+    sum = 0;
+
+    while ( len ) {
+        sum += *ptr++;
+        len--;
+    }
+
+    g_rsdp.rsdp1.checksum = -sum;
+    len = sizeof(struct acpi_rsdp);
+    ptr = (uint8_t*)(&g_rsdp);
+    sum = 0;
+
+    while ( len ) {
+        sum += *ptr++;
+        len--;
+    }
+
+    g_rsdp.rsdp_extchecksum = -sum;
+    r = &g_rsdp;
+
+    printk(TBOOT_ERR"***RJP*** CHECKSUM RSDP: %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x CS: %2.2x ECS: %2.2x\n",
+      r->rsdp1.signature[0], r->rsdp1.signature[1], r->rsdp1.signature[2], r->rsdp1.signature[3],
+      r->rsdp1.signature[4], r->rsdp1.signature[5], r->rsdp1.signature[6], r->rsdp1.signature[7],
+      r->rsdp1.checksum, r->rsdp_extchecksum);
+}*/
+
+struct acpi_rsdp
+*get_rsdp(loader_ctx *lctx)
+{
+    /* Only do this once and save a safe copy */
+    /* !HACK! if grow_mb2_tag is called before saving a copy of the RSDP, */
+    /* that call will corrupt the RSDP in the loader context (MBI) */
+    if (rsdp == NULL) {
+        if (get_rsdp_internal(lctx) == NULL)
+            return NULL;
+        tb_memcpy((void *)&g_rsdp, rsdp, sizeof(struct acpi_rsdp));
+        rsdp = &g_rsdp;
+    }
+
+    return rsdp;
+}
+
 /* this function can find dmar table whether or not it was hidden */
 static struct acpi_table_header *find_table(const char *table_name)
 {
-    if ( !find_rsdp() ) {
+    if ( get_rsdp(g_ldr_ctx) == NULL ) {
         printk(TBOOT_ERR"no rsdp to use\n");
         return NULL;
     }

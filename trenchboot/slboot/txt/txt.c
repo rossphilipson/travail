@@ -64,8 +64,6 @@
 #include <txt/smx.h>
 #include <io.h>
 
-__data struct acpi_rsdp g_rsdp;
-
 extern il_kernel_setup_t g_il_kernel_setup;
 
 extern uint32_t g_min_ram;
@@ -412,8 +410,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
                 os_sinit_data->efi_rsdt_ptr = (uint64_t) rsdp->rsdp1.rsdt;
             } else {
                 /* rsdp */
-                tb_memcpy((void *)&g_rsdp, rsdp, sizeof(struct acpi_rsdp));
-                os_sinit_data->efi_rsdt_ptr = (uint64_t)((uint32_t)&g_rsdp);
+                os_sinit_data->efi_rsdt_ptr = (uint64_t)((uint32_t)rsdp);
             }
         } else {
             /* per discussions--if we don't have an ACPI pointer, die */
