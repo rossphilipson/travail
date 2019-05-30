@@ -1205,7 +1205,7 @@ void determine_loader_type(void *addr, uint32_t magic)
 {
     if (g_ldr_ctx->addr == NULL){
         /* brave new world */
-        g_ldr_ctx->addr = addr;  /* save for post launch */
+        g_ldr_ctx->addr = addr;
         switch (magic){
         case MB_MAGIC:
             g_ldr_ctx->type = MB1_ONLY;
@@ -1230,7 +1230,21 @@ void determine_loader_type(void *addr, uint32_t magic)
              * to put updates inline
              */
             g_mb_orig_size = *(uint32_t *) addr;
+
             {
+                void *mb2_reloc;
+
+                /* Since GRUB is sticking the MB2 structure very close to the
+                 * default location for the kernel, move it up past the SLBOOT
+                 * image.
+                 */
+                mb2_reloc = (void*)PAGE_UP(_end);
+                tb_memcpy(mb2_reloc, addr, g_mb_orig_size);
+                g_ldr_ctx->addr = mb2_reloc;
+                addr = mb2_reloc;
+                /*printk(TBOOT_INFO"MB2 relocated to: %p size: %x\n",
+                       addr, g_mb_orig_size);*/
+
                 /* we may as well do this here--if we received an ELF
                  * sections tag, we won't use it, and it's useless to
                  * Xen downstream, since it's OUR ELF sections, not Xen's
