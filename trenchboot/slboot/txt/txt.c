@@ -89,22 +89,22 @@ static void dump_page_tables(void *ptab_base)
     int i, j;
 
     pg_dir_ptr_tab = (uint64_t*)ptab_base;
-    printk(TBOOT_DETA"PDPE(0)=%llx\n", pg_dir_ptr_tab[0] & PAGE_MASK);
+    printk(TBOOT_DETA"PDPE(0)=0x%llx\n", pg_dir_ptr_tab[0] & PAGE_MASK);
 
     pde = (uint64_t*)(uint32_t)(pg_dir_ptr_tab[0] & PAGE_MASK);
 
-    for (i = 0; i < 512; i++, pde++) {
+    for (i = 0; i < 512; i++) {
         if (pde[i] == 0)
             break;
 
-        printk(TBOOT_DETA"  PDE(%d)=%llx\n", i, pde[i] & PAGE_MASK);
+        printk(TBOOT_DETA"  PDE(%d)=0x%llx\n", i, pde[i]);
         pte = (uint64_t*)(uint32_t)(pde[i] & PAGE_MASK);
 
-        for (j = 0; j < 512; j++, pte++) {
+        for (j = 0; j < 512; j++) {
             if (pte[j] == 0)
                 break;
 
-            printk(TBOOT_DETA"    PTE(%d)=%llx\n", j, pte[j] & PAGE_MASK);
+            printk(TBOOT_DETA"    PTE(%d)=0x%llx\n", j, pte[j]);
         }
     }
 }
