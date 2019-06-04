@@ -82,6 +82,33 @@ static void print_file_info(void)
     printk(TBOOT_DETA"\t &_end=%p\n", &_end);
 }
 
+static void dump_page_tables(void *ptab_base)
+{
+    uint64_t *pg_dir_ptr_tab;
+    uint64_t *pte, *pde;
+    int i, j;
+
+    pg_dir_ptr_tab = (uint64_t*)ptab_base;
+    printk(TBOOT_DETA"PDPE(0)=%llx\n", pg_dir_ptr_tab[0] & PAGE_MASK);
+
+    pde = (uint64_t*)(uint32_t)(pg_dir_ptr_tab[0] & PAGE_MASK);
+
+    for (i = 0; i < 512; i++, pde++) {
+        if (pde[i] == 0)
+            break;
+
+        printk(TBOOT_DETA"  PDE(%d)=%llx\n", i, pde[i] & PAGE_MASK);
+        pte = (uint64_t*)(uint32_t)(pde[i] & PAGE_MASK);
+
+        for (j = 0; j < 512; j++, pte++) {
+            if (pte[j] == 0)
+                break;
+
+            printk(TBOOT_DETA"    PTE(%d)=%llx\n", j, pte[j] & PAGE_MASK);
+        }
+    }
+}
+
 /*
  * build_mle_pagetable()
  */
@@ -153,6 +180,8 @@ static void *build_mle_pagetable(void)
             *pde = MAKE_PDTE(pte);
         }
     } while ( mle_off < mle_size );
+
+    dump_page_tables(ptab_base);
 
     return ptab_base;
 }

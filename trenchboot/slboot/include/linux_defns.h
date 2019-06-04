@@ -203,7 +203,8 @@ typedef struct __attribute__ ((packed)) {
 000000  +---------------------------+
 */
 
-#define BZIMAGE_PROTECTED_START 0x100000
+//#define BZIMAGE_PROTECTED_START 0x100000
+#define BZIMAGE_PROTECTED_START 0x1000000
 #define LEGACY_REAL_START       0x90000
 
 #define REAL_KERNEL_OFFSET      0x0000
