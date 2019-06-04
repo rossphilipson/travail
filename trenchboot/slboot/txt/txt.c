@@ -146,6 +146,9 @@ static void *build_mle_pagetable(void)
 
         pd_off++;
         if ( !(pd_off % 512) ) {
+            /* break if we don't need any additional page entries */
+            if (mle_off >= mle_size)
+                break;
             pde++;
             *pde = MAKE_PDTE(pte);
         }
