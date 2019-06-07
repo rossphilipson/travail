@@ -147,12 +147,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         return false;
     }
 
-    if ( hdr->relocatable_kernel ) {
-        printk(TBOOT_ERR
-               "Error: IL kernel should not be relocatable.\n");
-        return false;
-    }
-
     if ( !(hdr->loadflags & FLAG_LOAD_HIGH) ) {
         printk(TBOOT_ERR
                "Error: IL kernel must have the FLAG_LOAD_HIGH loadflag set.\n");
