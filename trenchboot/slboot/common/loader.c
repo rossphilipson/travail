@@ -662,15 +662,20 @@ bool prepare_intermediate_loader(void)
     size_t kernel_size;
     void *initrd_image;
     size_t initrd_size;
+    uint64_t base = TBOOT_AP_WAKE_BLOCK_ADDR;
+    uint64_t size = TBOOT_AP_WAKE_BLOCK_SIZE;
+
+    printk(TBOOT_INFO"reserving SLBOOT AP wake block (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
 
     /* if using memory logging, reserve log area */
     if ( g_log_targets & TBOOT_LOG_TARGET_MEMORY ) {
-        uint64_t base = TBOOT_SERIAL_LOG_ADDR;
-        uint64_t size = TBOOT_SERIAL_LOG_SIZE;
-        printk(TBOOT_INFO"reserving tboot memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
-        if ( !e820_protect_region(base, size, E820_RESERVED) )
-            error_action(TB_ERR_FATAL);
+        base = TBOOT_SERIAL_LOG_ADDR;
+        size += TBOOT_SERIAL_LOG_SIZE;
+        printk(TBOOT_INFO"reserving SLBOOT memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
     }
+
+    if ( !e820_protect_region(base, size, E820_RESERVED) )
+        error_action(TB_ERR_FATAL);
 
     /* replace map in loader context with copy */
     replace_e820_map(g_ldr_ctx);

@@ -82,6 +82,7 @@ static void print_file_info(void)
     printk(TBOOT_DETA"\t &_end=%p\n", &_end);
 }
 
+#if 0
 static void dump_page_tables(void *ptab_base)
 {
     uint64_t *pg_dir_ptr_tab;
@@ -108,6 +109,7 @@ static void dump_page_tables(void *ptab_base)
         }
     }
 }
+#endif
 
 /*
  * build_mle_pagetable()
@@ -181,7 +183,9 @@ static void *build_mle_pagetable(void)
         }
     } while ( mle_off < mle_size );
 
+#if 0
     dump_page_tables(ptab_base);
+#endif
 
     return ptab_base;
 }
@@ -369,6 +373,9 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_mle_data->saved_misc_enable_msr = rdmsr(MSR_IA32_MISC_ENABLE);
     /* might as well save the MTRR state here where OS-MLE is setup */
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
+    /* provide AP wake code block area */
+    tb_memset((void*)TBOOT_AP_WAKE_BLOCK_ADDR, 0, TBOOT_AP_WAKE_BLOCK_SIZE);
+    os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
 
     /*
      * OS/loader to SINIT data

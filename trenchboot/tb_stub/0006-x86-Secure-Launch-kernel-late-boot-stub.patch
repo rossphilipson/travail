@@ -1,4 +1,4 @@
-From 62c9196ed2f784b66c89b68eb3f9127d109d7516 Mon Sep 17 00:00:00 2001
+From 7ae0ea99299f8137d55f9513375ce2bcbadb4d6d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -16,9 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 427 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 415 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 +
- 4 files changed, 438 insertions(+)
+ 4 files changed, 426 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,10 +58,10 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..46fd6816e250
+index 000000000000..a30f4b67a9aa
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,427 @@
+@@ -0,0 +1,415 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -453,7 +453,6 @@ index 000000000000..46fd6816e250
 +
 +void slaunch_setup(void)
 +{
-+	phys_addr_t base;
 +	u32 vendor[4];
 +
 +	/*
@@ -461,17 +460,6 @@ index 000000000000..46fd6816e250
 +	 * supported platform.
 +	 */
 +	sl_flags = SL_FLAG_ACTIVE;
-+
-+	/*
-+	 * Protect the Secure Launch area in the .text section of the
-+	 * protected mode enty area where the MLE header is located and where
-+	 * the APs are idling. Note the size we care about is far smaller than
-+	 * a page.
-+	 */
-+	base = boot_params.hdr.code32_start +
-+		boot_params.hdr.slaunch_header;
-+	if (memblock_reserve(base, PAGE_SIZE))
-+		panic("Failed to reserve MLE header/AP wake area\n");
 +
 +	/* Get manufacturer string with CPUID 0 */
 +	cpuid(0, &vendor[0], &vendor[1], &vendor[2], &vendor[3]);
