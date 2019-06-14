@@ -224,8 +224,9 @@ ENTRY(sl_txt_ap_entry)
 	subl	%eax, %edx
 	movl	%edx, %esp
 
-	/* Load GDT, set segment regs and lret to __SL32_CS */
-	lgdt	sl_gdt_desc(%ebp)
+	/* Load reloc GDT, set segment regs and lret to __SL32_CS */
+	movl	sl_txt_ap_wake_block(%ebp), %eax
+	lgdt	(sl_ap_gdt_desc - sl_txt_ap_wake)(%eax)
 
 	movl	$(__SL32_DS), %eax
 	movw	%ax, %ds
@@ -279,14 +280,15 @@ ENDPROC(sl_txt_ap_entry)
 ENTRY(sl_txt_reloc_ap_wake)
 	movl	sl_txt_ap_wake_block(%ebp), %edi
 
-	/* Fixup AP IDT descriptor before relocating */
+	/* Fixup AP IDT and GDT descriptor before relocating */
 	addl	%edi, (sl_ap_idt_desc + 2)(%ebp)
+	addl	%edi, (sl_ap_gdt_desc + 2)(%ebp)
 
 	/*
 	 * Copy the AP wake code and IDT to the protected wake block provided
 	 * by the loader. Destination already in %edi.
 	 */
-	movl	$(sl_ap_idt_end - sl_txt_ap_wake), %ecx
+	movl	$(sl_ap_gdt_end - sl_txt_ap_wake), %ecx
 	leal	sl_txt_ap_wake(%ebp), %esi
 	rep movsb
 
@@ -505,8 +507,21 @@ sl_ap_idt:
 	.endr
 sl_ap_idt_end:
 
+	.balign 16
+sl_ap_gdt_desc:
+	.word	sl_ap_gdt_end - sl_ap_gdt - 1
+	.long	sl_ap_gdt - sl_txt_ap_wake
+sl_ap_gdt_desc_end:
+
+	.balign	16
+sl_ap_gdt:
+	.quad	0x0000000000000000	/* NULL */
+	.quad	0x00cf9a000000ffff	/* __SL32_CS */
+	.quad	0x00cf92000000ffff	/* __SL32_DS */
+sl_ap_gdt_end:
+
 	.data
-	.balign 4096
+	.balign 16
 sl_gdt_desc:
 	.word	sl_gdt_end - sl_gdt - 1
 	.long	sl_gdt
