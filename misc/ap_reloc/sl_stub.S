@@ -132,18 +132,6 @@ ENTRY(sl_stub)
 	/* Skip over BIOS data and size of OS to MLE */
 	leal	8(%eax, %ecx), %eax
 
-	/* Fetch the AP wake code block address from the heap */
-	movl	SL_ap_wake_block(%eax), %edi
-	movl	%edi, sl_txt_ap_wake_block(%ebp)
-
-	/*
-	 * Copy the AP wake code to the protected wake block provided
-	 * by the loader. Destination already in %edi.
-	 */
-	movl	$(sl_txt_ap_wake_end - sl_txt_ap_wake), %ecx
-	leal	sl_txt_ap_wake(%ebp), %esi
-	rep movsb
-
 	/* Get the zero page address from the heap.
 	 *
 	 * Note %esi and %ebp MUST be preserved across calls and
@@ -154,8 +142,18 @@ ENTRY(sl_stub)
 	/* Save ebp so the APs can find their way home */
 	movl	%ebp, SL_ap_wake_ebp(%eax)
 
+	/* Fetch the AP wake code block address from the heap */
+	movl	SL_ap_wake_block(%eax), %edi
+	movl	%edi, sl_txt_ap_wake_block(%ebp)
+
+	/* %eax still is the base of the OS-MLE block */
 	movl	%eax, %edi
 	call	sl_txt_load_regs
+
+	/* Relocate the AP wake code to the safe block */
+	pushl	%esi
+	call	sl_txt_reloc_ap_wake
+	popl	%esi
 
 	/* Wake up all APs and wait for them to halt */
 	call	sl_txt_wake_aps
@@ -242,8 +240,9 @@ ENTRY(sl_txt_ap_entry)
 	lret
 
 .Lsl_ap_cs:
-	/* Load the IDT */
-	lidt	sl_idt_desc(%ebp)
+	/* Load the relocated AP IDT */
+	movl	sl_txt_ap_wake_block(%ebp), %eax
+	lidt	(sl_ap_idt_desc - sl_txt_ap_wake)(%eax)
 
 	/* Enable SMI with GETSET[SMCTRL] */
 	xorl	%ebx, %ebx
@@ -276,6 +275,61 @@ ENTRY(sl_txt_ap_entry)
 	movl	sl_txt_ap_wake_block(%ebp), %eax
 	jmp	*%eax
 ENDPROC(sl_txt_ap_entry)
+
+ENTRY(sl_txt_reloc_ap_wake)
+	movl	sl_txt_ap_wake_block(%ebp), %edi
+
+	/* Fixup AP IDT descriptor before relocating */
+	addl	%edi, (sl_ap_idt_desc + 2)(%ebp)
+
+	/*
+	 * Copy the AP wake code and IDT to the protected wake block provided
+	 * by the loader. Destination already in %edi.
+	 */
+	movl	$(sl_ap_idt_end - sl_txt_ap_wake), %ecx
+	leal	sl_txt_ap_wake(%ebp), %esi
+	rep movsb
+
+	/* Setup the IDT for the APs to use in the relocation block */
+	movl	sl_txt_ap_wake_block(%ebp), %ecx
+	addl	$(sl_ap_idt - sl_txt_ap_wake), %ecx
+	xorl	%edx, %edx
+
+	/* Form the default reset vector relocation address */
+	movl	sl_txt_ap_wake_block(%ebp), %ebx
+	addl	$(sl_txt_int_reset - sl_txt_ap_wake), %ebx
+
+1:
+	cmpw	$(NR_VECTORS), %dx
+	jz	.Lap_idt_done
+
+	cmpw	$(X86_TRAP_NMI), %dx
+	jz	2f
+
+	/* Load all other fixed vectors with reset handler (SNO) */
+	movl	%ebx, %eax
+	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
+	shrl	$16, %eax
+	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
+	jmp	3f
+
+2:
+	/* Load single wake NMI IPI vector at the relocation address */
+	movl	sl_txt_ap_wake_block(%ebp), %eax
+	addl	$(sl_txt_int_ipi_wake - sl_txt_ap_wake), %eax
+	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
+	shrl	$16, %eax
+	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
+
+3:
+	incw	%dx
+	addl	$8, %ecx
+	jmp	1b
+
+.Lap_idt_done:
+	ret
+
+ENDPROC(sl_txt_reloc_ap_wake)
 
 ENTRY(sl_txt_load_regs)
 	/*
@@ -334,46 +388,7 @@ ENTRY(sl_txt_load_regs)
 ENDPROC(sl_txt_load_regs)
 
 ENTRY(sl_txt_wake_aps)
-	/* First setup the IDT for the APs to use */
-	leal	sl_idt(%ebp), %ecx
-	xorl	%edx, %edx
-
-	/* Form the default reset vector relocation address */
-	movl	sl_txt_ap_wake_block(%ebp), %ebx
-	addl	(sl_txt_int_reset - sl_txt_ap_wake), %ebx
-
-1:
-	cmpw	$(NR_VECTORS), %dx
-	jz	.Lidt_done
-
-	cmpw	$(X86_TRAP_NMI), %dx
-	jz	2f
-
-	/* Load all other fixed vectors with reset handler (SNO) */
-	movl	%ebx, %eax
-	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
-	shrl	$16, %eax
-	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
-	jmp	3f
-
-2:
-	/* Load single wake NMI IPI vector at the relocation address */
-	movl	sl_txt_ap_wake_block(%ebp), %eax
-	addl	(sl_txt_int_ipi_wake - sl_txt_ap_wake), %eax
-	movw	%ax, (IDT_VECTOR_LO_BITS)(%ecx)
-	shrl	$16, %eax
-	movw	%ax, (IDT_VECTOR_HI_BITS)(%ecx)
-
-3:
-	incw	%dx
-	addl	$8, %ecx
-	jmp	1b
-
-.Lidt_done:
-	/* Fixup descriptor */
-	addl	%ebp, (sl_idt_desc + 2)(%ebp)
-
-	/* Next setup the MLE join structure and load it into TXT reg */
+	/* First setup the MLE join structure and load it into TXT reg */
 	leal	sl_gdt(%ebp), %eax
 	leal	sl_txt_ap_entry(%ebp), %ecx
 	leal	sl_txt_mle_join(%ebp), %edx
@@ -473,7 +488,22 @@ ENTRY(sl_txt_int_reset)
 	pause
 	jmp 	1b
 ENDPROC(sl_txt_int_reset)
-sl_txt_ap_wake_end:
+
+	.balign 16
+sl_ap_idt_desc:
+	.word	sl_ap_idt_end - sl_ap_idt - 1	/* Limit */
+	.long	sl_ap_idt - sl_txt_ap_wake	/* Base */
+sl_ap_idt_desc_end:
+
+	.balign 16
+sl_ap_idt:
+	.rept	NR_VECTORS
+	.word	0x0000		/* Offset 15 to 0 */
+	.word	__SL32_CS	/* Segment selector */
+	.word	0x8e00		/* Present, DPL=0, 32b Vector, Interrupt */
+	.word	0x0000		/* Offset 31 to 16 */
+	.endr
+sl_ap_idt_end:
 
 	.data
 	.balign 4096
@@ -488,22 +518,6 @@ sl_gdt:
 	.quad	0x00cf9a000000ffff	/* __SL32_CS */
 	.quad	0x00cf92000000ffff	/* __SL32_DS */
 sl_gdt_end:
-
-	.balign 16
-sl_idt_desc:
-	.word	sl_idt_end - sl_idt - 1	/* Limit */
-	.long	sl_idt			/* Base */
-sl_idt_desc_end:
-
-	.balign 16
-sl_idt:
-	.rept	NR_VECTORS
-	.word	0x0000		/* Offset 15 to 0 */
-	.word	__SL32_CS	/* Segment selector */
-	.word	0x8e00		/* Present, DPL=0, 32b Vector, Interrupt */
-	.word	0x0000		/* Offset 31 to 16 */
-	.endr
-sl_idt_end:
 
 	.balign 16
 sl_txt_mle_join:
