@@ -146,9 +146,19 @@ static void *build_mle_pagetable(void)
         return NULL;
     }
 
-    /* place ptab_base below MLE */
+    /*
+     * Place ptab_base below MLE. If the kernel is not relocatable then
+     * we have to use the low memory block since the kernel gets loaded
+     * at 1M. This does not work on server systems though.
+     */
     ptab_size = SLBOOT_MLEPT_SIZE;
-    ptab_base = (void*)SLBOOT_MLEPT_ADDR;
+    if ( g_il_kernel_setup.boot_params->hdr.relocatable_kernel ) {
+        /* TODO check that there is room/alignment and also allow bigger page table */
+        ptab_base = (void*)(g_il_kernel_setup.protected_mode_base - ptab_size);
+    }
+    else
+        ptab_base = (void*)SLBOOT_MLEPT_ADDR;
+
     tb_memset(ptab_base, 0, ptab_size);
     printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
 
