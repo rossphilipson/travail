@@ -91,6 +91,7 @@ Ross
  v2:
    - Added comment about where the code originated in include/crypto/sha1_base.h.
    - Fixed a few warnings found by checkpatch.
+   - Define SHA1_DISABLE_EXPORT before including sha1.c to disable EXPORTs.
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  NOTE: This patch has not been broken up yet due to expected fixes for TPM2.

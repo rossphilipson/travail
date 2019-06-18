@@ -1,4 +1,4 @@
-From faaf4aeff6fe3298d9af8aa6ff0807c0cbc0ace3 Mon Sep 17 00:00:00 2001
+From 5b80081992a9f2fc0028df26e0a6bb8d1614b1b2 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: Add early SHA1 support for Secure Launch early
@@ -19,9 +19,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 Reviewed-by: Alexandre Chartre <alexandre.chartre@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile     |   2 +
- arch/x86/boot/compressed/early_sha1.c | 105 ++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_sha1.c | 106 ++++++++++++++++++++++++++++++++++
  arch/x86/include/asm/sha1.h           |  18 ++++++
- 3 files changed, 125 insertions(+)
+ lib/sha1.c                            |   4 ++
+ 4 files changed, 130 insertions(+)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/include/asm/sha1.h
 
@@ -40,10 +41,10 @@ index 466f66c8a7f8..57f2f467cbb0 100644
  # it is executed as-is without any ELF relocation processing performed
 diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
 new file mode 100644
-index 000000000000..53ecd128866b
+index 000000000000..8497115c0ace
 --- /dev/null
 +++ b/arch/x86/boot/compressed/early_sha1.c
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,106 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -56,6 +57,7 @@ index 000000000000..53ecd128866b
 +#include <asm/boot.h>
 +#include <asm/unaligned.h>
 +
++#define SHA1_DISABLE_EXPORT
 +#include "../../../../lib/sha1.c"
 +
 +static void early_sha1_block_fn(struct sha1_state *sst, u8 const *src,
@@ -173,6 +175,27 @@ index 000000000000..9b2552908487
 +void early_sha1_finish(struct sha1_state *sctx, u8 *out);
 +
 +#endif /* _ASM_X86_SHA1_H */
+diff --git a/lib/sha1.c b/lib/sha1.c
+index 1d96d2c02b82..a33fb8d42b9a 100644
+--- a/lib/sha1.c
++++ b/lib/sha1.c
+@@ -185,7 +185,9 @@ void sha_transform(__u32 *digest, const char *data, __u32 *array)
+ 	digest[3] += D;
+ 	digest[4] += E;
+ }
++#ifndef SHA1_DISABLE_EXPORT
+ EXPORT_SYMBOL(sha_transform);
++#endif
+ 
+ /**
+  * sha_init - initialize the vectors for a SHA1 digest
+@@ -199,4 +201,6 @@ void sha_init(__u32 *buf)
+ 	buf[3] = 0x10325476;
+ 	buf[4] = 0xc3d2e1f0;
+ }
++#ifndef SHA1_DISABLE_EXPORT
+ EXPORT_SYMBOL(sha_init);
++#endif
 -- 
 2.13.6
 
