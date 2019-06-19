@@ -1,4 +1,4 @@
-From 7b905ce486213e50a3c326f6eed11f27eec63bc4 Mon Sep 17 00:00:00 2001
+From 37a6f3c9fa6e35feeb3348aeef65c5b828e6d8b6 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
 Subject: [PATCH 7/8] x86: Secure Launch SMP bringup support
@@ -17,11 +17,11 @@ entry point.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 ---
- arch/x86/include/asm/realmode.h      |   3 +
- arch/x86/kernel/smpboot.c            | 111 +++++++++++++++++++++++++++++++++++
- arch/x86/realmode/rm/header.S        |   3 +
- arch/x86/realmode/rm/trampoline_64.S |  40 +++++++++++++
- 4 files changed, 157 insertions(+)
+ arch/x86/include/asm/realmode.h      |  3 ++
+ arch/x86/kernel/smpboot.c            | 98 ++++++++++++++++++++++++++++++++++++
+ arch/x86/realmode/rm/header.S        |  3 ++
+ arch/x86/realmode/rm/trampoline_64.S | 40 +++++++++++++++
+ 4 files changed, 144 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393bd98e..e2b71fb9dc85 100644
@@ -38,7 +38,7 @@ index 63b3393bd98e..e2b71fb9dc85 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 6489067b78a4..fa25755c72da 100644
+index 6489067b78a4..981b7edf3dfc 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
 @@ -81,6 +81,7 @@
@@ -49,7 +49,7 @@ index 6489067b78a4..fa25755c72da 100644
  
  /* representing HT siblings of each logical CPU */
  DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
-@@ -954,6 +955,105 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
+@@ -954,6 +955,92 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
  #endif
  }
  
@@ -63,36 +63,23 @@ index 6489067b78a4..fa25755c72da 100644
 +static int
 +slaunch_fixup_jump_vector(void)
 +{
-+	void __iomem *txt_heap;
-+	uint32_t ap_wake_block;
-+	uint32_t *ap_jmp_ptr = 0;
-+	uint32_t ap_wake_block_offset =
-+			offsetof(struct txt_os_mle_data, ap_wake_block);
-+	uint8_t *scan_ptr;
++	unsigned int ap_wake_block = slaunch_get_ap_wake_block();
++	unsigned int *ap_jmp_ptr = 0;
++	unsigned char *scan_ptr;
 +	int i;
 +
 +	if (!atomic_dec_and_test(&first_ap_only))
 +		return 0;
 +
-+	txt_heap = txt_early_get_heap_table(TXT_OS_MLE_DATA_TABLE,
-+					    ap_wake_block_offset + 4);
-+	if (unlikely(!txt_heap)) {
-+		pr_err("Error SMP early_ioremap of TXT OS-SINIT heap\n");
-+		return -1;
-+	}
-+
-+	ap_wake_block = readl(txt_heap + ap_wake_block_offset);
-+	early_iounmap(txt_heap, ap_wake_block_offset + 4);
-+
 +	/* Scan for the far jmp op code 0xea where the fixup is done */
-+	scan_ptr = (uint8_t *)__va(ap_wake_block);
++	scan_ptr = (unsigned char *)__va(ap_wake_block);
 +	for (i = 0; i < (PAGE_SIZE - 5); i++, scan_ptr++) {
 +		if (*scan_ptr == 0xea) {
 +			scan_ptr++;
-+			if (*(uint32_t *)scan_ptr != 0x0000000)
++			if (*(unsigned int *)scan_ptr != 0x0000000)
 +				break;
 +
-+			ap_jmp_ptr = (uint32_t *)scan_ptr;
++			ap_jmp_ptr = (unsigned int *)scan_ptr;
 +			break;
 +		}
 +	}
@@ -155,7 +142,7 @@ index 6489067b78a4..fa25755c72da 100644
  /*
   * NOTE - on most systems this is a PHYSICAL apic ID, but on multiquad
   * (ie clustered apic addressing mode), this is a LOGICAL apic ID.
-@@ -1010,6 +1110,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1010,6 +1097,7 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
@@ -163,7 +150,7 @@ index 6489067b78a4..fa25755c72da 100644
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -1021,6 +1122,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1021,6 +1109,16 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	else
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);

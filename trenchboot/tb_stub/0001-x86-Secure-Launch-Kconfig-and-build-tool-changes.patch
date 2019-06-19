@@ -1,4 +1,4 @@
-From c2af2fca16a4c459bba76db666c166dac35c06ae Mon Sep 17 00:00:00 2001
+From 21ee21ee809c58639164f05974ee8d7f2e266b1d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
 Subject: [PATCH 1/8] x86: Secure Launch Kconfig and build tool changes

@@ -1,4 +1,4 @@
-From 64fe5348091d01a166b5c3fdb4407195affe13e3 Mon Sep 17 00:00:00 2001
+From a3a66d857582b53661608e62325bb8bf7c7f2db5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub

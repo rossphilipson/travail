@@ -1,4 +1,4 @@
-From 7ae0ea99299f8137d55f9513375ce2bcbadb4d6d Mon Sep 17 00:00:00 2001
+From 8d0615bc3015bfb17a1065327564edf44504eedd Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -16,9 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 415 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 445 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 +
- 4 files changed, 426 insertions(+)
+ 4 files changed, 456 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,10 +58,10 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..a30f4b67a9aa
+index 000000000000..d0034f4a0d3c
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,415 @@
+@@ -0,0 +1,445 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -94,6 +94,7 @@ index 000000000000..a30f4b67a9aa
 +#define PREFIX	"SLAUNCH: "
 +
 +static u32 sl_flags;
++static u32 ap_wake_block;
 +
 +/* This should be plenty of room */
 +static u8 txt_dmar[PAGE_SIZE] __aligned(16);
@@ -101,6 +102,11 @@ index 000000000000..a30f4b67a9aa
 +u32 slaunch_get_flags(void)
 +{
 +	return sl_flags;
++}
++
++u32 slaunch_get_ap_wake_block(void)
++{
++	return ap_wake_block;
 +}
 +
 +struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar)
@@ -112,7 +118,8 @@ index 000000000000..a30f4b67a9aa
 +	return (struct acpi_table_header *)(&txt_dmar[0]);
 +}
 +
-+static void slaunch_txt_reset(void __iomem *txt, const char *msg, u64 error)
++static void __init slaunch_txt_reset(void __iomem *txt,
++				     const char *msg, u64 error)
 +{
 +	u64 one = 1, val;
 +
@@ -132,7 +139,7 @@ index 000000000000..a30f4b67a9aa
 + * The TXT heap is too big to map all at once with early_ioremap
 + * so it is done a table at a time.
 + */
-+void __iomem *txt_early_get_heap_table(u32 type, u32 bytes)
++static void __init __iomem *txt_early_get_heap_table(u32 type, u32 bytes)
 +{
 +	void __iomem *txt;
 +	void __iomem *heap;
@@ -200,7 +207,7 @@ index 000000000000..a30f4b67a9aa
 + * be setup to protect all memory beyond 4Gb. Validate that these values cover
 + * what is expected.
 + */
-+static void slaunch_verify_pmrs(void __iomem *txt)
++static void __init slaunch_verify_pmrs(void __iomem *txt)
 +{
 +	void __iomem *heap;
 +	u64 pmrvals[4];
@@ -254,7 +261,7 @@ index 000000000000..a30f4b67a9aa
 +				  TXT_SLERROR_LO_PMR_MLE);
 +}
 +
-+static int slaunch_txt_reserve_range(u64 base, u64 size)
++static int __init slaunch_txt_reserve_range(u64 base, u64 size)
 +{
 +	int type;
 +
@@ -280,7 +287,7 @@ index 000000000000..a30f4b67a9aa
 + * Also the Memory Descriptor Ranges that are passed to the MLE (see TXT
 + * specification) may need to be reserved depeding on their type.
 + */
-+static void slaunch_txt_reserve(void __iomem *txt)
++static void __init slaunch_txt_reserve(void __iomem *txt)
 +{
 +	struct txt_memory_descriptor_record *mdr;
 +	void __iomem *heap;
@@ -355,7 +362,7 @@ index 000000000000..a30f4b67a9aa
 + * It is stored in the TXT heap. Fetch it from there and make it available
 + * to the IOMMU driver.
 + */
-+static void slaunch_copy_dmar_table(void __iomem *txt)
++static void __init slaunch_copy_dmar_table(void __iomem *txt)
 +{
 +	void __iomem *heap;
 +	u32 dmarvals[2];
@@ -400,9 +407,30 @@ index 000000000000..a30f4b67a9aa
 +}
 +
 +/*
++ * The location of the safe AP wake code block is stored in the TXT heap.
++ * Fetch it here in the early init code for later use in SMP startup.
++ */
++static void __init slaunch_fetch_ap_wake_block(void __iomem *txt)
++{
++	void __iomem *heap;
++	u32 ap_wake_block_offset =
++		offsetof(struct txt_os_mle_data, ap_wake_block);
++
++	heap = txt_early_get_heap_table(TXT_OS_MLE_DATA_TABLE,
++					ap_wake_block_offset + 4);
++	if (!heap)
++		slaunch_txt_reset(txt,
++				  "Error early_ioremap of AP wake block\n",
++				  TXT_SLERROR_AP_WAKE_BLOCK_VAL);
++
++	ap_wake_block = readl(heap + ap_wake_block_offset);
++	early_iounmap(heap, ap_wake_block_offset + 4);
++}
++
++/*
 + * Intel specific late stub setup and validation.
 + */
-+static void slaunch_setup_intel(void)
++static void __init slaunch_setup_intel(void)
 +{
 +	void __iomem *txt;
 +	u64 val = 0x1ULL;
@@ -446,12 +474,14 @@ index 000000000000..a30f4b67a9aa
 +
 +	slaunch_copy_dmar_table(txt);
 +
++	slaunch_fetch_ap_wake_block(txt);
++
 +	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +
 +	pr_info("Intel TXT setup complete\n");
 +}
 +
-+void slaunch_setup(void)
++void __init slaunch_setup(void)
 +{
 +	u32 vendor[4];
 +

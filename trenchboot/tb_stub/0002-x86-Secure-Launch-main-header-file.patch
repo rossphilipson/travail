@@ -1,4 +1,4 @@
-From d1a08cbd300cd8a29bebcad159bc75592d941479 Mon Sep 17 00:00:00 2001
+From 75c135251ab5ca560b343c47fe61c973c537a6f4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
@@ -8,16 +8,16 @@ and the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 295 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 295 insertions(+)
+ arch/x86/include/asm/slaunch.h | 296 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 296 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..1eebf56791bb
+index 000000000000..8fbf4ec8c631
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,295 @@
+@@ -0,0 +1,296 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -162,6 +162,7 @@ index 000000000000..1eebf56791bb
 +#define TXT_SLERROR_LO_PMR_BASE		0xc0008017
 +#define TXT_SLERROR_LO_PMR_MLE		0xc0008018
 +#define TXT_SLERROR_HEAP_ZERO_OFFSET	0xc0008019
++#define TXT_SLERROR_AP_WAKE_BLOCK_VAL	0xc000801a
 +
 +/*
 + * Secure Launch Defined Limits
@@ -307,7 +308,7 @@ index 000000000000..1eebf56791bb
 + */
 +void slaunch_setup(void);
 +u32 slaunch_get_flags(void);
-+void __iomem *txt_early_get_heap_table(u32 type, u32 bytes);
++u32 slaunch_get_ap_wake_block(void);
 +struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar);
 +
 +#endif
