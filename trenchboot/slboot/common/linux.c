@@ -439,6 +439,10 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         screen->orig_y = 24;               /* start display text @ screen end*/
     }
 
+    /* Clear out some boot_params we don't want dangling around */
+    tb_memset((void *)boot_params->tboot_shared_addr, 0, 8);
+    tb_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
+
     /* Copy all the handoff information about the loaded IL kernel */
     g_il_kernel_setup.real_mode_base = real_mode_base;
     g_il_kernel_setup.real_mode_size = real_mode_size;

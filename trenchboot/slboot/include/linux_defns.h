@@ -113,7 +113,8 @@ typedef struct __attribute__ ((packed)) {
     uint8_t               _pad2[4];                                 /* 0x054 */
     uint8_t               tboot_shared_addr[8];                     /* 0x058 */
     uint8_t               ist_info[0x070-0x060];                    /* 0x060 */
-    uint8_t               _pad3[16];                                /* 0x070 */
+    uint8_t               acpi_rsdp_addr[8];                        /* 0x070 */
+    uint8_t               _pad3[8];                                 /* 0x078 */
     uint8_t               hd0_info[16];     /* obsolete! */         /* 0x080 */
     uint8_t               hd1_info[16];     /* obsolete! */         /* 0x090 */
     uint8_t               sys_desc_table[0x0b0-0x0a0];              /* 0x0a0 */
