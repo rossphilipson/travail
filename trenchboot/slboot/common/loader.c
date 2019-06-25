@@ -1240,15 +1240,15 @@ void determine_loader_type(void *addr, uint32_t magic)
                 void *mb2_reloc;
 
                 /* Since GRUB is sticking the MB2 structure very close to the
-                 * default location for the kernel, move it up past the SLBOOT
+                 * default location for the kernel, move it just below the SLBOOT
                  * image.
                  */
-                mb2_reloc = (void*)PAGE_UP(_end);
+                mb2_reloc = (void*)PAGE_DOWN(TBOOT_BASE_ADDR - g_mb_orig_size);
                 tb_memcpy(mb2_reloc, addr, g_mb_orig_size);
                 g_ldr_ctx->addr = mb2_reloc;
                 addr = mb2_reloc;
-                /*printk(TBOOT_INFO"MB2 relocated to: %p size: %x\n",
-                       addr, g_mb_orig_size);*/
+                printk(TBOOT_INFO"MB2 relocated to: %p size: %x\n",
+                       addr, g_mb_orig_size);
 
                 /* we may as well do this here--if we received an ELF
                  * sections tag, we won't use it, and it's useless to
