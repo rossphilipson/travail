@@ -1,4 +1,4 @@
-From a3a66d857582b53661608e62325bb8bf7c7f2db5 Mon Sep 17 00:00:00 2001
+From 19e4e7002e44ace50c1c844a8ba9a3acdfb3dc1e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
 Subject: [PATCH 5/8] x86: Secure Launch kernel early boot stub
@@ -20,10 +20,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  32 +++
- arch/x86/boot/compressed/sl_main.c | 171 +++++++++++
+ arch/x86/boot/compressed/sl_main.c | 181 ++++++++++++
  arch/x86/boot/compressed/sl_stub.S | 564 +++++++++++++++++++++++++++++++++++++
  arch/x86/kernel/asm-offsets.c      |  12 +
- 5 files changed, 780 insertions(+), 1 deletion(-)
+ 5 files changed, 790 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -92,10 +92,10 @@ index 64037895b085..af38654f30ba 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 000000000000..46098fb1cffd
+index 000000000000..d0140f65387e
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,181 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -113,6 +113,8 @@ index 000000000000..46098fb1cffd
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/slaunch.h>
++
++extern u32 sl_cpu_type;
 +
 +static u64 sl_txt_read(u32 reg)
 +{
@@ -217,6 +219,14 @@ index 000000000000..46098fb1cffd
 +	u64 *txt_heap;
 +	u64 bios_data_size;
 +	u32 os_mle_len;
++
++	/*
++	 * Currently only Intel TXT is supported for Secure Launch. Testing this value
++	 * also indicates that the kernel was booted successfully through the Secure
++	 * Launch entry point and is in SMX mode.
++	 */
++	if (!(sl_cpu_type & SL_CPU_INTEL))
++		return;
 +
 +	/*
 +	 * If enable_tpm fails there is no point going on. The entire secure

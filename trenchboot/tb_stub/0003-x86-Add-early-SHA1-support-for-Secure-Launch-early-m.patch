@@ -1,4 +1,4 @@
-From 60eaab6231a33f2e64fe34af94eb9ae64a4a821a Mon Sep 17 00:00:00 2001
+From 345c1a67a639d3686c9262541c0fbc03136373a1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
 Subject: [PATCH 3/8] x86: Add early SHA1 support for Secure Launch early

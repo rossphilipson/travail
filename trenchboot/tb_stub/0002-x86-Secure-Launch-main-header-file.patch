@@ -1,4 +1,4 @@
-From 75c135251ab5ca560b343c47fe61c973c537a6f4 Mon Sep 17 00:00:00 2001
+From fb1b396e430862cf1b54639ef8cbc6ab30d5b749 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
 Subject: [PATCH 2/8] x86: Secure Launch main header file
@@ -8,16 +8,16 @@ and the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 296 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 296 insertions(+)
+ arch/x86/include/asm/slaunch.h | 300 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 300 insertions(+)
  create mode 100644 arch/x86/include/asm/slaunch.h
 
 diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
 new file mode 100644
-index 000000000000..8fbf4ec8c631
+index 000000000000..8467ccf6d5ba
 --- /dev/null
 +++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,300 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef _ASM_X86_SLAUNCH_H
 +#define _ASM_X86_SLAUNCH_H
@@ -88,6 +88,10 @@ index 000000000000..8fbf4ec8c631
 +#define TXTCR_CMD_SECRETS		0x08e0
 +#define TXTCR_CMD_NO_SECRETS		0x08e8
 +#define TXTCR_E2STS			0x08f0
++
++/* TXTCR_STS status bits */
++#define TXT_SENTER_DONE_STS		(1<<0)
++#define TXT_SEXIT_DONE_STS		(1<<1)
 +
 +/*
 + * SINIT/MLE Capabilities Field Bit Definitions

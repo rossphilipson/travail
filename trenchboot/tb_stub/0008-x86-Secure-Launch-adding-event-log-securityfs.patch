@@ -1,4 +1,4 @@
-From d1130410f4bb4786ef27c5166038a3a98c3ed6ac Mon Sep 17 00:00:00 2001
+From 43cec218d46a982d699d4405fe30efc13f7b1bf3 Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
 Subject: [PATCH 8/8] x86: Secure Launch adding event log securityfs
@@ -8,16 +8,16 @@ of the late launch TPM log and other platform specific operations.
 
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
- arch/x86/kernel/slaunch.c | 127 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 127 insertions(+)
+ arch/x86/kernel/slaunch.c | 129 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 129 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index d0034f4a0d3c..f3c55656b7f4 100644
+index a05d4149bdd7..40c21797b400 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -443,3 +443,130 @@ void __init slaunch_setup(void)
- 		panic("Invalid platform: not Intel or AMD\n");
- 	}
+@@ -458,3 +458,132 @@ void __init slaunch_setup(void)
+ 	    vendor[3] == INTEL_CPUID_MFGID_EDX)
+ 		slaunch_setup_intel();
  }
 +
 +/*
@@ -130,10 +130,12 @@ index d0034f4a0d3c..f3c55656b7f4 100644
 +
 +static int __init slaunch_late_init(void)
 +{
-+	if (sl_flags & SL_FLAG_ARCH_TXT)
-+		slaunch_intel_evtlog();
-+	else
-+		BUG();
++	/* Check to see if Secure Launch happened */
++	if (!(sl_flags & (SL_FLAG_ACTIVE|SL_FLAG_ARCH_TXT)))
++		return 0;
++
++	/* Only Intel TXT is supported at this point */
++	slaunch_intel_evtlog();
 +
 +	return slaunch_expose_securityfs();
 +}

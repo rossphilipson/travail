@@ -1,4 +1,4 @@
-From 8d0615bc3015bfb17a1065327564edf44504eedd Mon Sep 17 00:00:00 2001
+From 5b687c242746f0d1d62753cee921639a8bf9f922 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
 Subject: [PATCH 6/8] x86: Secure Launch kernel late boot stub
@@ -16,9 +16,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
  arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 445 ++++++++++++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/slaunch.c | 460 ++++++++++++++++++++++++++++++++++++++++++++++
  drivers/iommu/dmar.c      |   5 +
- 4 files changed, 456 insertions(+)
+ 4 files changed, 471 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -58,10 +58,10 @@ index b4866badb235..5784e638a12c 100644
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 000000000000..d0034f4a0d3c
+index 000000000000..a05d4149bdd7
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,445 @@
+@@ -0,0 +1,460 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -435,25 +435,53 @@ index 000000000000..d0034f4a0d3c
 +	void __iomem *txt;
 +	u64 val = 0x1ULL;
 +
++	/*
++	 * First see if SENTER was done and not by TBOOT by reading the status
++	 * register in the public space.
++	 */
++	txt = early_ioremap(TXT_PUB_CONFIG_REGS_BASE,
++			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++	if (!txt) {
++		/* This is really bad, no where to go from here */
++		panic("Error early_ioremap of TXT pub registers\n");
++	}
++
++	memcpy_fromio(&val, txt + TXTCR_STS, sizeof(u64));
++	early_iounmap(txt, TXT_NR_CONFIG_PAGES * PAGE_SIZE);
++
++	/* Was SENTER done? */
++	if (!(val & TXT_SENTER_DONE_STS))
++		return;
++
++	/* Was it done by TBOOT? */
++	if (boot_params.tboot_addr)
++		return;
++
++	/* Now we want to use the private register space */
 +	txt = early_ioremap(TXT_PRIV_CONFIG_REGS_BASE,
 +			    TXT_NR_CONFIG_PAGES * PAGE_SIZE);
 +	if (!txt) {
 +		/* This is really bad, no where to go from here */
-+		panic("Error early_ioremap of TXT registers\n");
++		panic("Error early_ioremap of TXT priv registers\n");
 +	}
 +
 +	/*
 +	 * Try to read the Intel VID from the TXT private registers to see if
-+	 * TXT is active and the measured launch happened.
++	 * TXT measured launch happened properly and the private space is
++	 * available.
 +	 */
 +	memcpy_fromio(&val, txt + TXTCR_DIDVID, sizeof(u64));
 +	if ((u16)(val & 0xffff) != 0x8086) {
 +		/*
-+		 * Can't do a proper TXT reset since it appears we are not in
-+		 * SMX mode.
++		 * Can't do a proper TXT reset since it appears something is
++		 * wrong even though SENTER happened and it should be in SMX
++		 * mode.
 +		 */
 +		panic("Invalid TXT vendor ID, not in SMX mode\n");
 +	}
++
++	/* Set flags so subsequent code knows the status of the launch */
++	sl_flags |= (SL_FLAG_ACTIVE|SL_FLAG_ARCH_TXT);
 +
 +	/*
 +	 * Reading the proper DIDVID from the private register space means we
@@ -485,27 +513,14 @@ index 000000000000..d0034f4a0d3c
 +{
 +	u32 vendor[4];
 +
-+	/*
-+	 * First assume Secure Launch is enabled and this is a
-+	 * supported platform.
-+	 */
-+	sl_flags = SL_FLAG_ACTIVE;
-+
 +	/* Get manufacturer string with CPUID 0 */
 +	cpuid(0, &vendor[0], &vendor[1], &vendor[2], &vendor[3]);
 +
++	/* Only Intel TXT is supported at this point */
 +	if (vendor[1] == INTEL_CPUID_MFGID_EBX &&
 +	    vendor[2] == INTEL_CPUID_MFGID_ECX &&
-+	    vendor[3] == INTEL_CPUID_MFGID_EDX) {
-+		sl_flags |= SL_FLAG_ARCH_TXT;
++	    vendor[3] == INTEL_CPUID_MFGID_EDX)
 +		slaunch_setup_intel();
-+	} else if (vendor[1] == AMD_CPUID_MFGID_EBX &&
-+		   vendor[2] == AMD_CPUID_MFGID_ECX &&
-+		   vendor[3] == AMD_CPUID_MFGID_EDX) {
-+		panic("Invalid platform: AMD not supported\n");
-+	} else {
-+		panic("Invalid platform: not Intel or AMD\n");
-+	}
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
 index d9c748b6f9e4..5e9fc61da18e 100644

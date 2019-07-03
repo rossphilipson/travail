@@ -71,6 +71,8 @@ Questions:
    * TODO does starting the IOMMU driver disable them? Does it then protect memory?
    * TODO do we need to disable the IOMMU driver in IL?
    * TODO do we need to pass the saved DMAR to the real kernel?
+ - Relaunch
+   * On a relaunch the RLPs may need to be rendezvous'ed. Section 2.2.4.3.
 
 Stages:
 ---------------------------------------------------------------------
