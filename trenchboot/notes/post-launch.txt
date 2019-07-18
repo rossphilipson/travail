@@ -73,6 +73,8 @@ Questions:
    * TODO do we need to pass the saved DMAR to the real kernel?
  - Relaunch
    * On a relaunch the RLPs may need to be rendezvous'ed. Section 2.2.4.3.
+ - VT-d
+   * TODO do we have to do something like tboot_force_iommu()
 
 Stages:
 ---------------------------------------------------------------------

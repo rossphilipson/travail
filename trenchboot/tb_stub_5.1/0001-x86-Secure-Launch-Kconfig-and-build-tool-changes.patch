@@ -1,0 +1,129 @@
+From 6a85f650a4779dd8ad2b305eac957ff334158412 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 21 Sep 2018 10:22:12 -0400
+Subject: [PATCH 1/8] x86: Secure Launch Kconfig and build tool changes
+
+Initial bits to bring in Secure Launch functionality. Add a Kconfig
+for compiling in/out the Secure Launch code. Set the offset of the MLE
+(Measured Launch Environment) header in the slaunch boot parameter allowing
+the pre-launch environment loader code to locate it.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/Kconfig                      | 11 +++++++++++
+ arch/x86/boot/Makefile                |  2 +-
+ arch/x86/boot/header.S                |  1 +
+ arch/x86/boot/tools/build.c           | 16 ++++++++++++++++
+ arch/x86/include/uapi/asm/bootparam.h |  1 +
+ 5 files changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 62fc3fda1a05..11ee095c402d 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -1961,6 +1961,17 @@ config EFI_MIXED
+ 
+ 	   If unsure, say N.
+ 
++config SECURE_LAUNCH_STUB
++	bool "Secure Launch stub support"
++	default n
++	depends on X86_64
++	help
++	  This Secure Launch kernel feature allows a bzImage to be loaded
++	  directly through Intel TXT or AMD SKINIT measured launch. This
++	  allows extablishing a Dynamic Root of Trust Measurement (DRTM)
++	  of all the modules and configuration information used for
++	  boooting the operating system.
++
+ config SECCOMP
+ 	def_bool y
+ 	prompt "Enable seccomp to safely compute untrusted bytecode"
+diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
+index e2839b5c246c..d2285313b977 100644
+--- a/arch/x86/boot/Makefile
++++ b/arch/x86/boot/Makefile
+@@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
+ 
+ SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
+ 
+-sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
++sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [ABCDGRSTVW] \(startup_32\|startup_64\|efi32_stub_entry\|efi64_stub_entry\|efi_pe_entry\|sl_mle_header\|input_data\|_end\|_ehead\|_text\|z_.*\)$$/\#define ZO_\2 0x\1/p'
+ 
+ quiet_cmd_zoffset = ZOFFSET $@
+       cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
+diff --git a/arch/x86/boot/header.S b/arch/x86/boot/header.S
+index 850b8762e889..05e7c402084a 100644
+--- a/arch/x86/boot/header.S
++++ b/arch/x86/boot/header.S
+@@ -557,6 +557,7 @@ pref_address:		.quad LOAD_PHYSICAL_ADDR	# preferred load addr
+ 
+ init_size:		.long INIT_SIZE		# kernel initialization size
+ handover_offset:	.long 0			# Filled in by build.c
++slaunch_header:		.long 0			# Filled in by build.c
+ 
+ # End of setup header #####################################################
+ 
+diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
+index a93d44e58f9c..31129c1723fd 100644
+--- a/arch/x86/boot/tools/build.c
++++ b/arch/x86/boot/tools/build.c
+@@ -56,6 +56,7 @@ u8 buf[SETUP_SECT_MAX*512];
+ unsigned long efi32_stub_entry;
+ unsigned long efi64_stub_entry;
+ unsigned long efi_pe_entry;
++unsigned long sl_mle_header;
+ unsigned long startup_64;
+ 
+ /*----------------------------------------------------------------------*/
+@@ -289,6 +290,18 @@ static inline int reserve_pecoff_reloc_section(int c)
+ }
+ #endif /* CONFIG_EFI_STUB */
+ 
++#ifdef CONFIG_SECURE_LAUNCH_STUB
++
++static void slaunch_stub_entry_update(void)
++{
++	put_unaligned_le32(sl_mle_header, &buf[0x268]);
++}
++
++#else
++
++static void slaunch_stub_entry_update(void) {}
++
++#endif /* CONFIG_SECURE_LAUNCH_STUB */
+ 
+ /*
+  * Parse zoffset.h and find the entry points. We could just #include zoffset.h
+@@ -321,6 +334,7 @@ static void parse_zoffset(char *fname)
+ 		PARSE_ZOFS(p, efi32_stub_entry);
+ 		PARSE_ZOFS(p, efi64_stub_entry);
+ 		PARSE_ZOFS(p, efi_pe_entry);
++		PARSE_ZOFS(p, sl_mle_header);
+ 		PARSE_ZOFS(p, startup_64);
+ 
+ 		p = strchr(p, '\n');
+@@ -410,6 +424,8 @@ int main(int argc, char ** argv)
+ 
+ 	efi_stub_entry_update();
+ 
++	slaunch_stub_entry_update();
++
+ 	crc = partial_crc32(buf, i, crc);
+ 	if (fwrite(buf, 1, i, dest) != i)
+ 		die("Writing setup failed");
+diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
+index 60733f137e9a..d45925b90689 100644
+--- a/arch/x86/include/uapi/asm/bootparam.h
++++ b/arch/x86/include/uapi/asm/bootparam.h
+@@ -86,6 +86,7 @@ struct setup_header {
+ 	__u64	pref_address;
+ 	__u32	init_size;
+ 	__u32	handover_offset;
++	__u32	slaunch_header;
+ } __attribute__((packed));
+ 
+ struct sys_desc_table {
+-- 
+2.13.6
+
