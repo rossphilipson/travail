@@ -52,10 +52,8 @@ extern void get_tboot_min_ram(void);
 extern bool get_tboot_call_racm(void);
 extern bool get_tboot_call_racm_check(void);
 extern bool get_tboot_ignore_prev_err(void);
-extern bool get_tboot_measure_nv(void);
 extern void get_tboot_extpol(void);
 extern bool get_tboot_force_tpm2_legacy_log(void);
-extern bool get_tboot_save_vtd(void);
 extern uint32_t get_error_shutdown(void);
 
 /* for parse cmdline of linux kernel, say vga and mem */

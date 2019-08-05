@@ -81,11 +81,9 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "pcr_map", "legacy" },         /* legacy|da */
     { "min_ram", "0" },              /* size in bytes | 0 for no min */
     { "call_racm", "false" },        /* true|false|check */
-    { "measure_nv", "false" },       /* true|false */
     { "extpol",    "sha1" },         /*agile|embedded|sha1|sha256|sm3|... */
     { "ignore_prev_err", "true"},    /* true|false */
     { "force_tpm2_legacy_log", "false"}, /* true|false */
-    { "save_vtd", "false"},          /* true|false */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { NULL, NULL }
 };
@@ -484,15 +482,6 @@ bool get_tboot_call_racm_check(void)
     return true;
 }
 
-bool get_tboot_measure_nv(void)
-{
-    const char *measure_nv = get_option_val(g_tboot_cmdline_options,
-                                       g_tboot_param_values, "measure_nv");
-    if ( measure_nv == NULL || tb_strcmp(measure_nv, "true") != 0 )
-        return false;
-    return true;
-}
-
 void get_tboot_extpol(void)
 {
     const char *extpol = get_option_val(g_tboot_cmdline_options, g_tboot_param_values, "extpol");
@@ -541,17 +530,6 @@ bool get_tboot_ignore_prev_err(void)
 			   "ignore_prev_err");
     if ( ignore_prev_err == NULL || tb_strcmp(ignore_prev_err, "true") == 0 )
 	    return true;
-    return false;
-}
-
-bool get_tboot_save_vtd(void)
-{
-    const char *save_vtd =
-       get_option_val(g_tboot_cmdline_options,
-              g_tboot_param_values,
-              "save_vtd");
-    if ( save_vtd != NULL && tb_strcmp(save_vtd, "true") == 0 )
-       return true;
     return false;
 }
 
