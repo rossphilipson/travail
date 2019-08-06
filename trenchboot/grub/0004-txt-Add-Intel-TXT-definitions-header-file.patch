@@ -1,20 +1,20 @@
-From 3933e1668c1a018352758a96f272ddf8fc7110fb Mon Sep 17 00:00:00 2001
+From 0104c27f5e98895a8ee0bda73d01501bc5265c04 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:56:36 -0500
-Subject: [PATCH 4/4] txt: Add Intel TXT definitions header file
+Subject: [PATCH 4/6] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 475 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 475 insertions(+)
+ include/grub/i386/txt.h | 478 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 478 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..799901a99
+index 000000000..b438acd1a
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,475 @@
+@@ -0,0 +1,478 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -488,6 +488,9 @@ index 000000000..799901a99
 +{
 +  __asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
 +}
++
++grub_err_t
++grub_txt_enable_smx_mode (void);
 +
 +#endif
 -- 

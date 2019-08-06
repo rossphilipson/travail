@@ -1,14 +1,14 @@
-From 92f2b0cb671a8427654c2543ea352b069584b483 Mon Sep 17 00:00:00 2001
+From 11e04ab7a1e311a5f50e4332baee7de912cd6d20 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 11:27:21 -0500
-Subject: [PATCH 1/4] i386: Add basic platform support for secure launch
+Subject: [PATCH 1/6] i386: Add basic platform support for secure launch
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  include/grub/i386/cpuid.h |  13 ++++++
  include/grub/i386/mmio.h  | 105 ++++++++++++++++++++++++++++++++++++++++++++++
- include/grub/i386/msr.h   |  82 ++++++++++++++++++++++++++++++++++++
- 3 files changed, 200 insertions(+)
+ include/grub/i386/msr.h   |  84 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 202 insertions(+)
  create mode 100644 include/grub/i386/mmio.h
  create mode 100644 include/grub/i386/msr.h
 
@@ -149,10 +149,10 @@ index 000000000..6a4c4946a
 +#endif
 diff --git a/include/grub/i386/msr.h b/include/grub/i386/msr.h
 new file mode 100644
-index 000000000..a0c5d39e7
+index 000000000..7867485e8
 --- /dev/null
 +++ b/include/grub/i386/msr.h
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,84 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -186,6 +186,8 @@ index 000000000..a0c5d39e7
 +
 +#define GRUB_MSR_X86_FEATURE_CONTROL	0x0000003a
 +#define GRUB_MSR_X86_ENABLE_VMX_IN_SMX	(1<<1)
++#define GRUB_MSR_X86_SENTER_FUNCTIONS	(0x7f<<8)
++#define GRUB_MSR_X86_SENTER_ENABLE	(1<<15)
 +
 +#define GRUB_MSR_X86_MCG_CAP		0x00000179
 +#define GRUB_MSR_MCG_BANKCNT_MASK	0xff      /* Number of banks  */

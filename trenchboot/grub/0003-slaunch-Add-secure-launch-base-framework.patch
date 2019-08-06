@@ -1,24 +1,24 @@
-From 36ea4370ca162dc540ea1e306ae108fc932f2c51 Mon Sep 17 00:00:00 2001
+From e334b22f9d14cfc17a7396144436844b4143b8e8 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:49:37 -0500
-Subject: [PATCH 3/4] slaunch: Add secure launch base framework
+Subject: [PATCH 3/6] slaunch: Add secure launch base framework
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def         |   7 ++
  grub-core/loader/i386/linux.c       |  18 ++++
- grub-core/loader/i386/slaunch.c     | 208 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c |  35 ++++++
+ grub-core/loader/i386/slaunch.c     | 198 ++++++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c |  62 +++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 271 insertions(+)
+ 5 files changed, 288 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 474a63e68..2e8e10197 100644
+index 269370417..24caa1f13 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1792,6 +1792,13 @@ module = {
+@@ -1807,6 +1807,13 @@ module = {
  };
  
  module = {
@@ -84,10 +84,10 @@ index d0501e229..8db9b1f34 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..fde64b8b6
+index 000000000..1c61f839a
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,208 @@
+@@ -0,0 +1,198 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -174,7 +174,7 @@ index 000000000..fde64b8b6
 +                int argc, char *argv[])
 +{
 +  grub_uint32_t manufacturer[3];
-+  grub_uint32_t eax, edx, ebx, ecx;
++  grub_uint32_t eax;
 +  grub_uint64_t msr_value;
 +
 +  if (argc == 0)
@@ -195,17 +195,7 @@ index 000000000..fde64b8b6
 +      if (grub_memcmp (manufacturer, "GenuineIntel", 12) != 0)
 +        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("Intel platform required for TXT"));
 +
-+      grub_cpuid(GRUB_X86_CPUID_FEATURES, eax, ebx, ecx, edx);
-+      if (! (ecx & GRUB_VMX_CPUID_FEATURE) || ! (ecx & GRUB_SMX_CPUID_FEATURE) )
-+        return grub_error (GRUB_ERR_BAD_DEVICE,
-+			   N_("CPU does not support Intel TXT"));
-+
-+      msr_value = grub_rdmsr (GRUB_MSR_X86_FEATURE_CONTROL);
-+      if (! (msr_value & GRUB_MSR_X86_ENABLE_VMX_IN_SMX))
-+        return grub_error (GRUB_ERR_BAD_DEVICE,
-+			   N_("Intel TXT is not enabled"));
-+
-+      grub_linux_slaunch_set (grub_slaunch_boot_txt);
++      return grub_slaunch_init_txt ();
 +    }
 +  else
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
@@ -298,10 +288,10 @@ index 000000000..fde64b8b6
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..b1165911b
+index 000000000..7d165f0fd
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,62 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -327,13 +317,40 @@ index 000000000..b1165911b
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
++#include <grub/i386/cpuid.h>
++#include <grub/i386/msr.h>
 +#include <grub/i386/txt.h>
 +#include <grub/slaunch.h>
 +
 +grub_err_t
 +grub_slaunch_boot_txt (struct grub_slaunch_params *slparams)
 +{
-+  slparams = slparams;
++  slparams = slparams; /* TODO */
++
++  return GRUB_ERR_NONE;
++}
++
++grub_err_t grub_slaunch_init_txt (void)
++{
++  grub_uint32_t eax, edx, ebx, ecx;
++  grub_uint64_t msr_value;
++
++  grub_cpuid(GRUB_X86_CPUID_FEATURES, eax, ebx, ecx, edx);
++  if (! (ecx & GRUB_VMX_CPUID_FEATURE) || ! (ecx & GRUB_SMX_CPUID_FEATURE) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++                       N_("CPU does not support Intel TXT"));
++
++  msr_value = grub_rdmsr (GRUB_MSR_X86_FEATURE_CONTROL);
++  if (! (msr_value & GRUB_MSR_X86_ENABLE_VMX_IN_SMX) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++                       N_("Intel TXT is not enabled"));
++
++  if ( (msr_value & (GRUB_MSR_X86_SENTER_FUNCTIONS | GRUB_MSR_X86_SENTER_ENABLE))
++        != (GRUB_MSR_X86_SENTER_FUNCTIONS | GRUB_MSR_X86_SENTER_ENABLE) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++                       N_("Intel SENTER is not enabled"));
++
++  grub_linux_slaunch_set (grub_slaunch_boot_txt);
 +
 +  return GRUB_ERR_NONE;
 +}

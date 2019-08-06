@@ -1,0 +1,174 @@
+From a0b5e8106ee50f068f0393628330df057c337d86 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 6 Aug 2019 14:39:42 -0400
+Subject: [PATCH 5/6] txt: Add Intel TXT core implementation
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ grub-core/Makefile.core.def         |   1 +
+ grub-core/loader/i386/slaunch_txt.c |   6 ++
+ grub-core/loader/i386/txt/txt.c     | 121 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 128 insertions(+)
+ create mode 100644 grub-core/loader/i386/txt/txt.c
+
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index 24caa1f13..f9ee7e6c0 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -1810,6 +1810,7 @@ module = {
+   name = slaunch;
+   x86 = loader/i386/slaunch.c;
+   x86 = loader/i386/slaunch_txt.c;
++  x86 = loader/i386/txt/txt.c;
+   enable = x86;
+ };
+ 
+diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
+index 7d165f0fd..50fe4ea2d 100644
+--- a/grub-core/loader/i386/slaunch_txt.c
++++ b/grub-core/loader/i386/slaunch_txt.c
+@@ -31,8 +31,14 @@
+ grub_err_t
+ grub_slaunch_boot_txt (struct grub_slaunch_params *slparams)
+ {
++  grub_err_t err;
++
+   slparams = slparams; /* TODO */
+ 
++  err = grub_txt_enable_smx_mode ();
++  if ( err )
++    return err;
++
+   return GRUB_ERR_NONE;
+ }
+ 
+diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
+new file mode 100644
+index 000000000..b9a586417
+--- /dev/null
++++ b/grub-core/loader/i386/txt/txt.c
+@@ -0,0 +1,121 @@
++/*
++ * txt.c: Intel(r) TXT support functions, including initiating measured
++ *        launch, post-launch, AP wakeup, etc.
++ *
++ * Copyright (c) 2003-2011, Intel Corporation
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above
++ *     copyright notice, this list of conditions and the following
++ *     disclaimer in the documentation and/or other materials provided
++ *     with the distribution.
++ *   * Neither the name of the Intel Corporation nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
++ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++ * OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/loader.h>
++#include <grub/memory.h>
++#include <grub/normal.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/dl.h>
++#include <grub/cpu/relocator.h>
++#include <grub/i386/cpuid.h>
++#include <grub/i386/msr.h>
++#include <grub/i386/txt.h>
++#include <grub/slaunch.h>
++
++GRUB_MOD_LICENSE("GPLv3+");
++
++/* TODO if you use this define in the asm below, the grub build thinks it is
++ * a symbol and then some script chokes and dies.
++ */
++#define GRUB_CPU_CR4_SMX_ON	0x00004000
++
++#define GRUB_SMX_ALL_CAPABILITIES \
++  (GRUB_SMX_CAPABILITY_ENTERACCS | \
++   GRUB_SMX_CAPABILITY_EXITAC | \
++   GRUB_SMX_CAPABILITY_SENTER | \
++   GRUB_SMX_CAPABILITY_SEXIT | \
++   GRUB_SMX_CAPABILITY_PARAMETERS | \
++   GRUB_SMX_CAPABILITY_SMCTRL | \
++   GRUB_SMX_CAPABILITY_WAKEUP)
++
++grub_err_t
++grub_txt_enable_smx_mode (void)
++{
++  grub_uint32_t caps;
++  grub_err_t err;
++  const char *msg;
++
++  asm volatile ("movq %%cr4, %%rax\n\t"
++                "orl $0x00004000, %%eax\n\t"
++                "movq %%rax, %%cr4\n\t"
++                : : : "%rax");
++
++  caps = grub_txt_getsec_capabilities (0);
++
++  if ( !(caps & GRUB_SMX_CAPABILITY_CHIPSET_PRESENT) ) {
++    err = GRUB_ERR_BAD_DEVICE;
++    msg = "TXT capable chipset not present";
++    goto fail;
++  }
++
++  if ( (caps & GRUB_SMX_ALL_CAPABILITIES) != GRUB_SMX_ALL_CAPABILITIES ) {
++    err = GRUB_ERR_BAD_DEVICE;
++    msg = "Not all SMX capagilities are supported";
++    goto fail;
++  }
++
++
++  return GRUB_ERR_NONE;
++
++fail:
++  /* Disable SMX mode on failure */
++  asm volatile ("movq %%cr4, %%rax\n\t"
++                "andl $(~0x00004000), %%eax\n\t"
++                "movq %%rax, %%cr4\n\t"
++                : : : "%rax");
++
++  return grub_error (err, N_(msg));
++}
+-- 
+2.13.6
+

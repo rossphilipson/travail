@@ -1,13 +1,13 @@
-From 573936992bad12e7cc3b2a9d3fa89c73f193215b Mon Sep 17 00:00:00 2001
+From e0db9b927d79e6473caa61b2f60052e65c71e678 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 14 Dec 2018 12:37:53 -0500
-Subject: [PATCH 2/4] slaunch: Add main secure launch definitions header
+Subject: [PATCH 2/6] slaunch: Add main secure launch definitions header
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am  |  3 +++
- include/grub/slaunch.h | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 62 insertions(+)
+ include/grub/slaunch.h | 60 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 63 insertions(+)
  create mode 100644 include/grub/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
@@ -40,10 +40,10 @@ index 3ea8e7ff4..fa8c330ab 100644
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
 diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
 new file mode 100644
-index 000000000..f0f9ccb09
+index 000000000..b5d6cc2a7
 --- /dev/null
 +++ b/include/grub/slaunch.h
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,60 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -98,6 +98,7 @@ index 000000000..f0f9ccb09
 +
 +struct grub_slaunch_module *grub_slaunch_get_modules (void);
 +
++grub_err_t grub_slaunch_init_txt (void);
 +grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
 +
 +void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*));
