@@ -12,6 +12,25 @@
 
 /* Intel TXT Software Developers Guide */
 
+/* Chapter 2, Table 2 MLE/SINIT Capabilities Field Bit Definitions */
+
+#define TXT_PLATFORM_TYPE_LEGACY	0
+#define TXT_PLATFORM_TYPE_CLIENT	1
+#define TXT_PLATFORM_TYPE_SERVER        2
+#define TXT_PLATFORM_TYPE_RESERVED	3
+
+#define TXT_CAPS_GETSEC_WAKE_SUPPORT	(1<<0)
+#define TXT_CAPS_MONITOR_SUPPORT	(1<<1)
+#define TXT_CAPS_ECX_PT_SUPPORT		(1<<2)
+#define TXT_CAPS_STM_SUPPORT		(1<<3)
+#define TXT_CAPS_TPM12_LEGACY_PCR_USAGE	(1<<4)
+#define TXT_CAPS_TPM12_AUTH_PCR_USAGE	(1<<5)
+#define TXT_CAPS_PLATFORM_TYPE		(3<<6)
+#define TXT_CAPS_MAXPHYSADDR_SUPPORT	(1<<8)
+#define TXT_CAPS_TPM20_EVLOG_SUPPORT	(1<<9)
+#define TXT_CAPS_CBNT_SUPPORT		(1<<10)
+/* Rest is reserved */
+
 /* Appendix A TXT Execution Technology Authenticated Code Modules */
 /* A.1 Authenticated Code Module Format */
 
@@ -53,6 +72,28 @@ struct txt_acm_header {
 	u32 key_size;
 	u32 scratch_size;
 	/* RSA Pub Key and Signature */
+} __attribute__((packed));
+
+#define TXT_ACM_UUID "\xaa\x3a\xc0\x7f\xa7\x46\xdb\x18\x2e\xac\x69\x8f\x8d\x41\x7f\x5a"
+
+#define TXT_ACM_CHIPSET_TYPE_BIOS	0
+#define TXT_ACM_CHIPSET_TYPE_SINIT	1
+#define TXT_ACM_CHIPSET_TYPE_BIOS_RACM	8
+#define TXT_ACM_CHIPSET_TYPE_SINIT_RACM	9
+
+struct txt_acm_info_table {
+	u8 uuid[16];
+	u8 chipset_acm_type;
+	u8 version;
+	u16 length;
+	u32 chipset_id_list;
+	u32 os_sinit_data_ver;
+	u32 min_mle_header_ver;
+	u32 capabilities;
+	u32 acm_version_revision;
+	u32 processor_id_list;
+	/* Version >= 5 */
+	u32 tpm_info_list;
 } __attribute__((packed));
 
 /* Appendix B SMX Interaction with Platform */
