@@ -96,6 +96,33 @@ struct txt_acm_info_table {
 	u32 tpm_info_list;
 } __attribute__((packed));
 
+struct txt_acm_chipset_id_list {
+	u32 count;
+	/* Array of chipset ID structs */
+} __attribute__((packed));
+
+#define TXT_ACM_REVISION_ID_MASK	(1<<0)
+
+struct txt_acm_chipset_id {
+	u32 flags;
+	u16 vendor_id;
+	u16 device_id;
+	u16 revision_id;
+	u8 reserved[6];
+} __attribute__((packed));
+
+struct txt_acm_processor_id_list {
+	u32 count;
+	/* Array of processor ID structs */
+} __attribute__((packed));
+
+struct txt_acm_processor_id {
+	u32 fms;
+	u32 fms_mask;
+	u64 platform_id;
+	u64 platform_mask;
+} __attribute__((packed));
+
 /* Appendix B SMX Interaction with Platform */
 /* B.1 Intel Trusted Execution Technology Configuration Registers */
 
