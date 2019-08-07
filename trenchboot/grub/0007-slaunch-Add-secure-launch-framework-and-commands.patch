@@ -1,4 +1,4 @@
-From f8303dd3014df7ee61c53c5b8ac05a41af0725f1 Mon Sep 17 00:00:00 2001
+From 991c4d01035f4e2aab8ceadd5bc8ea68147f706e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:07:15 -0400
 Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
@@ -8,9 +8,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  grub-core/Makefile.core.def         |   2 +
  grub-core/loader/i386/linux.c       |  18 ++++
  grub-core/loader/i386/slaunch.c     | 198 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c | 102 +++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 104 +++++++++++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 323 insertions(+)
+ 5 files changed, 325 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
@@ -283,10 +283,10 @@ index 000000000..7b416e447
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..bc886d2a4
+index 000000000..8714cfec4
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,104 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -354,13 +354,15 @@ index 000000000..bc886d2a4
 +
 +  slparams = slparams; /* TODO */
 +
-+  sinit_base = find_sinit_module(&sinit_size);
-+
-+  sinit_base = sinit_base;
-+
 +  err = grub_txt_enable_smx_mode ();
 +  if ( err )
 +    return err;
++
++  sinit_base = find_sinit_module (&sinit_size);
++  sinit_base = grub_txt_load_sinit ((struct grub_txt_acm_header *)sinit_base);
++  if ( !sinit_base )
++    return grub_error (GRUB_ERR_BAD_MODULE,
++                       N_("No valid SINIT ACM provided for launch"));
 +
 +  return GRUB_ERR_NONE;
 +}

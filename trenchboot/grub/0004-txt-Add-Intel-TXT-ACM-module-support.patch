@@ -1,4 +1,4 @@
-From 29625fca3b170be958b63cf35fe2fa67790ec395 Mon Sep 17 00:00:00 2001
+From f0cee73df3ca29787aa1c43edbbd7d843c7f665d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:59:18 -0400
 Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support
@@ -6,8 +6,8 @@ Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def       |   1 +
- grub-core/loader/i386/txt/acmod.c | 459 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 460 insertions(+)
+ grub-core/loader/i386/txt/acmod.c | 555 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 556 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/acmod.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -24,10 +24,10 @@ index c2b84d7e0..0c174b60e 100644
  
 diff --git a/grub-core/loader/i386/txt/acmod.c b/grub-core/loader/i386/txt/acmod.c
 new file mode 100644
-index 000000000..b80316038
+index 000000000..33003f34f
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/acmod.c
-@@ -0,0 +1,459 @@
+@@ -0,0 +1,555 @@
 +/*
 + * acmod.c: support functions for use of Intel(r) TXT Authenticated
 + *          Code (AC) Modules
@@ -184,7 +184,7 @@ index 000000000..b80316038
 +  /* This fn assumes that the ACM has already passed the is_acmod() checks */
 +
 +  info_table = get_acmod_info_table (hdr);
-+  if ( info_table == NULL )
++  if ( !info_table )
 +    return NULL;
 +  id_list_off = info_table->chipset_id_list;
 +
@@ -354,6 +354,32 @@ index 000000000..b80316038
 +  return 1;
 +}
 +
++static struct grub_txt_acm_header*
++get_bios_sinit(void *sinit_region_base)
++{
++  grub_uint8_t *txt_heap = grub_txt_get_heap ();
++  struct grub_txt_bios_data *bios_data = grub_txt_bios_data_start (txt_heap);
++  struct grub_txt_acm_header *bios_sinit;
++
++  if ( !sinit_region_base )
++     return NULL;
++
++  if ( bios_data->bios_sinit_size == 0 )
++    return NULL;
++
++  /* BIOS has loaded an SINIT module, so verify that it is valid */
++  /*printk(TBOOT_INFO"BIOS has already loaded an SINIT module\n");*/
++
++  bios_sinit = (struct grub_txt_acm_header *)sinit_region_base;
++
++  /* Is it a valid SINIT module? */
++  if ( !grub_txt_is_sinit_acmod (sinit_region_base, bios_data->bios_sinit_size) ||
++       !grub_txt_acmod_match_platform (bios_sinit) )
++    return NULL;
++
++  return bios_sinit;
++}
++
 +int
 +grub_txt_is_sinit_acmod(const void *acmod_base, grub_uint32_t acmod_size)
 +{
@@ -418,7 +444,7 @@ index 000000000..b80316038
 +
 +  /* Check if chipset vendor/device/revision IDs match */
 +  chipset_id_list = get_acmod_chipset_list (hdr);
-+  if ( chipset_id_list == NULL )
++  if ( !chipset_id_list )
 +    return 0;
 +
 +  /*printk(TBOOT_DETA"\t %x ACM chipset id entries:\n", chipset_id_list->count);*/
@@ -450,7 +476,7 @@ index 000000000..b80316038
 +
 +  /* Check if processor family/model/stepping and platform IDs match */
 +  info_table = get_acmod_info_table (hdr);
-+  if ( info_table == NULL )
++  if ( !info_table )
 +    return 0;
 +
 +  /* Logic inverted from oringal to avoid he if block. Note sure what drives
@@ -460,7 +486,7 @@ index 000000000..b80316038
 +    return 1;
 +
 +  proc_id_list = get_acmod_processor_list(hdr);
-+  if ( proc_id_list == NULL )
++  if ( !proc_id_list )
 +    return 1;
 +
 +  /*printk(TBOOT_DETA"\t %x ACM processor id entries:\n", proc_id_list->count);*/
@@ -486,6 +512,76 @@ index 000000000..b80316038
 +    }
 +
 +  return 1;
++}
++
++struct grub_txt_acm_header*
++grub_txt_load_sinit(struct grub_txt_acm_header *sinit)
++{
++  struct grub_txt_acm_header *bios_sinit;
++  void *sinit_region_base;
++  grub_uint32_t sinit_region_size;
++
++  /*printk(TBOOT_DETA"TXT.SINIT.BASE: %p\n", sinit_region_base);*/
++  /*printk(TBOOT_DETA"TXT.SINIT.SIZE: 0x%x (%u)\n", sinit_region_size, sinit_region_size);*/
++
++  /* get BIOS-reserved region from TXT.SINIT.BASE config reg */
++  sinit_region_base =
++    (void*)(unsigned long)grub_txt_read_reg (GRUB_TXT_SINIT_BASE, 1);
++  sinit_region_size = (grub_uint32_t)grub_txt_read_reg (GRUB_TXT_SINIT_SIZE, 1);
++
++  /* Check if BIOS already loaded an SINIT module there */
++  bios_sinit = get_bios_sinit(sinit_region_base);
++  if ( bios_sinit )
++    {
++      /* No other SINIT was provided so must use one BIOS provided */
++      if ( !sinit )
++        {
++          /*printk(TBOOT_WARN"no SINIT provided by bootloader; using BIOS SINIT\n");*/
++          return bios_sinit;
++        }
++
++      /* Is it newer than the one we've been provided? */
++      if ( bios_sinit->date >= sinit->date )
++        {
++          /*printk(TBOOT_INFO"BIOS-provided SINIT is newer, so using it\n");*/
++          return bios_sinit;    /* yes */
++        }
++      /*else
++         printk(TBOOT_INFO"BIOS-provided SINIT is older: date=%x\n", bios_sinit->date);*/
++    }
++
++  /* BIOS SINIT not present or not valid and none provided */
++  if ( !sinit )
++    return NULL;
++
++  /* Our SINIT is newer than BIOS's (or BIOS did not have one) */
++
++  /* Overflow? */
++  if ( multiply_overflow_u32 (sinit->size, 4) )
++    {
++      /*printk(TBOOT_ERR"sinit size in bytes overflows\n");*/
++      return NULL;
++    }
++
++  /* Make sure our SINIT fits in the reserved region */
++  if ( (sinit->size * 4) > sinit_region_size )
++    {
++      /*printk(TBOOT_ERR"BIOS-reserved SINIT size (%x) is too small for loaded "
++               "SINIT (%x)\n", sinit_region_size, sinit->size*4);*/
++      return NULL;
++    }
++
++  /* SNO no where to copy it */
++  if ( !sinit_region_base )
++    return NULL;
++
++  /* Copy it there */
++  grub_memcpy (sinit_region_base, sinit, sinit->size*4);
++
++  /*printk(TBOOT_DETA"copied SINIT (size=%x) to %p\n", sinit->size*4,
++           sinit_region_base);*/
++
++  return (struct grub_txt_acm_header *)sinit_region_base;
 +}
 -- 
 2.13.6
