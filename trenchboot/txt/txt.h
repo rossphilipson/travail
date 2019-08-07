@@ -133,6 +133,18 @@ struct txt_acm_info_table {
 #define TXT_CMD_NO_SECRETS		0x08e8
 #define TXT_E2STS			0x08f0
 
+union txt_didvid {
+	u64 value;
+	struct {
+		u16 vid;
+		u16 did;
+		u16 rid;
+		u16 id_ext;
+	};
+} __attribute__((packed));
+
+#define TXT_VERSION_DEBUG_FUSED		(1<<31)
+
 /* Appendix C Intel TXT Heap Memory */
 
 /* Ext Data Structs */
@@ -152,7 +164,7 @@ struct txt_heap_ext_data_element
 	/* Data */
 } __attribute__((packed));
 
-#define TXT_HEAP_EXTDATA_TYPE_END		0
+#define TXT_HEAP_EXTDATA_TYPE_END			0
 
 struct txt_heap_end_element {
 	u32 type;
