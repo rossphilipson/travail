@@ -229,11 +229,8 @@ struct txt_bios_data {
 	/* Ext Data Elements */
 } __attribute__((packed));
 
-#define TXT_MAX_EVENT_LOG_SIZE				5*4*1024   /* 4k*5 */
-
 struct txt_os_mle_data {
-	u32 zero_page_addr;
-	u8  event_log_buffer[TXT_MAX_EVENT_LOG_SIZE];
+	/* This structure is implementation specific */
 } __attribute__((packed));
 
 struct txt_os_sinit_data {
