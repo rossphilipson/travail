@@ -1,24 +1,24 @@
-From e0db9b927d79e6473caa61b2f60052e65c71e678 Mon Sep 17 00:00:00 2001
+From 5cdf631803acbd8933e817487897727788303984 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Fri, 14 Dec 2018 12:37:53 -0500
-Subject: [PATCH 2/6] slaunch: Add main secure launch definitions header
+Date: Wed, 7 Aug 2019 15:01:00 -0400
+Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.am  |  3 +++
- include/grub/slaunch.h | 60 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ grub-core/Makefile.am       |  3 +++
+ include/grub/i386/slaunch.h | 60 +++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 63 insertions(+)
- create mode 100644 include/grub/slaunch.h
+ create mode 100644 include/grub/i386/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
-index 3ea8e7ff4..fa8c330ab 100644
+index 3ea8e7ff4..ae6676e6f 100644
 --- a/grub-core/Makefile.am
 +++ b/grub-core/Makefile.am
 @@ -99,6 +99,7 @@ KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/kernel.h
  KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/pxe.h
  KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/int.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/slaunch.h
  endif
  
  if COND_i386_xen_pvh
@@ -26,7 +26,7 @@ index 3ea8e7ff4..fa8c330ab 100644
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/slaunch.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
@@ -34,15 +34,15 @@ index 3ea8e7ff4..fa8c330ab 100644
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
-+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/slaunch.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/slaunch.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/pci.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
-diff --git a/include/grub/slaunch.h b/include/grub/slaunch.h
+diff --git a/include/grub/i386/slaunch.h b/include/grub/i386/slaunch.h
 new file mode 100644
 index 000000000..b5d6cc2a7
 --- /dev/null
-+++ b/include/grub/slaunch.h
++++ b/include/grub/i386/slaunch.h
 @@ -0,0 +1,60 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader

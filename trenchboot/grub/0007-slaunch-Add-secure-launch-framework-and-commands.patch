@@ -1,46 +1,41 @@
-From e334b22f9d14cfc17a7396144436844b4143b8e8 Mon Sep 17 00:00:00 2001
+From f8303dd3014df7ee61c53c5b8ac05a41af0725f1 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Fri, 14 Dec 2018 12:49:37 -0500
-Subject: [PATCH 3/6] slaunch: Add secure launch base framework
+Date: Wed, 7 Aug 2019 15:07:15 -0400
+Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def         |   7 ++
+ grub-core/Makefile.core.def         |   2 +
  grub-core/loader/i386/linux.c       |  18 ++++
  grub-core/loader/i386/slaunch.c     | 198 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c |  62 +++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 102 +++++++++++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 288 insertions(+)
+ 5 files changed, 323 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 269370417..24caa1f13 100644
+index 6a2bd7225..1e4b1c11c 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1807,6 +1807,13 @@ module = {
- };
- 
- module = {
-+  name = slaunch;
+@@ -1811,6 +1811,8 @@ module = {
+   x86 = loader/i386/txt/txt.c;
+   x86 = loader/i386/txt/acmod.c;
+   x86 = loader/i386/txt/verify.c;
 +  x86 = loader/i386/slaunch.c;
 +  x86 = loader/i386/slaunch_txt.c;
-+  enable = x86;
-+};
-+
-+module = {
-   name = fdt;
-   efi = loader/efi/fdt.c;
-   common = lib/fdt.c;
+   enable = x86;
+ };
+ 
 diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
-index d0501e229..8db9b1f34 100644
+index d0501e229..eae1b825c 100644
 --- a/grub-core/loader/i386/linux.c
 +++ b/grub-core/loader/i386/linux.c
 @@ -34,6 +34,7 @@
  #include <grub/i386/relocator.h>
  #include <grub/i18n.h>
  #include <grub/lib/cmdline.h>
-+#include <grub/slaunch.h>
++#include <grub/i386/slaunch.h>
  #include <grub/linux.h>
  #include <grub/machine/kernel.h>
  
@@ -84,7 +79,7 @@ index d0501e229..8db9b1f34 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..1c61f839a
+index 000000000..7b416e447
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
 @@ -0,0 +1,198 @@
@@ -116,7 +111,7 @@ index 000000000..1c61f839a
 +#include <grub/cpu/relocator.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
-+#include <grub/slaunch.h>
++#include <grub/i386/slaunch.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
 +
@@ -288,10 +283,10 @@ index 000000000..1c61f839a
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..7d165f0fd
+index 000000000..bc886d2a4
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,102 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -320,12 +315,52 @@ index 000000000..7d165f0fd
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
 +#include <grub/i386/txt.h>
-+#include <grub/slaunch.h>
++#include <grub/i386/slaunch.h>
++
++static void*
++find_sinit_module(grub_uint32_t *size_out)
++{
++  struct grub_slaunch_module *modules;
++  void *base = NULL;
++
++  *size_out = 0;
++
++  modules = grub_slaunch_get_modules ();
++  if ( !modules )
++    return NULL; /* no external SINIT found */
++
++  do {
++    if ( grub_txt_is_sinit_acmod (modules->addr, modules->size) )
++      {
++        base = modules->addr;
++	if ( grub_txt_acmod_match_platform ((struct grub_txt_acm_header*)base) )
++          {
++            *size_out = modules->size;
++            break;
++          }
++      }
++    modules = modules->next;
++  } while ( modules );
++
++  return base;
++}
 +
 +grub_err_t
 +grub_slaunch_boot_txt (struct grub_slaunch_params *slparams)
 +{
++  grub_err_t err;
++  void *sinit_base;
++  grub_uint32_t sinit_size;
++
 +  slparams = slparams; /* TODO */
++
++  sinit_base = find_sinit_module(&sinit_size);
++
++  sinit_base = sinit_base;
++
++  err = grub_txt_enable_smx_mode ();
++  if ( err )
++    return err;
 +
 +  return GRUB_ERR_NONE;
 +}

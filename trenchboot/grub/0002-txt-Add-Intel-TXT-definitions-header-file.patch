@@ -1,20 +1,20 @@
-From 0104c27f5e98895a8ee0bda73d01501bc5265c04 Mon Sep 17 00:00:00 2001
+From a8764193ef949eeb129d2d7edbdb2ea7e7c45c92 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Fri, 14 Dec 2018 12:56:36 -0500
-Subject: [PATCH 4/6] txt: Add Intel TXT definitions header file
+Date: Wed, 7 Aug 2019 13:53:06 -0400
+Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 478 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 478 insertions(+)
+ include/grub/i386/txt.h | 568 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 568 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..b438acd1a
+index 000000000..7d5e7fc2d
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,478 @@
+@@ -0,0 +1,568 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -42,6 +42,25 @@ index 000000000..b438acd1a
 +#include <grub/i386/mmio.h>
 +
 +/* Intel TXT Software Developers Guide */
++
++/* Chapter 2, Table 2 MLE/SINIT Capabilities Field Bit Definitions */
++
++#define GRUB_TXT_PLATFORM_TYPE_LEGACY        0
++#define GRUB_TXT_PLATFORM_TYPE_CLIENT        1
++#define GRUB_TXT_PLATFORM_TYPE_SERVER        2
++#define GRUB_TXT_PLATFORM_TYPE_RESERVED      3
++
++#define GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT    (1<<0)
++#define GRUB_TXT_CAPS_MONITOR_SUPPORT        (1<<1)
++#define GRUB_TXT_CAPS_ECX_PT_SUPPORT         (1<<2)
++#define GRUB_TXT_CAPS_STM_SUPPORT            (1<<3)
++#define GRUB_TXT_CAPS_TPM12_LEGACY_PCR_USAGE (1<<4)
++#define GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE   (1<<5)
++#define GRUB_TXT_CAPS_PLATFORM_TYPE          (3<<6)
++#define GRUB_TXT_CAPS_MAXPHYSADDR_SUPPORT    (1<<8)
++#define GRUB_TXT_CAPS_TPM20_EVLOG_SUPPORT    (1<<9)
++#define GRUB_TXT_CAPS_CBNT_SUPPORT           (1<<10)
++/* Rest is reserved */
 +
 +/* Appendix A TXT Execution Technology Authenticated Code Modules */
 +/* A.1 Authenticated Code Module Format */
@@ -87,6 +106,56 @@ index 000000000..b438acd1a
 +  /* RSA Pub Key and Signature */
 +} GRUB_PACKED;
 +
++#define GRUB_TXT_ACM_UUID "\xaa\x3a\xc0\x7f\xa7\x46\xdb\x18\x2e\xac\x69\x8f\x8d\x41\x7f\x5a"
++
++#define GRUB_TXT_ACM_CHIPSET_TYPE_BIOS		0
++#define GRUB_TXT_ACM_CHIPSET_TYPE_SINIT		1
++#define GRUB_TXT_ACM_CHIPSET_TYPE_BIOS_RACM	8
++#define GRUB_TXT_ACM_CHIPSET_TYPE_SINIT_RACM	9
++
++struct grub_txt_acm_info_table
++{
++  grub_uint8_t uuid[16];
++  grub_uint8_t chipset_acm_type;
++  grub_uint8_t version;
++  grub_uint16_t length;
++  grub_uint32_t chipset_id_list;
++  grub_uint32_t os_sinit_data_ver;
++  grub_uint32_t min_mle_header_ver;
++  grub_uint32_t capabilities;
++  grub_uint32_t acm_version_revision;
++  grub_uint32_t processor_id_list;
++  /* Version >= 5 */
++  grub_uint32_t tpm_info_list;
++} GRUB_PACKED;
++
++struct grub_txt_acm_chipset_id_list {
++  grub_uint32_t count;
++        /* Array of chipset ID structs */
++} GRUB_PACKED;
++
++#define GRUB_TXT_ACM_REVISION_ID_MASK	(1<<0)
++
++struct grub_txt_acm_chipset_id {
++  grub_uint32_t flags;
++  grub_uint16_t vendor_id;
++  grub_uint16_t device_id;
++  grub_uint16_t revision_id;
++  grub_uint8_t reserved[6];
++} GRUB_PACKED;
++
++struct grub_txt_acm_processor_id_list {
++  grub_uint32_t count;
++        /* Array of processor ID structs */
++} GRUB_PACKED;
++
++struct grub_txt_acm_processor_id {
++  grub_uint32_t fms;
++  grub_uint32_t fms_mask;
++  grub_uint64_t platform_id;
++  grub_uint64_t platform_mask;
++} GRUB_PACKED;
++
 +/* Appendix B SMX Interaction with Platform */
 +/* B.1 Intel Trusted Execution Technology Configuration Registers */
 +
@@ -123,6 +192,20 @@ index 000000000..b438acd1a
 +#define GRUB_TXT_CMD_SECRETS		0x08e0
 +#define GRUB_TXT_CMD_NO_SECRETS		0x08e8
 +#define GRUB_TXT_E2STS			0x08f0
++
++union grub_txt_didvid
++{
++  grub_uint64_t value;
++  struct
++  {
++    grub_uint16_t vid;
++    grub_uint16_t did;
++    grub_uint16_t rid;
++    grub_uint16_t id_ext;
++  };
++} GRUB_PACKED;
++
++#define GRUB_TXT_VERSION_DEBUG_FUSED	(1<<31)
 +
 +/* Appendix C Intel TXT Heap Memory */
 +
@@ -235,8 +318,7 @@ index 000000000..b438acd1a
 +
 +struct grub_txt_os_mle_data
 +{
-+  grub_uint32_t zero_page_addr;
-+  grub_uint8_t  event_log_buffer[GRUB_TXT_MAX_EVENT_LOG_SIZE];
++  /* This structure is implementation specific */
 +} GRUB_PACKED;
 +
 +struct grub_txt_os_sinit_data
@@ -489,8 +571,16 @@ index 000000000..b438acd1a
 +  __asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
 +}
 +
++/* External Functions */
++
 +grub_err_t
 +grub_txt_enable_smx_mode (void);
++
++int
++grub_txt_is_sinit_acmod(const void *acmod_base, grub_uint32_t acmod_size);
++
++int
++grub_txt_acmod_match_platform(struct grub_txt_acm_header *hdr);
 +
 +#endif
 -- 
