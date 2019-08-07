@@ -1,20 +1,20 @@
-From fcd65296c665ea00a7d3d64a55ce1feaa207afac Mon Sep 17 00:00:00 2001
+From be7dd0a80471d7d44193d2cb2376318e446fa455 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 571 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 571 insertions(+)
+ include/grub/i386/txt.h | 575 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 575 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..382e45a4d
+index 000000000..b417ef05d
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,571 @@
+@@ -0,0 +1,575 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -129,14 +129,16 @@ index 000000000..382e45a4d
 +  grub_uint32_t tpm_info_list;
 +} GRUB_PACKED;
 +
-+struct grub_txt_acm_chipset_id_list {
++struct grub_txt_acm_chipset_id_list
++{
 +  grub_uint32_t count;
 +        /* Array of chipset ID structs */
 +} GRUB_PACKED;
 +
 +#define GRUB_TXT_ACM_REVISION_ID_MASK	(1<<0)
 +
-+struct grub_txt_acm_chipset_id {
++struct grub_txt_acm_chipset_id
++{
 +  grub_uint32_t flags;
 +  grub_uint16_t vendor_id;
 +  grub_uint16_t device_id;
@@ -144,12 +146,14 @@ index 000000000..382e45a4d
 +  grub_uint8_t reserved[6];
 +} GRUB_PACKED;
 +
-+struct grub_txt_acm_processor_id_list {
++struct grub_txt_acm_processor_id_list
++{
 +  grub_uint32_t count;
 +        /* Array of processor ID structs */
 +} GRUB_PACKED;
 +
-+struct grub_txt_acm_processor_id {
++struct grub_txt_acm_processor_id
++{
 +  grub_uint32_t fms;
 +  grub_uint32_t fms_mask;
 +  grub_uint64_t platform_id;

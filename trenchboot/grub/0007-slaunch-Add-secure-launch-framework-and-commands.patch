@@ -1,4 +1,4 @@
-From 991c4d01035f4e2aab8ceadd5bc8ea68147f706e Mon Sep 17 00:00:00 2001
+From 8ae72c4264e3d293c5e9edf14a17e12023358c84 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:07:15 -0400
 Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
@@ -6,11 +6,11 @@ Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def         |   2 +
- grub-core/loader/i386/linux.c       |  18 ++++
- grub-core/loader/i386/slaunch.c     | 198 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c | 104 +++++++++++++++++++
+ grub-core/loader/i386/linux.c       |  18 +++
+ grub-core/loader/i386/slaunch.c     | 296 ++++++++++++++++++++++++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 104 +++++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 325 insertions(+)
+ 5 files changed, 423 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
@@ -79,10 +79,10 @@ index d0501e229..eae1b825c 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..7b416e447
+index 000000000..90b51c230
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,296 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -111,9 +111,102 @@ index 000000000..7b416e447
 +#include <grub/cpu/relocator.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
++#include <grub/i386/mmio.h>
 +#include <grub/i386/slaunch.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
++
++/* Minimal TPM support to close any open localities before launch */
++#define TPM_MMIO_BASE	0xFED40000
++
++#define ACCESS_RELINQUISH_LOCALITY	0x20
++#define TPM_LOC_CTRL			0x0008
++
++#define TPM_INTERFACE_ID_0	0x30
++#define TPM_TIS_INTF_ACTIVE	0x00
++#define TPM_CRB_INTF_ACTIVE	0x01
++
++union grub_tpm_interface_id
++{
++  grub_uint32_t val;
++  struct
++  {
++    grub_uint32_t interface_type:4;
++    grub_uint32_t unused:28;
++  };
++} GRUB_PACKED;
++
++#define TPM_INTF_CAPABILITY_0	0x14
++#define TPM12_TIS_INTF_12	0x00
++#define TPM12_TIS_INTF_13	0x02
++#define TPM20_TIS_INTF_13	0x03
++
++union grub_tpm_intf_capability
++{
++  grub_uint32_t val;
++  struct
++  {
++    grub_uint32_t unused1:28;
++    grub_uint32_t interface_version:3;
++    grub_uint32_t unused2:1;
++  };
++} GRUB_PACKED;
++
++union grub_tpm_loc_ctrl
++{
++  grub_uint32_t val;
++  struct
++  {
++    grub_uint32_t request_access:1;
++    grub_uint32_t relinquish:1;
++    grub_uint32_t seize:1;
++    grub_uint32_t reset_establishment_bit:1;
++    grub_uint32_t _reserved:28;
++  };
++};
++
++static grub_err_t
++grub_tpm_close_locality(void)
++{
++  union grub_tpm_intf_capability intf_cap;
++  union grub_tpm_interface_id intf_id;
++  union grub_tpm_loc_ctrl loc_ctrl;
++  int is_tis = 1;
++  void *addr;
++
++  addr = (void *)(unsigned long)(TPM_MMIO_BASE + TPM_INTF_CAPABILITY_0);
++  intf_cap.val = grub_readl(addr);
++
++  if ( (intf_cap.interface_version == TPM12_TIS_INTF_12) ||
++       (intf_cap.interface_version == TPM12_TIS_INTF_13))
++    {
++      /* This is a TPM 1.2 using TIS */
++      is_tis = 1;
++      goto done;
++    }
++
++  /* This is TPM 2.0 assuming TIS for now */
++  addr = (void *)(unsigned long)(TPM_MMIO_BASE + TPM_INTERFACE_ID_0);
++  intf_id.val = grub_readl(addr);
++  if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE)
++    is_tis = 0; /* TPM 2.0 using CRB */
++
++  if (is_tis)
++    {
++      addr = (void *)(unsigned long)(TPM_MMIO_BASE);
++      grub_writel(ACCESS_RELINQUISH_LOCALITY, addr);
++    }
++  else
++    {
++      addr = (void *)(unsigned long)(TPM_MMIO_BASE + TPM_LOC_CTRL);
++      loc_ctrl.relinquish = 1;
++      grub_writel(loc_ctrl.val , addr);
++    }
++
++done:
++
++  return GRUB_ERR_NONE;
++}
 +
 +static grub_dl_t my_mod;
 +static struct grub_slaunch_module *modules = NULL, *modules_last = NULL;
@@ -171,6 +264,7 @@ index 000000000..7b416e447
 +  grub_uint32_t manufacturer[3];
 +  grub_uint32_t eax;
 +  grub_uint64_t msr_value;
++  grub_err_t err;
 +
 +  if (argc == 0)
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("argument expected"));
@@ -190,7 +284,11 @@ index 000000000..7b416e447
 +      if (grub_memcmp (manufacturer, "GenuineIntel", 12) != 0)
 +        return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("Intel platform required for TXT"));
 +
-+      return grub_slaunch_init_txt ();
++      err = grub_slaunch_init_txt ();
++      if (!err)
++        err = grub_tpm_close_locality();
++
++      return err;
 +    }
 +  else
 +    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("invalid argument"));
