@@ -1,20 +1,20 @@
-From be7dd0a80471d7d44193d2cb2376318e446fa455 Mon Sep 17 00:00:00 2001
+From 4c1bc0e189e05d39510bad8c94da19c460ecffce Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 575 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 575 insertions(+)
+ include/grub/i386/txt.h | 578 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 578 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..b417ef05d
+index 000000000..8c39d4e56
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,575 @@
+@@ -0,0 +1,578 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -588,6 +588,9 @@ index 000000000..b417ef05d
 +
 +struct grub_txt_acm_header*
 +grub_txt_load_sinit(struct grub_txt_acm_header *sinit);
++
++grub_err_t
++grub_txt_verify_platform(void);
 +
 +#endif
 -- 

@@ -1,4 +1,4 @@
-From 8ae72c4264e3d293c5e9edf14a17e12023358c84 Mon Sep 17 00:00:00 2001
+From 2c5cad3170911728692b36872facd7acd98631bb Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:07:15 -0400
 Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
@@ -8,9 +8,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  grub-core/Makefile.core.def         |   2 +
  grub-core/loader/i386/linux.c       |  18 +++
  grub-core/loader/i386/slaunch.c     | 296 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c | 104 +++++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 108 +++++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 423 insertions(+)
+ 5 files changed, 427 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
@@ -79,7 +79,7 @@ index d0501e229..eae1b825c 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..90b51c230
+index 000000000..d2239f94e
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
 @@ -0,0 +1,296 @@
@@ -191,6 +191,8 @@ index 000000000..90b51c230
 +  if (intf_id.interface_type == TPM_CRB_INTF_ACTIVE)
 +    is_tis = 0; /* TPM 2.0 using CRB */
 +
++done:
++
 +  if (is_tis)
 +    {
 +      addr = (void *)(unsigned long)(TPM_MMIO_BASE);
@@ -202,8 +204,6 @@ index 000000000..90b51c230
 +      loc_ctrl.relinquish = 1;
 +      grub_writel(loc_ctrl.val , addr);
 +    }
-+
-+done:
 +
 +  return GRUB_ERR_NONE;
 +}
@@ -381,10 +381,10 @@ index 000000000..90b51c230
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..8714cfec4
+index 000000000..824e72b82
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,108 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -461,6 +461,10 @@ index 000000000..8714cfec4
 +  if ( !sinit_base )
 +    return grub_error (GRUB_ERR_BAD_MODULE,
 +                       N_("No valid SINIT ACM provided for launch"));
++
++  err = grub_txt_verify_platform ();
++  if ( err )
++    return err;
 +
 +  return GRUB_ERR_NONE;
 +}

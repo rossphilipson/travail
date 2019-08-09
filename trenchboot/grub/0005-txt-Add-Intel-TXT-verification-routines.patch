@@ -1,4 +1,4 @@
-From 4cbdea42d763684f8620d572a558048d40479bfe Mon Sep 17 00:00:00 2001
+From 1b115182a35a59fc601c22ef409b35f805e0bbf4 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 14:46:17 -0400
 Subject: [PATCH 5/7] txt: Add Intel TXT verification routines
@@ -6,8 +6,8 @@ Subject: [PATCH 5/7] txt: Add Intel TXT verification routines
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def        |  1 +
- grub-core/loader/i386/txt/verify.c | 66 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 67 insertions(+)
+ grub-core/loader/i386/txt/verify.c | 89 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 90 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/verify.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -24,10 +24,10 @@ index 0c174b60e..6a2bd7225 100644
  
 diff --git a/grub-core/loader/i386/txt/verify.c b/grub-core/loader/i386/txt/verify.c
 new file mode 100644
-index 000000000..7b8d7089f
+index 000000000..f26b1675f
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/verify.c
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,89 @@
 +/*
 + * verify.c: verify that platform and processor supports Intel(r) TXT
 + *
@@ -94,6 +94,29 @@ index 000000000..7b8d7089f
 +#include <grub/i386/txt.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
++
++grub_err_t
++grub_txt_verify_platform(void)
++{
++  /* TODO
++   * TXT Specification
++   * 4.5 SGX Requirement for TXT Platform
++   * Secure Launch currently does not support interop with SGX since it does
++   * not have TPM support to write the SE NVRAM index.
++   * Eventually need the verify_IA32_se_svn_status routine to be called here.
++   */
++
++  /* TODO need the rest of the verify code here. Note that supports_txt() steps
++   * have already been effectively done in earlier slaunch code. Don't bother
++   * with vtd_bios_enabled().
++   */
++
++  /* TODO move a the heap verify code and verify_bios_data in here
++   * and fixup.
++   */
++
++  return GRUB_ERR_NONE;
++}
 -- 
 2.13.6
 
