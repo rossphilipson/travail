@@ -1,4 +1,4 @@
-From f0cee73df3ca29787aa1c43edbbd7d843c7f665d Mon Sep 17 00:00:00 2001
+From 452c74e1f0a43855d337ec6d808e41ad0cf22f11 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:59:18 -0400
 Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support
@@ -24,7 +24,7 @@ index c2b84d7e0..0c174b60e 100644
  
 diff --git a/grub-core/loader/i386/txt/acmod.c b/grub-core/loader/i386/txt/acmod.c
 new file mode 100644
-index 000000000..33003f34f
+index 000000000..c7707004e
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/acmod.c
 @@ -0,0 +1,555 @@
@@ -105,7 +105,7 @@ index 000000000..33003f34f
 + *   it will also fail because no unsigned number is less than zero.
 + */
 +static inline int
-+multiply_overflow_u32(grub_uint32_t x, grub_uint32_t y)
++multiply_overflow_u32 (grub_uint32_t x, grub_uint32_t y)
 +{
 +  return (x > 0) ? ((((grub_uint32_t)(~0))/x) < y) : 0;
 +}
@@ -117,14 +117,14 @@ index 000000000..33003f34f
 + *    overflow the type and end up with a smaller value and
 + *    return TRUE - that they did overflow.  i.e.
 + */
-+static inline int plus_overflow_u32(grub_uint32_t x, grub_uint32_t y)
++static inline int plus_overflow_u32 (grub_uint32_t x, grub_uint32_t y)
 +{
 +  return ((((grub_uint32_t)(~0)) - x) < y);
 +}
 +
 +
 +static struct grub_txt_acm_info_table*
-+get_acmod_info_table(struct grub_txt_acm_header* hdr)
++get_acmod_info_table (struct grub_txt_acm_header* hdr)
 +{
 +  grub_uint32_t user_area_off;
 +
@@ -175,7 +175,7 @@ index 000000000..33003f34f
 +}
 +
 +static struct grub_txt_acm_chipset_id_list*
-+get_acmod_chipset_list(struct grub_txt_acm_header *hdr)
++get_acmod_chipset_list (struct grub_txt_acm_header *hdr)
 +{
 +  struct grub_txt_acm_info_table *info_table;
 +  grub_uint32_t size, id_list_off;
@@ -243,7 +243,7 @@ index 000000000..33003f34f
 +}
 +
 +static struct grub_txt_acm_processor_id_list*
-+get_acmod_processor_list(struct grub_txt_acm_header* hdr)
++get_acmod_processor_list (struct grub_txt_acm_header* hdr)
 +{
 +  struct grub_txt_acm_info_table *info_table;
 +  grub_uint32_t size, id_list_off;
@@ -311,7 +311,7 @@ index 000000000..33003f34f
 +}
 +
 +static int
-+is_acmod(const void *acmod_base, grub_uint32_t acmod_size,
++is_acmod (const void *acmod_base, grub_uint32_t acmod_size,
 +         grub_uint8_t *type_out)
 +{
 +  struct grub_txt_acm_header *acm_hdr =
@@ -355,7 +355,7 @@ index 000000000..33003f34f
 +}
 +
 +static struct grub_txt_acm_header*
-+get_bios_sinit(void *sinit_region_base)
++get_bios_sinit (void *sinit_region_base)
 +{
 +  grub_uint8_t *txt_heap = grub_txt_get_heap ();
 +  struct grub_txt_bios_data *bios_data = grub_txt_bios_data_start (txt_heap);
@@ -381,7 +381,7 @@ index 000000000..33003f34f
 +}
 +
 +int
-+grub_txt_is_sinit_acmod(const void *acmod_base, grub_uint32_t acmod_size)
++grub_txt_is_sinit_acmod (const void *acmod_base, grub_uint32_t acmod_size)
 +{
 +  grub_uint8_t type;
 +
@@ -395,7 +395,7 @@ index 000000000..33003f34f
 +}
 +
 +int
-+grub_txt_acmod_match_platform(struct grub_txt_acm_header *hdr)
++grub_txt_acmod_match_platform (struct grub_txt_acm_header *hdr)
 +{
 +  union grub_txt_didvid didvid;
 +  grub_uint32_t ver, fms, ign, i;
@@ -515,7 +515,7 @@ index 000000000..33003f34f
 +}
 +
 +struct grub_txt_acm_header*
-+grub_txt_load_sinit(struct grub_txt_acm_header *sinit)
++grub_txt_load_sinit (struct grub_txt_acm_header *sinit)
 +{
 +  struct grub_txt_acm_header *bios_sinit;
 +  void *sinit_region_base;
@@ -530,7 +530,7 @@ index 000000000..33003f34f
 +  sinit_region_size = (grub_uint32_t)grub_txt_read_reg (GRUB_TXT_SINIT_SIZE, 1);
 +
 +  /* Check if BIOS already loaded an SINIT module there */
-+  bios_sinit = get_bios_sinit(sinit_region_base);
++  bios_sinit = get_bios_sinit (sinit_region_base);
 +  if ( bios_sinit )
 +    {
 +      /* No other SINIT was provided so must use one BIOS provided */

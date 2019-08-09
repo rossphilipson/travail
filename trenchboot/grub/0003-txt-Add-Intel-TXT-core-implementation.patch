@@ -1,13 +1,13 @@
-From 551db1282332a85b75884bc5151334dabee13744 Mon Sep 17 00:00:00 2001
+From f287a488431db4ce85279c9cefe3e4b0b0ae7fa3 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def     |   6 ++
- grub-core/loader/i386/txt/txt.c | 120 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 126 insertions(+)
+ grub-core/Makefile.core.def     |   6 +
+ grub-core/loader/i386/txt/txt.c | 252 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 258 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..5a0b92c11
+index 000000000..288928934
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,252 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -97,14 +97,10 @@ index 000000000..5a0b92c11
 +#include <grub/cpu/relocator.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
++#include <grub/i386/crfr.h>
 +#include <grub/i386/txt.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
-+
-+/* TODO if you use this define in the asm below, the grub build thinks it is
-+ * a symbol and then some script chokes and dies.
-+ */
-+#define GRUB_CPU_CR4_SMX_ON	0x00004000
 +
 +#define GRUB_SMX_ALL_CAPABILITIES \
 +  (GRUB_SMX_CAPABILITY_ENTERACCS | \
@@ -122,10 +118,8 @@ index 000000000..5a0b92c11
 +  grub_err_t err;
 +  const char *msg;
 +
-+  asm volatile ("movq %%cr4, %%rax\n\t"
-+                "orl $0x00004000, %%eax\n\t"
-+                "movq %%rax, %%cr4\n\t"
-+                : : : "%rax");
++  grub_write_control_register (GRUB_CR4,
++    grub_read_control_register (GRUB_CR4) | GRUB_CR4_X86_SMXE);
 +
 +  caps = grub_txt_getsec_capabilities (0);
 +
@@ -146,12 +140,150 @@ index 000000000..5a0b92c11
 +
 +fail:
 +  /* Disable SMX mode on failure */
-+  asm volatile ("movq %%cr4, %%rax\n\t"
-+                "andl $(~0x00004000), %%eax\n\t"
-+                "movq %%rax, %%cr4\n\t"
-+                : : : "%rax");
++  grub_write_control_register (GRUB_CR4,
++    grub_read_control_register (GRUB_CR4) & ~GRUB_CR4_X86_SMXE);
 +
 +  return grub_error (err, N_(msg));
++}
++
++void
++grub_txt_smx_parameters (struct grub_smx_parameters *params)
++{
++  grub_uint32_t index = 0, eax, ebx, ecx, param_type;
++
++  grub_memset (params, 0, sizeof(struct grub_smx_supported_versions));
++  params->max_acm_size = GRUB_SMX_DEFAULT_MAX_ACM_SIZE;
++  params->acm_memory_types = GRUB_SMX_DEFAULT_ACM_MEMORY_TYPE;
++  params->senter_controls = GRUB_SMX_DEFAULT_SENTER_CONTROLS;
++
++  do {
++    grub_txt_getsec_parameters (index, &eax, &ebx, &ecx);
++    param_type = eax & GRUB_SMX_PARAMETER_TYPE_MASK;
++
++    switch ( param_type )
++    {
++    case GRUB_SMX_PARAMETER_NULL:
++      break; /* this means done */
++    case GRUB_SMX_PARAMETER_ACM_VERSIONS:
++      if ( params->version_count == GRUB_SMX_PARAMETER_MAX_VERSIONS )
++       {
++         /* TODO log warning about too many versions */
++         break;
++       }
++       params->versions[params->version_count].mask = ebx;
++       params->versions[params->version_count++].version = ecx;
++      break;
++    case GRUB_SMX_PARAMETER_MAX_ACM_SIZE:
++      params->max_acm_size = GRUB_SMX_GET_MAX_ACM_SIZE (eax);
++      break;
++    case GRUB_SMX_PARAMETER_ACM_MEMORY_TYPES:
++      params->acm_memory_types = GRUB_SMX_GET_ACM_MEMORY_TYPES (eax);
++      break;
++    case GRUB_SMX_PARAMETER_SENTER_CONTROLS:
++      params->senter_controls = GRUB_SMX_GET_SENTER_CONTROLS (eax);
++      break;
++    case GRUB_SMX_PARAMETER_TXT_EXTENSIONS:
++      params->txt_feature_ext_flags = GRUB_SMX_GET_TXT_EXT_FEATURES (eax);
++      break;
++    default:
++      /* TODO log warning about unknown param */
++      param_type = GRUB_SMX_PARAMETER_NULL;
++    }
++  } while ( param_type != GRUB_SMX_PARAMETER_NULL );
++
++  /* If no ACM versions were found, set the default one */
++  if ( !params->version_count )
++  {
++    params->versions[0].mask = GRUB_SMX_DEFAULT_VERSION_MASK;
++    params->versions[0].version = GRUB_SMX_DEFAULT_VERSION;
++    params->version_count++;
++  }
++}
++
++grub_err_t
++grub_txt_prepare_cpu (void)
++{
++  unsigned long eflags, cr0;
++  grub_uint64_t mcg_cap, mcg_stat;
++  struct grub_smx_parameters params;
++  grub_uint32_t i;
++
++  cr0 = grub_read_control_register (GRUB_CR0);
++
++  /* Must be in either IA-32e or protected mode */
++#ifdef __x86_64__
++  {
++    grub_uint64_t efer;
++    efer = grub_rdmsr (GRUB_MSR_X86_EFER);
++    if ( !(efer & GRUB_MSR_EFER_LMA) )
++      return grub_error (GRUB_ERR_BAD_DEVICE,
++              N_("system must be in IA-32e mode to do secure launch"));
++  }
++#else
++  if ( !(cr0 & GRUB_CR0_X86_PE) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++            N_("system must be in protected mode to do secure launch"));
++#endif
++
++  /* Cache must be enabled (CR0.CD = CR0.NW = 0) */
++  if ( cr0 & GRUB_CR0_X86_CD )
++    cr0 &= ~GRUB_CR0_X86_CD;
++
++  if ( cr0 & GRUB_CR0_X86_NW )
++    cr0 &= ~GRUB_CR0_X86_NW;
++
++  /* Native FPU error reporting must be enabled for proper
++   * interaction behavior.
++   */
++  if ( !(cr0 & GRUB_CR0_X86_NE) )
++    cr0 |= GRUB_CR0_X86_NE;
++
++  grub_write_control_register (GRUB_CR0, cr0);
++
++  /* Cannot be in virtual-8086 mode (EFLAGS.VM=1) */
++  eflags = grub_read_flags_register ();
++  if ( eflags & GRUB_EFLAGS_X86_VM )
++    grub_write_flags_register (eflags | ~GRUB_EFLAGS_X86_VM);
++
++  /*printk(TBOOT_INFO"CR0 and EFLAGS OK\n");*/
++
++
++  /* Verify all machine check status registers are clear (unless
++   * support preserving them).
++   */
++
++  /* No machine check in progress (IA32_MCG_STATUS.MCIP=1) */
++  mcg_stat = grub_rdmsr (GRUB_MSR_X86_MCG_STATUS);
++  if ( mcg_stat & GRUB_MSR_MCG_STATUS_MCIP )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++            N_("machine check in progress during secure launch"));
++
++  grub_txt_smx_parameters (&params);
++
++  /* Check if all machine check regs are clear */
++  mcg_cap = grub_rdmsr (GRUB_MSR_X86_MCG_CAP);
++  for ( i = 0; i < (mcg_cap & GRUB_MSR_MCG_BANKCNT_MASK); i++ )
++  {
++     mcg_stat = grub_rdmsr (GRUB_MSR_X86_MC0_STATUS + 4*i);
++     if ( mcg_stat & (1ULL << 63) )
++     {
++       if ( !(params.txt_feature_ext_flags & GRUB_SMX_MACHINE_CHECK_HANLDING) )
++         return grub_error (GRUB_ERR_BAD_DEVICE,
++                      N_("secure launch MCG[%u] = %Lx ERROR"), i, mcg_stat);
++     }
++  }
++
++  /* TODO logging maybe...
++  if ( params.txt_feature_ext_flags & GRUB_SMX_MACHINE_CHECK_HANLDING )
++    printk(TBOOT_INFO"supports preserving machine check errors\n");
++  else
++    printk(TBOOT_INFO"no machine check errors\n");
++
++  if ( params.txt_feature_ext_flags & GRUB_SMX_PROCESSOR_BASE_SCRTM )
++    printk(TBOOT_INFO"CPU support processor-based S-CRTM\n");
++  */
++
++  return GRUB_ERR_NONE;
 +}
 -- 
 2.13.6

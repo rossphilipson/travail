@@ -1,4 +1,4 @@
-From 1b115182a35a59fc601c22ef409b35f805e0bbf4 Mon Sep 17 00:00:00 2001
+From cf71e0d7fa397423401e391c3902648921f9eba7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 14:46:17 -0400
 Subject: [PATCH 5/7] txt: Add Intel TXT verification routines
@@ -24,7 +24,7 @@ index 0c174b60e..6a2bd7225 100644
  
 diff --git a/grub-core/loader/i386/txt/verify.c b/grub-core/loader/i386/txt/verify.c
 new file mode 100644
-index 000000000..f26b1675f
+index 000000000..ab91c24f6
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/verify.c
 @@ -0,0 +1,89 @@
@@ -96,7 +96,7 @@ index 000000000..f26b1675f
 +GRUB_MOD_LICENSE("GPLv3+");
 +
 +grub_err_t
-+grub_txt_verify_platform(void)
++grub_txt_verify_platform (void)
 +{
 +  /* TODO
 +   * TXT Specification

@@ -1,20 +1,20 @@
-From 4c1bc0e189e05d39510bad8c94da19c460ecffce Mon Sep 17 00:00:00 2001
+From d970eeaa3d0a5402e97fd2edc0547ec8b6b63558 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 578 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 578 insertions(+)
+ include/grub/i386/txt.h | 631 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 631 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..8c39d4e56
+index 000000000..19757afa9
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,578 @@
+@@ -0,0 +1,631 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -513,7 +513,7 @@ index 000000000..8c39d4e56
 +{
 +  grub_uint32_t caps;
 +
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n"
++  asm volatile (".byte 0x0f,0x37\n"
 +                        : "=a" (caps)
 +                        : "a" (GRUB_SMX_LEAF_CAPABILITIES), "b" (index));
 +  return caps;
@@ -522,7 +522,7 @@ index 000000000..8c39d4e56
 +static inline void
 +grub_txt_getsec_enteraccs (grub_uint32_t acm_phys_addr, grub_uint32_t acm_size)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" :
++  asm volatile (".byte 0x0f,0x37\n" :
 +                        : "a" (GRUB_SMX_LEAF_ENTERACCS),
 +                          "b" (acm_phys_addr), "c" (acm_size));
 +}
@@ -530,14 +530,14 @@ index 000000000..8c39d4e56
 +static inline void
 +grub_txt_getsec_exitac (grub_uint32_t near_jump)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" :
++  asm volatile (".byte 0x0f,0x37\n" :
 +                        : "a" (GRUB_SMX_LEAF_EXITAC), "b" (near_jump));
 +}
 +
 +static inline void
 +grub_txt_getsec_senter (grub_uint32_t acm_phys_addr, grub_uint32_t acm_size)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" :
++  asm volatile (".byte 0x0f,0x37\n" :
 +                        : "a" (GRUB_SMX_LEAF_SENTER),
 +                          "b" (acm_phys_addr), "c" (acm_size));
 +}
@@ -545,10 +545,57 @@ index 000000000..8c39d4e56
 +static inline void
 +grub_txt_getsec_sexit (void)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_SEXIT));
++  asm volatile (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_SEXIT));
 +}
 +
-+#define GRUB_SMX_PARAMETER_TYPE_MASK	0x1f
++#define GRUB_SMX_PARAMETER_TYPE_MASK		0x1f
++#define GRUB_SMX_PARAMETER_NULL			0
++#define GRUB_SMX_PARAMETER_ACM_VERSIONS		1
++#define GRUB_SMX_PARAMETER_MAX_ACM_SIZE		2
++#define GRUB_SMX_PARAMETER_ACM_MEMORY_TYPES	3
++#define GRUB_SMX_PARAMETER_SENTER_CONTROLS	4
++#define GRUB_SMX_PARAMETER_TXT_EXTENSIONS	5
++
++
++#define GRUB_SMX_PARAMETER_MAX_VERSIONS	0x20
++
++#define GRUB_SMX_GET_MAX_ACM_SIZE(v)	((v & ~GRUB_SMX_PARAMETER_TYPE_MASK)*0x20)
++
++#define GRUB_SMX_ACM_MEMORY_TYPE_UC	0x00000100
++#define GRUB_SMX_ACM_MEMORY_TYPE_WC	0x00000200
++#define GRUB_SMX_ACM_MEMORY_TYPE_WT	0x00001000
++#define GRUB_SMX_ACM_MEMORY_TYPE_WP	0x00002000
++#define GRUB_SMX_ACM_MEMORY_TYPE_WB	0x00004000
++
++#define GRUB_SMX_GET_ACM_MEMORY_TYPES(v) (v & ~GRUB_SMX_PARAMETER_TYPE_MASK)
++
++#define GRUB_SMX_GET_SENTER_CONTROLS(v)	((v & 0x7f00) >> 8)
++
++#define GRUB_SMX_PROCESSOR_BASE_SCRTM	0x00000020
++#define GRUB_SMX_MACHINE_CHECK_HANLDING	0x00000040
++#define GRUB_SMX_GET_TXT_EXT_FEATURES(v) (v & (GRUB_SMX_PROCESSOR_BASE_SCRTM|GRUB_SMX_MACHINE_CHECK_HANLDING))
++
++#define GRUB_SMX_DEFAULT_VERSION	0x0
++#define GRUB_SMX_DEFAULT_VERSION_MASK	0xffffffff
++#define GRUB_SMX_DEFAULT_MAX_ACM_SIZE	0x8000 /* 32K */
++#define GRUB_SMX_DEFAULT_ACM_MEMORY_TYPE GRUB_SMX_ACM_MEMORY_TYPE_UC
++#define GRUB_SMX_DEFAULT_SENTER_CONTROLS 0x0
++
++struct grub_smx_supported_versions
++{
++  grub_uint32_t mask;
++  grub_uint32_t version;
++} GRUB_PACKED;
++
++struct grub_smx_parameters
++{
++  struct grub_smx_supported_versions versions[GRUB_SMX_PARAMETER_MAX_VERSIONS];
++  grub_uint32_t version_count;
++  grub_uint32_t max_acm_size;
++  grub_uint32_t acm_memory_types;
++  grub_uint32_t senter_controls;
++  grub_uint32_t txt_feature_ext_flags;
++} GRUB_PACKED;
 +
 +static inline void
 +grub_txt_getsec_parameters (grub_uint32_t index, grub_uint32_t *eax_out,
@@ -557,7 +604,7 @@ index 000000000..8c39d4e56
 +  if (!eax_out || !ebx_out || !ecx_out)
 +    return;
 +
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n"
++  asm volatile (".byte 0x0f,0x37\n"
 +                        : "=a" (*eax_out), "=b" (*ebx_out), "=c" (*ecx_out)
 +                        : "a" (GRUB_SMX_LEAF_PARAMETERS), "b" (index));
 +}
@@ -565,14 +612,14 @@ index 000000000..8c39d4e56
 +static inline void
 +grub_txt_getsec_smctrl (void)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" :
++  asm volatile (".byte 0x0f,0x37\n" :
 +                        : "a" (GRUB_SMX_LEAF_SMCTRL), "b" (0));
 +}
 +
 +static inline void
 +grub_txt_getsec_wakeup (void)
 +{
-+  __asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
++  asm volatile (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
 +}
 +
 +/* External Functions */
@@ -580,17 +627,23 @@ index 000000000..8c39d4e56
 +grub_err_t
 +grub_txt_enable_smx_mode (void);
 +
-+int
-+grub_txt_is_sinit_acmod(const void *acmod_base, grub_uint32_t acmod_size);
++void
++grub_txt_smx_parameters (struct grub_smx_parameters *params);
 +
 +int
-+grub_txt_acmod_match_platform(struct grub_txt_acm_header *hdr);
++grub_txt_is_sinit_acmod (const void *acmod_base, grub_uint32_t acmod_size);
++
++int
++grub_txt_acmod_match_platform (struct grub_txt_acm_header *hdr);
 +
 +struct grub_txt_acm_header*
-+grub_txt_load_sinit(struct grub_txt_acm_header *sinit);
++grub_txt_load_sinit (struct grub_txt_acm_header *sinit);
 +
 +grub_err_t
-+grub_txt_verify_platform(void);
++grub_txt_verify_platform (void);
++
++grub_err_t
++grub_txt_prepare_cpu (void);
 +
 +#endif
 -- 

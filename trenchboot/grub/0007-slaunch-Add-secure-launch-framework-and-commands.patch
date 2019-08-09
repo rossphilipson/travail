@@ -1,4 +1,4 @@
-From 2c5cad3170911728692b36872facd7acd98631bb Mon Sep 17 00:00:00 2001
+From ef0e6d3aa92f1422fabb1389bd7bf60bd1d07b2f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:07:15 -0400
 Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
@@ -8,9 +8,9 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  grub-core/Makefile.core.def         |   2 +
  grub-core/loader/i386/linux.c       |  18 +++
  grub-core/loader/i386/slaunch.c     | 296 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c | 108 +++++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 114 ++++++++++++++
  include/grub/file.h                 |   3 +
- 5 files changed, 427 insertions(+)
+ 5 files changed, 433 insertions(+)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
@@ -79,7 +79,7 @@ index d0501e229..eae1b825c 100644
    state.ebp = state.edi = state.ebx = 0;
 diff --git a/grub-core/loader/i386/slaunch.c b/grub-core/loader/i386/slaunch.c
 new file mode 100644
-index 000000000..d2239f94e
+index 000000000..a9a932d72
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch.c
 @@ -0,0 +1,296 @@
@@ -166,7 +166,7 @@ index 000000000..d2239f94e
 +};
 +
 +static grub_err_t
-+grub_tpm_close_locality(void)
++grub_tpm_close_locality (void)
 +{
 +  union grub_tpm_intf_capability intf_cap;
 +  union grub_tpm_interface_id intf_id;
@@ -213,7 +213,7 @@ index 000000000..d2239f94e
 +static struct grub_relocator *relocator = NULL;
 +
 +struct grub_slaunch_module*
-+grub_slaunch_get_modules( void)
++grub_slaunch_get_modules (void)
 +{
 +  return modules;
 +}
@@ -381,10 +381,10 @@ index 000000000..d2239f94e
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..824e72b82
+index 000000000..112aed282
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,114 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -416,7 +416,7 @@ index 000000000..824e72b82
 +#include <grub/i386/slaunch.h>
 +
 +static void*
-+find_sinit_module(grub_uint32_t *size_out)
++find_sinit_module (grub_uint32_t *size_out)
 +{
 +  struct grub_slaunch_module *modules;
 +  void *base = NULL;
@@ -462,7 +462,13 @@ index 000000000..824e72b82
 +    return grub_error (GRUB_ERR_BAD_MODULE,
 +                       N_("No valid SINIT ACM provided for launch"));
 +
++  /* TODO verify SINIT w/ verify_acmod */
++
 +  err = grub_txt_verify_platform ();
++  if ( err )
++    return err;
++
++  err = grub_txt_prepare_cpu ();
 +  if ( err )
 +    return err;
 +
