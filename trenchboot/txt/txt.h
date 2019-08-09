@@ -488,7 +488,45 @@ static inline void txt_getsec_sexit(void)
 	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (SMX_LEAF_SEXIT));
 }
 
-#define SMX_PARAMETER_TYPE_MASK	0x1f
+#define SMX_PARAMETER_TYPE_MASK		0x1f
+
+#define SMX_PARAMETER_MAX_VERSIONS	0x20
+
+#define SMX_GET_MAX_ACM_SIZE(v)		((v & ~SMX_PARAMETER_TYPE_MASK)*0x20)
+
+#define SMX_ACM_MEMORY_TYPE_UC		0x000000100
+#define SMX_ACM_MEMORY_TYPE_WC		0x000000200
+#define SMX_ACM_MEMORY_TYPE_WT		0x000001000
+#define SMX_ACM_MEMORY_TYPE_WP		0x000002000
+#define SMX_ACM_MEMORY_TYPE_WB		0x000004000
+
+#define SMX_GET_ACM_MEMORY_TYPES(v)	(v & ~SMX_PARAMETER_TYPE_MASK)
+
+#define SMX_GET_SENTER_CONTROLS(v)	((v & 0x7f00) >> 8)
+
+#define SMX_PROCESSOR_BASE_SCRTM	0x000000020
+#define SMX_MACHINE_CHECK_HANLDING	0x000000040
+#define SMX_GET_TXT_EXT_FEATURES(v)	(v & (SMX_PROCESSOR_BASE_SCRTM|SMX_MACHINE_CHECK_HANLDING))
+
+#define SMX_DEFAULT_VERSION		0x0
+#define SMX_DEFAULT_VERSION_MAX		0xfffffffff
+#define SMX_DEFAULT_MAX_ACM_SIZE	0x8000 /* 32K */
+#define SMX_DEFAULT_ACM_MEMORY_TYPE	SMX_ACM_MEMORY_TYPE_UC
+#define SMX_DEFAULT_SENTER_CONTROLS	0x0
+
+struct smx_supported_versions {
+	u32 mask;
+	u32 version;
+} __attribute__((packed));
+
+struct smx_parameters {
+	struct smx_supported_versions versions[SMX_PARAMETER_MAX_VERSIONS];
+	u32 version_count;
+	u32 max_acm_size;
+	u32 acm_memory_types;
+	u32 senter_controls;
+	u32 txt_feature_ext_flags;
+} __attribute__((packed));
 
 static inline void txt_getsec_parameters(u32 index, u32 *eax_out,
 					 u32 *ebx_out, u32 *ecx_out)
