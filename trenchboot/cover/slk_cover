@@ -132,6 +132,7 @@ Ross
    - New implementation of the AP wake up code to allow it to be relocated
      to a safe location away from the kernel extraction area.
    - Add support for runtime detection of Secure Launch entry.
+   - Fix rmpiggy slaunch code to properly form the 32b addresses
 
 0008-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
