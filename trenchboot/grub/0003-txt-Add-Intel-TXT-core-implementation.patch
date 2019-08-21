@@ -1,4 +1,4 @@
-From f287a488431db4ce85279c9cefe3e4b0b0ae7fa3 Mon Sep 17 00:00:00 2001
+From 98224fb05a3a58c06d42e78d7f396f7539ab0e70 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 252 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 258 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 375 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 381 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..288928934
+index 000000000..986953780
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,375 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -99,8 +99,13 @@ index 000000000..288928934
 +#include <grub/i386/msr.h>
 +#include <grub/i386/crfr.h>
 +#include <grub/i386/txt.h>
++#include <grub/i386/linux.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
++
++/* TODO make as much of the txt support code as implementation
++ * non-specific as possible in a clean room implementation.
++ */
 +
 +#define GRUB_SMX_ALL_CAPABILITIES \
 +  (GRUB_SMX_CAPABILITY_ENTERACCS | \
@@ -123,17 +128,19 @@ index 000000000..288928934
 +
 +  caps = grub_txt_getsec_capabilities (0);
 +
-+  if ( !(caps & GRUB_SMX_CAPABILITY_CHIPSET_PRESENT) ) {
-+    err = GRUB_ERR_BAD_DEVICE;
-+    msg = "TXT capable chipset not present";
-+    goto fail;
-+  }
++  if ( !(caps & GRUB_SMX_CAPABILITY_CHIPSET_PRESENT) )
++    {
++      err = GRUB_ERR_BAD_DEVICE;
++      msg = "TXT capable chipset not present";
++      goto fail;
++    }
 +
-+  if ( (caps & GRUB_SMX_ALL_CAPABILITIES) != GRUB_SMX_ALL_CAPABILITIES ) {
-+    err = GRUB_ERR_BAD_DEVICE;
-+    msg = "Not all SMX capagilities are supported";
-+    goto fail;
-+  }
++  if ( (caps & GRUB_SMX_ALL_CAPABILITIES) != GRUB_SMX_ALL_CAPABILITIES )
++    {
++      err = GRUB_ERR_BAD_DEVICE;
++      msg = "Not all SMX capagilities are supported";
++      goto fail;
++    }
 +
 +
 +  return GRUB_ERR_NONE;
@@ -156,48 +163,49 @@ index 000000000..288928934
 +  params->acm_memory_types = GRUB_SMX_DEFAULT_ACM_MEMORY_TYPE;
 +  params->senter_controls = GRUB_SMX_DEFAULT_SENTER_CONTROLS;
 +
-+  do {
-+    grub_txt_getsec_parameters (index, &eax, &ebx, &ecx);
-+    param_type = eax & GRUB_SMX_PARAMETER_TYPE_MASK;
-+
-+    switch ( param_type )
++  do
 +    {
-+    case GRUB_SMX_PARAMETER_NULL:
-+      break; /* this means done */
-+    case GRUB_SMX_PARAMETER_ACM_VERSIONS:
-+      if ( params->version_count == GRUB_SMX_PARAMETER_MAX_VERSIONS )
-+       {
-+         /* TODO log warning about too many versions */
-+         break;
-+       }
-+       params->versions[params->version_count].mask = ebx;
-+       params->versions[params->version_count++].version = ecx;
-+      break;
-+    case GRUB_SMX_PARAMETER_MAX_ACM_SIZE:
-+      params->max_acm_size = GRUB_SMX_GET_MAX_ACM_SIZE (eax);
-+      break;
-+    case GRUB_SMX_PARAMETER_ACM_MEMORY_TYPES:
-+      params->acm_memory_types = GRUB_SMX_GET_ACM_MEMORY_TYPES (eax);
-+      break;
-+    case GRUB_SMX_PARAMETER_SENTER_CONTROLS:
-+      params->senter_controls = GRUB_SMX_GET_SENTER_CONTROLS (eax);
-+      break;
-+    case GRUB_SMX_PARAMETER_TXT_EXTENSIONS:
-+      params->txt_feature_ext_flags = GRUB_SMX_GET_TXT_EXT_FEATURES (eax);
-+      break;
-+    default:
-+      /* TODO log warning about unknown param */
-+      param_type = GRUB_SMX_PARAMETER_NULL;
++      grub_txt_getsec_parameters (index, &eax, &ebx, &ecx);
++      param_type = eax & GRUB_SMX_PARAMETER_TYPE_MASK;
++
++      switch ( param_type )
++        {
++        case GRUB_SMX_PARAMETER_NULL:
++          break; /* this means done */
++        case GRUB_SMX_PARAMETER_ACM_VERSIONS:
++          if ( params->version_count == GRUB_SMX_PARAMETER_MAX_VERSIONS )
++            {
++              /* TODO log warning about too many versions */
++              break;
++            }
++          params->versions[params->version_count].mask = ebx;
++          params->versions[params->version_count++].version = ecx;
++          break;
++      case GRUB_SMX_PARAMETER_MAX_ACM_SIZE:
++        params->max_acm_size = GRUB_SMX_GET_MAX_ACM_SIZE (eax);
++        break;
++      case GRUB_SMX_PARAMETER_ACM_MEMORY_TYPES:
++        params->acm_memory_types = GRUB_SMX_GET_ACM_MEMORY_TYPES (eax);
++        break;
++      case GRUB_SMX_PARAMETER_SENTER_CONTROLS:
++        params->senter_controls = GRUB_SMX_GET_SENTER_CONTROLS (eax);
++        break;
++      case GRUB_SMX_PARAMETER_TXT_EXTENSIONS:
++        params->txt_feature_ext_flags = GRUB_SMX_GET_TXT_EXT_FEATURES (eax);
++        break;
++      default:
++        /* TODO log warning about unknown param */
++        param_type = GRUB_SMX_PARAMETER_NULL;
 +    }
 +  } while ( param_type != GRUB_SMX_PARAMETER_NULL );
 +
 +  /* If no ACM versions were found, set the default one */
 +  if ( !params->version_count )
-+  {
-+    params->versions[0].mask = GRUB_SMX_DEFAULT_VERSION_MASK;
-+    params->versions[0].version = GRUB_SMX_DEFAULT_VERSION;
-+    params->version_count++;
-+  }
++    {
++      params->versions[0].mask = GRUB_SMX_DEFAULT_VERSION_MASK;
++      params->versions[0].version = GRUB_SMX_DEFAULT_VERSION;
++      params->version_count++;
++    }
 +}
 +
 +grub_err_t
@@ -263,15 +271,15 @@ index 000000000..288928934
 +  /* Check if all machine check regs are clear */
 +  mcg_cap = grub_rdmsr (GRUB_MSR_X86_MCG_CAP);
 +  for ( i = 0; i < (mcg_cap & GRUB_MSR_MCG_BANKCNT_MASK); i++ )
-+  {
-+     mcg_stat = grub_rdmsr (GRUB_MSR_X86_MC0_STATUS + 4*i);
-+     if ( mcg_stat & (1ULL << 63) )
-+     {
-+       if ( !(params.txt_feature_ext_flags & GRUB_SMX_MACHINE_CHECK_HANLDING) )
-+         return grub_error (GRUB_ERR_BAD_DEVICE,
++    {
++      mcg_stat = grub_rdmsr (GRUB_MSR_X86_MC0_STATUS + 4*i);
++      if ( mcg_stat & (1ULL << 63) )
++        {
++          if ( !(params.txt_feature_ext_flags & GRUB_SMX_MACHINE_CHECK_HANLDING) )
++            return grub_error (GRUB_ERR_BAD_DEVICE,
 +                      N_("secure launch MCG[%u] = %Lx ERROR"), i, mcg_stat);
-+     }
-+  }
++        }
++    }
 +
 +  /* TODO logging maybe...
 +  if ( params.txt_feature_ext_flags & GRUB_SMX_MACHINE_CHECK_HANLDING )
@@ -282,6 +290,121 @@ index 000000000..288928934
 +  if ( params.txt_feature_ext_flags & GRUB_SMX_PROCESSOR_BASE_SCRTM )
 +    printk(TBOOT_INFO"CPU support processor-based S-CRTM\n");
 +  */
++
++  return GRUB_ERR_NONE;
++}
++
++#define PAGE_SHIFT	12
++#define PAGE_SIZE	(1 << PAGE_SHIFT)
++#define PAGE_MASK	(~(PAGE_SIZE-1))
++
++#define SLBOOT_MLEPT_ADDR		0x6B000 /* 0x6B000 to 0x80000 */
++#define SLBOOT_MLEPT_PAGES		20
++#define SLBOOT_MLEPT_SIZE		(PAGE_SIZE*SLBOOT_MLEPT_PAGES)
++#define SLBOOT_MLEPT_PAGE_TABLES	(SLBOOT_MLEPT_PAGES - 2)
++#define SLBOOT_MLEPT_PAGES_COVERED	(SLBOOT_MLEPT_PAGE_TABLES*512)
++#define SLBOOT_MLEPT_BYTES_COVERED	(SLBOOT_MLEPT_PAGES_COVERED*PAGE_SIZE)
++
++/* Page directory and table entries only need Present set */
++#define MAKE_PT_ENTRY(addr)  (((grub_uint64_t)(unsigned long)(addr) & PAGE_MASK) | 0x01)
++
++/* The MLE page tables have to be below the MLE and have no special regions in
++ * between them and the MLE (this is a bit of an unwritten rule).
++ * 20 pages are carved out of memory below the MLE. That leave 18 page table
++ * pages that can cover up to 36M .
++ * can only contain 4k pages
++ */
++static void*
++setup_mle_pagetables (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                     void *ptab_base, grub_uint32_t ptab_size)
++{
++  grub_uint32_t mle_off, pd_off;
++  grub_uint8_t *pg_dir_ptr_tab, *pg_dir, *pg_tab;
++  grub_uint64_t *pte, *pde;
++
++  /* TODO
++  printk(TBOOT_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
++           mle_start, mle_start+mle_size, mle_size);*/
++
++  grub_memset (ptab_base, 0, ptab_size);
++  /*printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);*/
++
++  pg_dir_ptr_tab = ptab_base;
++  pg_dir         = pg_dir_ptr_tab + PAGE_SIZE;
++  pg_tab         = pg_dir + PAGE_SIZE;
++
++  /* Only use first entry in page dir ptr table */
++  *(grub_uint64_t *)pg_dir_ptr_tab = MAKE_PT_ENTRY(pg_dir);
++
++  /* Start with first entry in page dir */
++  *(grub_uint64_t *)pg_dir = MAKE_PT_ENTRY(pg_tab);
++
++  pte = (grub_uint64_t*)pg_tab;
++  pde = (grub_uint64_t*)pg_dir;
++  mle_off = 0;
++  pd_off = 0;
++
++  do
++    {
++      *pte = MAKE_PT_ENTRY(mle_start + mle_off);
++
++      pte++;
++      mle_off += PAGE_SIZE;
++
++      pd_off++;
++      if ( !(pd_off % 512) )
++        {
++          /* Break if we don't need any additional page entries */
++          if (mle_off >= mle_size)
++            break;
++          pde++;
++          *pde = MAKE_PT_ENTRY(pte);
++        }
++    } while ( mle_off < mle_size );
++
++  return ptab_base;
++}
++
++grub_err_t
++grub_txt_launch_environment (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                             void *zero_page)
++{
++  void *mle_ptab_base;
++  struct linux_kernel_params *boot_params =
++   (struct linux_kernel_params*)zero_page;
++  //grub_uint8_t *txt_heap;
++  //grub_uint32_t *mle_size_ptr;
++
++  if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED )
++     return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                 N_("secure launch MLE size too big"));
++
++  /* Should start on page boundary */
++  if ( mle_start & ~PAGE_MASK )
++     return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                 N_("secure launch MLE base misaligned"));
++
++  /* Place ptab_base below MLE. If the kernel is not relocatable then
++   * we have to use the low memory block since the kernel gets loaded
++   * at 1M. This does not work on server systems though.
++   */
++  if ( boot_params->relocatable_kernel )
++    {
++      /* TODO this is a simple way to do the allocation. Not sure it will work
++       * with the way GRUB manages memory. Probably needs to be done when the
++       * kernel image space is allocated.
++       */
++      mle_ptab_base = (void*)(unsigned long)(mle_start - SLBOOT_MLEPT_SIZE);
++    }
++  else
++      mle_ptab_base = (void*)SLBOOT_MLEPT_ADDR;
++
++  mle_ptab_base = setup_mle_pagetables (mle_start, mle_size,
++                                        mle_ptab_base, SLBOOT_MLEPT_SIZE);
++
++  if ( !mle_ptab_base )
++     return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                 N_("secure launch failed to build MLE page tables"));
 +
 +  return GRUB_ERR_NONE;
 +}

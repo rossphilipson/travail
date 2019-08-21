@@ -1,4 +1,4 @@
-From 452c74e1f0a43855d337ec6d808e41ad0cf22f11 Mon Sep 17 00:00:00 2001
+From dab08ec0c36bbe415ef6f6a1437ae30915dd049e Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:59:18 -0400
 Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support

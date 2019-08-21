@@ -1,20 +1,20 @@
-From d970eeaa3d0a5402e97fd2edc0547ec8b6b63558 Mon Sep 17 00:00:00 2001
+From e178f04c507080538f8c6586db1715a075c5f7ca Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 631 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 631 insertions(+)
+ include/grub/i386/txt.h | 668 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 668 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..19757afa9
+index 000000000..b94ba4a3b
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,631 @@
+@@ -0,0 +1,668 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -622,6 +622,39 @@ index 000000000..19757afa9
 +  asm volatile (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
 +}
 +
++/* GRUB SLAUNCH specific definitions and functions */
++
++#define GRUB_SL_BOOTPARAMS_OFFSET	0x12c
++#define GRUB_SL_MAX_EVENT_LOG_SIZE	(5*4*1024)   /* 4k*5 */
++#define GRUB_SL_MAX_VARIABLE_MTRRS	32
++#define GRUB_SL_OS_MLE_STRUCT_VERSION	1
++
++struct grub_slaunch_mtrr_pair
++{
++  grub_uint64_t mtrr_physbase;
++  grub_uint64_t mtrr_physmask;
++} GRUB_PACKED;
++
++struct grub_slaunch_mtrr_state
++{
++  grub_uint64_t default_type_reg;
++  grub_uint64_t mtrr_vcnt;
++  struct grub_slaunch_mtrr_pair mtrr_pair[GRUB_SL_MAX_VARIABLE_MTRRS];
++} GRUB_PACKED;
++
++struct grub_slaunch_info
++{
++  grub_uint32_t version;
++  grub_uint32_t zero_page_addr;
++  grub_uint8_t msb_key_hash[20];
++  grub_uint64_t saved_misc_enable_msr;
++  struct grub_slaunch_mtrr_state saved_bsp_mtrrs;
++  grub_uint64_t lo_pmr_min;
++  grub_uint64_t ap_wake_ebp;
++  grub_uint64_t ap_wake_block;
++  grub_uint8_t event_log_buffer[GRUB_SL_MAX_EVENT_LOG_SIZE];
++} GRUB_PACKED;
++
 +/* External Functions */
 +
 +grub_err_t
@@ -644,6 +677,10 @@ index 000000000..19757afa9
 +
 +grub_err_t
 +grub_txt_prepare_cpu (void);
++
++grub_err_t
++grub_txt_launch_environment (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                             void *zero_page);
 +
 +#endif
 -- 

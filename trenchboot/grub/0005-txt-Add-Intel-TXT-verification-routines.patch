@@ -1,4 +1,4 @@
-From cf71e0d7fa397423401e391c3902648921f9eba7 Mon Sep 17 00:00:00 2001
+From cb6eb9575a375453421dfc793dc07a745a3f506d Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 14:46:17 -0400
 Subject: [PATCH 5/7] txt: Add Intel TXT verification routines

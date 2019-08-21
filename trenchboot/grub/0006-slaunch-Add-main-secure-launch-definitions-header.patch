@@ -1,4 +1,4 @@
-From da99a6ba0d60482d502041ec53278991a5af860a Mon Sep 17 00:00:00 2001
+From d3f034ae599f6476776d26788163646fe2e72537 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:01:00 -0400
 Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header
@@ -6,8 +6,8 @@ Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am       |  3 +++
- include/grub/i386/slaunch.h | 60 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 63 insertions(+)
+ include/grub/i386/slaunch.h | 50 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
  create mode 100644 include/grub/i386/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
@@ -40,10 +40,10 @@ index 3ea8e7ff4..ae6676e6f 100644
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
 diff --git a/include/grub/i386/slaunch.h b/include/grub/i386/slaunch.h
 new file mode 100644
-index 000000000..b5d6cc2a7
+index 000000000..7630528ee
 --- /dev/null
 +++ b/include/grub/i386/slaunch.h
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,50 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -70,22 +70,12 @@ index 000000000..b5d6cc2a7
 +#include <grub/types.h>
 +#include <grub/i386/linux.h>
 +
-+#define GRUB_SL_BOOTPARAMS_OFFSET	0x12c
-+
-+struct grub_slaunch_info
-+{
-+  grub_uint32_t sl_version;
-+  grub_uint32_t sl_entry;   /* Field updated by boot build tool */
-+  grub_uint32_t sl_mle_hdr; /* Field updated by boot build tool */
-+  grub_uint32_t sl_flags;
-+  grub_uint32_t sl_dev_map;
-+} GRUB_PACKED;
-+
 +struct grub_slaunch_params
 +{
 +  struct linux_kernel_params *params;
 +  grub_addr_t real_mode_target;
 +  grub_addr_t prot_mode_target;
++  grub_uint32_t prot_file_size;
 +};
 +
 +struct grub_slaunch_module
