@@ -1,20 +1,20 @@
-From e178f04c507080538f8c6586db1715a075c5f7ca Mon Sep 17 00:00:00 2001
+From a32219fb4cb70a291cd07986bb2f11de0b8674c7 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 668 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 668 insertions(+)
+ include/grub/i386/txt.h | 665 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 665 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..b94ba4a3b
+index 000000000..f2e5cc78d
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,668 @@
+@@ -0,0 +1,665 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -318,11 +318,37 @@ index 000000000..b94ba4a3b
 +  /* Ext Data Elements */
 +} GRUB_PACKED;
 +
-+#define GRUB_TXT_MAX_EVENT_LOG_SIZE			5*4*1024   /* 4k*5 */
++/* GRUB SLAUNCH specific definitions OS-MLE data */
++
++#define GRUB_SL_BOOTPARAMS_OFFSET	0x12c
++#define GRUB_SL_MAX_EVENT_LOG_SIZE	(5*4*1024)   /* 4k*5 */
++#define GRUB_SL_MAX_VARIABLE_MTRRS	32
++#define GRUB_SL_OS_MLE_STRUCT_VERSION	1
++
++struct grub_slaunch_mtrr_pair
++{
++  grub_uint64_t mtrr_physbase;
++  grub_uint64_t mtrr_physmask;
++} GRUB_PACKED;
++
++struct grub_slaunch_mtrr_state
++{
++  grub_uint64_t default_mem_type;
++  grub_uint64_t mtrr_vcnt;
++  struct grub_slaunch_mtrr_pair mtrr_pair[GRUB_SL_MAX_VARIABLE_MTRRS];
++} GRUB_PACKED;
 +
 +struct grub_txt_os_mle_data
 +{
-+  /* This structure is implementation specific */
++  grub_uint32_t version;
++  grub_uint32_t zero_page_addr;
++  grub_uint8_t msb_key_hash[20];
++  grub_uint64_t saved_misc_enable_msr;
++  struct grub_slaunch_mtrr_state saved_bsp_mtrrs;
++  grub_uint64_t lo_pmr_min;
++  grub_uint64_t ap_wake_ebp;
++  grub_uint64_t ap_wake_block;
++  grub_uint8_t event_log_buffer[GRUB_SL_MAX_EVENT_LOG_SIZE];
 +} GRUB_PACKED;
 +
 +struct grub_txt_os_sinit_data
@@ -622,39 +648,6 @@ index 000000000..b94ba4a3b
 +  asm volatile (".byte 0x0f,0x37\n" : : "a" (GRUB_SMX_LEAF_WAKEUP));
 +}
 +
-+/* GRUB SLAUNCH specific definitions and functions */
-+
-+#define GRUB_SL_BOOTPARAMS_OFFSET	0x12c
-+#define GRUB_SL_MAX_EVENT_LOG_SIZE	(5*4*1024)   /* 4k*5 */
-+#define GRUB_SL_MAX_VARIABLE_MTRRS	32
-+#define GRUB_SL_OS_MLE_STRUCT_VERSION	1
-+
-+struct grub_slaunch_mtrr_pair
-+{
-+  grub_uint64_t mtrr_physbase;
-+  grub_uint64_t mtrr_physmask;
-+} GRUB_PACKED;
-+
-+struct grub_slaunch_mtrr_state
-+{
-+  grub_uint64_t default_type_reg;
-+  grub_uint64_t mtrr_vcnt;
-+  struct grub_slaunch_mtrr_pair mtrr_pair[GRUB_SL_MAX_VARIABLE_MTRRS];
-+} GRUB_PACKED;
-+
-+struct grub_slaunch_info
-+{
-+  grub_uint32_t version;
-+  grub_uint32_t zero_page_addr;
-+  grub_uint8_t msb_key_hash[20];
-+  grub_uint64_t saved_misc_enable_msr;
-+  struct grub_slaunch_mtrr_state saved_bsp_mtrrs;
-+  grub_uint64_t lo_pmr_min;
-+  grub_uint64_t ap_wake_ebp;
-+  grub_uint64_t ap_wake_block;
-+  grub_uint8_t event_log_buffer[GRUB_SL_MAX_EVENT_LOG_SIZE];
-+} GRUB_PACKED;
-+
 +/* External Functions */
 +
 +grub_err_t
@@ -662,6 +655,9 @@ index 000000000..b94ba4a3b
 +
 +void
 +grub_txt_smx_parameters (struct grub_smx_parameters *params);
++
++grub_uint32_t
++grub_txt_supported_os_sinit_data_ver (struct grub_txt_acm_header* hdr);
 +
 +int
 +grub_txt_is_sinit_acmod (const void *acmod_base, grub_uint32_t acmod_size);
@@ -680,6 +676,7 @@ index 000000000..b94ba4a3b
 +
 +grub_err_t
 +grub_txt_launch_environment (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                             struct grub_txt_acm_header *sinit,
 +                             void *zero_page);
 +
 +#endif

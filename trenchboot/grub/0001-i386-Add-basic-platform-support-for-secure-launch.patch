@@ -1,4 +1,4 @@
-From 6a0992978c958ee8bf80642337790f5e0f2fbc26 Mon Sep 17 00:00:00 2001
+From 4ee89e2c84361d235485f1a2f17bf3699ebca78a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:50:14 -0400
 Subject: [PATCH 1/7] i386: Add basic platform support for secure launch
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  include/grub/i386/cpuid.h |  13 ++++
  include/grub/i386/crfr.h  | 165 ++++++++++++++++++++++++++++++++++++++++++++++
  include/grub/i386/mmio.h  | 105 +++++++++++++++++++++++++++++
- include/grub/i386/msr.h   |  88 +++++++++++++++++++++++++
- 4 files changed, 371 insertions(+)
+ include/grub/i386/msr.h   | 100 ++++++++++++++++++++++++++++
+ 4 files changed, 383 insertions(+)
  create mode 100644 include/grub/i386/crfr.h
  create mode 100644 include/grub/i386/mmio.h
  create mode 100644 include/grub/i386/msr.h
@@ -322,10 +322,10 @@ index 000000000..6a4c4946a
 +#endif
 diff --git a/include/grub/i386/msr.h b/include/grub/i386/msr.h
 new file mode 100644
-index 000000000..7ef0c3f6f
+index 000000000..5c139dfad
 --- /dev/null
 +++ b/include/grub/i386/msr.h
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,100 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -364,10 +364,22 @@ index 000000000..7ef0c3f6f
 +#define GRUB_MSR_X86_SENTER_FUNCTIONS	(0x7f<<8)
 +#define GRUB_MSR_X86_SENTER_ENABLE	(1<<15)
 +
++#define GRUB_MSR_X86_MTRRCAP		0x000000fe
++#define GRUB_MSR_X86_VCNT_MASK		0xff
++
 +#define GRUB_MSR_X86_MCG_CAP		0x00000179
 +#define GRUB_MSR_MCG_BANKCNT_MASK	0xff      /* Number of banks  */
 +#define GRUB_MSR_X86_MCG_STATUS		0x0000017a
 +#define GRUB_MSR_MCG_STATUS_MCIP	(1ULL<<2) /* MC in progress  */
++
++#define GRUB_MSR_X86_MISC_ENABLE	0x000001a0
++#define GRUB_MSR_X86_ENABLE_MONITOR_FSM	(1<<18)
++
++#define GRUB_MSR_X86_MTRR_PHYSBASE0	0x00000200
++#define GRUB_MSR_X86_MTRR_PHYSMASK0	0x00000201
++
++#define GRUB_MSR_X86_MTRR_DEF_TYPE	0x000002ff
++#define GRUB_MSR_X86_DEF_TYPE_MASK	0x7
 +
 +#define GRUB_MSR_X86_MC0_STATUS		0x00000401
 +

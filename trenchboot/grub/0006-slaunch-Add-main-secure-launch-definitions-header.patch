@@ -1,4 +1,4 @@
-From d3f034ae599f6476776d26788163646fe2e72537 Mon Sep 17 00:00:00 2001
+From d73db36678b5ebef9f6f7f899b999ee83d917237 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:01:00 -0400
 Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header

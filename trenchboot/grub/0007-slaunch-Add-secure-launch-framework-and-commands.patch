@@ -1,4 +1,4 @@
-From 354b0c1ebaf8e6cab0a9d7affc7580b1bbc4af34 Mon Sep 17 00:00:00 2001
+From 651c9c18f3c5e8e41917ba64369ac1bf316e1541 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:07:15 -0400
 Subject: [PATCH 7/7] slaunch: Add secure launch framework and commands
@@ -8,10 +8,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  grub-core/Makefile.core.def         |   2 +
  grub-core/loader/i386/linux.c       |  22 ++-
  grub-core/loader/i386/slaunch.c     | 296 ++++++++++++++++++++++++++++++++++++
- grub-core/loader/i386/slaunch_txt.c | 118 ++++++++++++++
+ grub-core/loader/i386/slaunch_txt.c | 119 +++++++++++++++
  include/grub/file.h                 |   3 +
  include/grub/i386/linux.h           |   4 +-
- 6 files changed, 443 insertions(+), 2 deletions(-)
+ 6 files changed, 444 insertions(+), 2 deletions(-)
  create mode 100644 grub-core/loader/i386/slaunch.c
  create mode 100644 grub-core/loader/i386/slaunch_txt.c
 
@@ -400,10 +400,10 @@ index 000000000..a9a932d72
 +}
 diff --git a/grub-core/loader/i386/slaunch_txt.c b/grub-core/loader/i386/slaunch_txt.c
 new file mode 100644
-index 000000000..0e5dfa7e4
+index 000000000..59a5eb78f
 --- /dev/null
 +++ b/grub-core/loader/i386/slaunch_txt.c
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,119 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -491,6 +491,7 @@ index 000000000..0e5dfa7e4
 +
 +  err = grub_txt_launch_environment (slparams->prot_mode_target,
 +                                     slparams->prot_file_size,
++                                     sinit_base,
 +                                     slparams->params);
 +  if ( err )
 +    return err;

@@ -1,4 +1,4 @@
-From 98224fb05a3a58c06d42e78d7f396f7539ab0e70 Mon Sep 17 00:00:00 2001
+From f9d169e7593616cc151ced509db04e96be619742 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 375 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 381 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 569 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 575 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..986953780
+index 000000000..3abadaf00
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,375 @@
+@@ -0,0 +1,569 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -298,6 +298,9 @@ index 000000000..986953780
 +#define PAGE_SIZE	(1 << PAGE_SHIFT)
 +#define PAGE_MASK	(~(PAGE_SIZE-1))
 +
++#define SLBOOT_AP_WAKE_BLOCK_ADDR	0x68000
++#define SLBOOT_AP_WAKE_BLOCK_SIZE	0x01000
++
 +#define SLBOOT_MLEPT_ADDR		0x6B000 /* 0x6B000 to 0x80000 */
 +#define SLBOOT_MLEPT_PAGES		20
 +#define SLBOOT_MLEPT_SIZE		(PAGE_SIZE*SLBOOT_MLEPT_PAGES)
@@ -365,21 +368,207 @@ index 000000000..986953780
 +  return ptab_base;
 +}
 +
++#define MIN_OS_SINIT_DATA_VER	4
++#define MAX_OS_SINIT_DATA_VER	7
++
++/*
++ * Make sure version is in [MIN_OS_SINIT_DATA_VER, MAX_OS_SINIT_DATA_VER]
++ * before calling calc_os_sinit_data_size
++ */
++static grub_uint64_t
++calc_os_sinit_data_size (grub_uint32_t version)
++{
++    /* TODO need help figuring out how this works
++    uint64_t size[] = {
++        offsetof(os_sinit_data_t, efi_rsdt_ptr) + sizeof(uint64_t),
++        sizeof(os_sinit_data_t) + sizeof(uint64_t),
++        sizeof(os_sinit_data_t) + sizeof(uint64_t) +
++            2 * sizeof(heap_ext_data_element_t) +
++            sizeof(heap_event_log_ptr_elt_t)
++    };
++    struct tpm_if *tpm = get_tpm();
++    int log_type = get_evtlog_type();
++
++    if ( log_type == EVTLOG_TPM2_TCG ) {
++        size[2] = sizeof(os_sinit_data_t) + sizeof(uint64_t) +
++        2 * sizeof(heap_ext_data_element_t) +
++        sizeof(heap_event_log_ptr_elt2_1_t);
++    } else if (log_type == EVTLOG_TPM2_LEGACY) {
++        u32 count;
++        if ( tpm->extpol == TB_EXTPOL_AGILE )
++            count = tpm->banks;
++        else
++            if ( tpm->extpol == TB_EXTPOL_EMBEDDED )
++                count = tpm->alg_count;
++            else
++                count = 1;
++        size[2] = sizeof(os_sinit_data_t) + sizeof(uint64_t) +
++            2 * sizeof(heap_ext_data_element_t) + 4 +
++            count*sizeof(heap_event_log_descr_t);
++    }
++
++    if ( version >= 6 )
++        return size[2];
++    else
++        return size[version - MIN_OS_SINIT_DATA_VER];*/
++
++  version = version;
++  return 0;
++}
++
++/* Current procs only have 10, so this should hold us for a while */
++#define MAX_VARIABLE_MTRRS	32
++
++static void
++save_mtrrs (struct grub_slaunch_mtrr_state *saved_state)
++{
++  grub_uint64_t mtrr_cap;
++  unsigned int ndx;
++
++  /* IA32_MTRR_DEF_TYPE MSR */
++  saved_state->default_mem_type =
++    grub_rdmsr (GRUB_MSR_X86_MTRR_DEF_TYPE) & GRUB_MSR_X86_DEF_TYPE_MASK;
++
++  /* Number variable MTTRRs */
++  mtrr_cap = grub_rdmsr (GRUB_MSR_X86_MTRRCAP);
++  if ( (mtrr_cap & GRUB_MSR_X86_VCNT_MASK)  > MAX_VARIABLE_MTRRS )
++    {
++      /* TODO print warning but continue saving what we can
++       * (set_mem_type() won't exceed the array, so we're safe doing this)
++        printk(TBOOT_WARN"actual # var MTRRs (%d) > MAX_VARIABLE_MTRRS (%d)\n",
++               mtrr_cap.vcnt, MAX_VARIABLE_MTRRS);*/
++      saved_state->mtrr_vcnt = MAX_VARIABLE_MTRRS;
++    }
++  else
++    saved_state->mtrr_vcnt = (mtrr_cap & GRUB_MSR_X86_VCNT_MASK);
++
++  /* Physmask's and Physbase's */
++  for ( ndx = 0; ndx < saved_state->mtrr_vcnt; ndx++ )
++    {
++      saved_state->mtrr_pair[ndx].mtrr_physmask =
++        grub_rdmsr (GRUB_MSR_X86_MTRR_PHYSMASK0 + ndx*2);
++      saved_state->mtrr_pair[ndx].mtrr_physbase =
++        grub_rdmsr (GRUB_MSR_X86_MTRR_PHYSBASE0 + ndx*2);
++    }
++}
++
++static grub_err_t
++get_ram_ranges (grub_uint64_t *min_lo_ram, grub_uint64_t *max_lo_ram,
++                grub_uint64_t *min_hi_ram, grub_uint64_t *max_hi_ram)
++{
++  /* TODO this needs to be implemented differently than the logic in TBOOT */
++  *min_lo_ram = 0;
++  *max_lo_ram = 0;
++  *min_hi_ram = 0;
++  *max_hi_ram = 0;
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_uint8_t*
++init_txt_heap (void *ptab_base, void *zero_page, grub_uint32_t mle_size,
++               struct grub_txt_acm_header *sinit)
++{
++  grub_uint8_t *txt_heap;
++  grub_uint64_t *size;
++  struct linux_kernel_params *boot_params =
++   (struct linux_kernel_params*)zero_page;
++  struct grub_txt_os_mle_data *os_mle_data;
++  struct grub_txt_os_sinit_data *os_sinit_data;
++  grub_uint32_t version;
++  grub_uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
++
++  txt_heap = grub_txt_get_heap ();
++
++  /* BIOS data already verified in grub_txt_verify_platform */
++
++  /*
++   * OS/loader to MLE data
++   */
++  os_mle_data = grub_txt_os_mle_data_start (txt_heap);
++  size = (grub_uint64_t *)((unsigned long)os_mle_data - sizeof(grub_uint64_t));
++  *size = sizeof(*os_mle_data) + sizeof(grub_uint64_t);
++  grub_memset (os_mle_data, 0, sizeof(*os_mle_data));
++  /* Set the zero page addr here */
++  /* NOTE msb_key_hash is not currently used and the log is setup later */
++  os_mle_data->zero_page_addr = (grub_uint32_t)(unsigned long)zero_page;
++  os_mle_data->version = GRUB_SL_OS_MLE_STRUCT_VERSION;
++  /* TODO this goes away os_mle_data->lo_pmr_min = g_min_ram;*/
++  os_mle_data->saved_misc_enable_msr = grub_rdmsr (GRUB_MSR_X86_MISC_ENABLE);
++  /* Might as well save the MTRR state here where OS-MLE is setup */
++  save_mtrrs(&(os_mle_data->saved_bsp_mtrrs));
++  /* Provide AP wake code block area */
++  /* TODO again there is a better way for GRUB to safely find a page in
++   * low memory for this.
++   */
++  grub_memset ((void*)(unsigned long)SLBOOT_AP_WAKE_BLOCK_ADDR, 0,
++               SLBOOT_AP_WAKE_BLOCK_SIZE);
++  os_mle_data->ap_wake_block = SLBOOT_AP_WAKE_BLOCK_ADDR;
++
++  /*
++   * OS/loader to SINIT data
++   */
++  /* Check sinit supported os_sinit_data version */
++  version = grub_txt_supported_os_sinit_data_ver (sinit);
++  if ( version < MIN_OS_SINIT_DATA_VER )
++    {
++      /* TODO printk(TBOOT_ERR"unsupported OS to SINIT data version(%u) in sinit\n",
++               version);*/
++      return NULL;
++    }
++  if ( version > MAX_OS_SINIT_DATA_VER )
++    version = MAX_OS_SINIT_DATA_VER;
++
++  os_sinit_data = grub_txt_os_sinit_data_start (txt_heap);
++  size = (grub_uint64_t *)((unsigned long)os_sinit_data - sizeof(grub_uint64_t));
++  *size = calc_os_sinit_data_size(version);
++  grub_memset (os_sinit_data, 0, *size);
++  os_sinit_data->version = version;
++
++  /* This is phys addr */
++  os_sinit_data->mle_ptab = (grub_uint64_t)(unsigned long)ptab_base;
++  os_sinit_data->mle_size = mle_size;
++
++  /* This is linear addr (offset from MLE base) of mle header */
++  os_sinit_data->mle_hdr_base = boot_params->slaunch_header;
++
++  /* VT-d PMRs */
++  if ( get_ram_ranges (&min_lo_ram, &max_lo_ram, &min_hi_ram, &max_hi_ram) )
++    return NULL;
++
++  /*
++   * base must be 2M-aligned and size must be multiple of 2M
++   * (so round bases and sizes down--rounding size up might conflict
++   *  with a BIOS-reserved region and cause problems; in practice, rounding
++   *  base down doesn't)
++   * we want to protect all of usable mem so that any kernel allocations
++   * before VT-d remapping is enabled are protected
++   */
++  os_sinit_data->vtd_pmr_lo_base = min_lo_ram & ~0x1fffffULL;
++  os_sinit_data->vtd_pmr_lo_size = (max_lo_ram - min_lo_ram) & ~0x1fffffULL;
++
++  os_sinit_data->vtd_pmr_hi_base = min_hi_ram & ~0x1fffffULL;
++  os_sinit_data->vtd_pmr_hi_size = (max_hi_ram - min_hi_ram) & ~0x1fffffULL;
++
++  return txt_heap;
++}
++
 +grub_err_t
 +grub_txt_launch_environment (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                             struct grub_txt_acm_header *sinit,
 +                             void *zero_page)
 +{
 +  void *mle_ptab_base;
 +  struct linux_kernel_params *boot_params =
 +   (struct linux_kernel_params*)zero_page;
-+  //grub_uint8_t *txt_heap;
++  grub_uint8_t *txt_heap;
 +  //grub_uint32_t *mle_size_ptr;
 +
 +  if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,
 +                 N_("secure launch MLE size too big"));
 +
-+  /* Should start on page boundary */
++  /* MLE should start on page boundary */
 +  if ( mle_start & ~PAGE_MASK )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,
 +                 N_("secure launch MLE base misaligned"));
@@ -405,6 +594,11 @@ index 000000000..986953780
 +  if ( !mle_ptab_base )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,
 +                 N_("secure launch failed to build MLE page tables"));
++
++  txt_heap = init_txt_heap (mle_ptab_base, zero_page, mle_size, sinit);
++  if ( !txt_heap )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("secure launch failed to init TXT heap"));
 +
 +  return GRUB_ERR_NONE;
 +}
