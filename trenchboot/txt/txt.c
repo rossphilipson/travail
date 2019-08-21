@@ -4,7 +4,7 @@
  * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  */
 
-void txt_smx_parameters (struct smx_parameters *params)
+void txt_smx_parameters(struct smx_parameters *params)
 {
 	u32 index = 0, eax, ebx, ecx, param_type;
 
@@ -54,6 +54,60 @@ void txt_smx_parameters (struct smx_parameters *params)
 	if (!params->version_count) {
 		params->versions[0].mask = SMX_DEFAULT_VERSION_MASK;
 		params->versions[0].version = SMX_DEFAULT_VERSION;
-		params->version_count++;  
+		params->version_count++;
 	}
+}
+
+/* Page directory and table entries only need Present set */
+#define MAKE_PT_ENTRY(addr)  (((u64)(unsigned long)(addr) & PAGE_MASK) | 0x01)
+
+/*
+ * The MLE page tables have to be below the MLE and have no special regions in
+ * between them and the MLE (this is a bit of an unwritten rule).
+ * 20 pages are carved out of memory below the MLE. That leave 18 page table
+ * pages that can cover up to 36M .
+ * can only contain 4k pages
+ */
+void *setup_mle_pagetables(u32 mle_start, u32 mle_size,
+			   void *ptab_base, u32 ptab_size)
+{
+	u32 mle_off, pd_off;
+	void *pg_dir_ptr_tab, *pg_dir, *pg_tab;
+	u64 *pte, *pde;
+
+	memset(ptab_base, 0, ptab_size);
+
+	pg_dir_ptr_tab = ptab_base;
+	pg_dir         = pg_dir_ptr_tab + PAGE_SIZE;
+	pg_tab         = pg_dir + PAGE_SIZE;
+
+	/* Only use first entry in page dir ptr table */
+	*(u64 *)pg_dir_ptr_tab = MAKE_PT_ENTRY(pg_dir);
+
+	/* Start with first entry in page dir */
+	*(u64 *)pg_dir = MAKE_PT_ENTRY(pg_tab);
+
+	pte = pg_tab;
+	pde = pg_dir;
+	mle_off = 0;
+	pd_off = 0;
+
+	do {
+		*pte = MAKE_PT_ENTRY(mle_start + mle_off);
+
+		pte++;
+		mle_off += PAGE_SIZE;
+
+		pd_off++;
+		if ( !(pd_off % 512) ) {
+			/* Break if we don't need any additional page entries */
+			if (mle_off >= mle_size)
+				break;
+
+			pde++;
+			*pde = MAKE_PT_ENTRY(pte);
+		}
+	} while ( mle_off < mle_size );
+
+	return ptab_base;
 }
