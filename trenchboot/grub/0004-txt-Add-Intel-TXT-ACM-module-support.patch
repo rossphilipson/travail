@@ -1,4 +1,4 @@
-From a4862aa4d57cf8c8817a2d4a2415f29f439e533b Mon Sep 17 00:00:00 2001
+From 1f0ba3dc693cf5bae3e4c4e53f1706454a685cbe Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:59:18 -0400
 Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support
@@ -6,8 +6,8 @@ Subject: [PATCH 4/7] txt: Add Intel TXT ACM module support
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def       |   1 +
- grub-core/loader/i386/txt/acmod.c | 569 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 570 insertions(+)
+ grub-core/loader/i386/txt/acmod.c | 583 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 584 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/acmod.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -24,10 +24,10 @@ index c2b84d7e0..0c174b60e 100644
  
 diff --git a/grub-core/loader/i386/txt/acmod.c b/grub-core/loader/i386/txt/acmod.c
 new file mode 100644
-index 000000000..b3a719b81
+index 000000000..faef1ebcd
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/acmod.c
-@@ -0,0 +1,569 @@
+@@ -0,0 +1,583 @@
 +/*
 + * acmod.c: support functions for use of Intel(r) TXT Authenticated
 + *          Code (AC) Modules
@@ -392,6 +392,20 @@ index 000000000..b3a719b81
 +    return 0;
 +
 +  return info_table->os_sinit_data_ver;
++}
++
++grub_uint32_t
++grub_txt_get_sinit_capabilities (struct grub_txt_acm_header* hdr)
++{
++  static struct grub_txt_acm_info_table *info_table;
++
++  /* Assumes that it passed is_sinit_acmod() */
++  info_table = get_acmod_info_table (hdr);
++
++  if ( info_table == NULL || info_table->version < 3 )
++    return 0;
++
++  return info_table->capabilities;
 +}
 +
 +int

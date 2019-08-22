@@ -1,20 +1,20 @@
-From a32219fb4cb70a291cd07986bb2f11de0b8674c7 Mon Sep 17 00:00:00 2001
+From 4034334190f4571d55da66f8377c510474196ab0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 665 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 665 insertions(+)
+ include/grub/i386/txt.h | 668 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 668 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..f2e5cc78d
+index 000000000..ec4460942
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,665 @@
+@@ -0,0 +1,668 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -50,16 +50,16 @@ index 000000000..f2e5cc78d
 +#define GRUB_TXT_PLATFORM_TYPE_SERVER        2
 +#define GRUB_TXT_PLATFORM_TYPE_RESERVED      3
 +
-+#define GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT    (1<<0)
-+#define GRUB_TXT_CAPS_MONITOR_SUPPORT        (1<<1)
-+#define GRUB_TXT_CAPS_ECX_PT_SUPPORT         (1<<2)
-+#define GRUB_TXT_CAPS_STM_SUPPORT            (1<<3)
-+#define GRUB_TXT_CAPS_TPM12_LEGACY_PCR_USAGE (1<<4)
-+#define GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE   (1<<5)
-+#define GRUB_TXT_CAPS_PLATFORM_TYPE          (3<<6)
-+#define GRUB_TXT_CAPS_MAXPHYSADDR_SUPPORT    (1<<8)
-+#define GRUB_TXT_CAPS_TPM20_EVLOG_SUPPORT    (1<<9)
-+#define GRUB_TXT_CAPS_CBNT_SUPPORT           (1<<10)
++#define GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT    	(1<<0)
++#define GRUB_TXT_CAPS_MONITOR_SUPPORT        	(1<<1)
++#define GRUB_TXT_CAPS_ECX_PT_SUPPORT         	(1<<2)
++#define GRUB_TXT_CAPS_STM_SUPPORT            	(1<<3)
++#define GRUB_TXT_CAPS_TPM12_NO_LEGACY_PCR_USAGE	(1<<4)
++#define GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE   	(1<<5)
++#define GRUB_TXT_CAPS_PLATFORM_TYPE          	(3<<6)
++#define GRUB_TXT_CAPS_MAXPHYSADDR_SUPPORT    	(1<<8)
++#define GRUB_TXT_CAPS_TPM20_EVLOG_SUPPORT    	(1<<9)
++#define GRUB_TXT_CAPS_CBNT_SUPPORT           	(1<<10)
 +/* Rest is reserved */
 +
 +/* Appendix A TXT Execution Technology Authenticated Code Modules */
@@ -658,6 +658,9 @@ index 000000000..f2e5cc78d
 +
 +grub_uint32_t
 +grub_txt_supported_os_sinit_data_ver (struct grub_txt_acm_header* hdr);
++
++grub_uint32_t
++grub_txt_get_sinit_capabilities (struct grub_txt_acm_header* hdr);
 +
 +int
 +grub_txt_is_sinit_acmod (const void *acmod_base, grub_uint32_t acmod_size);

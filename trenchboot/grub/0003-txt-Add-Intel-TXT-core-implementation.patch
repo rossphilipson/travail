@@ -1,4 +1,4 @@
-From f9d169e7593616cc151ced509db04e96be619742 Mon Sep 17 00:00:00 2001
+From ed2e98c4df44ecaa6129557fa2cf99092548df7f Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 569 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 575 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 667 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 673 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..3abadaf00
+index 000000000..7fd0c0fa9
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,569 @@
+@@ -0,0 +1,667 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -94,6 +94,7 @@ index 000000000..3abadaf00
 +#include <grub/misc.h>
 +#include <grub/types.h>
 +#include <grub/dl.h>
++#include <grub/acpi.h>
 +#include <grub/cpu/relocator.h>
 +#include <grub/i386/cpuid.h>
 +#include <grub/i386/msr.h>
@@ -115,6 +116,22 @@ index 000000000..3abadaf00
 +   GRUB_SMX_CAPABILITY_PARAMETERS | \
 +   GRUB_SMX_CAPABILITY_SMCTRL | \
 +   GRUB_SMX_CAPABILITY_WAKEUP)
++
++static int
++param_prefer_da(void)
++{
++  /* TODO some command line support is needed. There are several parameters
++   * that need to be support. Current list:
++   * prefer_da - this one
++   * min_ram - or whatever its replacement is
++   * extpol - this one has to do with evt logging work that needs doing.
++   * tpm_ver - 1.2 or 2.0 mode; not a cmdline arg but slaunch knows which.
++   *
++   * The slaunch framework should pass these in via some initializer function.
++   * They will also need defaults.
++   */
++  return 0; /* just for now */
++}
 +
 +grub_err_t
 +grub_txt_enable_smx_mode (void)
@@ -465,6 +482,8 @@ index 000000000..3abadaf00
 +  return GRUB_ERR_NONE;
 +}
 +
++#define MLE_HDR_CAPS	0x000000227 /* rlp_wake_{getsec, monitor} = 1,
++                                       ecx_pgtbl = 1, nolg = 0, da = 1 tcg_event_log_format =1 */
 +static grub_uint8_t*
 +init_txt_heap (void *ptab_base, void *zero_page, grub_uint32_t mle_size,
 +               struct grub_txt_acm_header *sinit)
@@ -475,8 +494,11 @@ index 000000000..3abadaf00
 +   (struct linux_kernel_params*)zero_page;
 +  struct grub_txt_os_mle_data *os_mle_data;
 +  struct grub_txt_os_sinit_data *os_sinit_data;
-+  grub_uint32_t version;
++  grub_uint32_t version, sinit_caps, caps_mask;
 +  grub_uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
++#ifdef GRUB_MACHINE_EFI
++  struct grub_acpi_rsdp_v20 *rsdp;
++#endif
 +
 +  txt_heap = grub_txt_get_heap ();
 +
@@ -549,6 +571,82 @@ index 000000000..3abadaf00
 +
 +  os_sinit_data->vtd_pmr_hi_base = min_hi_ram & ~0x1fffffULL;
 +  os_sinit_data->vtd_pmr_hi_size = (max_hi_ram - min_hi_ram) & ~0x1fffffULL;
++
++  /* Capabilities : choose monitor wake mechanism first */
++  sinit_caps = grub_txt_get_sinit_capabilities (sinit);
++  caps_mask = (GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT|
++               GRUB_TXT_CAPS_MONITOR_SUPPORT|
++               GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE|
++               GRUB_TXT_CAPS_TPM20_EVLOG_SUPPORT|
++               GRUB_TXT_CAPS_ECX_PT_SUPPORT);
++  os_sinit_data->capabilities = MLE_HDR_CAPS & ~caps_mask;
++  if ( sinit_caps & GRUB_TXT_CAPS_MONITOR_SUPPORT )
++    os_sinit_data->capabilities |= GRUB_TXT_CAPS_MONITOR_SUPPORT;
++  else if ( sinit_caps & GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT )
++    os_sinit_data->capabilities |= GRUB_TXT_CAPS_GETSEC_WAKE_SUPPORT;
++  else
++   { /* should have been detected in verify_acmod() */
++     /*printk(TBOOT_ERR"SINIT capabilities are incompatible (0x%x)\n", sinit_caps._raw);*/
++     return NULL;
++   }
++  /* TODO event log processing needs to be incorporated. There is a clean room verion
++   * for event log handling that was created for this.
++  if ( get_evtlog_type() == EVTLOG_TPM2_TCG )
++    {
++      printk(TBOOT_INFO"SINIT ACM supports TCG compliant TPM 2.0 event log format, tcg_event_log_format = %d \n",
++              sinit_caps.tcg_event_log_format);
++      os_sinit_data->capabilities | GRUB_TXT_CAPS_TPM20_EVLOG_SUPPORT;
++    }*/
++
++  /* This call will sort out if it is fetched lecacy or EFI and only care
++   * about this field on EFI platforms
++   */
++#ifdef GRUB_MACHINE_EFI
++  rsdp = grub_acpi_get_rsdpv2 ();
++  if ( !rsdp ) /* SNO */
++    return NULL;
++
++  if (version < 6)
++    os_sinit_data->efi_rsdt_ptr = rsdp->rsdpv1.rsdt_addr;
++  else
++    os_sinit_data->efi_rsdt_ptr = (grub_uint64_t)((unsigned long)rsdp);
++#endif
++
++  /* Capabilities : choose DA/LG */
++  os_sinit_data->capabilities |= GRUB_TXT_CAPS_TPM12_NO_LEGACY_PCR_USAGE;
++  if ( (sinit_caps & GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE) && param_prefer_da() )
++    os_sinit_data->capabilities |= GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE;
++  else if ( !(sinit_caps & GRUB_TXT_CAPS_TPM12_NO_LEGACY_PCR_USAGE) )
++     os_sinit_data->capabilities &= ~GRUB_TXT_CAPS_TPM12_NO_LEGACY_PCR_USAGE;
++  else if ( (sinit_caps & GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE) )
++    {
++      /*printk(TBOOT_INFO
++            "DA is the only supported PCR mapping by SINIT, use it\n");*/
++      os_sinit_data->capabilities |= GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE;
++    }
++  else
++    {
++        /*printk(TBOOT_ERR"SINIT capabilities are incompatible (0x%x)\n",
++               sinit_caps._raw);*/
++        return NULL;
++    }
++
++  /* PCR mapping selection MUST be zero in TPM2.0 mode
++   * since D/A mapping is the only supported by TPM2.0 */
++  /* TODO extpol is related to evt logging which is pending. The slaunch
++   * figured out if this is in TPM 1.2 or 2.0 mode, this should be passed
++   * as an init param (see above in param_prefer_da).
++  if ( tpm->major >= TPM20_VER_MAJOR )
++    {
++      os_sinit_data->flags = (tpm->extpol == TB_EXTPOL_AGILE) ? 0 : 1;
++      os_sinit_data->capabilities &= GRUB_TXT_CAPS_TPM12_NO_LEGACY_PCR_USAGE;
++      os_sinit_data->capabilities &= ~GRUB_TXT_CAPS_TPM12_AUTH_PCR_USAGE;
++    }*/
++
++  /* Event log initialization */
++  /* TODO evt log hanlding is still pending.
++  if ( os_sinit_data->version >= 6 )
++    init_os_sinit_ext_data(os_sinit_data->ext_data_elts);*/
 +
 +  return txt_heap;
 +}
