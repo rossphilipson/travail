@@ -29,3 +29,21 @@ void print_debug_chars_inl(void)
 ...
 	print_debug_chars_inl();
 ...
+
+void __init setup_dbregs(int cpuid, u64 l0, u64 l1)
+{
+#define G0 (1<<1)
+#define G1 (1<<3)
+#define W0 (1<<16) /* W only */
+#define L0 (1<<18) /* 2b */
+#define W1 (1<<20) /* W only */
+#define L1 (1<<22) /* 2b */
+	u64 value  = G0|G1|W0|L0|W1|L1;
+
+	asm("movq %0, %%db0"     ::"r" (l0));
+	asm("movq %0, %%db1"     ::"r" (l1));
+	asm("movq %0, %%db7"     ::"r" (value));
+
+	printk("***RJP*** setup 2 DB regs on CPU# %d\n", cpuid);
+}
+
