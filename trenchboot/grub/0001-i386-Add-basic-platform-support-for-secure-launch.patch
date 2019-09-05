@@ -1,4 +1,4 @@
-From 4ee89e2c84361d235485f1a2f17bf3699ebca78a Mon Sep 17 00:00:00 2001
+From 06c7202509aeeb04d8e6bf1526d42531d175fcae Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:50:14 -0400
 Subject: [PATCH 1/7] i386: Add basic platform support for secure launch
@@ -8,8 +8,8 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  include/grub/i386/cpuid.h |  13 ++++
  include/grub/i386/crfr.h  | 165 ++++++++++++++++++++++++++++++++++++++++++++++
  include/grub/i386/mmio.h  | 105 +++++++++++++++++++++++++++++
- include/grub/i386/msr.h   | 100 ++++++++++++++++++++++++++++
- 4 files changed, 383 insertions(+)
+ include/grub/i386/msr.h   | 112 +++++++++++++++++++++++++++++++
+ 4 files changed, 395 insertions(+)
  create mode 100644 include/grub/i386/crfr.h
  create mode 100644 include/grub/i386/mmio.h
  create mode 100644 include/grub/i386/msr.h
@@ -322,10 +322,10 @@ index 000000000..6a4c4946a
 +#endif
 diff --git a/include/grub/i386/msr.h b/include/grub/i386/msr.h
 new file mode 100644
-index 000000000..5c139dfad
+index 000000000..2b64015b9
 --- /dev/null
 +++ b/include/grub/i386/msr.h
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,112 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -377,9 +377,13 @@ index 000000000..5c139dfad
 +
 +#define GRUB_MSR_X86_MTRR_PHYSBASE0	0x00000200
 +#define GRUB_MSR_X86_MTRR_PHYSMASK0	0x00000201
++#define GRUB_MSR_X86_BASE_DEF_TYPE_MASK	0xff
++#define GRUB_MSR_X86_MASK_VALID		(1<<11)
 +
 +#define GRUB_MSR_X86_MTRR_DEF_TYPE	0x000002ff
-+#define GRUB_MSR_X86_DEF_TYPE_MASK	0x7
++#define GRUB_MSR_X86_DEF_TYPE_MASK	0xff
++#define GRUB_MSR_X86_MTRR_ENABLE_FIXED	(1<<10)
++#define GRUB_MSR_X86_MTRR_ENABLE	(1<<11)
 +
 +#define GRUB_MSR_X86_MC0_STATUS		0x00000401
 +
@@ -395,6 +399,14 @@ index 000000000..5c139dfad
 +						      patch clear  */
 +#define GRUB_MSR_AMD64_VM_CR		0xc0010114
 +#define GRUB_MSR_SVM_VM_CR_SVM_DISABLE	4
++
++/* MTRR Specific */
++
++#define GRUB_MTRR_MEMORY_TYPE_UC	0
++#define GRUB_MTRR_MEMORY_TYPE_WC	1
++#define GRUB_MTRR_MEMORY_TYPE_WT	4
++#define GRUB_MTRR_MEMORY_TYPE_WP	5
++#define GRUB_MTRR_MEMORY_TYPE_WB	6
 +
 +static inline grub_uint64_t
 +grub_rdmsr(grub_uint32_t msr)
