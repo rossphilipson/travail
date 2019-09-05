@@ -1,4 +1,4 @@
-From 21c4013f5ddf03c840d22423c0ac8d3b5d6453bb Mon Sep 17 00:00:00 2001
+From 96cf216ea1766f775bcae3387f2d259c923a6840 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 913 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 919 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 926 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 932 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..bd663a720
+index 000000000..f2082f29b
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,913 @@
+@@ -0,0 +1,926 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -901,7 +901,7 @@ index 000000000..bd663a720
 +   (struct linux_kernel_params*)zero_page;
 +  grub_uint8_t *txt_heap;
 +  grub_err_t err;
-+  //grub_uint32_t *mle_size_ptr;
++  unsigned long *mle_size_ptr;
 +
 +  if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,
@@ -943,6 +943,19 @@ index 000000000..bd663a720
 +  if ( err )
 +     return grub_error (err,
 +                 N_("secure launch failed to set MTRRs for ACM"));
++
++  /*
++   * Need to update the MLE header with the size of the MLE. The field is
++   * the 9th dword in.
++   */
++  mle_size_ptr = (unsigned long*)((unsigned long)mle_start +
++                                  boot_params->slaunch_header);
++  *(mle_size_ptr + 9) = mle_size;
++
++  /*
++   * TXT prelaunch setup is done. The next step is to issue the
++   * GETSEC[SENTER] instruction in the TXT relocator.
++   */
 +
 +  return GRUB_ERR_NONE;
 +}
