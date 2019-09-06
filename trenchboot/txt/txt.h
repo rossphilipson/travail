@@ -271,7 +271,7 @@ struct txt_heap_event_log_pointer2_1_element {
 	u32 next_record_offset;
 } __attribute__((packed));
 
-#define TXT_HEAP_EXTDATA_TYPE_MCFG			8
+#define TXT_HEAP_EXTDATA_TYPE_MCFG			9
 
 struct txt_heap_mcfg_element {
 	/* Copy of ACPI MCFG table */

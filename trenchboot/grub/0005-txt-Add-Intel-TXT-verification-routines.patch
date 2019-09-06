@@ -1,13 +1,13 @@
-From 08662e8576970df38ebaebf84af2d0043dda0a20 Mon Sep 17 00:00:00 2001
+From 18a7e184f138370fe20d1d435819f370735533b9 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 14:46:17 -0400
 Subject: [PATCH 5/7] txt: Add Intel TXT verification routines
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- grub-core/Makefile.core.def        |  1 +
- grub-core/loader/i386/txt/verify.c | 89 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 90 insertions(+)
+ grub-core/Makefile.core.def        |   1 +
+ grub-core/loader/i386/txt/verify.c | 304 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 305 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/verify.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -24,10 +24,10 @@ index 0c174b60e..6a2bd7225 100644
  
 diff --git a/grub-core/loader/i386/txt/verify.c b/grub-core/loader/i386/txt/verify.c
 new file mode 100644
-index 000000000..ab91c24f6
+index 000000000..708c17957
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/verify.c
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,304 @@
 +/*
 + * verify.c: verify that platform and processor supports Intel(r) TXT
 + *
@@ -95,9 +95,228 @@ index 000000000..ab91c24f6
 +
 +GRUB_MOD_LICENSE("GPLv3+");
 +
++/* Current max that the secure launch can handle */
++#define TXT_MAX_CPUS	512
++
++static grub_err_t
++verify_bios_spec_ver_elt (struct grub_txt_heap_ext_data_element *elt)
++{
++  grub_uint8_t *ptr = (grub_uint8_t *)elt;
++  struct grub_txt_heap_bios_spec_ver_element *bios_spec_ver_elt =
++         (struct grub_txt_heap_bios_spec_ver_element *)ptr;
++
++  if ( elt->size != sizeof(*elt) + sizeof(*bios_spec_ver_elt) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++                N_("HEAP_BIOS_SPEC_VER element has wrong size (%d)"),
++                elt->size);
++
++  /* Any values are allowed */
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++verify_acm_elt (struct grub_txt_heap_ext_data_element *elt)
++{
++  grub_uint8_t *ptr = (grub_uint8_t *)elt;
++  struct grub_txt_heap_acm_element *acm_elt =
++         (struct grub_txt_heap_acm_element *)ptr;
++  grub_uint64_t *acm_addrs;
++  grub_uint32_t i;
++
++  if ( elt->size != sizeof(*elt) + sizeof(*acm_elt) +
++       acm_elt->num_acms*sizeof(grub_uint64_t) )
++    return grub_error (GRUB_ERR_BAD_DEVICE,
++                N_("HEAP_ACM element has wrong size (%d)"),
++                elt->size);
++
++  /* TODO warning: Mo addrs is not error, but print warning
++  if ( acm_elt->num_acms == 0 )
++        printk(TBOOT_WARN"HEAP_ACM element has no ACM addrs\n");*/
++
++  acm_addrs = (grub_uint64_t *)(ptr + sizeof(*acm_elt));
++  for ( i = 0; i < acm_elt->num_acms; i++ )
++    {
++      if ( acm_addrs[i] == 0 )
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++                    N_("HEAP_ACM element ACM addr (%d) is NULL"), i);
++
++      if ( acm_addrs[i] >= 0x100000000UL )
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++                    N_("HEAP_ACM element ACM addr (%d) is >4GB"), i);
++
++      /* Not going to check if ACM addrs are valid ACMs */
++    }
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++verify_custom_elt (struct grub_txt_heap_ext_data_element *elt)
++{
++  grub_uint8_t *ptr = (grub_uint8_t *)elt;
++  struct grub_txt_heap_custom_element *custom_elt =
++         (struct grub_txt_heap_custom_element *)ptr;
++
++  if ( elt->size < sizeof(*elt) + sizeof(*custom_elt) )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("HEAP_CUSTOM element has wrong size (%d)"),
++                 elt->size);
++
++  /* Any values are allowed */
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++verify_evt_log_ptr_elt (struct grub_txt_heap_ext_data_element *elt)
++{
++  grub_uint8_t *ptr = (grub_uint8_t *)elt;
++  struct grub_txt_heap_event_log_element *elog_elt =
++         (struct grub_txt_heap_event_log_element *)ptr;
++
++  if ( elt->size != sizeof(*elt) + sizeof(*elog_elt) )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("HEAP_EVENT_LOG_POINTER element has wrong size (%d)"),
++                 elt->size);
++
++  /* TODO sort out how to do this verifier once the event log handling is in place
++  return verify_evt_log((event_log_container_t *)(unsigned long)
++                          elog_elt->event_log_phys_addr);*/
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++verify_ext_data_elts(struct grub_txt_heap_ext_data_element *elts,
++                     grub_uint64_t elts_size)
++{
++  struct grub_txt_heap_ext_data_element *elt = elts;
++  grub_err_t err;
++
++  if ( elts_size < sizeof(*elt) )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("TXT heap heap ext data elements too small"));
++
++  for ( ; ; )
++    {
++      if ( elts_size < elt->size || elt->size == 0 )
++        return grub_error (GRUB_ERR_BAD_DEVICE,
++                    N_("TXT heap invalid element size:  type: %d, size: %d"),
++                    elt->type, elt->size);
++
++      switch ( elt->type )
++        {
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_END:
++            return GRUB_ERR_NONE;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_BIOS_SPEC_VER:
++            err = verify_bios_spec_ver_elt (elt);
++            if ( err )
++              return err;
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_ACM:
++            err = verify_acm_elt (elt);
++            if ( err )
++              return err;
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_STM:
++            /* Nothing to check, platform specific */
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_CUSTOM:
++            err = verify_custom_elt (elt);
++            if ( err )
++              return err;
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR:
++            err = verify_evt_log_ptr_elt (elt);
++            if ( err )
++              return err;
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_MADT:
++            /* Copy of ACPI MADT, not validating */
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_EVENT_LOG_POINTER2_1:
++            /* TODO TBOOT did not verify this, not sure why or how to do it */
++            break;
++          case GRUB_TXT_HEAP_EXTDATA_TYPE_MCFG:
++            /* Copy of ACPI MCFG, not validating */
++            break;
++          default:
++            /* TODO how to do warnings:
++            printk(TBOOT_WARN"unknown element:  type: %u, size: %u\n", elt->type,
++                   elt->size);*/
++            break;
++        }
++
++      elts_size -= elt->size;
++      elt = (struct grub_txt_heap_ext_data_element *)((grub_uint8_t *)elt + elt->size);
++    }
++
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++verify_bios_data (void)
++{
++  grub_uint8_t *txt_heap;
++  grub_uint64_t heap_base;
++  grub_uint64_t heap_size;
++  grub_uint64_t bios_size;
++  grub_err_t err = GRUB_ERR_NONE;
++  struct grub_txt_bios_data *bios_data;
++  struct grub_txt_heap_ext_data_element *elts;
++
++  /*
++   * Verify that the BIOS information in the TXT heap that was setup by the
++   * BIOS ACM is sane.
++   */
++
++  txt_heap = grub_txt_get_heap ();
++  heap_base = grub_txt_read_reg (GRUB_TXT_HEAP_BASE, 1);
++  heap_size = grub_txt_read_reg (GRUB_TXT_HEAP_SIZE, 1);
++
++  if ( txt_heap == NULL || heap_base == 0 || heap_size == 0 )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("TXT heap is not configured correctly"));
++
++  bios_size = grub_txt_bios_data_size (txt_heap);
++  if ( bios_size == 0 || bios_size > heap_size )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("invalid size of the TXT heap BIOS data table"));
++
++  bios_data = grub_txt_bios_data_start (txt_heap);
++
++  /* Check version */
++  if ( bios_data->version < 2 )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("unsupported BIOS data version (%d)"), bios_data->version);
++
++  /* We assume backwards compatibility but print a warning */
++  /* TODO how to do warnings:
++   * if ( bios_data->version > 4 )
++        printk(TBOOT_WARN"unsupported BIOS data version (%u)\n", bios_data->version);*/
++
++  if ( bios_data->num_logical_procs > TXT_MAX_CPUS )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("BIOS reports too many CPUs for secure launch (%d)"),
++                 bios_data->num_logical_procs);
++
++  if ( bios_data->version >= 4 && bios_size > sizeof(*bios_data) + sizeof(bios_size) )
++    {
++      elts = (struct grub_txt_heap_ext_data_element *)
++              ((grub_uint8_t *)bios_data + bios_size);
++      err = verify_ext_data_elts(elts,
++                                 bios_size - sizeof(*bios_data) - sizeof(bios_size));
++    }
++
++
++  return err;
++}
++
 +grub_err_t
 +grub_txt_verify_platform (void)
 +{
++  grub_uint64_t ests;
++
 +  /* TODO
 +   * TXT Specification
 +   * 4.5 SGX Requirement for TXT Platform
@@ -106,16 +325,12 @@ index 000000000..ab91c24f6
 +   * Eventually need the verify_IA32_se_svn_status routine to be called here.
 +   */
 +
-+  /* TODO need the rest of the verify code here. Note that supports_txt() steps
-+   * have already been effectively done in earlier slaunch code. Don't bother
-+   * with vtd_bios_enabled().
-+   */
++  ests = grub_txt_read_reg (GRUB_TXT_ESTS, 1);
++  if ( ests & GRUB_TXT_ESTS_RESET )
++     return grub_error (GRUB_ERR_BAD_DEVICE,
++                 N_("TXT_RESET.STS is set and SENTER is disabled"));
 +
-+  /* TODO move a the heap verify code and verify_bios_data in here
-+   * and fixup.
-+   */
-+
-+  return GRUB_ERR_NONE;
++  return verify_bios_data ();
 +}
 -- 
 2.13.6

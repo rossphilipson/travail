@@ -1,20 +1,20 @@
-From a083b1b51b4eddf464f1355d9ba8f05338ffb544 Mon Sep 17 00:00:00 2001
+From 17a818045d445e79b6b550947fdd75bfa5886503 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:53:06 -0400
 Subject: [PATCH 2/7] txt: Add Intel TXT definitions header file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- include/grub/i386/txt.h | 690 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 690 insertions(+)
+ include/grub/i386/txt.h | 699 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 699 insertions(+)
  create mode 100644 include/grub/i386/txt.h
 
 diff --git a/include/grub/i386/txt.h b/include/grub/i386/txt.h
 new file mode 100644
-index 000000000..c03531b7d
+index 000000000..e236b4cf6
 --- /dev/null
 +++ b/include/grub/i386/txt.h
-@@ -0,0 +1,690 @@
+@@ -0,0 +1,699 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -216,6 +216,15 @@ index 000000000..c03531b7d
 +#define GRUB_TXT_CMD_NO_SECRETS		0x08e8
 +#define GRUB_TXT_E2STS			0x08f0
 +
++#define GRUB_TXT_STS_SINIT_DONE		(1<<0)
++#define GRUB_TXT_STS_SEXIT_DONE		(1<<1)
++#define GRUB_TXT_STS_MEM_CONFIG_LOCK	(1<<6)
++#define GRUB_TXT_STS_PRIVATE_OPEN	(1<<7)
++#define GRUB_TXT_STS_LOCALITY1_OPEN	(1<<15)
++#define GRUB_TXT_STS_LOCALITY2_OPEN	(1<<16)
++#define GRUB_TXT_ESTS_RESET		(1<<0)
++#define GRUB_TXT_E2STS_SECRETS		(1<<1)
++
 +union grub_txt_didvid
 +{
 +  grub_uint64_t value;
@@ -314,7 +323,7 @@ index 000000000..c03531b7d
 +  grub_uint32_t next_record_offset;
 +} GRUB_PACKED;
 +
-+#define GRUB_TXT_HEAP_EXTDATA_TYPE_MCFG			8
++#define GRUB_TXT_HEAP_EXTDATA_TYPE_MCFG			9
 +
 +struct grub_txt_heap_mcfg_element
 +{
