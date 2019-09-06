@@ -120,6 +120,24 @@ struct txt_acm_processor_id {
 	u64 platform_mask;
 } __attribute__((packed));
 
+#define TXT_TPM_CAPS_EXTPOL_NONE	0 /* TPM 1.2 */
+#define TXT_TPM_CAPS_EXTPOL_MA		1
+#define TXT_TPM_CAPS_EXTPOL_MP		2
+#define TXT_TPM_CAPS_EXTPOL_BOTH	3
+
+#define TXT_TPM_CAPS_FAMILY_DISCRETE_12	1
+#define TXT_TPM_CAPS_FAMILY_DISCRETE_20	2
+#define TXT_TPM_CAPS_FAMILY_FIRMWARE_20	8
+
+#define TXT_TPM_CAPS_INITIAL_NV_INDICES	0
+#define TXT_TPM_CAPS_TCP_NV_INDICES	1
+
+struct txt_acm_tpm_info {
+	u32 capabilities;
+	u16 count;
+	/* List of supported hash algorithm per TPM2 spec */
+} __attribute__((packed));
+
 /* Appendix B SMX Interaction with Platform */
 /* B.1 Intel Trusted Execution Technology Configuration Registers */
 
