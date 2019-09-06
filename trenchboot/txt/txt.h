@@ -175,6 +175,15 @@ struct txt_acm_tpm_info {
 #define TXT_CMD_NO_SECRETS		0x08e8
 #define TXT_E2STS			0x08f0
 
+#define TXT_STS_SINIT_DONE		(1<<0)
+#define TXT_STS_SEXIT_DONE		(1<<1)
+#define TXT_STS_MEM_CONFIG_LOCK		(1<<6)
+#define TXT_STS_PRIVATE_OPEN		(1<<7)
+#define TXT_STS_LOCALITY1_OPEN		(1<<15)
+#define TXT_STS_LOCALITY2_OPEN		(1<<16)
+#define TXT_ESTS_RESET			(1<<0)
+#define TXT_E2STS_SECRETS		(1<<1)
+
 union txt_didvid {
 	u64 value;
 	struct {
