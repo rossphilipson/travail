@@ -1,4 +1,4 @@
-From 96cf216ea1766f775bcae3387f2d259c923a6840 Mon Sep 17 00:00:00 2001
+From fab99656e6d304fe921f680cd281da11c40164d5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 926 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 932 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 937 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 943 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..f2082f29b
+index 000000000..dd8f96d9a
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,926 @@
+@@ -0,0 +1,937 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -101,8 +101,19 @@ index 000000000..f2082f29b
 +#include <grub/i386/crfr.h>
 +#include <grub/i386/txt.h>
 +#include <grub/i386/linux.h>
++#include <grub/i386/slaunch.h>
 +
 +GRUB_MOD_LICENSE("GPLv3+");
++
++static grub_uint8_t txt_tpm_type;
++static grub_uint8_t txt_extpol;
++
++void
++grub_txt_init_params (grub_uint8_t tpm_type, grub_uint8_t extpol)
++{
++  txt_tpm_type = tpm_type;
++  txt_extpol = extpol;
++}
 +
 +/* TODO make as much of the txt support code as implementation
 + * non-specific as possible in a clean room implementation.

@@ -1,4 +1,4 @@
-From d73db36678b5ebef9f6f7f899b999ee83d917237 Mon Sep 17 00:00:00 2001
+From 15f81c4b4669ee841a05b8a74ddbbfd8cf5163dc Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 15:01:00 -0400
 Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header
@@ -6,8 +6,8 @@ Subject: [PATCH 6/7] slaunch: Add main secure launch definitions header
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.am       |  3 +++
- include/grub/i386/slaunch.h | 50 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 53 insertions(+)
+ include/grub/i386/slaunch.h | 55 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
  create mode 100644 include/grub/i386/slaunch.h
 
 diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
@@ -40,10 +40,10 @@ index 3ea8e7ff4..ae6676e6f 100644
  KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/pmtimer.h
 diff --git a/include/grub/i386/slaunch.h b/include/grub/i386/slaunch.h
 new file mode 100644
-index 000000000..7630528ee
+index 000000000..445c40bee
 --- /dev/null
 +++ b/include/grub/i386/slaunch.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,55 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -70,6 +70,10 @@ index 000000000..7630528ee
 +#include <grub/types.h>
 +#include <grub/i386/linux.h>
 +
++#define GRUB_TPM12_TIS	1
++#define GRUB_TPM20_TIS	2
++#define GRUB_TPM20_CRB	3
++
 +struct grub_slaunch_params
 +{
 +  struct linux_kernel_params *params;
@@ -88,7 +92,8 @@ index 000000000..7630528ee
 +
 +struct grub_slaunch_module *grub_slaunch_get_modules (void);
 +
-+grub_err_t grub_slaunch_init_txt (void);
++grub_err_t grub_slaunch_init_txt (grub_uint8_t tpm_type, int argc,
++                                  char *argv[]);
 +grub_err_t grub_slaunch_boot_txt (struct grub_slaunch_params *slparams);
 +
 +void grub_linux_slaunch_set (grub_err_t (*sfunc) (struct grub_slaunch_params*));
