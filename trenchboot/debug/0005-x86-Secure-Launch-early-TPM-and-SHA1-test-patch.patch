@@ -21,7 +21,7 @@ index 1a089f7f7f79..2bdf0fd569a8 100644
 @@ -91,7 +91,7 @@ vmlinux-objs-$(CONFIG_EFI_STUB) += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o \
  vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_thunk_$(BITS).o
  
- vmlinux-objs-$(CONFIG_SECURE_LAUNCH_STUB) += $(obj)/early_sha1.o \
+ vmlinux-objs-$(CONFIG_SECURE_LAUNCH) += $(obj)/early_sha1.o \
 -	$(obj)/early_tpm.o
 +	$(obj)/early_tpm.o $(obj)/sl_main.o
  
@@ -35,7 +35,7 @@ index 64037895b085..879b53375884 100644
  	shrq	$3, %rcx
  	rep	stosq
  
-+#ifdef CONFIG_SECURE_LAUNCH_STUB
++#ifdef CONFIG_SECURE_LAUNCH
 +	/*
 +	 * Have to do the final early sl stub work in 64b area.
 +	 *

@@ -79,6 +79,7 @@ Ross
        of the boot params.
  v2:
    - Set bool default=n and add to the description.
+   - Changed CONFIG_SECURE_LAUNCH_STUB to CONFIG_SECURE_LAUNCH.
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:
@@ -112,6 +113,7 @@ Ross
    - Protect the MLE area on all platforms.
    - Use defines and asm-offsets for numeric values in sl_stub.
    - Add support for runtime detection of Secure Launch entry.
+   - Reorder startup operations to more closely match specification.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
