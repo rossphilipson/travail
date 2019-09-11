@@ -348,6 +348,24 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
            (unsigned long)(hdr->cmd_line_ptr + kernel_cmdline_size));
     printk_long((void *)hdr->cmd_line_ptr);
 
+#if 0
+    /* DEBUG create some dummy setup_data blocks */
+    {
+        struct setup_data *data = (struct setup_data *)(unsigned long)0x6c000;
+
+        data->next = 0x6c400;
+        data->type = 10;
+        data->len = 0x40;
+
+        data = (struct setup_data *)(unsigned long)data->next;
+        data->next = 0;
+        data->type = 11;
+        data->len = 0x80;
+
+        hdr->setup_data = 0x6c000;
+    }
+#endif
+
     /* need to put boot_params in real mode area so it gets mapped */
     boot_params = (boot_params_t *)real_mode_base;
 

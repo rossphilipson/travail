@@ -225,6 +225,13 @@ struct efi_info {
 	uint32_t efi_memmap_hi;
 };
 
+struct setup_data {
+	uint64_t next;
+	uint32_t type;
+	uint32_t len;
+	/* data */
+};
+
 typedef struct {
     uint32_t real_mode_base;
     unsigned long real_mode_size;
