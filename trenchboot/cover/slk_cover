@@ -114,6 +114,7 @@ Ross
    - Use defines and asm-offsets for numeric values in sl_stub.
    - Add support for runtime detection of Secure Launch entry.
    - Reorder startup operations to more closely match specification.
+   - Add measuring of setup_data and EFI memory map.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:

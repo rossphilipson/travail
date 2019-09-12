@@ -379,7 +379,6 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_mle_data->zero_page_addr = (uint32_t)g_il_kernel_setup.boot_params;
     printk(TBOOT_DETA"Zero page addr: 0x%x\n", os_mle_data->zero_page_addr);
     os_mle_data->version = OS_MLE_STRUCT_VERSION;
-    os_mle_data->lo_pmr_min = g_min_ram;
     os_mle_data->saved_misc_enable_msr = rdmsr(MSR_IA32_MISC_ENABLE);
     /* might as well save the MTRR state here where OS-MLE is setup */
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
