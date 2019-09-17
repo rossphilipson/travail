@@ -80,6 +80,7 @@ Ross
  v2:
    - Set bool default=n and add to the description.
    - Changed CONFIG_SECURE_LAUNCH_STUB to CONFIG_SECURE_LAUNCH.
+   - Change sl_mle_header to mle_header.
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:
