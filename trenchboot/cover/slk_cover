@@ -78,69 +78,69 @@ Ross
  NOTE: This patch is still waiting to be updated with the final implementation
        of the boot params.
  v2:
-   - Set bool default=n and add to the description.
-   - Changed CONFIG_SECURE_LAUNCH_STUB to CONFIG_SECURE_LAUNCH.
-   - Change sl_mle_header to mle_header.
+   * Set bool default=n and add to the description.
+   * Changed CONFIG_SECURE_LAUNCH_STUB to CONFIG_SECURE_LAUNCH.
+   * Change sl_mle_header to mle_header.
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:
-   - Added offsets, struct and error codes for e820 TXT reservations.
-   - Added comments from code review.
-   - Use asm-offsets for OS-MLE structure (and offsetof in C code).
-   - Defines for Intel and AMD manufacturer CPUID.
+   * Added offsets, struct and error codes for e820 TXT reservations.
+   * Added comments from code review.
+   * Use asm-offsets for OS-MLE structure (and offsetof in C code).
+   * Defines for Intel and AMD manufacturer CPUID.
 
 0003-x86-Add-early-SHA1-support-for-measuring-zero-page-a.patch
  v2:
-   - Added comment about where the code originated in include/crypto/sha1_base.h.
-   - Fixed a few warnings found by checkpatch.
-   - Define SHA1_DISABLE_EXPORT before including sha1.c to disable EXPORTs.
+   * Added comment about where the code originated in include/crypto/sha1_base.h.
+   * Fixed a few warnings found by checkpatch.
+   * Define SHA1_DISABLE_EXPORT before including sha1.c to disable EXPORTs.
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
  v2:
-   - General code fixes found in review of v1 from Daniel Smith.
-   - Cleanup from running checkpatch.
+   * General code fixes found in review of v1 from Daniel Smith.
+   * Cleanup from running checkpatch.
 
 0005-x86-Secure-Launch-kernel-early-boot-stub.patch
  v2:
-   - Removed unfinished AMD support for now.
-   - Cleanup from running checkpatch.
-   - Added a number of comments in code to explain things.
-   - Remove cache disable code, TXT left it al UC anyway.
-   - Remove incorrect stack adds after i/lrets.
-   - Fix the manufacturer jump logic in sl_stub.S
-   - Fix some cast issues and related in sl_main.c
-   - Moved SHA1 and PCR extend code to a common function.
-   - Protect the MLE area on all platforms.
-   - Use defines and asm-offsets for numeric values in sl_stub.
-   - Add support for runtime detection of Secure Launch entry.
-   - Reorder startup operations to more closely match specification.
-   - Add measuring of setup_data and EFI memory map.
+   * Removed unfinished AMD support for now.
+   * Cleanup from running checkpatch.
+   * Added a number of comments in code to explain things.
+   * Remove cache disable code, TXT left it al UC anyway.
+   * Remove incorrect stack adds after i/lrets.
+   * Fix the manufacturer jump logic in sl_stub.S
+   * Fix some cast issues and related in sl_main.c
+   * Moved SHA1 and PCR extend code to a common function.
+   * Protect the MLE area on all platforms.
+   * Use defines and asm-offsets for numeric values in sl_stub.
+   * Add support for runtime detection of Secure Launch entry.
+   * Reorder startup operations to more closely match specification.
+   * Add measuring of setup_data and EFI memory map.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
-   - Removed unfinished AMD support for now.
-   - Fixed error handling in the late SL stub code.
-   - Added e820 reservations for TXT specific memory ranges.
-   - Added VTd PMR validation for TXT.
-   - Fixed the DMAR copying code to happen earlier before IOMMU driver loads.
-   - Check for offset == 0 during heap walk.
-   - Cleanup from running checkpatch.
-   - Add support for runtime detection of Secure Launch entry.
+   * Removed unfinished AMD support for now.
+   * Fixed error handling in the late SL stub code.
+   * Added e820 reservations for TXT specific memory ranges.
+   * Added VTd PMR validation for TXT.
+   * Fixed the DMAR copying code to happen earlier before IOMMU driver loads.
+   * Check for offset == 0 during heap walk.
+   * Cleanup from running checkpatch.
+   * Add support for runtime detection of Secure Launch entry.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
-   - Removed unfinished AMD support for now.
-   - Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
-   - Added comments to TXT AP functions.
-   - New implementation of the AP wake up code to allow it to be relocated
+   * Removed unfinished AMD support for now.
+   * Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
+   * Added comments to TXT AP functions.
+   * New implementation of the AP wake up code to allow it to be relocated
      to a safe location away from the kernel extraction area.
-   - Add support for runtime detection of Secure Launch entry.
-   - Fix rmpiggy slaunch code to properly form the 32b addresses
+   * Add support for runtime detection of Secure Launch entry.
+   * Fix rmpiggy slaunch code to properly form the 32b addresses
 
 0008-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
-   - Removed unfinished AMD support for now.
-   - Cleanup from running checkpatch.
-   - Removed sl_memfile_read and use built in simple_read_from_buffer
-   - Add support for runtime detection of Secure Launch entry.
+   * Removed unfinished AMD support for now.
+   * Cleanup from running checkpatch.
+   * Removed sl_memfile_read and use built in simple_read_from_buffer
+   * Add support for runtime detection of Secure Launch entry.
