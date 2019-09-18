@@ -1,0 +1,132 @@
+From f8cf50713d25518df69e03b61469c7b9952968d9 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 18 Sep 2019 11:38:13 -0400
+Subject: [PATCH v2 0/8] x86: Trenchboot secure late launch Linux kernel support
+
+The basic idea of the Trenchboot project is to allow a Linux kernel to be
+directly "late launched" establising a Dynamic Root of Trust Measurement
+(DRTM). The late launch will be initiated by boot loader with assocaited
+support added to it, for example the first capable target will be GRUB2.
+The process of establishing a DRTM involves measuring everything
+that is intended to be run (kernel image, initrd, etc) and everything that
+will configure that kernel to run (command line, boot params, etc) into
+specific PCRs in the TPM. Another key aspect is the late launch is rooted
+in hardware. On Intel this is done using TXT and on AMD it is done using
+SKINIT. Information on these technologies can be readily found online.
+
+To make a kernel able to be launched from TXT or SKINIT, a stub must be
+built into the setup section of the compressed kernel to handle the
+sepcific state that the late launch process leaves the BSP in. This is a
+lot like the EFI stub that is found in the same area. Also this stub must
+measure everything that is going to be used as early as possible. This stub
+code and subsequent code must also deal with the specific state that the
+late launch leaves the APs in.
+
+A quick note on terminology. The open source project itself is called
+Trenchboot which is hosted on Github (links below). The technology is
+referred to as "Secure Launch" within the kernel code. So the prefixes
+sl_/SL_ or slaunch/SLAUNCH will be seen in the code. The stub code
+discussed above is referred to as the SL stub.
+
+The basic flow is:
+
+ - Entry from the late launch jumps to the SL stub
+ - SL stub fixes up the world on the BSP
+ - For TXT, SL stub wakes the APs, fixes up their worlds
+ - For TXT, APs are left waiting in a pause/jmp loop for an NMI to wake them
+ - SL stub jumps to startup_32
+ - Kernel boot proceeds normally
+ - During early setup, SL code runs to finish some validation and setup tasks
+ - The SMP bringup code is modified to wake the APs
+ - Kernel boot finishes booting normally
+
+This is the second internal posting of the kernel support patches for
+Trenchboot. The code is functional using TXT and will boot to user mode
+following a secure late launch. A few things to note:
+
+ - Almost all the feedback from the first posting was incorporated. This
+   will be the final internal review. I welcome feedback and will
+   incorporate it but the next posting will be as an RFC to LKML.
+ - We are focusing on Intel TXT first per OCI's wishes so the AMD bits
+   are not implemented and were removed.
+ - Patch 1 will change once we hammer out the final details of the boot
+   protocol and changes to the boot params with the x86 maintainers.
+ - The TPM CRB code is as yet untested due to a lack of hardware.
+ - The kernel crash on X7 systems is still an issue. The details can be
+   seen here:
+   https://groups.google.com/forum/#!topic/trenchboot-devel/EZN_4ymrCgs
+
+Links:
+
+The Trenchboot project including documentation:
+
+https://github.com/trenchboot
+
+Our internal OCI Confluence page:
+
+https://confluence.oci.oraclecorp.com/pages/viewpage.action?spaceKey=linux&title=TrenchBoot
+
+AMD SKINIT is documented in the System Programming manual:
+
+https://www.amd.com/system/files/TechDocs/24593.pdf
+
+Intel TXT is documented in its own specification and in the SDM Instruction Set volume:
+
+https://www.intel.com/content/dam/www/public/us/en/documents/guides/intel-txt-software-development-guide.pdf
+https://software.intel.com/en-us/articles/intel-sdm
+
+Thanks
+Ross Philipson
+
+Daniel P. Smith (1):
+  x86: Secure Launch adding event log securityfs
+
+Ross Philipson (7):
+  x86: Secure Launch Kconfig and build tool changes
+  x86: Secure Launch main header file
+  x86: Add early SHA1 support for Secure Launch early measurements
+  x86: Add early TPM code for updating PCRs
+  x86: Secure Launch kernel early boot stub
+  x86: Secure Launch kernel late boot stub
+  x86: Secure Launch SMP bringup support
+
+ arch/x86/Kconfig                      |   11 +
+ arch/x86/boot/Makefile                |    2 +-
+ arch/x86/boot/compressed/Makefile     |    3 +
+ arch/x86/boot/compressed/early_sha1.c |  106 ++++
+ arch/x86/boot/compressed/early_tpm.c  | 1087 +++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/early_tpm.h  |  367 +++++++++++
+ arch/x86/boot/compressed/head_64.S    |   32 +
+ arch/x86/boot/compressed/sl_main.c    |  220 +++++++
+ arch/x86/boot/compressed/sl_stub.S    |  571 +++++++++++++++++
+ arch/x86/boot/header.S                |    1 +
+ arch/x86/boot/tools/build.c           |   16 +
+ arch/x86/include/asm/realmode.h       |    3 +
+ arch/x86/include/asm/sha1.h           |   18 +
+ arch/x86/include/asm/slaunch.h        |  299 +++++++++
+ arch/x86/include/asm/tpm.h            |   75 +++
+ arch/x86/include/uapi/asm/bootparam.h |    1 +
+ arch/x86/kernel/Makefile              |    1 +
+ arch/x86/kernel/asm-offsets.c         |   12 +
+ arch/x86/kernel/setup.c               |    5 +
+ arch/x86/kernel/slaunch.c             |  595 ++++++++++++++++++
+ arch/x86/kernel/smpboot.c             |   99 +++
+ arch/x86/realmode/rm/header.S         |    3 +
+ arch/x86/realmode/rm/trampoline_64.S  |   40 ++
+ drivers/iommu/dmar.c                  |    6 +
+ include/linux/tpm_command.h           |    4 +
+ lib/sha1.c                            |    4 +
+ 26 files changed, 3580 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/boot/compressed/early_sha1.c
+ create mode 100644 arch/x86/boot/compressed/early_tpm.c
+ create mode 100644 arch/x86/boot/compressed/early_tpm.h
+ create mode 100644 arch/x86/boot/compressed/sl_main.c
+ create mode 100644 arch/x86/boot/compressed/sl_stub.S
+ create mode 100644 arch/x86/include/asm/sha1.h
+ create mode 100644 arch/x86/include/asm/slaunch.h
+ create mode 100644 arch/x86/include/asm/tpm.h
+ create mode 100644 arch/x86/kernel/slaunch.c
+
+-- 
+1.8.3.1
+
