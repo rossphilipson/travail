@@ -115,7 +115,35 @@ static void dump_page_tables(void *ptab_base)
  * build_mle_pagetable()
  */
 
-/* page dir/table entry is phys addr + P + R/W + PWT */
+static void *calculate_ptab_base_size(uint32_t *ptab_size)
+{
+    uint32_t pages;
+    void *ptab_base;
+
+    /*
+     * TODO should check there is enough space between kernel base and the
+     * beginning of the RAM region where it is located.
+     */
+
+    /* Round up pages from int divide and add PD and PTPE */
+    pages = g_il_kernel_setup.protected_mode_size/(512*PAGE_SIZE) + 3;
+    *ptab_size = pages*PAGE_SIZE;
+    ptab_base = (void*)(PAGE_DOWN(g_il_kernel_setup.protected_mode_base) - *ptab_size);
+
+    printk(TBOOT_DETA"Page table start=0x%x, size=0x%x, count=0x%x\n",
+           (uint32_t)ptab_base, *ptab_size, pages);
+
+    return ptab_base;
+}
+
+/*
+ * If enough room is available in front of the MLE, the maximum size of an
+ * MLE that can be covered is 1G. This is due to having 512 PDEs pointing
+ * to 512 page tables with 512 PTEs each.
+ */
+#define SLBOOT_MAX_MLE_SIZE (512*512*4096)
+
+/* Page dir/table entry is phys addr + P + R/W + PWT */
 #define MAKE_PDTE(addr)  (((uint64_t)(unsigned long)(addr) & PAGE_MASK) | 0x01)
 
 /* The MLE page tables have to be below the MLE which by default loads at 1M */
@@ -135,8 +163,8 @@ static void *build_mle_pagetable(void)
     printk(TBOOT_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
            mle_start, mle_start+mle_size, mle_size);
 
-    if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED ) {
-        printk(TBOOT_ERR"MLE size too big for single page table\n");
+    if ( mle_size > SLBOOT_MAX_MLE_SIZE ) {
+        printk(TBOOT_ERR"MLE size exceeds maximum size allowable (1Gb)\n");
         return NULL;
     }
 
@@ -151,13 +179,22 @@ static void *build_mle_pagetable(void)
      * we have to use the low memory block since the kernel gets loaded
      * at 1M. This does not work on server systems though.
      */
-    ptab_size = SLBOOT_MLEPT_SIZE;
     if ( g_il_kernel_setup.boot_params->hdr.relocatable_kernel ) {
         /* TODO check that there is room/alignment and also allow bigger page table */
-        ptab_base = (void*)(g_il_kernel_setup.protected_mode_base - ptab_size);
+        ptab_base = calculate_ptab_base_size(&ptab_size);
+        if ( !ptab_base ) {
+            printk(TBOOT_ERR"MLE size exceeds space available for page tables\n");
+            return NULL;
+        }
     }
-    else
+    else {
+        if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED ) {
+            printk(TBOOT_ERR"MLE size exceeds size allowable in low mem\n");
+            return NULL;
+        }
+        ptab_size = SLBOOT_MLEPT_SIZE;
         ptab_base = (void*)SLBOOT_MLEPT_ADDR;
+    }
 
     tb_memset(ptab_base, 0, ptab_size);
     printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
