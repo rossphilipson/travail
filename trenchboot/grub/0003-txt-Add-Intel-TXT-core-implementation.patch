@@ -1,4 +1,4 @@
-From 7e936f914542a28e9ce1255396a20b176933013a Mon Sep 17 00:00:00 2001
+From f1bbab3afa978a5a286a46e6e8eee9c20f4db7bd Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Wed, 7 Aug 2019 13:57:33 -0400
 Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
@@ -6,8 +6,8 @@ Subject: [PATCH 3/7] txt: Add Intel TXT core implementation
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  grub-core/Makefile.core.def     |   6 +
- grub-core/loader/i386/txt/txt.c | 936 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 942 insertions(+)
+ grub-core/loader/i386/txt/txt.c | 973 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 979 insertions(+)
  create mode 100644 grub-core/loader/i386/txt/txt.c
 
 diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
@@ -29,10 +29,10 @@ index 269370417..c2b84d7e0 100644
    common = lib/fdt.c;
 diff --git a/grub-core/loader/i386/txt/txt.c b/grub-core/loader/i386/txt/txt.c
 new file mode 100644
-index 000000000..aee0b53d5
+index 000000000..d2495d2de
 --- /dev/null
 +++ b/grub-core/loader/i386/txt/txt.c
-@@ -0,0 +1,936 @@
+@@ -0,0 +1,973 @@
 +/*
 + * txt.c: Intel(r) TXT support functions, including initiating measured
 + *        launch, post-launch, AP wakeup, etc.
@@ -901,21 +901,55 @@ index 000000000..aee0b53d5
 +  return txt_heap;
 +}
 +
++/* If enough room is available in front of the MLE, the maximum size of an
++ * MLE that can be covered is 1G. This is due to having 512 PDEs pointing
++ * to 512 page tables with 512 PTEs each.
++ */
++#define SLBOOT_MAX_MLE_SIZE (512*512*4096)
++
++static void*
++calculate_ptab_base_size (grub_uint32_t mle_start, grub_uint32_t mle_size,
++                          grub_uint32_t *ptab_size)
++{
++  grub_uint32_t pages;
++  void *ptab_base;
++
++  /* TODO should check there is enough space between kernel base and the
++   * beginning of the RAM region where it is located.
++   */
++
++  /* TODO this is a simple way to do the allocation. Not sure it will work
++   * with the way GRUB manages memory. Probably needs to be done when the
++   * kernel image space is allocated.
++   */
++
++  /* Round up pages from int divide and add PD and PDPT */
++  pages = mle_size/(512*PAGE_SIZE) + 3;
++  *ptab_size = pages*PAGE_SIZE;
++  ptab_base = (void*)(unsigned long)(mle_start - *ptab_size);
++
++  /*printk(TBOOT_DETA"Page table start=0x%x, size=0x%x, count=0x%x\n",
++           (uint32_t)ptab_base, *ptab_size, pages);*/
++
++  return ptab_base;
++}
++
 +grub_err_t
 +grub_txt_launch_environment (grub_uint32_t mle_start, grub_uint32_t mle_size,
 +                             struct grub_txt_acm_header *sinit,
 +                             void *zero_page)
 +{
-+  void *mle_ptab_base;
 +  struct linux_kernel_params *boot_params =
 +   (struct linux_kernel_params*)zero_page;
++  void *mle_ptab_base;
++  grub_uint32_t mle_ptab_size;
 +  grub_uint8_t *txt_heap;
 +  grub_err_t err;
 +  unsigned long *mle_size_ptr;
 +
-+  if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED )
++  if ( mle_size > SLBOOT_MAX_MLE_SIZE )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,
-+                 N_("secure launch MLE size too big"));
++                 N_("secure launch MLE size exceeds max size allowable (1Gb)"));
 +
 +  /* MLE should start on page boundary */
 +  if ( mle_start & ~PAGE_MASK )
@@ -928,17 +962,20 @@ index 000000000..aee0b53d5
 +   */
 +  if ( boot_params->relocatable_kernel )
 +    {
-+      /* TODO this is a simple way to do the allocation. Not sure it will work
-+       * with the way GRUB manages memory. Probably needs to be done when the
-+       * kernel image space is allocated.
-+       */
-+      mle_ptab_base = (void*)(unsigned long)(mle_start - SLBOOT_MLEPT_SIZE);
++      mle_ptab_base = calculate_ptab_base_size (mle_start, mle_size,
++                                                &mle_ptab_size);
++      if ( !mle_ptab_base ) {
++        return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                 N_("secure launch MLE size exceeds space for page tables"));
++      }
 +    }
-+  else
++  else {
 +    mle_ptab_base = (void*)SLBOOT_MLEPT_ADDR;
++    mle_ptab_size = SLBOOT_MLEPT_SIZE;
++  }
 +
 +  mle_ptab_base = setup_mle_pagetables (mle_start, mle_size,
-+                                        mle_ptab_base, SLBOOT_MLEPT_SIZE);
++                                        mle_ptab_base, mle_ptab_size);
 +
 +  if ( !mle_ptab_base )
 +     return grub_error (GRUB_ERR_BAD_ARGUMENT,

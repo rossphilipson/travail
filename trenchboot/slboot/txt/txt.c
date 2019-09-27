@@ -125,7 +125,7 @@ static void *calculate_ptab_base_size(uint32_t *ptab_size)
      * beginning of the RAM region where it is located.
      */
 
-    /* Round up pages from int divide and add PD and PTPE */
+    /* Round up pages from int divide and add PD and PDPT */
     pages = g_il_kernel_setup.protected_mode_size/(512*PAGE_SIZE) + 3;
     *ptab_size = pages*PAGE_SIZE;
     ptab_base = (void*)(PAGE_DOWN(g_il_kernel_setup.protected_mode_base) - *ptab_size);
@@ -180,7 +180,6 @@ static void *build_mle_pagetable(void)
      * at 1M. This does not work on server systems though.
      */
     if ( g_il_kernel_setup.boot_params->hdr.relocatable_kernel ) {
-        /* TODO check that there is room/alignment and also allow bigger page table */
         ptab_base = calculate_ptab_base_size(&ptab_size);
         if ( !ptab_base ) {
             printk(TBOOT_ERR"MLE size exceeds space available for page tables\n");
