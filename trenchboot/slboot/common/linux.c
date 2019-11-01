@@ -192,7 +192,14 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             printk(TBOOT_ERR"max_ram overflows\n");
             return false;
         }
-        initrd_base = (max_ram_base + max_ram_size - initrd_size) & PAGE_MASK;
+        /*initrd_base = (max_ram_base + max_ram_size - initrd_size) & PAGE_MASK;*/
+
+        /*
+         * The location, initrd_base, determined above in the commented out
+         * code causes memory corruption. This value leads to the corruption
+         * of EFI System Resource Table (ESRT), which is also located in RAM.
+         */
+        initrd_base = 0x20000000;
 
         /* should not exceed initrd_addr_max */
         if ( initrd_base + initrd_size > hdr->initrd_addr_max ) {
