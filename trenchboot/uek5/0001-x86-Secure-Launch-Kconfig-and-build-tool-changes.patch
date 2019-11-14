@@ -1,7 +1,7 @@
-From fa8f5b010e0c1ee8baf8187d6f04b1acd3ce3ba0 Mon Sep 17 00:00:00 2001
+From 1ef7b13f467915f8e47bdccd81984fdde22bf7d0 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 21 Sep 2018 10:22:12 -0400
-Subject: [PATCH 01/10] x86: Secure Launch Kconfig and build tool changes
+Subject: [PATCH 01/11] x86: Secure Launch Kconfig and build tool changes
 
 Initial bits to bring in Secure Launch functionality. Add a Kconfig
 for compiling in/out the Secure Launch code. Set the offset of the MLE
@@ -18,7 +18,7 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
  5 files changed, 30 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index e34168c..cf483a9 100644
+index b56776a..d191867 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -1924,6 +1924,17 @@ config EFI_MIXED
@@ -40,7 +40,7 @@ index e34168c..cf483a9 100644
  	def_bool y
  	prompt "Enable seccomp to safely compute untrusted bytecode"
 diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
-index 1c06074..d913df2 100644
+index d88a2fd..cc45b8f 100644
 --- a/arch/x86/boot/Makefile
 +++ b/arch/x86/boot/Makefile
 @@ -87,7 +87,7 @@ $(obj)/vmlinux.bin: $(obj)/compressed/vmlinux FORCE
@@ -65,7 +65,7 @@ index 9c7ea59..101a5ba 100644
  # End of setup header #####################################################
  
 diff --git a/arch/x86/boot/tools/build.c b/arch/x86/boot/tools/build.c
-index bf0e824..62d5555 100644
+index d4e6cd4..e5cea43 100644
 --- a/arch/x86/boot/tools/build.c
 +++ b/arch/x86/boot/tools/build.c
 @@ -56,6 +56,7 @@
@@ -103,7 +103,7 @@ index bf0e824..62d5555 100644
  		PARSE_ZOFS(p, startup_64);
  
  		p = strchr(p, '\n');
-@@ -409,6 +423,8 @@ int main(int argc, char ** argv)
+@@ -402,6 +416,8 @@ int main(int argc, char ** argv)
  
  	efi_stub_entry_update();
  

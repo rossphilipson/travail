@@ -88,8 +88,11 @@ Ross
    * Added comments from code review.
    * Use asm-offsets for OS-MLE structure (and offsetof in C code).
    * Defines for Intel and AMD manufacturer CPUID.
+ v3:
+   * Move slaunch.h to include/linux since it is included outside of arch/x86
+   * Use #define function() do { } while (0) instead of ifdefs in code.
 
-0003-x86-Add-early-SHA1-support-for-measuring-zero-page-a.patch
+0003-x86-Add-early-SHA-support-for-measuring-zero-page-a.patch
  v2:
    * Added comment about where the code originated in include/crypto/sha1_base.h.
    * Fixed a few warnings found by checkpatch.
@@ -127,20 +130,27 @@ Ross
    * Check for offset == 0 during heap walk.
    * Cleanup from running checkpatch.
    * Add support for runtime detection of Secure Launch entry.
+ v3:
+   * Removed uneeded check for execution on BSP in sl_stub.
+   * Removed uneeded EOI for NMI interrupt in sl_stub.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
    * Removed unfinished AMD support for now.
    * Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
    * Added comments to TXT AP functions.
-   * New implementation of the AP wake up code to allow it to be relocated
+   * New implementation of the AP wake up code to allow it to be relocated.
      to a safe location away from the kernel extraction area.
    * Add support for runtime detection of Secure Launch entry.
-   * Fix rmpiggy slaunch code to properly form the 32b addresses
+   * Fix rmpiggy slaunch code to properly form the 32b addresses.
 
 0008-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
    * Removed unfinished AMD support for now.
    * Cleanup from running checkpatch.
-   * Removed sl_memfile_read and use built in simple_read_from_buffer
+   * Removed sl_memfile_read and use built in simple_read_from_buffer.
    * Add support for runtime detection of Secure Launch entry.
+
+0009-kexec-Secure-Launch-kexic-SEXIT-support.patch
+ v3:
+   * Added SEXIT support during kexec for target kernel.

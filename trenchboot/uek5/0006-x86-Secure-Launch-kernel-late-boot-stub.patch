@@ -1,7 +1,7 @@
-From 95a7b06e1d1af246002e00e3bf2439cd932aeff2 Mon Sep 17 00:00:00 2001
+From 7629b38a77d5b24ca1c7d6617300ce66d3aa743b Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 16:13:03 -0400
-Subject: [PATCH 06/10] x86: Secure Launch kernel late boot stub
+Subject: [PATCH 06/11] x86: Secure Launch kernel late boot stub
 
 The routine slaunch_setup is called out of the x86 specific setup_arch
 routine during early kernel boot. After determining what platform is
@@ -17,10 +17,10 @@ This patch depends on patches 1, 2 and 5.
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/kernel/Makefile  |   1 +
- arch/x86/kernel/setup.c   |   5 +
- arch/x86/kernel/slaunch.c | 466 ++++++++++++++++++++++++++++++++++++++++++++++
- drivers/iommu/dmar.c      |   6 +
- 4 files changed, 478 insertions(+)
+ arch/x86/kernel/setup.c   |   3 +
+ arch/x86/kernel/slaunch.c | 467 ++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/iommu/dmar.c      |   4 +
+ 4 files changed, 475 insertions(+)
  create mode 100644 arch/x86/kernel/slaunch.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -36,34 +36,32 @@ index ac994f7..6a480c2 100644
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
  obj-y				+= cpu/
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index e21b55c..922473f 100644
+index 43f1876..2836329 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -118,6 +118,7 @@
- #include <asm/mmu_context.h>
- #include <asm/kaslr.h>
- #include <asm/unwind.h>
-+#include <asm/slaunch.h>
+@@ -71,6 +71,7 @@
+ #include <linux/tboot.h>
+ #include <linux/jiffies.h>
+ #include <linux/mem_encrypt.h>
++#include <linux/slaunch.h>
  
- /*
-  * max_low_pfn_mapped: highest direct mapped pfn under 4GB
-@@ -1051,6 +1052,10 @@ void __init setup_arch(char **cmdline_p)
+ #include <linux/usb/xhci-dbgp.h>
+ #include <video/edid.h>
+@@ -1051,6 +1052,8 @@ void __init setup_arch(char **cmdline_p)
  	early_gart_iommu_check();
  #endif
  
-+#ifdef CONFIG_SECURE_LAUNCH
 +	slaunch_setup();
-+#endif
 +
  	/*
  	 * partially used pages are not usable - thus
  	 * we are rounding upwards:
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
 new file mode 100644
-index 0000000..c82671f
+index 0000000..60175c8
 --- /dev/null
 +++ b/arch/x86/kernel/slaunch.c
-@@ -0,0 +1,466 @@
+@@ -0,0 +1,467 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -86,12 +84,13 @@ index 0000000..c82671f
 +#include <asm/sections.h>
 +#include <asm/boot.h>
 +#include <asm/msr.h>
++#include <asm/tlbflush.h>
 +#include <asm/processor-flags.h>
 +#include <asm/asm-offsets.h>
 +#include <asm/e820/api.h>
 +#include <asm/bootparam.h>
 +#include <asm/setup.h>
-+#include <asm/slaunch.h>
++#include <linux/slaunch.h>
 +
 +#define PREFIX	"SLAUNCH: "
 +
@@ -531,30 +530,27 @@ index 0000000..c82671f
 +		slaunch_setup_intel();
 +}
 diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
-index 38d0128..5bf6712 100644
+index c0d1c4d..121c269 100644
 --- a/drivers/iommu/dmar.c
 +++ b/drivers/iommu/dmar.c
-@@ -41,6 +41,7 @@
+@@ -39,6 +39,7 @@
+ #include <linux/dmi.h>
+ #include <linux/slab.h>
  #include <linux/iommu.h>
++#include <linux/slaunch.h>
  #include <asm/irq_remapping.h>
  #include <asm/iommu_table.h>
-+#include <asm/slaunch.h>
  
- #include "irq_remapping.h"
- 
-@@ -632,7 +633,12 @@ static inline int dmar_walk_dmar_table(struct acpi_table_dmar *dmar,
- 	 * ACPI tables may not be DMA protected by tboot, so use DMAR copy
- 	 * SINIT saved in SinitMleData in TXT heap (which is DMA protected)
+@@ -634,6 +635,9 @@ static inline int dmar_walk_dmar_table(struct acpi_table_dmar *dmar,
  	 */
-+#ifdef CONFIG_SECURE_LAUNCH
-+	dmar_tbl = slaunch_get_dmar_table(dmar_tbl);
-+#else
  	dmar_tbl = tboot_get_dmar_table(dmar_tbl);
-+#endif
-+
  
++	/* If Secure Launch is active, it has similar logic */
++	dmar_tbl = slaunch_get_dmar_table(dmar_tbl);
++
  	dmar = (struct acpi_table_dmar *)dmar_tbl;
  	if (!dmar)
+ 		return -ENODEV;
 -- 
 1.8.3.1
 

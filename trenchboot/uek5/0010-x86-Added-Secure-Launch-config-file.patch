@@ -1,20 +1,20 @@
-From c37c4dbf66748a615ad331939c6805609f6564f1 Mon Sep 17 00:00:00 2001
+From 147e248f5cf6c034c84513b167603fba9a5cf302 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Thu, 15 Aug 2019 12:27:58 -0400
-Subject: [PATCH 09/10] x86: Added Secure Launch config file
+Subject: [PATCH 10/11] x86: Added Secure Launch config file
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- uek-rpm/ol7/config-il-x86_64 | 7732 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 7732 insertions(+)
+ uek-rpm/ol7/config-il-x86_64 | 7731 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 7731 insertions(+)
  create mode 100644 uek-rpm/ol7/config-il-x86_64
 
 diff --git a/uek-rpm/ol7/config-il-x86_64 b/uek-rpm/ol7/config-il-x86_64
 new file mode 100644
-index 0000000..2c261dc
+index 0000000..837fc97
 --- /dev/null
 +++ b/uek-rpm/ol7/config-il-x86_64
-@@ -0,0 +1,7732 @@
+@@ -0,0 +1,7731 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
 +# Linux/x86 4.14.35 Kernel Configuration
@@ -3555,7 +3555,6 @@ index 0000000..2c261dc
 +CONFIG_N_HDLC=m
 +CONFIG_N_GSM=m
 +# CONFIG_TRACE_SINK is not set
-+CONFIG_LDISC_AUTOLOAD=y
 +CONFIG_DEVMEM=y
 +# CONFIG_DEVKMEM is not set
 +
@@ -3632,6 +3631,7 @@ index 0000000..2c261dc
 +CONFIG_HW_RANDOM_VIRTIO=m
 +CONFIG_HW_RANDOM_TPM=m
 +CONFIG_NVRAM=y
++# CONFIG_R3964 is not set
 +# CONFIG_APPLICOM is not set
 +
 +#
@@ -6984,7 +6984,6 @@ index 0000000..2c261dc
 +CONFIG_CIFS=m
 +CONFIG_CIFS_STATS=y
 +# CONFIG_CIFS_STATS2 is not set
-+CONFIG_CIFS_ALLOW_INSECURE_LEGACY=y
 +CONFIG_CIFS_WEAK_PW_HASH=y
 +CONFIG_CIFS_UPCALL=y
 +CONFIG_CIFS_XATTR=y

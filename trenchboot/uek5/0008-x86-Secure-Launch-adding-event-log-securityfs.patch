@@ -1,7 +1,7 @@
-From a2ff1e9da5da4e61e1c5cdec3750c7795b569e2e Mon Sep 17 00:00:00 2001
+From 46ae3edd4eaf31ad079a0cba22870e4e975ea00a Mon Sep 17 00:00:00 2001
 From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
 Date: Fri, 22 Feb 2019 10:33:05 -0500
-Subject: [PATCH 08/10] x86: Secure Launch adding event log securityfs
+Subject: [PATCH 08/11] x86: Secure Launch adding event log securityfs
 
 The late init functionality registers securityfs nodes to allow fetching
 of the late launch TPM log and other platform specific operations.
@@ -14,10 +14,10 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  1 file changed, 129 insertions(+)
 
 diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
-index c82671f..4be5749 100644
+index 60175c8..0394140 100644
 --- a/arch/x86/kernel/slaunch.c
 +++ b/arch/x86/kernel/slaunch.c
-@@ -464,3 +464,132 @@ void __init slaunch_setup(void)
+@@ -465,3 +465,132 @@ void __init slaunch_setup(void)
  	    vendor[3] == INTEL_CPUID_MFGID_EDX)
  		slaunch_setup_intel();
  }

@@ -1,7 +1,7 @@
-From ed670ca64fd179ee34b5aed6544ac438ce1b3e53 Mon Sep 17 00:00:00 2001
+From 84bfde2b02e9b897fb320358a0fb41dbfcdfab17 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 14:50:02 -0400
-Subject: [PATCH 03/10] x86: Add early SHA1 support for Secure Launch early
+Subject: [PATCH 03/11] x86: Add early SHA support for Secure Launch early
  measurements
 
 The SHA1 algorithm is necessary to measure configuration information into

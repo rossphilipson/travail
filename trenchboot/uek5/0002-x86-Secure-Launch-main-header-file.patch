@@ -1,26 +1,35 @@
-From 4a3c0bbed39bf185348453181c735b05bc86cc0d Mon Sep 17 00:00:00 2001
+From e6d623c1a9fcb389308dca94d2b8ab23be7bdbf5 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 30 Oct 2018 14:44:38 -0400
-Subject: [PATCH 02/10] x86: Secure Launch main header file
+Subject: [PATCH 02/11] x86: Secure Launch main header file
 
 Introduce the main Secure Launch header file used in the early SL stub
 and the early setup code.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/slaunch.h | 299 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 299 insertions(+)
- create mode 100644 arch/x86/include/asm/slaunch.h
+ include/linux/slaunch.h | 313 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 313 insertions(+)
+ create mode 100644 include/linux/slaunch.h
 
-diff --git a/arch/x86/include/asm/slaunch.h b/arch/x86/include/asm/slaunch.h
+diff --git a/include/linux/slaunch.h b/include/linux/slaunch.h
 new file mode 100644
-index 0000000..26107b1
+index 0000000..3c7ea7f
 --- /dev/null
-+++ b/arch/x86/include/asm/slaunch.h
-@@ -0,0 +1,299 @@
++++ b/include/linux/slaunch.h
+@@ -0,0 +1,313 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _ASM_X86_SLAUNCH_H
-+#define _ASM_X86_SLAUNCH_H
++#ifndef _LINUX_SLAUNCH_H
++#define _LINUX_SLAUNCH_H
++
++/*
++ * Secure Launch Defined State Flags
++ */
++#define SL_FLAG_ACTIVE		0x00000001
++#define SL_FLAG_ARCH_SKINIT	0x00000002
++#define SL_FLAG_ARCH_TXT	0x00000004
++
++#ifdef CONFIG_SECURE_LAUNCH
 +
 +/*
 + * Secure Launch main definitions file.
@@ -56,6 +65,7 @@ index 0000000..26107b1
 +/*
 + * SMX GETSEC Leaf Functions
 + */
++#define SMX_X86_GETSEC_SEXIT	5
 +#define SMX_X86_GETSEC_SMCTRL	7
 +#define SMX_X86_GETSEC_WAKEUP	8
 +
@@ -74,6 +84,7 @@ index 0000000..26107b1
 +#define TXTCR_ESTS			0x0008
 +#define TXTCR_ERRORCODE			0x0030
 +#define TXTCR_CMD_RESET			0x0038
++#define TXTCR_CMD_CLOSE_PRIVATE		0x0048
 +#define TXTCR_DIDVID			0x0110
 +#define TXTCR_CMD_UNLOCK_MEM_CONFIG	0x0218
 +#define TXTCR_SINIT_BASE		0x0270
@@ -184,13 +195,6 @@ index 0000000..26107b1
 + */
 +#define SL_IMAGE_PCR17		17
 +#define SL_CONFIG_PCR18		18
-+
-+/*
-+ * Secure Launch Defined Flags
-+ */
-+#define SL_FLAG_ACTIVE		0x00000001
-+#define SL_FLAG_ARCH_SKINIT	0x00000002
-+#define SL_FLAG_ARCH_TXT	0x00000004
 +
 +#ifndef __ASSEMBLY__
 +
@@ -313,10 +317,20 @@ index 0000000..26107b1
 +u32 slaunch_get_flags(void);
 +u32 slaunch_get_ap_wake_block(void);
 +struct acpi_table_header *slaunch_get_dmar_table(struct acpi_table_header *dmar);
++void slaunch_sexit(void);
 +
 +#endif
 +
-+#endif /* _ASM_X86_SLAUNCH_H */
++#else
++
++#define slaunch_setup()			do { } while (0)
++#define slaunch_get_flags()		0
++#define slaunch_get_dmar_table(d)	(d)
++#define slaunch_sexit()			do { } while (0)
++
++#endif /* !CONFIG_SECURE_LAUNCH */
++
++#endif /* _LINUX_SLAUNCH_H */
 -- 
 1.8.3.1
 

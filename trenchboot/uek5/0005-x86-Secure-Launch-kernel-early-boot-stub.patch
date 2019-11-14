@@ -1,7 +1,7 @@
-From 26fadf05fabb16c40c49b245e6845a10fbcaaf9d Mon Sep 17 00:00:00 2001
+From 006e8cd2bdc47db735dc72918c9e3b4288eb7e8a Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Fri, 26 Oct 2018 15:53:24 -0400
-Subject: [PATCH 05/10] x86: Secure Launch kernel early boot stub
+Subject: [PATCH 05/11] x86: Secure Launch kernel early boot stub
 
 The Secure Launch (SL) stub provides the entry point for Intel TXT (and
 later AMD SKINIT) to vector to during the late launch. The symbol
@@ -22,10 +22,10 @@ Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
  arch/x86/boot/compressed/Makefile  |   2 +-
  arch/x86/boot/compressed/head_64.S |  32 +++
- arch/x86/boot/compressed/sl_main.c | 220 ++++++++++++++
- arch/x86/boot/compressed/sl_stub.S | 571 +++++++++++++++++++++++++++++++++++++
+ arch/x86/boot/compressed/sl_main.c | 220 +++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S | 555 +++++++++++++++++++++++++++++++++++++
  arch/x86/kernel/asm-offsets.c      |  12 +
- 5 files changed, 836 insertions(+), 1 deletion(-)
+ 5 files changed, 820 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/boot/compressed/sl_main.c
  create mode 100644 arch/x86/boot/compressed/sl_stub.S
 
@@ -94,7 +94,7 @@ index fc313e2..07018e34 100644
   */
 diff --git a/arch/x86/boot/compressed/sl_main.c b/arch/x86/boot/compressed/sl_main.c
 new file mode 100644
-index 0000000..0b89f8e
+index 0000000..2390678
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_main.c
 @@ -0,0 +1,220 @@
@@ -116,7 +116,7 @@ index 0000000..0b89f8e
 +#include <asm/tpm.h>
 +#include <asm/bootparam.h>
 +#include <asm/efi.h>
-+#include <asm/slaunch.h>
++#include <linux/slaunch.h>
 +
 +extern u32 sl_cpu_type;
 +
@@ -320,10 +320,10 @@ index 0000000..0b89f8e
 +}
 diff --git a/arch/x86/boot/compressed/sl_stub.S b/arch/x86/boot/compressed/sl_stub.S
 new file mode 100644
-index 0000000..3102bc4
+index 0000000..c154de8
 --- /dev/null
 +++ b/arch/x86/boot/compressed/sl_stub.S
-@@ -0,0 +1,571 @@
+@@ -0,0 +1,555 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +/*
@@ -338,14 +338,11 @@ index 0000000..3102bc4
 +#include <asm/asm-offsets.h>
 +#include <asm/bootparam.h>
 +#include <asm/irq_vectors.h>
-+#include <asm/slaunch.h>
++#include <linux/slaunch.h>
 +
 +/* Can't include apiddef.h in asm */
-+#define APIC_BASE_MSR	0x800
 +#define XAPIC_ENABLE	(1 << 11)
 +#define X2APIC_ENABLE	(1 << 10)
-+#define	APIC_EOI	0xB0
-+#define	APIC_EOI_ACK	0x0
 +
 +/* Can't include traps.h in asm */
 +#define X86_TRAP_NMI	2
@@ -405,14 +402,6 @@ index 0000000..3102bc4
 +	lret
 +
 +.Lsl_cs:
-+	/* Before going any further, make sure this is the BSP */
-+	movl	$(MSR_IA32_APICBASE), %ecx
-+	rdmsr
-+	testl	$(MSR_IA32_APICBASE_BSP), %eax
-+	jnz	.Lbsp_ok
-+	ud2
-+
-+.Lbsp_ok:
 +	/* Assume CPU is AMD to start */
 +	movl	$(SL_CPU_AMD), %edi
 +
@@ -804,12 +793,7 @@ index 0000000..3102bc4
 +ENTRY(sl_txt_int_ipi_wake)
 +	movl	$1, %ebx
 +
-+	movl	$(APIC_EOI), %ecx
-+	shrl	$4, %ecx
-+	addl	$(APIC_BASE_MSR), %ecx
-+	movl	$(APIC_EOI_ACK), %eax
-+	wrmsr
-+
++	/* NMI context, just IRET */
 +	iret
 +ENDPROC(sl_txt_int_ipi_wake)
 +
@@ -896,17 +880,17 @@ index 0000000..3102bc4
 +	.fill (TXT_MAX_CPUS*TXT_BOOT_STACK_SIZE), 1, 0
 +sl_stacks_end:
 diff --git a/arch/x86/kernel/asm-offsets.c b/arch/x86/kernel/asm-offsets.c
-index 76417a9..2009d8e 100644
+index 76417a9..ea0680f 100644
 --- a/arch/x86/kernel/asm-offsets.c
 +++ b/arch/x86/kernel/asm-offsets.c
-@@ -18,6 +18,7 @@
- #include <asm/bootparam.h>
- #include <asm/suspend.h>
- #include <asm/tlbflush.h>
-+#include <asm/slaunch.h>
- 
- #ifdef CONFIG_XEN
- #include <xen/interface/xen.h>
+@@ -12,6 +12,7 @@
+ #include <linux/hardirq.h>
+ #include <linux/suspend.h>
+ #include <linux/kbuild.h>
++#include <linux/slaunch.h>
+ #include <asm/processor.h>
+ #include <asm/thread_info.h>
+ #include <asm/sigframe.h>
 @@ -103,4 +104,15 @@ void common(void) {
  	OFFSET(CPU_ENTRY_AREA_entry_trampoline, cpu_entry_area, entry_trampoline);
  	OFFSET(CPU_ENTRY_AREA_entry_stack, cpu_entry_area, entry_stack_page);

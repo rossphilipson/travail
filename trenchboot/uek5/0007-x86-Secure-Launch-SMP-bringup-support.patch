@@ -1,7 +1,7 @@
-From 5a0242d8aa0426a406427979952ed41df3e9c641 Mon Sep 17 00:00:00 2001
+From 01017c5ab4ebb411dd0d5f33e5464de49f9fd65c Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 2 Oct 2018 14:41:49 -0400
-Subject: [PATCH 07/10] x86: Secure Launch SMP bringup support
+Subject: [PATCH 07/11] x86: Secure Launch SMP bringup support
 
 On Intel, the APs are left in a well documented state after TXT performs
 the late launch. Specifically they cannot have #INIT asserted on them so
@@ -18,11 +18,11 @@ This patch depends on patches 1, 2 and 5.
 
 Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
 ---
- arch/x86/include/asm/realmode.h      |  3 ++
- arch/x86/kernel/smpboot.c            | 99 ++++++++++++++++++++++++++++++++++++
- arch/x86/realmode/rm/header.S        |  3 ++
- arch/x86/realmode/rm/trampoline_64.S | 40 +++++++++++++++
- 4 files changed, 145 insertions(+)
+ arch/x86/include/asm/realmode.h      |   3 ++
+ arch/x86/kernel/smpboot.c            | 101 +++++++++++++++++++++++++++++++++++
+ arch/x86/realmode/rm/header.S        |   3 ++
+ arch/x86/realmode/rm/trampoline_64.S |  39 ++++++++++++++
+ 4 files changed, 146 insertions(+)
 
 diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
 index 63b3393..f58f321 100644
@@ -39,22 +39,23 @@ index 63b3393..f58f321 100644
  
  /* This must match data at trampoline_32/64.S */
 diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
-index 523fb9a..539fd95 100644
+index 8069451..dc0eb8b 100644
 --- a/arch/x86/kernel/smpboot.c
 +++ b/arch/x86/kernel/smpboot.c
-@@ -81,6 +81,7 @@
- #include <asm/microcode.h>
- #include <asm/spec-ctrl.h>
- #include <asm/hw_irq.h>
-+#include <asm/slaunch.h>
+@@ -56,6 +56,7 @@
+ #include <linux/stackprotector.h>
+ #include <linux/gfp.h>
+ #include <linux/cpuidle.h>
++#include <linux/slaunch.h>
  
- /* representing HT siblings of each logical CPU */
- DEFINE_PER_CPU_READ_MOSTLY(cpumask_var_t, cpu_sibling_map);
-@@ -931,6 +932,92 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
+ #include <asm/acpi.h>
+ #include <asm/desc.h>
+@@ -966,6 +967,98 @@ void common_cpu_up(unsigned int cpu, struct task_struct *idle)
  #endif
  }
  
 +#ifdef CONFIG_SECURE_LAUNCH
++
 +static atomic_t first_ap_only = {1};
 +
 +/*
@@ -138,33 +139,34 @@ index 523fb9a..539fd95 100644
 +
 +	return (send_status | accept_status);
 +}
-+#endif
++
++#else
++
++#define slaunch_wakeup_cpu_from_txt(cpu, apicid)	0
++
++#endif  /* !CONFIG_SECURE_LAUNCH */
 +
  /*
   * NOTE - on most systems this is a PHYSICAL apic ID, but on multiquad
   * (ie clustered apic addressing mode), this is a LOGICAL apic ID.
-@@ -987,6 +1074,14 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1022,6 +1115,12 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  	cpumask_clear_cpu(cpu, cpu_initialized_mask);
  	smp_mb();
  
-+#ifdef CONFIG_SECURE_LAUNCH
 +	/* With Intel TXT, the AP startup is totally different */
 +	if (slaunch_get_flags() & (SL_FLAG_ACTIVE|SL_FLAG_ARCH_TXT)) {
 +		boot_error = slaunch_wakeup_cpu_from_txt(cpu, apicid);
-+		goto skip;
++		goto txt_wake;
 +	}
-+#endif
 +
  	/*
  	 * Wake up a CPU in difference cases:
  	 * - Use the method in the APIC driver if it's defined
-@@ -999,6 +1094,10 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
+@@ -1034,6 +1133,8 @@ static int do_boot_cpu(int apicid, int cpu, struct task_struct *idle,
  		boot_error = wakeup_cpu_via_init_nmi(cpu, start_ip, apicid,
  						     cpu0_nmi_registered);
  
-+#ifdef CONFIG_SECURE_LAUNCH
-+skip:
-+#endif
++txt_wake:
 +
  	if (!boot_error) {
  		/*
@@ -184,18 +186,10 @@ index 30b0d30d..250410a 100644
  
  	/* End signature, used to verify integrity */
 diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
-index 24bb759..5a4b332 100644
+index 24bb759..09efb4b 100644
 --- a/arch/x86/realmode/rm/trampoline_64.S
 +++ b/arch/x86/realmode/rm/trampoline_64.S
-@@ -32,6 +32,7 @@
- #include <asm/segment.h>
- #include <asm/processor-flags.h>
- #include <asm/realmode.h>
-+#include <asm/slaunch.h>
- #include "realmode.h"
- 
- 	.text
-@@ -85,6 +86,45 @@ no_longmode:
+@@ -85,6 +85,45 @@ no_longmode:
  
  	.section ".text32","ax"
  	.code32
