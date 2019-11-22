@@ -68,6 +68,8 @@ extern il_kernel_setup_t g_il_kernel_setup;
 
 extern uint32_t g_min_ram;
 
+static uint32_t g_slaunch_header;
+
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
 
@@ -435,6 +437,17 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     if ( version > MAX_OS_SINIT_DATA_VER )
         version = MAX_OS_SINIT_DATA_VER;
 
+    if (get_kernel_info()) {
+        struct kernel_info *ki;
+
+        ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
+            g_il_kernel_setup.boot_params->hdr.slaunch_header);
+        g_slaunch_header = ki->mle_header_offset;
+    }
+    else /* the old way */
+        g_slaunch_header = g_il_kernel_setup.boot_params->hdr.slaunch_header;
+
+
     os_sinit_data_t *os_sinit_data = get_os_sinit_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_sinit_data - sizeof(uint64_t));
     *size = calc_os_sinit_data_size(version);
@@ -445,7 +458,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_sinit_data->mle_ptab = (uint64_t)(unsigned long)ptab_base;
     os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
     /* this is linear addr (offset from MLE base) of mle header */
-    os_sinit_data->mle_hdr_base = g_il_kernel_setup.boot_params->hdr.slaunch_header;
+    os_sinit_data->mle_hdr_base = g_slaunch_header;
 
     /* VT-d PMRs */
     uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
@@ -607,8 +620,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
      * Need to update the MLE header with the size of the MLE. The field is
      * the 9th dword in.
      */
-    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base +
-                       g_il_kernel_setup.boot_params->hdr.slaunch_header);
+    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
     *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
 
     printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");

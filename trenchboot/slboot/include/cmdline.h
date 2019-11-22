@@ -55,6 +55,7 @@ extern bool get_tboot_ignore_prev_err(void);
 extern void get_tboot_extpol(void);
 extern bool get_tboot_force_tpm2_legacy_log(void);
 extern uint32_t get_error_shutdown(void);
+extern bool get_kernel_info(void);
 
 /* for parse cmdline of linux kernel, say vga and mem */
 extern void linux_parse_cmdline(const char *cmdline);

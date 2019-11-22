@@ -232,6 +232,14 @@ struct setup_data {
 	/* data */
 };
 
+struct kernel_info {
+	char magic[4];
+	uint32_t size;
+	uint32_t size_total;
+	uint32_t setup_type_max;
+	uint32_t mle_header_offset;
+};
+
 typedef struct {
     uint32_t real_mode_base;
     unsigned long real_mode_size;

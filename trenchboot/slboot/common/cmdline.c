@@ -85,6 +85,7 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "ignore_prev_err", "true"},    /* true|false */
     { "force_tpm2_legacy_log", "false"}, /* true|false */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
+    { "kernel_info", "false"},     /*  */
     { NULL, NULL }
 };
 static char g_tboot_param_values[ARRAY_SIZE(g_tboot_cmdline_options)][MAX_VALUE_LEN];
@@ -529,6 +530,17 @@ bool get_tboot_ignore_prev_err(void)
 			   g_tboot_param_values,
 			   "ignore_prev_err");
     if ( ignore_prev_err == NULL || tb_strcmp(ignore_prev_err, "true") == 0 )
+	    return true;
+    return false;
+}
+
+bool get_kernel_info(void)
+{
+    const char *kernel_info =
+	    get_option_val(g_tboot_cmdline_options,
+			   g_tboot_param_values,
+			   "kernel_info");
+    if ( kernel_info != NULL || tb_strcmp(kernel_info, "true") == 0 )
 	    return true;
     return false;
 }
