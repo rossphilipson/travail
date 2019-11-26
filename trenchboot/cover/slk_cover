@@ -81,6 +81,8 @@ Ross
    * Set bool default=n and add to the description.
    * Changed CONFIG_SECURE_LAUNCH_STUB to CONFIG_SECURE_LAUNCH.
    * Change sl_mle_header to mle_header.
+ v3:
+   * Remove changes to the build tool to write the mle_header offset.
 
 0002-x86-Secure-Launch-main-header-file.patch
  v2:
@@ -97,6 +99,8 @@ Ross
    * Added comment about where the code originated in include/crypto/sha1_base.h.
    * Fixed a few warnings found by checkpatch.
    * Define SHA1_DISABLE_EXPORT before including sha1.c to disable EXPORTs.
+ v3:
+   * Add SHA256 and SHA512 support.
 
 0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
  NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
@@ -119,6 +123,9 @@ Ross
    * Add support for runtime detection of Secure Launch entry.
    * Reorder startup operations to more closely match specification.
    * Add measuring of setup_data and EFI memory map.
+ v3:
+   * Add support for extending TPM2.0 PCRs with SHA256 and SHA512 hashes.
+   * Add kernel_info field to expose the offset to the mle_header.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
