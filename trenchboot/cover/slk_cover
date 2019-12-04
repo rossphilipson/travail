@@ -124,6 +124,8 @@ Ross
    * Reorder startup operations to more closely match specification.
    * Add measuring of setup_data and EFI memory map.
  v3:
+   * Removed uneeded check for execution on BSP in sl_stub.
+   * Removed uneeded EOI for NMI interrupt in sl_stub.
    * Add support for extending TPM2.0 PCRs with SHA256 and SHA512 hashes.
    * Add kernel_info field to expose the offset to the mle_header.
 
@@ -138,8 +140,7 @@ Ross
    * Cleanup from running checkpatch.
    * Add support for runtime detection of Secure Launch entry.
  v3:
-   * Removed uneeded check for execution on BSP in sl_stub.
-   * Removed uneeded EOI for NMI interrupt in sl_stub.
+   * Added SEXIT support during kexec for target kernel.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
