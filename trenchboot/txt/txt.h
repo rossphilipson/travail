@@ -69,7 +69,7 @@ struct txt_acm_header {
 	u32 key_size;
 	u32 scratch_size;
 	/* RSA Pub Key and Signature */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_ACM_UUID "\xaa\x3a\xc0\x7f\xa7\x46\xdb\x18\x2e\xac\x69\x8f\x8d\x41\x7f\x5a"
 
@@ -91,12 +91,12 @@ struct txt_acm_info_table {
 	u32 processor_id_list;
 	/* Version >= 5 */
 	u32 tpm_info_list;
-} __attribute__((packed));
+} __packed;
 
 struct txt_acm_chipset_id_list {
 	u32 count;
 	/* Array of chipset ID structs */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_ACM_REVISION_ID_MASK	(1<<0)
 
@@ -106,19 +106,19 @@ struct txt_acm_chipset_id {
 	u16 device_id;
 	u16 revision_id;
 	u8 reserved[6];
-} __attribute__((packed));
+} __packed;
 
 struct txt_acm_processor_id_list {
 	u32 count;
 	/* Array of processor ID structs */
-} __attribute__((packed));
+} __packed;
 
 struct txt_acm_processor_id {
 	u32 fms;
 	u32 fms_mask;
 	u64 platform_id;
 	u64 platform_mask;
-} __attribute__((packed));
+} __packed;
 
 #define TXT_TPM_CAPS_EXTPOL_NONE	0 /* TPM 1.2 */
 #define TXT_TPM_CAPS_EXTPOL_MA		1
@@ -136,7 +136,7 @@ struct txt_acm_tpm_info {
 	u32 capabilities;
 	u16 count;
 	/* List of supported hash algorithm per TPM2 spec */
-} __attribute__((packed));
+} __packed;
 
 /* Appendix B SMX Interaction with Platform */
 /* B.1 Intel Trusted Execution Technology Configuration Registers */
@@ -192,7 +192,7 @@ union txt_didvid {
 		u16 rid;
 		u16 id_ext;
 	};
-} __attribute__((packed));
+} __packed;
 
 #define TXT_VERSION_DEBUG_FUSED		(1<<31)
 
@@ -206,21 +206,21 @@ struct txt_heap_uuid {
 	u16 data3;
 	u16 data4;
 	u8 data5[6];
-} __attribute__((packed));
+} __packed;
 
 struct txt_heap_ext_data_element
 {
 	u32 type;
 	u32 size;
 	/* Data */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_END			0
 
 struct txt_heap_end_element {
 	u32 type;
 	u32 size;
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_BIOS_SPEC_VER		1
 
@@ -235,32 +235,32 @@ struct txt_heap_bios_spec_ver_element {
 struct txt_heap_acm_element {
 	u32 num_acms;
 	/* Array of num_acms u64 addresses */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_STM			3
 
 struct txt_heap_stm_element {
 	/* STM specific BIOS properties */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_CUSTOM			4
 
 struct txt_heap_custom_element {
 	struct txt_heap_uuid uuid;
 	  /* Vendor Data */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR		5
 
 struct txt_heap_event_log_element {
 	u64 event_log_phys_addr;
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_MADT			6
 
 struct txt_heap_madt_element {
 	/* Copy of ACPI MADT table */
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_EVENT_LOG_POINTER2_1	8
 
@@ -269,13 +269,13 @@ struct txt_heap_event_log_pointer2_1_element {
 	u32 allocated_event_container_size;
 	u32 first_record_offset;
 	u32 next_record_offset;
-} __attribute__((packed));
+} __packed;
 
 #define TXT_HEAP_EXTDATA_TYPE_MCFG			9
 
 struct txt_heap_mcfg_element {
 	/* Copy of ACPI MCFG table */
-} __attribute__((packed));
+} __packed;
 
 /* TXT Heap Tables */
 
@@ -290,11 +290,11 @@ struct txt_bios_data {
 	u32 mle_flags;
 	/* Versions >= 4 */
 	/* Ext Data Elements */
-} __attribute__((packed));
+} __packed;
 
 struct txt_os_mle_data {
 	/* This structure is implementation specific */
-} __attribute__((packed));
+} __packed;
 
 struct txt_os_sinit_data {
 	u32 version; /* Currently 6 for TPM 1.2 and 7 for TPM 2.0 */
@@ -313,7 +313,7 @@ struct txt_os_sinit_data {
 	u64    efi_rsdt_ptr;
 	/* Versions >= 6 */
 	/* Ext Data Elements */
-} __attribute__((packed));
+} __packed;
 
 struct txt_sinit_mle_data {
 	u32 version;             /* Current values are 6 through 9 */
@@ -337,14 +337,14 @@ struct txt_sinit_mle_data {
 	u32 processor_scrtm_status;
 	/* Versions >= 9 */
 	/* Ext Data Elements */
-} __attribute__((packed));
+} __packed;
 
 struct txt_sinit_memory_descriptor_records {
 	u64 address;
 	u64 length;
 	u8 type;
 	u8 reserved[7];
-} __attribute__((packed));
+} __packed;
 
 /* Section 2 Measured Launch Environment */
 /* 2.1 MLE Architecture Overview */
@@ -361,7 +361,7 @@ struct txt_mle_header {
 	u32 capabilities;
 	u32 cmdline_start;
 	u32 cmdline_end;
-} __attribute__((packed));
+} __packed;
 
 /* TXT register and heap access */
 
@@ -547,7 +547,7 @@ static inline void txt_getsec_sexit(void)
 struct smx_supported_versions {
 	u32 mask;
 	u32 version;
-} __attribute__((packed));
+} __packed;
 
 struct smx_parameters {
 	struct smx_supported_versions versions[SMX_PARAMETER_MAX_VERSIONS];
@@ -556,7 +556,7 @@ struct smx_parameters {
 	u32 acm_memory_types;
 	u32 senter_controls;
 	u32 txt_feature_ext_flags;
-} __attribute__((packed));
+} __packed;
 
 static inline void txt_getsec_parameters(u32 index, u32 *eax_out,
 					 u32 *ebx_out, u32 *ecx_out)
