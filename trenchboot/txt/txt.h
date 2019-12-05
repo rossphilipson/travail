@@ -575,6 +575,13 @@ static inline void txt_getsec_smctrl(void)
 			: "a" (SMX_LEAF_SMCTRL), "b" (0));
 }
 
+struct smx_rlp_mle_join {
+        u32 rlp_gdt_limit;
+        u32 rlp_gdt_base;
+        u32 rlp_seg_sel;     /* cs (ds, es, ss are seg_sel+8) */
+        u32 rlp_entry_point; /* phys addr */
+} __packed;
+
 static inline void txt_getsec_wakeup(void)
 {
 	__asm__ __volatile__ (".byte 0x0f,0x37\n" : : "a" (SMX_LEAF_WAKEUP));
