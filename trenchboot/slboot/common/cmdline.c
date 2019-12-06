@@ -540,7 +540,7 @@ bool get_kernel_info(void)
 	    get_option_val(g_tboot_cmdline_options,
 			   g_tboot_param_values,
 			   "kernel_info");
-    if ( kernel_info != NULL || tb_strcmp(kernel_info, "true") == 0 )
+    if ( kernel_info != NULL && tb_strcmp(kernel_info, "true") == 0 )
 	    return true;
     return false;
 }
