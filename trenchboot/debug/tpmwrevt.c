@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define __packed __attribute__((packed))
 
@@ -82,8 +84,18 @@ struct tpm20_pcr_event_tail {
 				sizeof(struct tpm20_pcr_event_tail) + \
 				SL_MAX_EVENT_DATA)
 
-static inline int tpm12_log_event(uint32_t event_size, void *event)
+static int fd;
+
+static inline int tpm_log_event(uint32_t event_size, void *event)
 {
+	ssize_t ret;
+
+	ret = write(fd, event, event_size);
+	if (ret == -1) {
+		printf("Failed to write event to log\n");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -105,13 +117,8 @@ static void sl_tpm12_log_event(uint32_t pcr, uint8_t *digest,
 
 	total_size = sizeof(struct tpm12_pcr_event) + event_size;
 
-	if (tpm12_log_event(total_size, pcr_event))
+	if (tpm_log_event(total_size, pcr_event))
 		printf("Failed to write TPM 1.2 event\n");
-}
-
-static inline int tpm20_log_event(uint32_t event_size, void *event)
-{
-	return 0;
 }
 
 static void sl_tpm20_log_event(uint32_t pcr, uint8_t *digest, uint16_t algo,
@@ -162,13 +169,63 @@ static void sl_tpm20_log_event(uint32_t pcr, uint8_t *digest, uint16_t algo,
 	total_size = (uint32_t)((uint8_t *)tail - (uint8_t *)head) +
 		sizeof(struct tpm20_pcr_event_tail) + event_size;
 
-	if (tpm20_log_event(total_size, &log_buf[0]))
+	if (tpm_log_event(total_size, &log_buf[0]))
 		printf("Failed to write TPM 1.2 event\n");
 }
 
-void main(void)
+void log_event(int is_tpm20)
 {
-	unsigned int arr[2];
+	uint8_t digest[20];
 
-	printf("Sizeof: %d\n", sizeof(arr));
+	fd = open("/sys/kernel/security/slaunch/eventlog", O_WRONLY);
+	if (fd == -1) {
+		printf("Failed to open slaunch/eventlog node\n");
+		return;
+	}
+
+	if (is_tpm20)
+		sl_tpm20_log_event(23, &digest[0], TPM_HASH_ALG_SHA1,
+				   "Test event 20", strlen("Test event 20"));
+	else
+		sl_tpm12_log_event(23, &digest[0],
+				   "Test event 12", strlen("Test event 12"));
+
+	close(fd);
+}
+
+void usage(void)
+{
+	printf("Usage: tpmwrevt <-1|-2>\n");
+}
+
+int main(int argc, char *argv[])
+{
+	int c;
+
+	if (argc <= 1) {
+		usage();
+		return 0;
+	}
+
+	for ( ; ; ) {
+		c = getopt(argc, argv, "12");
+		if (c == -1)
+			break;
+		switch ( c ) {
+		case '1':
+			printf("TPM 1.2 log event\n");
+			log_event(0);
+			break;
+		case '2':
+			printf("TPM 2.0 log event\n");
+			log_event(1);
+			break;
+		case 'h':
+		case '?':
+		default:
+			usage();
+		}
+	}
+
+	return 0;
 }
