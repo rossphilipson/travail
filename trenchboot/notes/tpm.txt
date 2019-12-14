@@ -1,0 +1,40 @@
+TPM 2.0:
+
+https://trustedcomputinggroup.org/wp-content/uploads/TCG_PC_Client_Platform_TPM_Profile_PTP_2.0_r1.03_v22.pdf
+
+Locality:
+
+The best way to think of locality is that it is like privilege levels (like
+rings) with 4 being the highest. In general:
+
+Locality 0 is the SRTM locality using PCRs 0 - 15.
+Localities 1 - 4 are the DRTM localities using PCRs 17 - 22.
+
+For the DRTM localities:
+
+4 - This is the HW locality where only the CPU/Chipset can access the TPM at
+    this locality.
+3 - This locality is left as implementation specific. TXT uses it for the
+    MLE's locality.
+2 - Dynamically Launched OS (Dynamic OS) “runtime” environment.
+1 - An environment for use by the Dynamic OS.
+
+Table 4 in the spec above is a bit cryptic but what is important are columns
+7 - 9. Column 9 indicates which locality can extend what. For the DRTM
+localities:
+
+4 - Can extend 17 and 18.
+3 - Can extend 17 through 20.
+2 - Can extend 17 through 22.
+1 - Can only extend 20.
+
+The other colunns have to do with what localities can reset which PCRs. Note
+that only re-establishing the DRTM can reset all the DRTM PCRs.
+
+Special PCRs:
+
+16 - Debug PCR that can be used in any locality.
+23 - PCR that can be used in any locality for any purpose.
+
+
+
