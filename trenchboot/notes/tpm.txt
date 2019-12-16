@@ -15,8 +15,8 @@ For the DRTM localities:
 4 - This is the HW locality where only the CPU/Chipset can access the TPM at
     this locality.
 3 - This locality is left as implementation specific. TXT uses it for the
-    MLE's locality.
-2 - Dynamically Launched OS (Dynamic OS) “runtime” environment.
+    ACM's locality.
+2 - This is the PCR for the MLE itself - the Dynamic OS.
 1 - An environment for use by the Dynamic OS.
 
 Table 4 in the spec above is a bit cryptic but what is important are columns
