@@ -74,7 +74,7 @@ Ross
 
 ---
 
-0001-x86-Secure-Launch-Kconfig-and-build-tool-changes.patch
+0001-x86-Secure-Launch-Kconfig.patch
  NOTE: This patch is still waiting to be updated with the final implementation
        of the boot params.
  v2:
@@ -93,6 +93,7 @@ Ross
  v3:
    * Move slaunch.h to include/linux since it is included outside of arch/x86
    * Use #define function() do { } while (0) instead of ifdefs in code.
+   * Have boot loader provide an MLE scratch area in OS/MLE heap table.
 
 0003-x86-Add-early-SHA-support-for-measuring-zero-page-a.patch
  v2:
@@ -128,6 +129,7 @@ Ross
    * Removed uneeded EOI for NMI interrupt in sl_stub.
    * Add support for extending TPM2.0 PCRs with SHA256 and SHA512 hashes.
    * Add kernel_info field to expose the offset to the mle_header.
+   * Add support for writing PCR measurements to the TPM event log.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
@@ -158,7 +160,13 @@ Ross
    * Cleanup from running checkpatch.
    * Removed sl_memfile_read and use built in simple_read_from_buffer.
    * Add support for runtime detection of Secure Launch entry.
+v3:
+   * Allow TPM event log writing through securityfs interface.
 
 0009-kexec-Secure-Launch-kexic-SEXIT-support.patch
  v3:
    * Added SEXIT support during kexec for target kernel.
+
+0010-tpm-Allow-locality-2-to-be-set-when-initializing-the.patch
+ v3:
+   * Switch TPM interface to locality 2 when doing a Secure Launch.
