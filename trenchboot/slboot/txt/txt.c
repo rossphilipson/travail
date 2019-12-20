@@ -422,7 +422,12 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
     /* provide AP wake code block area */
     tb_memset((void*)TBOOT_AP_WAKE_BLOCK_ADDR, 0, TBOOT_AP_WAKE_BLOCK_SIZE);
-    os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
+    if (get_kernel_info()) {
+        /* In 0.9.2, mle_scratch and ap_wake_block are swapped */
+	os_mle_data->mle_scratch = TBOOT_AP_WAKE_BLOCK_ADDR;
+    }
+    else
+	os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
 
     /*
      * OS/loader to SINIT data

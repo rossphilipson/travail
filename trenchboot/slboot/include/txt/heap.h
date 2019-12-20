@@ -269,8 +269,8 @@ typedef struct __packed {
     uint8_t      msb_key_hash[20];
     uint64_t     saved_misc_enable_msr; /* saved prior to SENTER */
     mtrr_state_t saved_mtrr_state;      /* saved prior to changes for SINIT */
-    uint64_t     ap_wake_ebp; /* this becomes the MLE scratch area, don't bother renaming */
-    uint64_t     ap_wake_block;
+    uint64_t     mle_scratch; /* the %ebp area becomes the MLE scratch area in 0.9.2 */
+    uint64_t     ap_wake_block; /* this is swapped with MLE scratch in 0.9.2 */
     uint8_t      event_log_buffer[MAX_EVENT_LOG_SIZE];
 } os_mle_data_t;
 
