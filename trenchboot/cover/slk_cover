@@ -94,6 +94,7 @@ Ross
    * Move slaunch.h to include/linux since it is included outside of arch/x86
    * Use #define function() do { } while (0) instead of ifdefs in code.
    * Have boot loader provide an MLE scratch area in OS/MLE heap table.
+   * Change TXT heap accessors to not use __iomem type.
 
 0003-x86-Add-early-SHA-support-for-measuring-zero-page-a.patch
  v2:
@@ -130,6 +131,7 @@ Ross
    * Add support for extending TPM2.0 PCRs with SHA256 and SHA512 hashes.
    * Add kernel_info field to expose the offset to the mle_header.
    * Add support for writing PCR measurements to the TPM event log.
+   * User TXT heap accessors in sl_main() code.
 
 0006-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
@@ -142,7 +144,8 @@ Ross
    * Cleanup from running checkpatch.
    * Add support for runtime detection of Secure Launch entry.
  v3:
-   * Added SEXIT support during kexec for target kernel.
+   * Use memremap with TXT heap and access directly with pointers.
+   * Fix buffer overflow in DMAR copying code.
 
 0007-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
@@ -162,6 +165,7 @@ Ross
    * Add support for runtime detection of Secure Launch entry.
 v3:
    * Allow TPM event log writing through securityfs interface.
+   * Use memremap with TXT heap and access directly with pointers.
 
 0009-kexec-Secure-Launch-kexic-SEXIT-support.patch
  v3:
