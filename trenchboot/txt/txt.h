@@ -283,7 +283,7 @@ struct txt_bios_data {
 	u32 version; /* Currently 5 for TPM 1.2 and 6 for TPM 2.0 */
 	u32 bios_sinit_size;
 	u64 reserved1;
-	u64 reserved22;
+	u64 reserved2;
 	u32 num_logical_procs;
 	/* Versions >= 5 with updates in version 6 */
 	u32 sinit_flags;
