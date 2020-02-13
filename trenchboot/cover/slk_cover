@@ -95,6 +95,7 @@ Ross
    * Use #define function() do { } while (0) instead of ifdefs in code.
    * Have boot loader provide an MLE scratch area in OS/MLE heap table.
    * Change TXT heap accessors to not use __iomem type.
+   * Add other TXT structures and use offsets instead of #define offsets.
 
 0003-x86-Add-early-SHA-support-for-measuring-zero-page-a.patch
  v2:
@@ -104,13 +105,26 @@ Ross
  v3:
    * Add SHA256 and SHA512 support.
 
-0004-x86-Add-early-TPM-code-for-updating-PCRs.patch
- NOTE: This patch has not been broken up yet due to expected fixes for TPM2.
+0004-x86-Add-early-TPM-TIS-CRB-interface-support-for-Secu.patch
+ v3:
+   * Break out TIS/CRB code into their own patch.
+   * Include from a tpm/ subdir directly.
+
+0005-x86-Add-early-TPM1.2-TPM2.0-interface-support-for-Se.patch
+ v3:
+   * Break out TPM1/2 code into their own patch.
+   * Include from a tpm/ subdir directly.
+
+0006-x86-Add-early-general-TPM-interface-support-for-Secu.patch
  v2:
    * General code fixes found in review of v1 from Daniel Smith.
    * Cleanup from running checkpatch.
+ v3:
+   * Break out TPM general code into its own patch.
+   * Include from a tpm/ subdir directly.
+   * Remove release locality loop from tis_init().
 
-0005-x86-Secure-Launch-kernel-early-boot-stub.patch
+0007-x86-Secure-Launch-kernel-early-boot-stub.patch
  v2:
    * Removed unfinished AMD support for now.
    * Cleanup from running checkpatch.
@@ -131,9 +145,11 @@ Ross
    * Add support for extending TPM2.0 PCRs with SHA256 and SHA512 hashes.
    * Add kernel_info field to expose the offset to the mle_header.
    * Add support for writing PCR measurements to the TPM event log.
-   * User TXT heap accessors in sl_main() code.
+   * Use TXT heap accessors in sl_main() code.
+   * Use IO readq/writeq functions to access TXT registers.
+   * Added a GETSEC asm macro.
 
-0006-x86-Secure-Launch-kernel-late-boot-stub.patch
+0008-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
    * Removed unfinished AMD support for now.
    * Fixed error handling in the late SL stub code.
@@ -145,9 +161,9 @@ Ross
    * Add support for runtime detection of Secure Launch entry.
  v3:
    * Use memremap with TXT heap and access directly with pointers.
-   * Fix buffer overflow in DMAR copying code.
+   * Fix incorrect define used in DMAR copying code.
 
-0007-x86-Secure-Launch-SMP-bringup-support.patch
+0009-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
    * Removed unfinished AMD support for now.
    * Use atomic_dec_and_test to allow 1 pass through slaunch_fixup_jump_vector.
@@ -157,7 +173,7 @@ Ross
    * Add support for runtime detection of Secure Launch entry.
    * Fix rmpiggy slaunch code to properly form the 32b addresses.
 
-0008-x86-Secure-Launch-adding-event-log-securityfs.patch
+0010-x86-Secure-Launch-adding-event-log-securityfs.patch
  v2:
    * Removed unfinished AMD support for now.
    * Cleanup from running checkpatch.
@@ -167,10 +183,10 @@ v3:
    * Allow TPM event log writing through securityfs interface.
    * Use memremap with TXT heap and access directly with pointers.
 
-0009-kexec-Secure-Launch-kexic-SEXIT-support.patch
+0011-kexec-Secure-Launch-kexic-SEXIT-support.patch
  v3:
    * Added SEXIT support during kexec for target kernel.
 
-0010-tpm-Allow-locality-2-to-be-set-when-initializing-the.patch
+0012-tpm-Allow-locality-2-to-be-set-when-initializing-the.patch
  v3:
    * Switch TPM interface to locality 2 when doing a Secure Launch.

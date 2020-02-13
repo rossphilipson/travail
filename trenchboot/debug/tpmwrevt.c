@@ -176,6 +176,9 @@ static void sl_tpm20_log_event(uint32_t pcr, uint8_t *digest, uint16_t algo,
 void log_event(int is_tpm20)
 {
 	uint8_t digest[20];
+	void *p = (void *)tpm_log_event;
+
+	memcpy(&digest[0], p, 20);
 
 	fd = open("/sys/kernel/security/slaunch/eventlog", O_WRONLY);
 	if (fd == -1) {
