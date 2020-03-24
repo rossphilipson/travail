@@ -109,11 +109,13 @@ Ross
  v3:
    * Break out TIS/CRB code into their own patch.
    * Include from a tpm/ subdir directly.
+   * Fix formatting from checkpatch.pl
 
 0005-x86-Add-early-TPM1.2-TPM2.0-interface-support-for-Se.patch
  v3:
    * Break out TPM1/2 code into their own patch.
    * Include from a tpm/ subdir directly.
+   * Fix formatting from checkpatch.pl
 
 0006-x86-Add-early-general-TPM-interface-support-for-Secu.patch
  v2:
@@ -123,6 +125,7 @@ Ross
    * Break out TPM general code into its own patch.
    * Include from a tpm/ subdir directly.
    * Remove release locality loop from tis_init().
+   * Fix formatting from checkpatch.pl
 
 0007-x86-Secure-Launch-kernel-early-boot-stub.patch
  v2:
@@ -148,6 +151,7 @@ Ross
    * Use TXT heap accessors in sl_main() code.
    * Use IO readq/writeq functions to access TXT registers.
    * Added a GETSEC asm macro.
+   * Fix formatting from checkpatch.pl
 
 0008-x86-Secure-Launch-kernel-late-boot-stub.patch
  v2:
@@ -162,6 +166,7 @@ Ross
  v3:
    * Use memremap with TXT heap and access directly with pointers.
    * Fix incorrect define used in DMAR copying code.
+   * Fix formatting from checkpatch.pl
 
 0009-x86-Secure-Launch-SMP-bringup-support.patch
  v2:
