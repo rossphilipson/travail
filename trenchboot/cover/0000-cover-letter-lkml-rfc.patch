@@ -1,7 +1,7 @@
-From a089b5b5a503af0459d332865b4610a5ac288952 Mon Sep 17 00:00:00 2001
+From dffaa2c324498fe1ee3138cf54c28968e655e496 Mon Sep 17 00:00:00 2001
 From: Ross Philipson <ross.philipson@oracle.com>
-Date: Tue, 24 Mar 2020 12:18:05 -0400
-Subject: [RFC PATCH 00/13] x86: Trenchboot secure late launch Linux kernel support
+Date: Wed, 25 Mar 2020 14:58:47 -0400
+Subject: [RFC PATCH 00/12] x86: Trenchboot secure late launch Linux kernel support
 
 The Trenchboot project focus on boot security has led to the enabling of
 the Linux kernel to be directly invocable by the x86 Dynamic Launch
