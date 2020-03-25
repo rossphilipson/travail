@@ -79,13 +79,12 @@ https://www.amd.com/system/files/TechDocs/24593.pdf
 Thanks
 Ross Philipson and Daniel P. Smith
 
-Daniel P. Smith (6):
+Daniel P. Smith (5):
   x86: Add early SHA support for Secure Launch early measurements
   x86: Add early TPM TIS/CRB interface support for Secure Launch
   x86: Add early TPM1.2/TPM2.0 interface support for Secure Launch
   x86: Add early general TPM interface support for Secure Launch
   x86: Secure Launch adding event log securityfs
-  x86/defconfig: add Secure Launch base config
 
 Ross Philipson (7):
   x86: Secure Launch Kconfig
@@ -97,52 +96,51 @@ Ross Philipson (7):
   tpm: Allow locality 2 to be set when initializing the TPM for Secure
     Launch
 
- Documentation/x86/boot.rst                    |    9 +
- arch/x86/Kconfig                              |   35 +
- arch/x86/boot/compressed/Makefile             |    8 +
- arch/x86/boot/compressed/early_sha1.c         |  104 +
- arch/x86/boot/compressed/early_sha1.h         |   17 +
- arch/x86/boot/compressed/early_sha256.c       |    6 +
- arch/x86/boot/compressed/early_sha512.c       |    6 +
- arch/x86/boot/compressed/head_64.S            |   32 +
- arch/x86/boot/compressed/kernel_info.S        |    3 +
- arch/x86/boot/compressed/sl_main.c            |  374 ++
- arch/x86/boot/compressed/sl_stub.S            |  568 +++
- arch/x86/boot/compressed/tpm/crb.c            |  302 ++
- arch/x86/boot/compressed/tpm/crb.h            |   25 +
- arch/x86/boot/compressed/tpm/tis.c            |  212 ++
- arch/x86/boot/compressed/tpm/tis.h            |   51 +
- arch/x86/boot/compressed/tpm/tpm.c            |  190 +
- arch/x86/boot/compressed/tpm/tpm.h            |   42 +
- arch/x86/boot/compressed/tpm/tpm1.h           |  112 +
- arch/x86/boot/compressed/tpm/tpm1_cmds.c      |  133 +
- arch/x86/boot/compressed/tpm/tpm2.h           |   89 +
- arch/x86/boot/compressed/tpm/tpm2_auth.c      |   31 +
- arch/x86/boot/compressed/tpm/tpm2_auth.h      |   21 +
- arch/x86/boot/compressed/tpm/tpm2_cmds.c      |  150 +
- arch/x86/boot/compressed/tpm/tpm2_constants.h |   66 +
- arch/x86/boot/compressed/tpm/tpm_buff.c       |  135 +
- arch/x86/boot/compressed/tpm/tpm_common.h     |  127 +
- arch/x86/boot/compressed/tpm/tpmbuff.h        |   34 +
- arch/x86/boot/compressed/tpm/tpmio.c          |   51 +
- arch/x86/boot/compressed/vmlinux.lds.S        |    4 +
- arch/x86/configs/securelaunch_defconfig       | 3079 +++++++++++++++++
- arch/x86/include/asm/realmode.h               |    3 +
- arch/x86/kernel/Makefile                      |    1 +
- arch/x86/kernel/asm-offsets.c                 |   15 +
- arch/x86/kernel/setup.c                       |    3 +
- arch/x86/kernel/slaunch.c                     |  700 ++++
- arch/x86/kernel/smpboot.c                     |   86 +
- arch/x86/realmode/rm/header.S                 |    3 +
- arch/x86/realmode/rm/trampoline_64.S          |   37 +
- drivers/char/tpm/tpm-chip.c                   |   13 +-
- drivers/iommu/dmar.c                          |    4 +
- include/linux/sha512.h                        |   21 +
- include/linux/slaunch.h                       |  513 +++
- kernel/kexec_core.c                           |    3 +
- lib/sha1.c                                    |    4 +
- lib/sha512.c                                  |  209 ++
- 45 files changed, 7629 insertions(+), 2 deletions(-)
+ Documentation/x86/boot.rst                    |   9 +
+ arch/x86/Kconfig                              |  35 +
+ arch/x86/boot/compressed/Makefile             |   8 +
+ arch/x86/boot/compressed/early_sha1.c         | 104 +++
+ arch/x86/boot/compressed/early_sha1.h         |  17 +
+ arch/x86/boot/compressed/early_sha256.c       |   6 +
+ arch/x86/boot/compressed/early_sha512.c       |   6 +
+ arch/x86/boot/compressed/head_64.S            |  32 +
+ arch/x86/boot/compressed/kernel_info.S        |   3 +
+ arch/x86/boot/compressed/sl_main.c            | 378 ++++++++++
+ arch/x86/boot/compressed/sl_stub.S            | 568 ++++++++++++++
+ arch/x86/boot/compressed/tpm/crb.c            | 302 ++++++++
+ arch/x86/boot/compressed/tpm/crb.h            |  25 +
+ arch/x86/boot/compressed/tpm/tis.c            | 212 ++++++
+ arch/x86/boot/compressed/tpm/tis.h            |  51 ++
+ arch/x86/boot/compressed/tpm/tpm.c            | 190 +++++
+ arch/x86/boot/compressed/tpm/tpm.h            |  42 ++
+ arch/x86/boot/compressed/tpm/tpm1.h           | 112 +++
+ arch/x86/boot/compressed/tpm/tpm1_cmds.c      | 133 ++++
+ arch/x86/boot/compressed/tpm/tpm2.h           |  89 +++
+ arch/x86/boot/compressed/tpm/tpm2_auth.c      |  31 +
+ arch/x86/boot/compressed/tpm/tpm2_auth.h      |  21 +
+ arch/x86/boot/compressed/tpm/tpm2_cmds.c      | 150 ++++
+ arch/x86/boot/compressed/tpm/tpm2_constants.h |  66 ++
+ arch/x86/boot/compressed/tpm/tpm_buff.c       | 135 ++++
+ arch/x86/boot/compressed/tpm/tpm_common.h     | 127 ++++
+ arch/x86/boot/compressed/tpm/tpmbuff.h        |  34 +
+ arch/x86/boot/compressed/tpm/tpmio.c          |  51 ++
+ arch/x86/boot/compressed/vmlinux.lds.S        |   4 +
+ arch/x86/include/asm/realmode.h               |   3 +
+ arch/x86/kernel/Makefile                      |   1 +
+ arch/x86/kernel/asm-offsets.c                 |  15 +
+ arch/x86/kernel/setup.c                       |   3 +
+ arch/x86/kernel/slaunch.c                     | 700 ++++++++++++++++++
+ arch/x86/kernel/smpboot.c                     |  86 +++
+ arch/x86/realmode/rm/header.S                 |   3 +
+ arch/x86/realmode/rm/trampoline_64.S          |  37 +
+ drivers/char/tpm/tpm-chip.c                   |  13 +-
+ drivers/iommu/dmar.c                          |   4 +
+ include/linux/sha512.h                        |  21 +
+ include/linux/slaunch.h                       | 513 +++++++++++++
+ kernel/kexec_core.c                           |   3 +
+ lib/sha1.c                                    |   4 +
+ lib/sha512.c                                  | 209 ++++++
+ 44 files changed, 4554 insertions(+), 2 deletions(-)
  create mode 100644 arch/x86/boot/compressed/early_sha1.c
  create mode 100644 arch/x86/boot/compressed/early_sha1.h
  create mode 100644 arch/x86/boot/compressed/early_sha256.c
@@ -166,12 +164,11 @@ Ross Philipson (7):
  create mode 100644 arch/x86/boot/compressed/tpm/tpm_common.h
  create mode 100644 arch/x86/boot/compressed/tpm/tpmbuff.h
  create mode 100644 arch/x86/boot/compressed/tpm/tpmio.c
- create mode 100644 arch/x86/configs/securelaunch_defconfig
  create mode 100644 arch/x86/kernel/slaunch.c
  create mode 100644 include/linux/sha512.h
  create mode 100644 include/linux/slaunch.h
  create mode 100644 lib/sha512.c
 
 -- 
-2.23.0
+2.25.1
 
