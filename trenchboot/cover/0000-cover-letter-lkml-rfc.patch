@@ -3,57 +3,62 @@ From: Ross Philipson <ross.philipson@oracle.com>
 Date: Tue, 24 Mar 2020 12:18:05 -0400
 Subject: [RFC PATCH 00/13] x86: Trenchboot secure late launch Linux kernel support
 
-The basic idea of the Trenchboot project is to allow a Linux kernel to be
-directly "late launched" establising a Dynamic Root of Trust Measurement
-(DRTM). The late launch will be initiated by boot loader with assocaited
-support added to it, for example the first capable target will be GRUB2.
-The process of establishing a DRTM involves measuring everything
-that is intended to be run (kernel image, initrd, etc) and everything that
-will configure that kernel to run (command line, boot params, etc) into
-specific PCRs in the TPM. Another key aspect is the late launch is rooted
-in hardware. On Intel this is done using TXT and on AMD it is done using
-SKINIT. Information on these technologies can be readily found online.
+The Trenchboot project focus on boot security has led to the enabling of
+the Linux kernel to be directly invocable by the x86 Dynamic Launch
+instruction(s) for establishing a Dynamic Root of Trust for Measurement
+(DRTM). The dynamic launch will be initiated by a boot loader with
+associated support added to it, for example the first targeted boot
+loader will be GRUB2. An integral part of establishing the DRTM involves
+measuring everything that is intended to be run (kernel image, initrd,
+etc) and everything that will configure that kernel to run (command
+line, boot params, etc) into specific PCRs, the DRTM PCRs (17-22), in
+the TPM. Another key aspect is the dynamic launch is rooted in hardware.
+On Intel this is done using the GETSEC instruction set provided by
+Intel's TXT and the SKINIT instruction provided by AMD's AMD-V.
+Information on these technologies can be readily found online.
 
-To make a kernel able to be launched from TXT or SKINIT, a stub must be
+To enable the kernel to be launched by GETSEC or SKINIT, a stub must be
 built into the setup section of the compressed kernel to handle the
-sepcific state that the late launch process leaves the BSP in. This is a
-lot like the EFI stub that is found in the same area. Also this stub must
-measure everything that is going to be used as early as possible. This stub
-code and subsequent code must also deal with the specific state that the
-late launch leaves the APs in.
+specific state that the late launch process leaves the BSP. This is a
+lot like the EFI stub that is found in the same area. Also this stub
+must measure everything that is going to be used as early as possible.
+This stub code and subsequent code must also deal with the specific
+state that the late launch leaves the APs in.
 
-A quick note on terminology. The open source project itself is called
-Trenchboot which is hosted on Github (links below). The technology is
-referred to as "Secure Launch" within the kernel code. So the prefixes
-sl_/SL_ or slaunch/SLAUNCH will be seen in the code. The stub code
-discussed above is referred to as the SL stub.
+A quick note on terminology. The larger open source project itself is
+called Trenchboot, which is hosted on Github (links below). The kernel
+feature enabling the use of the x86 technology is referred to as "Secure
+Launch" within the kernel code. As such the prefixes sl_/SL_ or
+slaunch/SLAUNCH will be seen in the code. The stub code discussed above
+is referred to as the SL stub.
 
 The basic flow is:
 
  - Entry from the late launch jumps to the SL stub
  - SL stub fixes up the world on the BSP
  - For TXT, SL stub wakes the APs, fixes up their worlds
- - For TXT, APs are left waiting in a pause/jmp loop for an NMI to wake them
+ - For TXT, APs are left halted waiting for an NMI to wake them
  - SL stub jumps to startup_32
- - Kernel boot proceeds normally
- - During early setup, SL code runs to finish some validation and setup tasks
- - The SMP bringup code is modified to wake the APs
+ - SL main runs to measure configuration and module information into the
+DRTM PCRs. It also locates the TPM even log.
+ - Kernel boot proceeds normally from this point.
+ - During early setup, slaunch_setup() runs to finish some validation
+and setup tasks.
+ - The SMP bringup code is modified to wake the waiting APs. APs vector
+to rmpiggy and start up normally from that point.
  - Kernel boot finishes booting normally
+ - SL securityfs module is present to allow reading and writing of the
+TPM event log.
 
-This is the second internal posting of the kernel support patches for
-Trenchboot. The code is functional using TXT and will boot to user mode
-following a secure late launch. A few things to note:
+Outstanding:
 
- - Almost all the feedback from the first posting was incorporated. This
-   will be the final internal review. I welcome feedback and will
-   incorporate it but the next posting will be as an RFC to LKML.
- - We are focusing on Intel TXT first per OCI's wishes so the AMD bits
-   are not implemented and were removed.
- - Patch 1 will change once we hammer out the final details of the boot
-   protocol and changes to the boot params with the x86 maintainers.
- - The TPM CRB code is as yet untested due to a lack of hardware.
- - The kernel crash on X7 systems is still an issue. The details can be
-   seen here:
+ - Currently Secure Launch only supports TXT, though there is an AMD
+   version is in progress.
+ - The compressed kernel TPM code includes a CRB interface
+   implementation but is untested due to inability to locate a system
+   with TXT and a TPM accessible with the CRB interface
+ - There is a known crash that is difficult to reproduce and is unclear
+   how the secure launch code is causing the crash. Thread on it here:
    https://groups.google.com/forum/#!topic/trenchboot-devel/EZN_4ymrCgs
 
 Links:
@@ -62,21 +67,17 @@ The Trenchboot project including documentation:
 
 https://github.com/trenchboot
 
-Our internal OCI Confluence page:
-
-https://confluence.oci.oraclecorp.com/pages/viewpage.action?spaceKey=linux&title=TrenchBoot
-
-AMD SKINIT is documented in the System Programming manual:
-
-https://www.amd.com/system/files/TechDocs/24593.pdf
-
 Intel TXT is documented in its own specification and in the SDM Instruction Set volume:
 
 https://www.intel.com/content/dam/www/public/us/en/documents/guides/intel-txt-software-development-guide.pdf
 https://software.intel.com/en-us/articles/intel-sdm
 
+AMD SKINIT is documented in the System Programming manual:
+
+https://www.amd.com/system/files/TechDocs/24593.pdf
+
 Thanks
-Ross Philipson
+Ross Philipson and Daniel P. Smith
 
 Daniel P. Smith (6):
   x86: Add early SHA support for Secure Launch early measurements
