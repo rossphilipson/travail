@@ -40,15 +40,15 @@ The basic flow is:
  - For TXT, APs are left halted waiting for an NMI to wake them
  - SL stub jumps to startup_32
  - SL main runs to measure configuration and module information into the
-DRTM PCRs. It also locates the TPM even log.
+   DRTM PCRs. It also locates the TPM event log.
  - Kernel boot proceeds normally from this point.
  - During early setup, slaunch_setup() runs to finish some validation
-and setup tasks.
+   and setup tasks.
  - The SMP bringup code is modified to wake the waiting APs. APs vector
-to rmpiggy and start up normally from that point.
+   to rmpiggy and start up normally from that point.
  - Kernel boot finishes booting normally
  - SL securityfs module is present to allow reading and writing of the
-TPM event log.
+   TPM event log.
 
 Outstanding:
 
