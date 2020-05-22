@@ -9,7 +9,7 @@
 #define UINT_FMT "%x"
 #endif
 
-#define ACPI_SIG_DMAR           "DMAR"	/* DMA Remapping table */
+#define ACPI_SIG_DMAR	"DMAR"	/* DMA Remapping table */
 
 uint8_t *helper_mmap(size_t phys_addr, size_t length);
 void helper_unmmap(uint8_t *addr, size_t length);
