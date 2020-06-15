@@ -55,7 +55,7 @@
 /* address/size for AP wakeup code block */
 #define TBOOT_AP_WAKE_BLOCK_ADDR     (TBOOT_SERIAL_LOG_ADDR + \
 				      TBOOT_SERIAL_LOG_SIZE)
-#define TBOOT_AP_WAKE_BLOCK_SIZE     0x01000
+#define TBOOT_AP_WAKE_BLOCK_SIZE     0x04000
 
 
 /* address/size for modified e820 table */
