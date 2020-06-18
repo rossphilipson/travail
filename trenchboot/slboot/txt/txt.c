@@ -395,6 +395,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     uint64_t *size;
     struct tpm_if *tpm = get_tpm();
     os_mle_data_t *os_mle_data;
+    struct kernel_info *ki;
 
     txt_heap = get_txt_heap();
 
@@ -422,12 +423,8 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
     /* provide AP wake code block area */
     tb_memset((void*)TBOOT_AP_WAKE_BLOCK_ADDR, 0, TBOOT_AP_WAKE_BLOCK_SIZE);
-    if (get_kernel_info()) {
-        /* In 0.9.2, mle_scratch and ap_wake_block are swapped */
-	os_mle_data->mle_scratch = TBOOT_AP_WAKE_BLOCK_ADDR;
-    }
-    else
-	os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
+    os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
+    os_mle_data->ap_wake_block_size = TBOOT_AP_WAKE_BLOCK_SIZE;
 
     /*
      * OS/loader to SINIT data
@@ -442,16 +439,9 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     if ( version > MAX_OS_SINIT_DATA_VER )
         version = MAX_OS_SINIT_DATA_VER;
 
-    if (get_kernel_info()) {
-        struct kernel_info *ki;
-
-        ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
+    ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
             g_il_kernel_setup.boot_params->hdr.slaunch_header);
-        g_slaunch_header = ki->mle_header_offset;
-    }
-    else /* the old way */
-        g_slaunch_header = g_il_kernel_setup.boot_params->hdr.slaunch_header;
-
+    g_slaunch_header = ki->mle_header_offset;
 
     os_sinit_data_t *os_sinit_data = get_os_sinit_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_sinit_data - sizeof(uint64_t));

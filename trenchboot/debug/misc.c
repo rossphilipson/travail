@@ -53,6 +53,7 @@ void sl_main(u8 *bootparams)
 	console_init();
 	error_putstr("***RJP*** test string and hex:\n");
 	error_puthex(0xffaa2211);
+	error_putstr("\n");
 
 	...
 }
