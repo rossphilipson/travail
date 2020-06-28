@@ -425,6 +425,10 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     tb_memset((void*)TBOOT_AP_WAKE_BLOCK_ADDR, 0, TBOOT_AP_WAKE_BLOCK_SIZE);
     os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
     os_mle_data->ap_wake_block_size = TBOOT_AP_WAKE_BLOCK_SIZE;
+    /* event log and size */
+    os_mle_data->evtlog_addr = (uint32_t)&os_mle_data->event_log_buffer;
+    os_mle_data->evtlog_size = MAX_EVENT_LOG_SIZE;
+    printk(TBOOT_DETA"Event log addr: 0x%x\n", (uint32_t)os_mle_data->evtlog_addr);
 
     /*
      * OS/loader to SINIT data
