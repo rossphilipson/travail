@@ -170,7 +170,7 @@ static void sl_tpm20_log_event(uint32_t pcr, uint8_t *digest, uint16_t algo,
 		sizeof(struct tpm20_pcr_event_tail) + event_size;
 
 	if (tpm_log_event(total_size, &log_buf[0]))
-		printf("Failed to write TPM 1.2 event\n");
+		printf("Failed to write TPM 2.0 event\n");
 }
 
 void log_event(int is_tpm20)
