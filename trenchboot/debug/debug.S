@@ -1,4 +1,23 @@
 	.code32
+.macro DEBUG_PUT_CHAR char
+	pushl	%edx
+	pushl	%eax
+	xorl	%ecx, %ecx
+
+	movw	$0x3f8, %dx
+	addw	$5, %dx
+1:
+	inb	%dx, %al
+	testb	$0x20, %al
+	jz	1b
+	movw	$0x3f8, %dx
+	movb	\char, %al
+	outb	%al, %dx
+
+	popl	%eax
+	popl	%edx
+.endm
+
 ENTRY(debug_put_chars)
 	pushl	%ecx
 	pushl	%edx
