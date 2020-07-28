@@ -1,0 +1,2505 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!--
+      generated using
+      libxslt1.0,
+      http://xmlsoft.org/XSLT/--><!--
+              Discussion on
+            [url=http://x86asm.net/projects/x86reference]X86 Opcode and Instruction Reference[/url]project.[quote]This reference is intended to be precise opcode and instruction set
+  reference (including x86-64). Its principal aim is exact definition
+  of instruction parameters and attributes.[/quote]News in this revision:[quote][/quote]
+
+New revision is out. Use the original link to see it.
+
+This thread is locked.--><HTML>
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-2">
+<title>X86 Opcode and Instruction Reference</title>
+<META NAME="description" CONTENT="This reference is intended to be precise opcode and instruction set
+  reference (including x86-64). Its principal aim is exact definition
+  of instruction parameters and attributes.">
+<link href="main_v2.css" rel="stylesheet" type="text/css" media="screen">
+<LINK REL="shortcut icon" HREF="favicon.ico">
+<LINK REL="alternate" TYPE="application/atom+xml" title="x86asm.net" HREF="http://x86asm.net/atom.xml">
+</HEAD>
+<body>
+<DIV CLASS="menu">
+<DIV STYLE="text-align: center;"><A HREF="http://x86asm.net/index.html">x86asm.net</A></DIV>
+<HR>
+<!--<DIV><A HREF="#Store">Store</A></DIV>-->
+<DIV><A HREF="index.html#HTML-Editions">HTML Editions</A></DIV>
+<DIV><A HREF="index.html#Using-HTML-Editions">Using HTML Editions</A></DIV>
+<DIV><A HREF="index.html#Columns-Description">Columns Description</A></DIV>
+<DIV><A HREF="index.html#Instruction-Operand-Codes">Instruction Operand Codes</A></DIV>
+<DIV><A HREF="index.html#Current-State">Current State</A></DIV>
+<DIV><A HREF="index.html#Implementations">Implementations</A></DIV>
+<DIV><A HREF="index.html#License">License</A></DIV>
+<DIV><A HREF="index.html#Resources">Resources</A></DIV>
+<DIV><A HREF="index.html#Credits">Credits</A></DIV>
+<DIV><A HREF="index.html#References">References</A></DIV>
+<DIV><A HREF="index.html#Download">Download</A></DIV>
+<a href="index.html#Comments">Comments</a>
+</DIV>
+<DIV CLASS="page-inside">
+<H1>X86 Opcode and Instruction Reference</H1>
+<TABLE CELLPADDING="3" CLASS="metainfo noborder"><TBODY CLASS="noborder"><TR CLASS="noborder">
+<TD CLASS="noborder">
+<B>MazeGen</B>,
+              2017-02-18</TD>
+<TD STYLE="text-align: right;" CLASS="noborder">Revision: <A HREF="index.html#rev_history" TITLE="Revision History">1.12</A>
+</TD>
+</TR></TBODY></TABLE>
+<p>This reference is intended to be precise opcode and instruction set
+  reference (including x86-64). Its principal aim is exact definition
+  of instruction parameters and attributes.</p>
+<h3>Quick Navigation</h3>
+<p><a href="coder32.html">coder32</a>,
+    <a href="coder32-abc.html">coder32-abc</a>,
+    <a href="geek32.html">geek32</a>,
+    <a href="geek32-abc.html">geek32-abc</a></p>
+<p><a href="coder64.html">coder64</a>,
+    <a href="coder64-abc.html">coder64-abc</a>,
+    <a href="geek64.html">geek64</a>,
+    <a href="geek64-abc.html">geek64-abc</a></p>
+<p><a href="coder.html">coder</a>,
+    <a href="coder-abc.html">coder-abc</a>,
+    <a href="geek.html">geek</a>,
+    <a href="geek-abc.html">geek-abc</a> (these
+    contain both x86-32 and x64 instructions).
+  </p>
+<p>In contrast to other references, primary source of
+  this reference is an <a onClick="javascript:urchinTracker ('downloads/x86reference.xml');" href="http://ref.x86asm.net/x86reference.xml">XML</a> document, which guarantees
+  clear and structured information base and therefore ability to extract
+  many various informations such as a list of instructions from requested
+  groups, etc.</p>
+<p>The reference is primarily based on Intel manuals as
+  Intel is the originator of x86 architecture. Additionally, it
+  describes undocumented instructions as well. On appropriate
+  places, it gives a notice if an opcode act differently on
+  <ABBR>AMD</ABBR> architecture. Support for Cyrix, NexGen
+  etc. specific instructions is not scheduled at all.</p>
+<!--
+<H2 ID="Store"><a href="store/index.html">Store</a></H2>
+<p><i>Get one copy for <strong>$20</strong>,
+  two copies for <strong>$32</strong>.</i></p>
+<p>Immediately following the initial release of the
+  reference, it emerged that a large number of users are interested in
+  a printed version. You can order a copy in <a href="store/index.html">the on-line store</a>.</p>
+-->
+<H2 ID="HTML-Editions">
+<ABBR>HTML</ABBR> Editions</H2>
+<p>These editions are available at the moment:
+  The <dfn>coder</dfn> suite is intended to more common use and
+  contains the following editions:
+  <a href="coder32.html">coder32</a>,
+  <a href="coder64.html">coder64</a>, and 
+  <a href="coder.html">coder</a> (sorted by
+  opcode), and
+  <a href="coder32-abc.html">coder32-abc</a>,
+  <a href="coder64-abc.html">coder64-abc</a>, and 
+  <a href="coder-abc.html">coder-abc</a> (sorted by
+  mnemonic).
+  The <dfn>geek</dfn> suite is intended for deeper research of
+  x86 architectures' instruction set. This includes
+  <a href="geek32.html">geek32</a>, 
+  <a href="geek64.html">geek64</a>, and
+  <a href="geek.html">geek</a> editions (by opcode)
+  and
+  <a href="geek32-abc.html">geek32-abc</a>, 
+  <a href="geek64-abc.html">geek64-abc</a>, and
+  <a href="geek-abc.html">geek-abc</a> editions (by
+  mnemonic).
+  More on the purpose and use of this suite see close below.</p>
+<p>Don't get confused by geek(-abc) and coder(-abc) editions. Both
+  of them contains instruction set of both x86-32 and x86-64
+  architectures. If you don't have a particular reason to use them
+  (such as to view the differencies between the architectures), the
+  other editions would probably suit you better.</p>
+<p>Editions coder32 a geek32 relate exclusively to
+  x86-32 architecture. Similarly, editions coder64 and geek64 relate
+  exclusively to x86-64 architecture.</p>
+<p>The following chart illustrates the differencies between
+  editions for current release:</p>
+<TABLE CELLPADDING="7">
+    <TBODY>
+
+      <TR>
+	<TD COLSPAN="2"><STRONG>Edition</STRONG></TD>
+	<TD>coder</TD>
+	<TD>coder32</TD>
+	<TD>coder64</TD>
+	<TD>geek</TD>
+	<TD>geek32</TD>
+	<TD>geek64</TD>
+      </TR>
+    </TBODY>
+    <TBODY>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Supported Architectures</STRONG></TD>
+	<TD>both</TD>
+	<TD>pure x86-32</TD>
+	<TD>pure x86-64</TD>
+	<TD>both</TD>
+	<TD>pure x86-32</TD>
+	<TD>pure x86-64</TD>
+      </TR>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Operand Codes</STRONG></TD>
+	<TD>traditional</TD>
+	<TD>traditional</TD>
+	<TD>traditional</TD>
+	<TD>special</TD>
+	<TD>special</TD>
+	<TD>special</TD>
+      </TR>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Abandoned Instructions</STRONG></TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Opcode Bitfields Information</STRONG></TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Instruction Extension Indicated</STRONG></TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD COLSPAN="2"><STRONG>Instruction Group Indicated</STRONG></TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>no</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+	<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD ROWSPAN="8"><STRONG>Present Instructions</STRONG></TD>
+	<TD><STRONG>general</STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD><STRONG>system</STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD><STRONG>x87 <ABBR>FPU</ABBR></STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD><STRONG>MMX</STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+      <TR>
+	<TD><STRONG><ABBR>Intel SSE (all)</ABBR></STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+
+
+
+      <TR>
+	<TD><STRONG><ABBR TITLE="Intel Virtualization Technology Extensions">VMX</ABBR></STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+
+      <TR>
+	<TD><STRONG><ABBR TITLE="Intel Safer Mode Extensions">SMX</ABBR></STRONG></TD>
+	<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+
+      <TR>
+	<TD><STRONG>Itanium</STRONG></TD>
+	<TD>no</TD>
+<TD>no</TD>
+<TD>no</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+<TD>yes</TD>
+      </TR>
+    </TBODY>
+  </TABLE>
+<h3>The Purpose of Geek Editions in Short</h3>
+<p>The geek editions contains as much complete
+  information from the <a href="index.html#Source_XML_Document_desc">source XML document</a> as possible. That's why
+  they may seem quite unclear. You appreciate them only if you need to
+  get to know the instruction set deeply or if you investigate the
+  source <ABBR>XML</ABBR> and you need to visualize it better.</p>
+<p>These editions use specific operand codes (which
+  are described in Instruction Operand Codes chapter below). These
+  codes may look strange and obscure at the first sight. The reason to
+  use them is that they hold more information than the more common
+  ones. One example can be operand combination
+  <code>rAX, imm16/32</code>, such as in instruction
+  <code><a href="coder64.html#x05">ADD rAX, imm16/32</a></code> in <a href="coder64.html">coder64</a> edition. One can
+  determine that the destination operand is either
+  <code>ax</code>, <code>eax</code>, or <code>rax</code>, and the
+  source one is either <code>imm16</code> or
+  <code>imm32</code>. A problem arises when one needs to determine what
+  magic is behind <code>rax, imm32</code> combination. If one is
+  just getting started with x64 architecture, it is not clear how
+  exactly is 32-bit immediate added to 64-bit <code>rax</code>. This
+  question is answered by corresponding geek edition, <code><a href="geek64.html#x05">ADD rAX, Ivds</a></code> in <a href="geek64.html">geek64</a> edition. The immediate
+  value is encoded there using <code>Ivds</code> code. <code>I</code>
+  code means <DFN>Immediate</DFN>, <code>v</code> means
+  <DFN>word</DFN> or <DFN>doubleword</DFN> (<code>imm16</code> or
+  <code>imm32</code>). The most important part is <code>ds</code>
+  code, which means <DFN>doubleword, sign-extended to 64
+  bits for 64-bit operand size</DFN>. Now is it clear.</p>
+<p>As for Itanium-specific instructions,
+  they are added just for the sake of interest - they give a notice
+  that the appropriate opcodes are already used.</p>
+<h3>Hypertext Reference to Particular Opcode</h3>
+<p>If you want to refer to
+  particular opcode (in any edition), e. g., <code>0FA0 PUSH FS</code>, it can be
+  easily achieved this way:</p>
+<p><KBD>ref.x86asm.net/geek.html#x0FA0</KBD>
+    (<a href="geek.html#x0FA0">try it</a>)
+  </p>
+<p>It works for opcode extension similarly, e. g., <code>83 /7 CMP</code>:</p>
+<p><KBD>ref.x86asm.net/coder32.html#x83_7</KBD>
+    (<a href="coder32.html#x83_7">try it</a>)
+  </p>
+
+<!--
+<h3>Printing</h3>
+<p>You can order a printed copy in <a href="store/index.html">the on-line
+  store</a>. This is how a copy looks like:</p>
+<DIV STYLE="text-align: center"><img style="width: 384px; height:288px;" alt="printed_reference_inside.jpg" src="printed_reference_inside.jpg"></DIV>
+-->
+
+<H2 ID="Using-HTML-Editions">Using <ABBR>HTML</ABBR> Editions</H2>
+<p>Since <ABBR>HTML</ABBR> editions can look
+  complicated at first sight, here goes an outline how to work with
+  them. Following examples come from <a href="coder32.html">coder32's</a> edition because it is
+  easier to use than geek's editions.</p>
+<h3>Example: ADC Instruction</h3>
+<p>Let's start with more known instruction, such as
+  <code><a href="coder32.html#x11">ADC</a></code>.
+  We find something similar to the following:</p>
+<pre>
+|pf|0F|po|so|flds|o|proc|st|m|rl|l|mnemonic|op1     |op2   |op3|op4|iext|grp1|grp2 |tested f|modif f |def f   |undef f|f values|description, notes|
+|  |  |11|  |    |r|    |  | |  |L|ADC     |<b>r/m16/32</b>|r16/32|   |   |    |gen |arith|.......c|o..szapc|o..szapc|       |        |Add with Carry    |</pre>
+<p>First column <a href="index.html#column_pf">pf</a> (Prefix) is empty. That means the instruction's
+  opcode doesn't contain any fixed prefix.</p>
+<p>Next column <a href="index.html#column_0F">0F</a> is just allocated for
+  <code>0F</code> prefix for multiple-byte opcodes so it is
+  empty.</p>
+<p>Next column <a href="index.html#column_po">po</a> (Primary Opcode) holds
+  primary opcode value itself.</p>
+<p>Because the instruction's opcode
+  doesn't contain any added byte, the column <a href="index.html#column_so">so</a> (Secondary Opcode) is empty too.</p>
+<p>The opcode doesn't contain any specific bits so the
+  column <a href="index.html#column_flds">flds</a> (Opcode
+  Fields) is empty.</p>
+<p>The column <a href="index.html#column_o">o</a> (Register/Opcode Field) here holds "r", which
+  indicates that the instruction uses "full" ModR/M byte (no opcode extension).</p>
+<p>Because this instruction is supported since 8086 processor,
+  <a href="index.html#column_proc">proc</a> column
+  (Introduced with Processor) is empty.</p>
+<p>This instruction is officially documented
+  so <a href="index.html#column_st">st</a> column
+  is empty too.</p>
+<p>Instruction <code>ADC</code> can work on any ring level
+  so the column <a href="index.html#column_rl">rl</a>, Ring Level, is empty.</p>
+<p>The column <a href="index.html#column_x">x</a> holds "L", which means that
+  <code>LOCK</code> prefix is allowed with this instruction.</p>
+<p>Next three columns, <a href="index.html#column_mnemonic">mnemonic</a>, <a href="index.html#column_op">op1 and op2</a> show instruction's
+  syntax. The destination operand of this instruction is set up using
+  bold, what always means the operand is modified by the instruction.</p>
+<p>The column <a href="index.html#column_iext">iext</a> (Instruction Extension
+  Group) is empty because the instruction doesn't
+  belong to any instruction set extension.</p>
+<p>Columns <a href="index.html#column_grp1_grp2_grp3">grp1
+  and grp2</a> classify the instruction among general
+  arithmetic instructions.</p>
+<p><code>ADC</code> instruction is influenced
+  by CF flag, what represents <a href="index.html#column_tested_f_modif_f_def_f_undef_f">tested f</a> column.</p>
+<p>This instruction influences (overwrites) all status
+  flags. These can be found in next column <a href="index.html#column_tested_f_modif_f_def_f_undef_f">modif f</a> column.</p>
+<p>All of these flags are defined (don't contain random
+  values) so the same flags are in next <a href="index.html#column_tested_f_modif_f_def_f_undef_f">def f</a> column, and <a href="index.html#column_tested_f_modif_f_def_f_undef_f">undef f</a> column must be empty.</p>
+<p>No flag is set to a fixed value (all modified flags
+  depend on input operands) so <a href="index.html#column_tested_f_modif_f_def_f_undef_f">f values</a> column is empty.</p>
+<p>Last column <a href="index.html#column_description_notes">description,
+  notes</a> contains only a general description of the instruction.</p>
+<h3>Example: Opcode Extensions</h3>
+<p>Some opcodes (only a few) depend on Opcode
+  Extension Field in ModR/M byte. Using this field, the opcode is
+  actually extended by three bits. In most cases, different extension
+  of the same opcode means more or less different instruction. An
+  example can be opcode <code><a href="coder32.html#xF6">F6</a></code>. We choose last three extensions of
+  the opcode:</p>
+<pre>
+|pf|0F|po|so|flds|o|proc|st|m|rl|l|mnemonic|op1|op2|op3 |op4 |iext|grp1|grp2 |tested f|modif f |def f   |undef f |f values|description, notes|
+----------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |F6|  |    |5|    |  | |  | |IMUL    |<b><i>AX</i></b> |<i>AL</i> |r/m8|    |    |gen |arith|        |o..szapc|o......c|...szap.|        |Signed Multiply   |
+----------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |F6|  |    |6|    |  | |  | |DIV     |<b><i>AL</i></b> |<b><i>AH</i></b> |<i>AX</i>  |r/m8|    |gen |arith|        |o..szapc|        |o..szapc|        |Unsigned Divide   |
+----------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |F6|  |    |7|    |  | |  | |IDIV    |<b><i>AL</i></b> |<b><i>AH</i></b> |<i>AX</i>  |r/m8|    |gen |arith|        |o..szapc|        |o..szapc|        |Signed Divide     |</pre>
+<p>The opcode extension can be a value from 0
+  through 7. These values are indicated in <a href="index.html#column_o">o</a> (Register/Opcode Field) column. In this
+  example, values 5, 6, and 7 are chosen.</p>
+<p>Additionally, this example shows that operands, which
+  are not explicitly used (<code>AL</code>,
+  <code>AH</code>, and <code>AX</code> operands), are set up using
+  italic. It also shows that <code>DIV</code> and <code>IDIV</code>
+  instructions always destroy all status flags: both <a href="index.html#column_tested_f_modif_f_def_f_undef_f">modif f</a> and <a href="index.html#column_tested_f_modif_f_def_f_undef_f">undef f</a> column contain these flags.</p>
+<h3>Example: One Opcode, More Syntaxes</h3>
+<p>Some opcodes are represented by more instructions
+  with the same meaning, using different syntaxes. (This doesn't apply
+  to the case when an opcode depends on Opcode Extension field in
+  ModR/M byte. In this case, these instructions act more or less
+  differently). Best known example are conditional jumps, for example
+  <code><a href="coder32.html#x74">JZ/JE</a></code>, where we find something similar:</p>
+<pre>
+|pf|0F|po|so|flds|o|proc|st|m|rl|l|mnemonic|op1     |op2|op3|op4|iext|grp1|grp2  |tested f|modif f|def f|undef f|f values|description, notes             |
+|  |  |74|  |    | |    |  | |  | |JZ      |rel8    |   |   |   |    |gen |branch|....z...|       |     |       |        |Jump short if zero/equal (ZF=0)|
+|  |  |  |  |    | |    |  | |  | |JE      |rel8    |   |   |   |    |    |      |        |       |     |       |        |                               |</pre>
+<p>Each syntax has dedicated row in <a href="index.html#column_mnemonic">mnemonic</a> column
+  and in columns with instruction <a href="index.html#column_op">operands</a>.</p>
+<p>More complex case is, for example,
+  <code><a href="coder32.html#xA5">MOVS/MOVSW/MOVSD</a></code> instruction:</p>
+<pre>
+|pf|0F|po|so|flds|o|proc|st|m|rl|l|mnemonic|op1   |op2   |op3|op4|iext|grp1|grp2   |tested f|modif f|def f|undef f|f values|description, notes             |
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |A5|  |    | |    |  | |  | |MOVS    |<b>m16</b>   |m16   |   |   |    |gen |datamov|.d......|       |     |       |        |Move Data from String to String|
+|  |  |  |  |    | |    |  | |  | |MOVSW   |<b><i>m16</i></b>   |<i>m16</i>   |   |   |    |    |string |        |       |     |       |        |                               |
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |A5|  |    | |03+ |  | |  | |MOVS    |<b>m16/32</b>|m16/32|   |   |    |gen |datamov|.d......|       |     |       |        |Move Data from String to String|
+|  |  |  |  |    | |    |  | |  | |MOVSD   |<b><i>m32</i></b>   |<i>m32</i>   |   |   |    |    |string |        |       |     |       |        |                               |</pre>
+<p>Here, the opcode's record is complicated by the fact
+  that since 80386 processor, the syntax is extended (thanks to 32-bit
+  operands) with <code>MOVSD</code> mnemonic and <code>MOVS</code>
+  syntax is changed. That's why all four syntaxes have to be split by
+  twos.</p>
+<p>More examples with multiple syntaxes:
+  <code><a href="coder32.html#x60">PUSHA/PUSHAD</a></code>,
+  <code><a href="coder32.html#xD0_4">SHL/SAL</a></code>, or
+  <code><a href="coder32.html#x0F00_0">SLDT</a></code>.</p>
+<h3>Example: Undocumented Instruction <ABBR>SETALC</ABBR>
+</h3>
+<p>All main editions contain a few undocumented
+  instructions (from the Intel manual point of view). No that in this
+  reference, undocumented doesn't equal invalid. All undocumented
+  instructions mentioned by this reference work well in their
+  shape. It is, for example, <code><a href="coder32.html#xD6">SETALC</a></code> instruction:</p>
+<pre>
+|pf|0F|po|so|flds|o|proc|st|m|rl|l|mnemonic|op1|op2|op3|op4|iext|grp1|grp2   |tested f|modif f |def f|undef f|f values|description, notes                           |
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |D6|  |    | |02+ |D<a href="geek32.html#gen_note_D6_F1"><sup>5</sup></a>| |  | |<i>undefined</i>               |    |    |       |        |        |     |       |        |Undefined and Reserved; Does not Generate #UD|
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|  |  |D6|  |    | |02+ |U<a href="geek32.html#gen_note_u_D6_F1"><sup>6</sup></a>| |  | |SALC    |<i><b>AL</b></i> |   |   |   |    |gen |datamov|.......c|        |     |       |        |Set AL If Carry                              |
+|  |  |  |  |    | |    |  | |  | |SETALC  |<i><b>AL</b></i> |   |   |   |    |    |       |        |        |     |       |        |                                             |</pre>
+<p>In this case, the documented meaning
+  goes first, as indicated in <a href="index.html#column_st">st</a> column by "D" value. Since this opcode's
+  documented meaning is not a common one, there is additional
+  reference to the description where the opcode is documented. The column
+  <a href="index.html#column_mnemonic">mnemonic</a> implies by
+  the value "undefined" (which is set up using italic, which
+  always means here that it is not an original mnemonic) that the
+  documented meaning of this opcode is "undefined and reserved". This
+  is also stated in the last column.</p>
+<p>Below goes the undocumented meaning of the opcode -
+  <a href="index.html#column_st">st</a> column holds "U"
+  value. Each undocumented meaning should contain a reference to
+  the description where is the opcode unofficially documented, like in
+  this case.</p>
+<p>More examples of undocumented instructions:
+  <code><a href="coder32.html#xF1">INT1/ICEBP</a></code> or
+  <code><a href="coder32.html#xF6_1">TEST</a></code>.</p>
+<H2 ID="Columns-Description">Columns Description</H2>
+<p>Quick navigation:</p>
+<ul>
+    <LI>
+<a href="index.html#column_pf">pf</a> Prefix</LI>
+    <LI>
+<a href="index.html#column_0F">0F</a> <code>0F</code> Prefix</LI>
+    <LI>
+<a href="index.html#column_po">po</a> Primary Opcode</LI>
+    <LI>
+<a href="index.html#column_so">so</a> Secondary Opcode</LI>
+    <LI>
+<a href="index.html#column_flds">flds</a> Opcode Fields</LI>
+    <LI>
+<a href="index.html#column_o">o</a> Register/Opcode Field</LI>
+    <LI>
+<a href="index.html#column_proc">proc</a> Introduced with Processor</LI>
+    <LI>
+<a href="index.html#column_st">st</a> Documentation Status</LI>
+    <LI>
+<a href="index.html#column_m">m</a> Mode of Operation</LI>
+    <LI>
+<a href="index.html#column_rl">rl</a> Ring Level</LI>
+    <LI>
+<a href="index.html#column_x">x</a> Lock Prefix/FPU Push/FPU Pop</LI>
+    <LI>
+<a href="index.html#column_mnemonic">mnemonic</a> Instruction Mnemonic</LI>
+    <LI>
+<a href="index.html#column_op">op1, op2, &#8230;</a> Instruction Operands</LI>
+    <LI>
+<a href="index.html#column_iext">iext</a> Instruction Extension Group</LI>
+    <LI>
+<a href="index.html#column_grp1_grp2_grp3">grp1, grp2, grp3</a> Main Group, Sub-group, Sub-sub-group</LI>
+    <LI>
+<a href="index.html#column_tested_f_modif_f_def_f_undef_f">tested f, modif f, def f,
+    undef f</a> Tested, Modified, Defined, and Undefined Flags</LI>
+    <LI>
+<a href="index.html#column_f_values">f values</a> Flags Values</LI>
+    <LI><a href="index.html#column_description_notes">description, notes</a></LI>
+  </ul>
+<p><TABLE CELLPADDING="6">
+      <COL SPAN="2" STYLE="vertical-align: top">
+      <THEAD>
+	<TR>
+	  <TH>Name</TH>
+	  <TH>Meaning</TH>
+	  <TH>Description, Examples</TH>
+	</TR>
+      </THEAD>
+      <TBODY>
+	<TR ID="column_pf">
+	  <TD><ABBR>pf</ABBR></TD>
+	  <TD>Prefix</TD>
+	  <TD>Fixed extraordinary prefix, which may change the semantic of
+	  the Primary Opcode. Usually used in case of waiting
+	  x87 <ABBR>FPU</ABBR> instructions, and many
+	  <ABBR>SSE</ABBR> instructions.
+            <code><a href="geek.html#x90">F390</a> PAUSE</code>,
+            <code><a href="geek.html#xD9_7">9BD9/7</a> FSTCW</code>,
+            <code><a href="geek.html#x0F10">F30F10</a> MOVSS</code>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_0F">
+	  <TD><code>0F</code></TD>
+	  <TD>
+<code>0F</code> Prefix</TD>
+	  <TD>Dedicated for <code>0F</code> Prefix.
+            <code><a href="geek.html#x0F00">two-byte opcodes</a></code>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_po">
+	  <TD><ABBR>po</ABBR></TD>
+	  <TD>Primary Opcode</TD>
+	  <TD>Basic opcode. Second opcode byte in case of two- and
+	  three-byte opcodes. For coder's editions: <code>+r</code>
+	  means a register code, from 0 through 7, added to the
+	  value. <code><a href="coder.html#x50">50 PUSH</a></code>
+</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_so">
+	  <TD><ABBR>so</ABBR></TD>
+	  <TD>Secondary Opcode</TD>
+	  <TD>Fixed appended value to the primary opcode. It is used
+	  in some special cases, x87 <ABBR>FPU</ABBR>
+	  instructions and for new <STRONG>three-byte</STRONG> instructions.
+            <code><a href="geek.html#xD4">D40A</a> AAM</code>,
+            <code><a href="geek.html#xD5">D50A</a> AAD</code>,
+            <code><a href="geek.html#xD9_5">D5F8</a> FLD1</code>,
+            three-byte escape <code><a href="geek.html#x0F38">0F38</a></code>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_flds">
+	  <TD><ABBR>flds</ABBR></TD>
+	  <TD>Opcode Fields</TD>
+	  <TD>This column is present only in geek's editions. It
+	  contain present Primary Opcode binary fields. These are:
+            <ul>
+	      <LI>
+<code>+r</code> means a register code, from
+	      0 through 7, added to the basic value of the Primary
+	      Opcode.
+              <code><a href="geek.html#x40">40 INC</a></code>
+              </LI>
+	    </ul>
+
+	    The following fields are case-sensitive: if a letter of the code
+	    is set up in lower case, it means the appropriate bit is
+	    cleared, otherwise is set.
+            <ul>
+	      <LI>
+<code>w</code> means bit <code>w</code> (bit
+	      index 0, <DFN>operand size</DFN>) is present; may
+	      be combined with bits
+	      <code>d</code> or <code>s</code>.
+              <code><a href="geek.html#x04">04 ADD</a></code>
+              </LI>
+	      <LI>
+<code>s</code> means bit <code>s</code> (bit
+	      index 1, <DFN>Sign-extend</DFN>) is present; may be combined with
+	      bit <code>w</code>.
+              <code><a href="geek.html#x6B">6B IMUL</a></code>
+              </LI>
+	      <LI>
+<code>d</code> means bit <code>d</code> (bit
+	      index 1, <DFN>Direction</DFN>) is present; may be combined
+	      with bit <code>w</code>.
+              <code><a href="geek.html#x00">00 ADD</a></code>
+              </LI>
+	      <LI>
+<code>tttn</code> means bit field <code>tttn</code>
+	      (4 bits, bit index 0, <DFN>condition</DFN>). Used
+	      only with conditional instructions.
+              <code><a href="geek.html#x70">70 JO</a></code>
+              </LI>
+	      <LI>
+<code>sr</code> means segment register specifier -
+	      a code of one of original four segment registers (2
+	      bits, bit index 3). See also <code>S2</code>
+	      addressing method.
+              <code><a href="geek.html#x06">06 PUSH</a></code>
+              </LI>
+	      <LI>
+<code>sre</code> means segment register specifier -
+	      a code of any segment registers (3 bits, bit
+	      index 0 or 3). See also <code>S30</code> and
+	      <code>S33</code> addressing methods.
+              <code><a href="geek.html#x0FA0">0FA0 PUSH</a></code>
+              </LI>
+	      <LI>
+<code>mf</code> means bit field <ABBR>MF</ABBR>
+	       (2 bits, bit index 1, <DFN>memory format</DFN>); used only with
+	      <ABBR>x87 FPU</ABBR> instructions coded with second
+	      floating-point instruction format.
+              <code><a href="geek.html#xDA_0">DA/0</a> FIADD</code>
+              </LI>
+	    </ul>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_o">
+	  <TD><ABBR>o</ABBR></TD>
+	  <TD>Register/ Opcode Field</TD>
+	  <TD>
+            <ol>
+	      <LI>The value of the opcode extension (values
+	      from 0 through 7).
+              <code><a href="geek.html#x80">group 80</a></code>
+              </LI>
+	      <LI>
+<code>r</code> indicates that the ModR/M
+              byte contains a register operand and an r/m operand.
+              <code><a href="geek.html#x00">00 ADD</a></code>
+              </LI>
+	    </ol>
+	  </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_proc">
+	  <TD><ABBR>proc</ABBR></TD>
+	  <TD>Introduced with Processor</TD>
+	  <TD>Indicates the instruction's introductory processor
+	  (code in curves apply to XML reference):
+            <ul>
+	      <LI>
+<code>00</code>: 8086</LI>
+	      <LI>
+<code>01</code>: 80186</LI>
+	      <LI>
+<code>02</code>: 80286</LI>
+	      <LI>
+<code>03</code>: 80386</LI>
+	      <LI>
+<code>04</code>: 80486</LI>
+	      <LI>
+<code>P1</code> (<code>05</code>): Pentium (1)</LI>
+<LI>
+<code>PX</code> (<code>06</code>): Pentium with <ABBR>MMX</ABBR>
+</LI>
+<LI>
+<code>PP</code> (<code>07</code>): Pentium Pro</LI>
+<LI>
+<code>P2</code> (<code>08</code>): Pentium II</LI>
+<LI>
+<code>P3</code> (<code>09</code>): Pentium III</LI>
+<LI>
+<code>P4</code> (<code>10</code>): Pentium 4</LI>
+<LI>
+<code>C1</code> (<code>11</code>): Core (1)</LI>
+<LI>
+<code>C2</code> (<code>12</code>): Core 2</LI>
+<LI>
+<code>C7</code> (<code>13</code>): Core i7</LI>
+<LI>
+<code>IT</code> (<code>99</code>): Itanium (only geek editions)</LI>
+	    </ul>
+	      The opcodes that are not forward-compatible (the
+	      ones which have been abandoned) are present only in
+	      geek's editions.
+            <ol>
+	      <LI>If the processor marking is a range (e.g., <code>03-04</code>), it means that the
+                instruction is unsupported in latter processors.
+                <code><a href="geek.html#x0F24">0F24 MOV</a></code>
+              </LI>
+	      <LI>
+<code>+</code> (e. g., <code>00+</code>) means the instruction is supported in any
+                of latter processors and also in 64-bit mode, if the next row doesn't explicitly say otherwise.
+                <code><a href="geek.html#x06">06 PUSH ES</a></code>
+              </LI>
+	      <LI>
+<code>++</code> (e. g., <code>P4++</code>) the same meaning, but only in the latter
+                steppings of the processor (e. g., <ABBR>SSE3</ABBR> instruction extensions).
+                <code><a href="geek.html#x0FA2">0FA2 CPUID</a></code>
+              </LI>
+	    </ol>
+            If this column is empty: In case of 32-bit editions, it
+            means <code>00+</code> (8086 and all latter
+            processors). In case of 64-bit editions, it means
+            <code>P4++</code> (P4, latter stepping, and all latter
+            processors), because Intel 64 Architecture is
+            available since latter stepping of the Pentium 4 processor.
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_st">
+	  <TD><ABBR>st</ABBR></TD>
+	  <TD>Document. Status</TD>
+	  <TD>Indicates how is the instruction documented in the Intel
+	  manuals:
+            <ol>
+	      <LI>
+<code>D</code> means fully documented. It can
+	      contain a reference to description which chapter in
+	      Intel manual it is documented in, if it may be
+	      unclear.
+              <code><a href="geek.html#xD6">D6</a></code>
+              </LI>
+	      <LI>
+<code>M</code> means documented only marginally.
+              <code><a href="geek.html#x66">66 (SSE2)</a></code>
+              </LI>
+	      <LI>
+<code>U</code> undocumented at all. It should
+	      contain a reference to description of the source. Note
+	      that in this reference, undocumented doesn't equal invalid.
+	      All mentioned undocumented instructions should work well in their scope.
+              <code><a href="geek.html#xD6">D6 SALC</a></code>
+              </LI>
+	    </ol>
+          If this column is empty, it means <code>D</code> (documented with no further notes).
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_m">
+	  <TD><ABBR>m</ABBR></TD>
+	  <TD>Mode of Operation</TD>
+	  <TD>Indicates the mode, which is the instruction
+	  valid on. Virtual-8086 Mode is not taken into account.
+            <ol>
+	      <LI>
+<code>R</code> applies for real, protected and 64-bit
+	      mode. <ABBR>SMM</ABBR> is not taken into account.
+              </LI>
+	      <LI>
+<code>P</code> applies for protected and 64-bit mode.
+	      <ABBR>SMM</ABBR> is not taken into account.
+              <code><a href="geek.html#x0F00">group 0F00</a></code>
+              </LI>
+	      <LI>
+<code>E</code> applies for 64-bit
+	      mode. <ABBR>SMM</ABBR> is not taken into account.
+              <code><a href="geek.html#x63">63 MOVSXD</a></code>
+              </LI>
+	      <LI>
+<code>S</code> applies for <ABBR>SMM</ABBR>.
+              <code><a href="geek.html#x0FAA">0FAA RSM</a></code>
+              </LI>
+	    </ol>
+            If this column is empty, it means <code>R</code>. For
+            64-bit editions, <code>E</code> code indicates in
+            most cases that the
+            semantics of the opcode is specific to 64-bit mode.
+          </TD>
+	</TR>
+      </TBODY>
+
+      <TBODY>
+	<TR ID="column_rl">
+	  <TD><ABBR>rl</ABBR></TD>
+	  <TD>Ring Level</TD>
+	  <TD>The ring level, which is the instruction valid (3
+	    or 0) from; <code>f</code> indicates that the level
+	    depends on a flag(s) and it should contain a reference to the
+	    description of that flag, if the flag is not too complex. If
+	    this column is empty, it means ring 3.
+            <code><a href="geek.html#xCD">INT</a></code>,
+            <code><a href="geek.html#x6C">INS</a></code>,
+            <code><a href="geek.html#x0F31">RDTSC</a></code>
+          </TD>
+	</TR>
+      </TBODY>
+
+      <TBODY>
+	<TR ID="column_x">
+	  <TD ROWSPAN="2"><ABBR>x</ABBR></TD>
+	  <TD>Lock Prefix</TD>
+	  <TD>
+<code>L</code> indicates that the instruction is
+	  basically valid with <code><a href="geek.html#xF0">F0 LOCK</a></code> prefix.
+          <code><a href="geek.html#x00">00 ADD</a></code>
+          </TD>
+	</TR>
+	<TR>
+	  <TD>
+<ABBR>FPU</ABBR> Push/ <ABBR>FPU</ABBR> Pop</TD>
+	  <TD>The following codes apply only to x87 <ABBR>FPU</ABBR>
+	  instructions (none of them can use <code>LOCK</code> prefix).
+            <ul>
+	      <LI>
+<code>s</code> incidates that the opcode performs
+	      additional pu<STRONG>s</STRONG>h of a value to the register stack.
+              <code><a href="geek.html#xD9_0">D9 /0 FLD</a></code>
+              </LI>
+	      <LI>
+<code>p</code> incidates that the opcode performs
+	      additional <STRONG>p</STRONG>op of the register stack.
+              <code><a href="geek.html#xD9_3">D9 /3 FSTP</a></code>
+              </LI>
+	      <LI>
+<code>P</code> incidates the same like
+	      <code>p</code>, but pops twice.
+              <code><a href="geek.html#xD9_3">DA /5 FUCOMPP</a></code>
+              </LI>
+	    </ul>
+          </TD>
+	</TR>
+      </TBODY>
+
+      <TBODY>
+	<TR ID="column_mnemonic">
+	  <TD ROWSPAN="2">mnemonic</TD>
+	  <TD ROWSPAN="2">Instr. Mnemonic</TD>
+	  <TD>The instruction mnemonic itself. If there is no
+	  mnemonic, it holds additional information about the mnemonic
+	  or instruction:
+            <ul>
+	      <LI>If the mnemonic is set up using italic, there is no
+	        oficial mnemonic and the present one is just suggested
+	        one.
+                <code><a href="geek.html#xD4">D4 AMX</a></code>,
+                <code><a href="geek.html#xD5">D5 ADX</a></code>,
+                <code><a href="geek.html#x0FB9">0FB9 UD</a></code>
+              </LI>
+	      <LI>
+<DFN>no mnemonic</DFN> means that there is no
+	      mnemonic for the opcode.
+              <code><a href="geek.html#x66">66</a></code>
+              </LI>
+	      <LI>
+<DFN>invalid</DFN> means that the opcode is invalid. This
+	      option is not used everywhere the opcode is invalid, but
+	      only in some cases.
+              <code><a href="geek.html#x06">06 (64-bit mode)</a></code> 
+              </LI>
+	      <LI>
+<DFN>undefined</DFN> means that the behaviour of the
+	      instruction is according to official documentation
+	      undefined.
+              <code><a href="geek.html#xD6">D6</a></code>
+              </LI>
+	      <LI>
+<DFN>nop</DFN> means that the opcode is
+	      treated as integer <code>NOP</code> instruction. It should
+	      contain a reference to description of the source.
+              <code><a href="geek.html#x90">no mnenonic nop</a></code>
+              </LI>
+	      <LI>
+<DFN>null</DFN> means that the prefix has no meaning
+	      (no operation).
+              <code><a href="geek.html#x26">26 (64-bit mode)</a></code>
+              </LI>
+	    </ul>
+            
+	    If there is a mnemonic, it can hold additional
+	    attributes of the instruction:
+            <ul>
+	      <LI>
+<DFN>nop</DFN> means that the instruction is
+	      treated as integer <code>NOP</code> instruction (except
+	      <code>NOP</code> instructions themselves). It should
+	      contain a reference to description of the source.
+              <code><a href="geek.html#DB_4">DBE0</a> FNENI</code>
+              </LI>
+	    </ul>
+          </TD>
+	</TR>
+	<TR>
+          <TD>Only geek's editions:
+            <ul>
+	      <LI>
+<DFN>alias</DFN> means that the opcode is an alias
+	      to another opcode. The attribute should be a reference
+	      to that instruction.
+                <code><a href="geek.html#x82">group 82</a></code>,
+	        <code><a href="geek.html#xC0_6">C0 /6 SAL</a></code>
+              </LI>
+	      <LI>
+<DFN>part alias</DFN> means not true alias. It
+	      should contain a reference to the description of the
+	      differences between referenced instructions.
+              <code><a href="geek.html#xF1">F1 INT1</a></code>
+              </LI>
+	    </ul>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_op">
+	  <TD>
+<ABBR>op1</ABBR>, <ABBR>op2</ABBR>, ...</TD>
+	  <TD>Instr. Operands</TD>
+	  <TD>Instruction operands. Geek's editions use special
+	  operand codes, explained in <a href="index.html#Instruction-Operand-Codes">Instruction Operand Codes</a>
+	  chapter below. If an operand is set up using italic, it is an
+	  implicit operand, which is not explicitly used. If an operand is set up using
+	  boldface, it is modified by the instruction.</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_iext">
+	  <TD><ABBR>iext</ABBR></TD>
+	  <TD>Instr. Extension Group</TD>
+          
+	  <TD>The instruction extension group, which was the
+	  opcode released on:
+            <ol>
+<LI>
+<code>MMX</code> <ABBR>MMX</ABBR> Technology</LI>
+<LI>
+<code>SSE1</code> Streaming <ABBR>SIMD</ABBR> Extensions (1)</LI>
+<LI>
+<code>SSE2</code> Streaming <ABBR>SIMD</ABBR> Extensions 2</LI>
+<LI>
+<code>SSE3</code> Streaming <ABBR>SIMD</ABBR> Extensions 3</LI>
+<LI>
+<code>SSSE3</code> Supplemental Streaming <ABBR>SIMD</ABBR> Extensions 3</LI>
+<LI>
+<code>SSE41</code> Streaming <ABBR>SIMD</ABBR> Extensions 4.1</LI>
+<LI>
+<code>SSE42</code> Streaming <ABBR>SIMD</ABBR> Extensions 4.2</LI>
+<LI>
+<code>VMX</code> Virtualization Technology Extensions</LI>
+	      <LI>
+<code>SMX</code> Safer Mode Extensions</LI>
+	    </ol>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_grp1_grp2_grp3">
+	  <TD>
+<ABBR>grp1</ABBR>, <ABBR>grp2</ABBR>, <ABBR>grp3</ABBR>
+</TD>
+	  <TD>Main Group, Sub-group, Sub -sub-group</TD>
+	  <TD>These columns are present only in geek's editions. They
+	  classifies the instruction among groups. These groups
+	  don't match the instruction groups given by the Intel
+	  manual (I found them too loose). One instruction may fit
+	  into more groups.
+            <ol>
+	      <LI>
+<DFN>prefix</DFN>
+                <ol>
+		  <LI>
+<DFN>segreg</DFN> segment register</LI>
+		  <LI>
+<DFN>branch</DFN>
+		    <ol>
+		      <LI>
+<DFN>cond</DFN> conditional</LI>
+		    </ol>
+                  </LI>
+		  <LI>
+<DFN>x87fpu</DFN>
+                    <ol>
+		      <LI>
+<DFN>control</DFN> (only <code><a href="geek.html#x9B">WAIT</a></code>)</LI>
+		    </ol>
+                  </LI>
+		</ol>
+              </LI>
+	      <LI>
+<DFN>obsol</DFN> obsolete
+                <ol>
+		  <LI><DFN>control</DFN></LI>
+		</ol>
+              </LI>
+	      <LI>
+<DFN>gen</DFN> general
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI><DFN>stack</DFN></LI>
+		  <LI>
+<DFN>conver</DFN> type conversion</LI>
+		  <LI>
+<DFN>arith</DFN> arithmetic
+                    <ol>
+		      <LI><DFN>binary</DFN></LI>
+		      <LI><DFN>decimal</DFN></LI>
+		    </ol>
+                  </LI>
+		  <LI><DFN>logical</DFN></LI>
+		  <LI>
+<DFN>shftrot</DFN> shift&amp;rotate</LI>
+		  <LI>
+<DFN>bit</DFN> bit manipulation</LI>
+		  <LI>
+<DFN>branch</DFN>
+		    <ol>
+		      <LI>
+<DFN>cond</DFN> conditional</LI>
+		    </ol>
+                  </LI>
+		  <LI>
+<DFN>break</DFN> interrupt</LI>
+		  <LI>
+<DFN>string</DFN> (means that the instruction can make use of the <a href="geek.html#xF2">REP family prefixes</a>)</LI>
+		  <LI>
+<DFN>inout</DFN> I/O</LI>
+		  <LI>
+<DFN>flgctrl</DFN> flag control</LI>
+		  <LI>
+<DFN>segreg</DFN> segment register manipulation</LI>
+		  <LI><DFN>control</DFN></LI>
+		</ol>
+              </LI>
+	      <LI>system
+                <ol>
+		  <LI>
+<DFN>branch</DFN>
+                    <ol>
+		      <LI>
+<DFN>trans</DFN> transitional (implies
+		      sensitivity to operand-size attribute)</LI>
+		    </ol>
+                  </LI>
+		  
+		</ol>
+              </LI>
+	      <LI>
+<DFN>x87fpu</DFN> <ABBR>x87 FPU</ABBR>
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>arith</DFN> basic arithmetic</LI>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		  <LI>
+<DFN>trans</DFN> transcendental</LI>
+		  <LI>
+<DFN>ldconst</DFN> load constant</LI>
+		  <LI><DFN>control</DFN></LI>
+		  <LI>
+<DFN>conv</DFN> conversion</LI>
+		</ol>
+              </LI>
+	      <LI>
+<DFN>sm</DFN> <ABBR>x87 FPU</ABBR> and
+	      <ABBR>SIMD</ABBR> state management
+              </LI>
+	    </ol>
+<code>MMX</code> instruction extensions technology groups. Note that
+these groups are just experimental and may change in future.
+            <ol>
+	      <LI>
+<DFN>datamov</DFN> data movement</LI>
+	      <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+	      <LI>
+<DFN>compar</DFN> comparison</LI>
+	      <LI>
+<DFN>conver</DFN> conversion</LI>
+	      <LI><DFN>logical</DFN></LI>
+	      <LI><DFN>shift</DFN></LI>
+	      <LI>
+<DFN>unpack</DFN> unpacking</LI>
+
+	    </ol>
+<code>SSE1</code> instruction extensions groups. Note that
+these groups are just experimental and may change in future.
+            <ol>
+	      <LI>
+<DFN>simdfp</DFN> <ABBR>SIMD</ABBR> single-precision
+	      floating-point
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		  <LI><DFN>logical</DFN></LI>
+		  <LI>
+<DFN>shunpck</DFN> shuffle&amp;unpacking</LI>
+		</ol>
+	      </LI>
+	      <LI>
+<DFN>conver</DFN> conversion instructions</LI>
+	      <LI>
+<DFN>simdint</DFN> 64-bit <ABBR>SIMD</ABBR> integer
+
+
+
+
+
+
+              </LI>
+	      <LI>
+<DFN>mxcsrsm</DFN> <code>MXCSR</code> state management</LI>
+	      <LI>
+<DFN>cachect</DFN> cacheability control</LI>
+
+	      <LI>
+<DFN>fetch</DFN> prefetch</LI>
+	      <LI>
+<DFN>order</DFN> instruction ordering</LI>
+	    </ol>
+
+            <code>SSE2</code> instruction extensions groups. Note that
+            these groups are just experimental and may change in future.
+
+            <ol>
+	      <LI>
+<DFN>pcksclr</DFN> packed and scalar
+	      double-precision floating-point
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>conver</DFN> conversion</LI>
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		  <LI><DFN>logical</DFN></LI>
+		  <LI>
+<DFN>shunpck</DFN> shuffle&amp;unpacking</LI>
+		</ol>
+	      </LI>
+	      <LI>
+<DFN>pcksp</DFN> packed single-precision floating-point</LI>
+	      <LI>
+<DFN>simdint</DFN> 128-bit <ABBR>SIMD</ABBR> integer
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		  <LI>
+<DFN>shunpck</DFN> shuffle&amp;unpacking</LI>
+		  <LI><DFN>shift</DFN></LI>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		  <LI>
+<DFN>conver</DFN> conversion</LI>
+		  <LI><DFN>logical</DFN></LI>
+		</ol>
+              </LI>
+
+	      <LI>
+<DFN>cachect</DFN> cacheability control</LI>
+	      <LI>
+<DFN>order</DFN> instruction ordering</LI>
+	    </ol>
+
+            <code>SSE3</code> instruction extensions groups. Note that
+            these groups are just experimental and may change in
+            future.
+
+            <ol>
+	      <LI>
+<DFN>simdfp</DFN> <ABBR>SIMD</ABBR> single-precision
+	      floating-point (<ABBR>SIMD</ABBR> packed)
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		</ol>
+              </LI>
+
+
+	      <LI>
+<DFN>cachect</DFN> cacheability control</LI>
+	      <LI>
+<DFN>sync</DFN> agent synchronization</LI>
+	    </ol>
+
+            <code>SSSE3</code> instruction extensions group. Note that
+            these groups are just experimental and may change in future.
+
+            <ol>
+	      <LI>
+<DFN>simdint</DFN> <ABBR>SIMD</ABBR> integer</LI>
+	    </ol>
+
+            <code>SSE4.1</code> instruction extensions group. Note that
+            these groups are just experimental and may change in
+            future.
+
+            <ol>
+	      <LI>
+<DFN>simdint</DFN> <ABBR>SIMD</ABBR> integer
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		  <LI>
+<DFN>conver</DFN> conversion</LI>
+		</ol>
+              </LI>
+
+	      <LI>
+<DFN>simdfp</DFN> <ABBR>SIMD</ABBR> <ABBR>SIMD</ABBR> floating-point
+                <ol>
+		  <LI>
+<DFN>datamov</DFN> data movement</LI>
+		  <LI>
+<DFN>arith</DFN> packed arithmetic</LI>
+		  <LI>
+<DFN>conver</DFN> conversion</LI>
+		</ol>
+              </LI>
+
+	      <LI>
+<DFN>cachect</DFN> cacheability control</LI>
+	    </ol>
+
+            <code>SSE4.2</code> instruction extensions group. Note that
+            these groups are just experimental and may change in
+            future.
+
+            <ol>
+	      <LI>
+<DFN>simdint</DFN> <ABBR>SIMD</ABBR> integer
+                <ol>
+		  <LI>
+<DFN>compar</DFN> comparison</LI>
+		</ol>
+              </LI>
+
+	      <LI>
+<DFN>strtxt</DFN> string and text processing</LI>
+	    </ol>
+
+            <code>VMX</code> and <code>SMX</code> instruction
+            extensions has no groups at the moment. The grouping may
+            be added in future.
+
+          </TD>
+	</TR>
+      </TBODY>
+
+      <TBODY>
+	<TR ID="column_tested_f_modif_f_def_f_undef_f">
+	  <TD>tested f, modif f, def f, undef f</TD>
+	  <TD>Tested, Modified, Defined, and Undefined Flags</TD>
+	  <TD>
+            <ul>
+	      <LI>For <code>rFlags</code> register, indicates these
+	       flags using <DFN>odiszapc</DFN> pattern. Present flag
+	       fits in with the appropriate group.
+              <code><a href="geek.html#xC0">group C0</a></code>
+             </LI>
+	      <LI>For <ABBR>x87 FPU</ABBR> flags, indicates these
+	        flags using <DFN>1234</DFN> <ABBR>x87 FPU</ABBR>
+	        flag pattern. Present flag
+	        fits in with the appropriate group.
+                <code><a href="geek.html#DB_7">DB/7</a> FSTP</code>
+              </LI>
+	    </ul>
+          Note that if a flag is present in both Defined and
+	  Undefined column, the flag fits in under further conditions,
+	  which are not described by this reference.
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_f_values">
+	  <TD>f values</TD>
+	  <TD>Flags Values</TD>
+	  <TD>
+            <ul>
+	      <LI>For <code>rFlags</code> register, indicates the values of flags, which are always
+                set or cleared, using case-sensitive <DFN>odiszapc</DFN> flag
+                pattern. Lower-case flag means cleared flag,
+                upper-case means set flag.
+                <code><a href="geek.html#xF9">STC</a></code>
+              </LI>
+              
+	      <LI>For <ABBR>x87 FPU</ABBR> flags, indicates these
+                flags using <DFN>1234</DFN> <ABBR>x87 FPU</ABBR>
+	        flag pattern. Present flag holds its value.
+                <code><a href="geek.html#DB_4">DBE3</a> FNINIT</code>
+              </LI>
+	    </ul>
+          </TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR ID="column_description_notes">
+	  <TD>description, notes</TD>
+	  <TD></TD>
+	  <TD>Short desciption of the opcode. For now, the descriptions
+	  are very general. They will be improved in future perhaps.</TD>
+	</TR>
+      </TBODY>
+    </TABLE></p>
+<H2 ID="Instruction-Operand-Codes">Instruction Operand Codes</H2>
+<p>These codes come from official codes used in Intel
+  manual Instruction Set Reference, N-Z for Pentium 4 processor,
+  revision 17. The reason of using this particular, out-of-date
+  revision is that the codes from this revision
+  are most apposite ones. In next revisions the codes changed
+  unfortunately. These codes were modified and completed mainly because
+  of the possibility to code operands simultaneously for 64-bit
+  mode. Ideally, it would be the best to make brand new codes, but I'm
+  afraid those wouldn't be widely acceptable.</p>
+<p>The State column says if the code is
+  original, added or changed.</p>
+<p>The "Geek" part in these tables in the first column indicates
+  codes used in <ABBR>HTML</ABBR> geek's editions and in the <a href="index.html#Source_XML_Document_desc">source XML
+  document</a> as well. The "Coder" part indicates
+  alternative codes used in <ABBR>HTML</ABBR> coder's editions. These
+  are used also within instruction reference in Intel manual.</p>
+<h3>Codes for Addressing Method</h3>
+<p>The following abbreviations are used for addressing methods:
+    <TABLE CELLPADDING="6">
+      <THEAD>
+	<TR>
+	  <TH>Geek</TH>
+<TH ROWSPAN="2">State</TH>
+<TH ROWSPAN="2">Description</TH>
+	</TR>
+	<TR>
+	  <TH>Coder</TH>
+	</TR>
+      </THEAD>
+      <TBODY>
+	<TR>
+	  <TD><code>A</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Direct address. The instruction has no ModR/M byte; the address of the operand is encoded
+in the instruction; no base register, index register, or scaling factor can be applied
+(for example, far <code>JMP</code> (<code><a href="geek.html#xEA">EA</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>ptr</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>BA</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Memory addressed by <code>DS:EAX</code>, or
+	  by <code>rAX</code> in 64-bit mode (only
+	  <code><a href="geek.html#x0F01_1">0F01C8 MONITOR</a></code>).
+          </TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>BB</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Memory addressed by <code>DS:eBX+AL</code>, or by <code>rBX+AL</code> in 64-bit
+	  mode (only
+	  <code><a href="geek.html#xD7">XLAT</a></code>).
+          (This code changed from single <code>B</code> in revision 1.00)
+          </TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>BD</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Memory addressed by <code>DS:eDI</code>
+	  or by <code>RDI</code> (only <code><a href="geek.html#x0FF7">0FF7</a> MASKMOVQ</code> and
+	  <code><a href="geek.html#x0FF7">660FF7</a> MASKMOVDQU</code>) (This
+	  code changed from <code>YD</code> (introduced in 1.00) in
+	  revision 1.02)
+          </TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>C</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a control
+	  register (only <code>MOV</code> (<code><a href="geek.html#x0F20">0F20</a></code>, <code><a href="geek.html#x0F22">0F22</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>CRn</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>D</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a debug
+	  register (only <code>MOV</code> (<code><a href="geek.html#x0F21">0F21</a></code>, <code><a href="geek.html#x0F23">0F23</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>DRn</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>E</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">A ModR/M byte follows the opcode and specifies the operand. The operand is either a
+	general-purpose register or a memory address. If it is a memory address, the address is
+	computed from a segment register and any of the following values: a base register, an
+	index register, a scaling factor, or a displacement.</TD>
+	</TR>
+	<TR>
+	  <TD><code>r/m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>ES</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">(Implies original <code>E</code>). A ModR/M
+	  byte follows the opcode and specifies the operand. The
+	  operand is either a
+	  x87 <ABBR>FPU</ABBR> stack register or a memory address. If it is a memory address, the address is
+	  computed from a segment register and any of the following values: a base register, an
+	  index register, a scaling factor, or a displacement.
+          </TD>
+	</TR>
+	<TR>
+	  <TD><code>STi/m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>EST</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">(Implies original <code>E</code>). A ModR/M
+	  byte follows the opcode and specifies the x87
+	  <ABBR>FPU</ABBR> stack register.
+          </TD>
+	</TR>
+	<TR>
+	  <TD><code>STi</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>F</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">rFLAGS register.</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>G</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a general
+	  register (for example, <code>AX</code> (<code>000</code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>r</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>H</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">The r/m field of the ModR/M byte always selects
+	  a general register, regardless of the mod field (for
+	  example, <code>MOV</code> (<code><a href="geek.html#x0F20">0F20</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD>r</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>I</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Immediate data. The operand value is encoded in subsequent bytes of the instruction.</TD>
+	</TR>
+	<TR>
+	  <TD><code>imm</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>J</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The instruction contains a relative offset to be added to the instruction pointer register
+(for example, <code>JMP</code> (<code><a href="geek.html#xE9">E9</a></code>),
+	  <code><a href="geek.html#xE2">LOOP</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>rel</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>M</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The ModR/M byte may refer only to memory: mod != 11bin
+	  (<code><a href="geek.html#x62">BOUND</a></code>,
+	  <code><a href="geek.html#x8D">LEA</a></code>,
+          <code><a href="geek.html#xFF_3">CALLF</a></code>,
+          <code><a href="geek.html#xFF_5">JMPF</a></code>,
+          <code><a href="geek.html#xC4">LES</a></code>, <code><a href="geek.html#xC5">LDS</a></code>, <code><a href="geek.html#x0FB2">LSS</a></code>, <code><a href="geek.html#x0FB4">LFS</a></code>, <code><a href="geek.html#x0FB5">LGS</a></code>, <code><a href="geek.html#x0FC7_1">CMPXCHG8B</a></code>, <code><a href="geek.html#x0FC7_1">CMPXCHG16B</a></code>,
+          <code><a href="geek.html#x0FF0">F20FF0</a> LDDQU</code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>N</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The R/M field of the ModR/M byte selects a packed
+	  quadword <ABBR>MMX</ABBR> technology register.</TD>
+	</TR>
+	<TR>
+	  <TD><code>mm</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>O</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The instruction has no ModR/M byte; the offset of the operand is coded as a word,
+	double word or quad word (depending on address size attribute) in the instruction. No base register,
+	index register, or scaling factor can be applied (only <code>MOV</code> 
+	  (<code><a href="geek.html#xA0">A0</a></code>,
+	  <code><a href="geek.html#xA1">A1</a></code>,
+	  <code><a href="geek.html#xA2">A2</a></code>,
+	  <code><a href="geek.html#xA3">A3</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>moffs</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>P</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a packed
+	  quadword <ABBR>MMX</ABBR> technology register.</TD>
+	</TR>
+	<TR>
+	  <TD><code>mm</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>Q</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">A ModR/M byte follows the opcode and specifies the operand. The operand is either
+an <ABBR>MMX</ABBR> technology register or a memory address. If it is a memory address, the address
+is computed from a segment register and any of the following values: a base register,
+an index register, a scaling factor, and a displacement.</TD>
+	</TR>
+	<TR>
+	  <TD><code>mm/m64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>R</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The mod field of the ModR/M byte may refer only to a general register (only
+<code>MOV</code> (<code><a href="geek.html#x0F20">0F20</a></code>-<code><a href="geek.html#x0F24">0F24</a></code>,
+	  <code><a href="geek.html#x0F26">0F26</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>r</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>S</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a segment
+	  register (only <code>MOV</code> (<code><a href="geek.html#x8C">8C</a></code>,
+	  <code><a href="geek.html#x8E">8E</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>Sreg</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>SC</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Stack operand, used by instructions which
+	  either push an operand to the stack or pop an operand
+	  from the stack. Pop-like instructions are, for example,
+	  <code>POP</code>, <code>RET</code>, <code>IRET</code>,
+	  <code>LEAVE</code>. Push-like are, for example,
+	  <code>PUSH</code>, <code>CALL</code>, <code>INT</code>.
+          No Operand type is provided along with this method because it
+	  depends on source/destination operand(s).</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>T</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a test register
+	  (only <code>MOV</code> (<code><a href="geek.html#x0F24">0F24</a></code>,
+	  <code><a href="geek.html#x0F26">0F26</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>TRn</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>U</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The R/M field of the ModR/M byte selects a 128-bit <ABBR>XMM</ABBR> register.</TD>
+	</TR>
+	<TR>
+	  <TD><code>xmm</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>V</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">The reg field of the ModR/M byte selects a 128-bit <ABBR>XMM</ABBR> register.</TD>
+	</TR>
+	<TR>
+	  <TD><code>xmm</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>W</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">A ModR/M byte follows the opcode and specifies the operand. The operand is either a
+128-bit <ABBR>XMM</ABBR> register or a memory address. If it is a memory address, the address is
+computed from a segment register and any of the following values: a base register, an
+index register, a scaling factor, and a displacement</TD>
+	</TR>
+	<TR>
+	  <TD><code>xmm/m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>X</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Memory addressed by the <code>DS:eSI</code> or by
+	  <code>RSI</code> (only <code><a href="geek.html#xA4">MOVS</a></code>,
+	  <code><a href="geek.html#xA6">CMPS</a></code>,
+	  <code><a href="geek.html#x6E">OUTS</a></code>, and
+	  <code><a href="geek.html#xAC">LODS</a></code>). In
+	  64-bit mode, only 64-bit (<code>RSI</code>) and 32-bit
+	  (<code>ESI</code>) address sizes are supported. In
+	  non-64-bit modes, only 32-bit (<code>ESI</code>) and 16-bit
+	  (<code>SI</code>) address sizes are supported.</TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>Y</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Memory addressed by the <code>ES:eDI</code> or by
+	  <code>RDI</code> (only <code><a href="geek.html#xA4">MOVS</a></code>,
+	  <code><a href="geek.html#xA6">CMPS</a></code>,
+	  <code><a href="geek.html#x6C">INS</a></code>,
+<code><a href="geek.html#xAA">STOS</a></code>, and
+	  <code><a href="geek.html#xAE">SCAS</a></code>). In
+	  64-bit mode, only 64-bit (<code>RDI</code>) and 32-bit
+	  (<code>EDI</code>) address sizes are supported. In
+	  non-64-bit modes, only 32-bit (<code>EDI</code>) and
+	  16-bit (<code>DI</code>) address sizes are supported. The
+	  implicit <code>ES</code> segment register cannot be overriden by
+	  a segment prefix.</TD>
+	</TR>
+	<TR>
+	  <TD><code>m</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>Z</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">The instruction has no ModR/M byte; the three
+	  least-significant bits of the opcode byte selects
+	  a general-purpose register</TD>
+	</TR>
+	<TR>
+	  <TD><code>r</code></TD>
+	</TR>
+      </TBODY>
+    </TABLE></p>
+<p>The following abbreviations are used for addressing
+  methods only in case of direct segment registers and are accessible
+  only in <ABBR>HTML</ABBR> geek's editions as segment register's
+  title. As for <a href="index.html#Source_XML_Document_desc">source XML document</a>, they are used within
+  <DFN>address</DFN> atribute of <DFN>syntax/dst</DFN> or
+  <DFN>syntax/src</DFN> elements. All of them are added:
+
+    <TABLE CELLPADDING="6">
+      <TBODY>
+	<TR>
+	  <TD><code>S2</code></TD>
+	  <TD>The two bits at bit index three of the opcode byte
+	  selects one of original four segment registers (for example,
+	  <code><a href="geek.html#x06">PUSH ES</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>S30</code></TD>
+	  <TD>The three least-significant bits of the opcode byte
+	  selects segment register <code>SS</code>, <code>FS</code>, or
+	  <code>GS</code> (for example, <code><a href="geek.html#x0FB2">LSS</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>S33</code></TD>
+	  <TD>The three bits at bit index three of the opcode byte
+	  selects segment register <code>FS</code> or <code>GS</code>
+	  (for example, <code><a href="geek.html#x0FA0">PUSH FS</a></code>).
+	  </TD>
+	</TR>
+      </TBODY>
+    </TABLE></p>
+<h3>Codes for Operand Type</h3>
+<p>The following abbreviations are used for operand
+  types:
+    <TABLE CELLPADDING="6">
+      <THEAD>
+	<TR>
+	  <TH>Geek</TH>
+<TH ROWSPAN="2">State</TH>
+<TH ROWSPAN="2">Description</TH>
+	</TR>
+	<TR>
+	  <TH>Coder</TH>
+	</TR>
+      </THEAD>
+      <TBODY>
+	<TR>
+	  <TD><code>a</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Two one-word operands in memory or two double-word operands in memory, depending
+on operand-size attribute (only <code><a href="geek.html#x62">BOUND</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16/32&amp;16/32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>b</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Byte, regardless of operand-size attribute.</TD>
+	</TR>
+	<TR>
+	  <TD><code>8</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>bcd</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Packed-<ABBR>BCD</ABBR>. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDF_4">FBLD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>80dec</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>bs</code></TD>
+	  <TD ROWSPAN="2">Added; simplified <code>bsq</code>
+</TD>
+	  <TD ROWSPAN="2">Byte, sign-extended to the size of the destination operand.</TD>
+	</TR>
+	<TR>
+	  <TD><code>8</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>bsq</code></TD>
+	  <TD ROWSPAN="2">Original; replaced by <code>bs</code>
+</TD>
+	  <TD ROWSPAN="2">(Byte, sign-extended to 64 bits.)</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>bss</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Byte, sign-extended to the size of the stack pointer (for
+	  example, <code>PUSH</code> (<code><a href="geek.html#x6A">6A</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>8</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>c</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Byte or word, depending on operand-size
+	  attribute. (unused even by Intel?)</TD>
+	</TR>
+	<TR>
+	  <TD>?</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>d</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Doubleword, regardless of operand-size attribute.</TD>
+	</TR>
+	<TR>
+	  <TD><code>32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>di</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Doubleword-integer. Only x87
+	  <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDA_0">FIADD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>32int</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>dq</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Double-quadword, regardless of operand-size attribute
+	  (for example, <code><a href="geek.html#x0FC7_1">CMPXCHG16B</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>128</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>dqp</code></TD>
+	  <TD ROWSPAN="2">Added; combines <code>d</code> and <code>qp</code>
+</TD>
+	  <TD ROWSPAN="2">Doubleword, or quadword, promoted by <code><a href="geek.html#x48">REX.W</a></code> in
+	  64-bit mode (for example, <code><a href="geek.html#x63">MOVSXD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>32/64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>dr</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Double-real. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDC_0">FADD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>64real</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>ds</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Doubleword, sign-extended to 64 bits (for example,
+	  <code>CALL</code> (<code><a href="geek.html#xE8">E8</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>e</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">x87 <ABBR>FPU</ABBR> environment (for example, <code><a href="geek.html#xD9_6">FSTENV</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>14/28</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>er</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Extended-real. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDB_5">FLD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>80real</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>p</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">32-bit or 48-bit pointer, depending on operand-size
+	  attribute (for example, <code>CALLF</code> (<code><a href="geek.html#x9A">9A</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16:16/32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>pi</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Quadword MMX technology data. </TD>
+	</TR>
+	<TR>
+	  <TD>(<code>64</code>)</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>pd</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">128-bit packed double-precision floating-point data.</TD>
+	</TR>
+	<TR>
+	  <TD> </TD> 
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>ps</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">128-bit packed single-precision floating-point data.</TD>
+	</TR>
+	<TR>
+	  <TD>(<code>128</code>)</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>psq</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">64-bit packed single-precision floating-point data.</TD>
+	</TR>
+	<TR>
+	  <TD><code>64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>pt</code></TD>
+	  <TD ROWSPAN="2">Original; replaced by <code>ptp</code>
+</TD>
+	  <TD ROWSPAN="2">(80-bit far pointer.)</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>ptp</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">32-bit or 48-bit pointer, depending on operand-size
+	  attribute, or 80-bit far pointer, promoted by <code><a href="geek.html#x48">REX.W</a></code>
+	  in 64-bit mode (for example,
+	  <code>CALLF</code> (<code><a href="geek.html#xFF_3">FF /3</a></code>)).
+	  </TD>
+	</TR>
+	<TR>
+	  <TD><code>16:16/32/64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>q</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Quadword, regardless of operand-size attribute (for
+	  example, <code>CALL</code> (<code><a href="geek.html#xFF_2">FF /2</a></code>)).
+	  </TD>
+	</TR>
+	<TR>
+	  <TD><code>64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>qi</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Qword-integer. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDF_5">FILD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>64int</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>qp</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Quadword, promoted by <code><a href="geek.html#x48">REX.W</a></code> (for
+	  example, <code><a href="geek.html#xCF">IRETQ</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>s</code></TD>
+	  <TD>Changed to</TD>
+	  <TD>6-byte pseudo-descriptor, or 10-byte pseudo-descriptor
+	  in 64-bit mode (for example, <code><a href="geek.html#x0F01_0">SGDT</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	  <TD>Changed from</TD>
+	  <TD><CITE>6-byte pseudo-descriptor.</CITE></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>sd</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Scalar element of a 128-bit packed double-precision floating data.</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>si</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Doubleword integer register (e. g.,
+	  <code>eax</code>). (unused even by Intel?)</TD>
+	</TR>
+	<TR>
+	  <TD>?</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>sr</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Single-real. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xD8_0">FADD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>32real</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>ss</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Scalar element of a 128-bit packed single-precision floating data.</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>st</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">x87 <ABBR>FPU</ABBR> state (for example, <code><a href="geek.html#xDD_6">FSAVE</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>94/108</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>stx</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">x87 <ABBR>FPU</ABBR> and <ABBR>SIMD</ABBR> state (<code><a href="geek.html#x0FAE_0">FXSAVE</a></code>
+	  and <code><a href="geek.html#x0FAE_1">FXRSTOR</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>512</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>t</code></TD>
+	  <TD ROWSPAN="2">Original; replaced by <code>ptp</code>
+</TD>
+	  <TD ROWSPAN="2">10-byte far pointer.</TD>
+	</TR>
+	<TR>
+	  <TD>-</TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>v</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Word or doubleword, depending on operand-size attribute
+	  (for example, <code>INC</code> (<code><a href="geek.html#x40">40</a></code>),
+	  <code>PUSH</code> (<code><a href="geek.html#x50">50</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16/32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>vds</code></TD>
+	  <TD ROWSPAN="2">Added; combines <code>v</code> and <code>ds</code>
+</TD>
+	  <TD ROWSPAN="2">Word or doubleword, depending on operand-size attribute,
+	or doubleword, sign-extended to 64 bits for 64-bit operand size.</TD>
+	</TR>
+	<TR>
+	  <TD><code>16/32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>vq</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Quadword (default) or word if operand-size prefix is used (for example,
+	  <code>PUSH</code> (<code><a href="geek.html#x50">50</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>64/16</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>vqp</code></TD>
+	  <TD ROWSPAN="2">Added; combines <code>v</code> and <code>qp</code>
+</TD>
+	  <TD ROWSPAN="2">Word or doubleword, depending on operand-size attribute, or quadword, promoted by <code><a href="geek.html#x48">REX.W</a></code> in 64-bit mode.</TD>
+	</TR>
+	<TR>
+	  <TD><code>16/32/64</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>vs</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Word or doubleword sign extended to the size of the
+	  stack pointer (for example, <code>PUSH</code> (<code><a href="geek.html#x68">68</a></code>)).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16/32</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>w</code></TD>
+	  <TD ROWSPAN="2">Original</TD>
+	  <TD ROWSPAN="2">Word, regardless of operand-size attribute (for example, <code><a href="geek.html#xC8">ENTER</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16</code></TD>
+	</TR>
+      </TBODY>
+      <TBODY>
+	<TR>
+	  <TD><code>wi</code></TD>
+	  <TD ROWSPAN="2">Added</TD>
+	  <TD ROWSPAN="2">Word-integer. Only x87 <ABBR>FPU</ABBR> instructions (for example, <code><a href="geek.html#xDE_0">FIADD</a></code>).</TD>
+	</TR>
+	<TR>
+	  <TD><code>16int</code></TD>
+	</TR>
+      </TBODY>
+    </TABLE></p>
+<p>The following abbreviations are used for operand
+  types and are accessible only in <ABBR>HTML</ABBR> geek's editions
+  as operand's code title. They are issued to indicate
+  a dependency on address-size attribute instead of operand-size
+  attribute. As for <a href="index.html#Source_XML_Document_desc">source XML document</a>, they are used within
+  <DFN>address</DFN> atribute of <DFN>syntax/dst</DFN> or
+  <DFN>syntax/src</DFN> elements. All of them are added:
+
+    <TABLE CELLPADDING="6">
+      <TBODY>
+        
+        
+	<TR>
+	  <TD><code>va</code></TD>
+	  <TD>Word or doubleword, according to address-size attribute (only <code><a href="geek.html#xF2">REP</a></code> and <code><a href="geek.html#xE0">LOOP</a></code> families).</TD>
+	</TR>
+	<TR>
+	  <TD><code>dqa</code></TD>
+	  <TD>Doubleword or quadword, according to address-size attribute (only <code><a href="geek.html#xF2">REP</a></code> and <code><a href="geek.html#xE0">LOOP</a></code> families).</TD>
+	</TR>
+	<TR>
+	  <TD><code>wa</code></TD>
+	  <TD>Word, according to address-size attribute (only <code><a href="geek.html#xE3">JCXZ</a></code> instruction).</TD>
+	</TR>
+	<TR>
+	  <TD><code>wo</code></TD>
+	  <TD>Word, according to current operand size (e. g.,
+	  <code><a href="geek.html#xA5">MOVSW</a></code> instruction).</TD>
+	</TR>
+	<TR>
+	  <TD><code>ws</code></TD>
+	  <TD>Word, according to current stack size (only <code><a href="geek64.html#x9C">PUSHF</a></code> and
+	  <code><a href="geek64.html#x9D">POPF</a></code> instructions in 64-bit mode).</TD>
+	</TR>
+	<TR>
+	  <TD><code>da</code></TD>
+	  <TD>Doubleword, according to address-size attribute (only <code><a href="geek.html#xE3">JECXZ</a></code> instruction).</TD>
+	</TR>
+	<TR>
+	  <TD><code>do</code></TD>
+	  <TD>Doubleword, according to current operand size (e. g.,
+	  <code><a href="geek.html#xA5">MOVSD</a></code> instruction).</TD>
+	</TR>
+	<TR>
+	  <TD><code>qa</code></TD>
+	  <TD>Quadword, according to address-size attribute (only <code><a href="geek.html#xE3">JRCXZ</a></code> instruction).</TD>
+	</TR>
+	<TR>
+	  <TD><code>qs</code></TD>
+	  <TD>Quadword, according to current stack size (only <code><a href="geek64.html#x9C">PUSHFQ</a></code> and
+	  <code><a href="geek64.html#x9D">POPFQ</a></code> instructions).</TD>
+	</TR>
+      </TBODY>
+    </TABLE></p>
+<H2 ID="Current-State">Current State</H2>
+<p>In this version, the reference is almost
+  complete. It contains general, system,
+  <ABBR>x87 FPU</ABBR>, MMX, <abbr>SSE</abbr>, <abbr>SSE1</abbr>,
+  <abbr>SSE2</abbr>, <abbr>SSE3</abbr>, <abbr>SSSE3</abbr>, <abbr>SSE4</abbr>,
+  <abbr>VMX</abbr>, and <abbr>SMX</abbr> instructions (both one-byte
+  and two-byte ones). We are working on <abbr>AMD</abbr>-specific
+  instructions and Intel <abbr>AVX</abbr> instructions now.</p>
+<p>The <abbr>MMX</abbr> and <abbr>SSE</abbr>*
+  instruction classification among groups is considered experimental
+  and may change in future.</p>
+<p>Note that from the point of project's progress,
+  modifications of any of <ABBR>HTML</ABBR> editions is almost
+  useless. A <ABBR>HTML</ABBR> edition is just a result of transformation of
+  <a onClick="javascript:urchinTracker ('downloads/x86reference.xml');" href="http://ref.x86asm.net/x86reference.xml">source XML file</a>, so
+  all modifications need to be done there.</p>
+<H2 ID="Implementations">Implementations</H2>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://sourceforge.net/projects/bukowski/');" href="http://sourceforge.net/projects/bukowski/">Bukowski</a>'s
+  disassembler is first public implementation of the <a onClick="javascript:urchinTracker ('outgoing/x86reference.xml');" href="http://ref.x86asm.net/x86reference.xml">XML reference</a>.</p>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://sourceforge.net/projects/mediana/');" href="http://sourceforge.net/projects/mediana/">Mediana</a>,
+  maintained by Mikae, is table-based x86/x86-64 disassembler
+  engine. However, the transformation from <a onClick="javascript:urchinTracker ('downloads/x86reference.xml');" href="http://ref.x86asm.net/x86reference.xml">source XML file</a> is not
+  a part of the project.</p>
+<H2 ID="License">License</H2>
+<p>Since version 1.12, the reference is licensed under GPL-3.0.
+  For more see its
+  <a onClick="javascript:urchinTracker ('outgoing/https://github.com/Barebit/x86reference');" href="https://github.com/Barebit/x86reference">GitHub repository</a>.
+  </p>
+<p>The old license (used up to version 1.12) is not available anymore.</p>
+<H2 ID="Resources">Resources</H2>
+<p>This reference has been completed using the
+  following resources:</p>
+<p><a href="http://x86asm.net/links/index.html#intel_man">Intel manuals</a></p>
+<p><a href="http://x86asm.net/links/index.html#sandpile">Sandpile.org</a></p>
+<p><a href="http://x86asm.net/links/index.html#amd_man">AMD manuals</a></p>
+<p>Intel iAPX 86/88, 186/188 User's manual</p>
+<H2 ID="Credits">Credits</H2>
+<p>Thanks to all these geeks involved in some way in
+  this project:</p>
+<p>Christian Ludloff: maintainer of <a onClick="javascript:urchinTracker ('outgoing/http://sandpile.org');" href="http://sandpile.org">Sandpile.org</a>
+  site, one of important sources for this project</p>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://fasmlib.x86asm.net');" href="http://fasmlib.x86asm.net">Martin Mocko</a>
+  a.k.a. <strong>vid</strong>: many design ideas for <abbr>HTML</abbr>
+  editions</p>
+<p>Anthony Lopes: great <abbr>XML</abbr> and <abbr>XSL</abbr>
+  contributions</p>
+<p>Aquila: many great contributions</p>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://el1.cz/');" href="http://el1.cz/">EliCZ</a>: bug reports, design ideas</p>
+<p>Cephexin: many great contributions to <abbr>XML</abbr></p>
+<p>Miloslav Ponkrác: helped with PHP and JavaScript on this site</p>
+<p>William Whistler: valuable reviews and bug reports</p>
+<p>Mikae: reviews, bug reports</p>
+<H2 ID="References">References</H2>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://www.reddit.com/r/ReverseEngineering/comments/7j57x/handilyorganized_x86_instruction_and_opcode/');" href="http://www.reddit.com/r/ReverseEngineering/comments/7j57x/handilyorganized_x86_instruction_and_opcode/">Handily-organized
+  x86 instruction and opcode references</a></p>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://qune.cside.com/archives/001054.html');" href="http://qune.cside.com/archives/001054.html">x86&#12458;&#12506;&#12467;&#12540;&#12489;&#12522;&#12501;&#12449;&#12524;&#12531;&#12473;&#12381;&#12398;&#24460;&#12398;&#24460;</a></p>
+<p><a onClick="javascript:urchinTracker ('outgoing/http://www.cyberhades.com/2009/12/18/referencia-de-instrucciones-y-codigos-de-operacion-opcodes-x86/');" href="http://www.cyberhades.com/2009/12/18/referencia-de-instrucciones-y-codigos-de-operacion-opcodes-x86/">
+Referencia de Instrucciones y Códigos de Operación (OPCodes) x86</a></p>
+<H2 ID="Download">Download</H2>
+<p>The source files can be downloaded from
+  <a onClick="javascript:urchinTracker ('outgoing/https://github.com/Barebit/x86reference');" href="https://github.com/Barebit/x86reference">GitHub repository</a>.</p>
+<h3>
+<ABBR>HTML</ABBR> Editions Files</h3>
+<TABLE CELLPADDING="5" CLASS="noborder">
+    <TBODY CLASS="noborder">
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="coder.html">coder.html</a></TD>
+	<TD class="noborder"><a href="coder-abc.html">coder-abc.html</a></TD>
+      </TR>
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="coder32.html">coder32.html</a></TD>
+	<TD class="noborder"><a href="coder32-abc.html">coder32-abc.html</a></TD>
+      </TR>
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="coder64.html">coder64.html</a></TD>
+	<TD class="noborder"><a href="coder64-abc.html">coder64-abc.html</a></TD>
+      </TR>
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="geek.html">geek.html</a></TD>
+	<TD class="noborder"><a href="geek-abc.html">geek-abc.html</a></TD>
+      </TR>
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="geek32.html">geek32.html</a></TD>
+	<TD class="noborder"><a href="geek32-abc.html">geek32-abc.html</a></TD>
+      </TR>
+      <TR CLASS="noborder">
+	<TD class="noborder"><a href="geek64.html">geek64.html</a></TD>
+	<TD class="noborder"><a href="geek64-abc.html">geek64-abc.html</a></TD>
+      </TR>
+    </TBODY>
+  </TABLE>
+<HR CLASS="delimiter">
+<H2 STYLE="text-align: center;" ID="Comments">Comments</H2>
+<P STYLE="text-align: center;">My
+                      <A HREF="http://x86asm.net/contact/index.html">contact information is here</A>.
+                        </P>
+<HR CLASS="delimiter">
+<H2 STYLE="text-align: center;" ID="rev_history">Revisions</H2>
+<TABLE CELLPADDING="3" CLASS="metainfo">
+<TBODY><TR>
+<TD>2017-02-18</TD>
+<TD>1.12</TD>
+<TD>
+          Various bugfixes.
+          See <a onClick="javascript:urchinTracker ('outgoing/https://github.com/Barebit/x86reference/releases');" href="https://github.com/Barebit/x86reference/releases">GitHub releases</a>
+          for details.
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2010-01-20</TD>
+<TD>1.11</TD>
+<TD>Mostly a bugfix release
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2009-08-19</TD>
+<TD>1.10</TD>
+<TD>
+          <ul>
+	    <LI>All <abbr>SSE4</abbr> instructions (Aquila
+	    contribution)</LI>
+	    <LI>All <abbr>VMX</abbr> instructions</LI>
+	    <LI>(the only) <abbr>SMX</abbr> instruction</LI>
+	    <LI>All new general instructions: <code>POPCNT</code>,
+	    <code>MOVBE</code>
+</LI>
+	    <LI>All new system instructions: <code>XGETBV</code>,
+	    <code>XSETBV</code>, <code>RDTSCP</code>,
+	    <code>XSAVE</code>, <code>XRSTOR</code>
+</LI>
+	    <LI>Processor code <code>C7</code> to indicate
+	    Core i7</LI>
+	    <LI>Implicate register operand group <code>xcr</code> (extended
+	    control register) added because of <code>XGETBV</code> and
+	    <code>XSETBV</code> instructions</LI>
+	  </ul>
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2009-06-30</TD>
+<TD>1.02</TD>
+<TD>The first version considered stable
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2008-12-17</TD>
+<TD>1.01&#946;</TD>
+<TD>Various bugfixes and updates
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2008-10-19</TD>
+<TD>1.00&#946;</TD>
+<TD>
+          <ul>
+	    <LI>All <abbr>SSE</abbr>,
+	    <abbr>SSE2</abbr>, <abbr>SSE3</abbr>, and
+	    <abbr>SSSE3</abbr> instructions added (Aquila and
+	    Cephexin contributions)</LI>
+            <LI>
+<a href="index.html#Download">Alphabetically
+	    sorted editions</a> (postfixed with
+	    <dfn>-abc</dfn>)</LI>
+            
+	  </ul>
+
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2008-05-15</TD>
+<TD>0.40&#946;</TD>
+<TD>All <abbr>MMX</abbr> instructions added (Anthony Lopes contribution)
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2008-03-11</TD>
+<TD>0.30&#946;</TD>
+<TD>All x87 FPU instructions added, including new ones
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2007-11-29</TD>
+<TD>0.21&#946;</TD>
+<TD>Various changes
+
+        </TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2007-11-06</TD>
+<TD>0.20&#946;</TD>
+<TD>Added coder, coder32, coder64, geek32, and
+	geek64 editions. All main project's files modified. Project's
+	documentation completed.</TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+<TBODY><TR>
+<TD>2007-06-04</TD>
+<TD>0.10&#946;</TD>
+<TD>First public version</TD>
+<TD>
+                          MazeGen
+                        </TD>
+</TR></TBODY>
+</TABLE>
+<P>
+                (dates format correspond to 
+              <A HREF="http://www.w3.org/QA/Tips/iso-date#good">ISO 8601</A>)
+            </P>
+</DIV>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">
+            _uacct = "UA-1649193-2";
+          
+        urchinTracker();
+      </script>
+</body>
+</HTML>

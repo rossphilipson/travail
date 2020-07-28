@@ -1,0 +1,392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-2">
+    <title>Order a printed copy | X86 Opcode and Instruction Reference </title>
+    <meta name="description" content="Order a printed copy of X86 Opcode and Instruction Reference">
+    <link href="main.css" rel="stylesheet" type="text/css" media="screen">
+    <link rel="shortcut icon" href="http://ref.x86asm.net/store/favicon.ico">
+    <link rel="alternate" type="application/atom+xml" title="x86asm.net" href="http://x86asm.net/atom.xml">
+
+<script type="text/javascript" language="JavaScript1.2"><!--
+function check_email(email_address)
+{
+  re = /^[^.]+(\.[^.]+)*@([^.]+[.])+[a-z]{2,3}$/;
+  return email_address.search(re) == 0;
+}
+
+function check_form()
+{
+  var orders = self.document.forms.order;
+
+  if (orders.instruction32.value == "0" && orders.instruction64.value == "0" &&
+     orders.opcode32.value == "0" && orders.opcode64.value == "0")
+  {
+    alert("Please, order at least one copy.");
+    return false;
+  }
+
+  if (!check_email(self.document.forms.order.sender_email.value))
+  {
+    alert("Please, correct your e-mail address. It is not valid.");
+    return false;
+  }
+
+/*
+  if (self.document.forms.order.address.value == "")
+  {
+    alert("Please, fill in your postal address.");
+    return false;
+  }
+*/
+
+
+  if (orders.magic.value == "" || orders.magic.value != "5")
+  {
+    alert("Please, fill in or correct the verification code.");
+    return false;
+  }
+
+  get_total_price();
+
+  return true;  
+}
+
+function get_total_price()
+{
+ var orders = self.document.forms.order;
+
+ result = parseInt(orders.instruction32.value)+parseInt(orders.instruction64.value)+
+          parseInt(orders.opcode32.value)+parseInt(orders.opcode64.value);
+ result = result * 20;
+
+ if (result > 20)
+   result = result - (result/5);
+
+ orders.price.value = result;
+}
+
+// -->
+</script>
+
+  </head>
+
+  <body>
+    <div class="page">
+
+      <div class="menu">
+        <div style="text-align: center;"><a href="http://x86asm.net">x86asm.net</a></div>
+        <hr>
+        <div><a href="../index.html">Back to main page</a></div>
+      </div>
+
+      <div class="page-inside">
+        <h1>X86 Opcode and Instruction Reference</h1>
+
+        <h2>Order a Printed Copy</h2>
+
+        <hr>
+
+        <p>Immediately following the initial
+        release of the reference, it emerged that a large number of
+        users are interested in a printed version. You can order
+        a copy here.</p>
+
+<p style="color:red;margin:2em;font-size:135%">
+Please note that your order will be registered and shipped after the 8th of January 2018.
+I'm sorry for the incovenience.
+</p>
+
+        <p>If you are interested in coding in assembler, you should
+        consider <a
+        href="index.html#instruction">X86&nbsp;Instruction&nbsp;Reference</a>,
+        thanks to instruction sorting by mnemonic. If
+        you need to understand reversed code, <a
+        href="index.html#opcode">X86&nbsp;Opcode&nbsp;Reference</a>, which is
+        sorted by opcode, will suit you better.</p>
+
+<!--
+        <p>The reference can be customized to a very considerable
+        degree. If you need some modifications, please <a
+        href="http://x86asm.net/contact/index.html">contact me</a> and
+        I will endeavour to make such changes as are required.</p>
+-->
+
+        <h3>Details</h3>
+
+        <p>Any edition is complete reference of <!--all--> instructions available on
+        <!--today's--> x86 Intel processors: all general, system, x87&nbsp;FPU,
+        SSE(1), SSE2, SSE3, and SSSE3 instructions.</p>
+
+        <p>Both 32-bit and 64-bit editions are available: 32-bit edition covers x86-32
+        instruction set, 64-bit edition is specific to x86-64 (x64)
+        instructions.</p>
+
+        <p>The references are led by <i>All informations about an
+        instruction in one row</i> idea, which makes possible to put all
+        important information about an instruction/opcode on a single row.</p>
+
+        <p>Another idea of this reference is exactness. You can expect
+        exact and exhaustive information about any defined
+        instruction, including undocumented ones. The reference is
+        driven primarily by Intel processor manuals, but reflects also
+        incompatibilies in AMD implementation of x86 instruction set.</p>
+
+        <h3 id="instruction">X86 Instruction Reference</h3>
+
+        <div style="margin-right: 2em; margin-bottom: 1em; float: left;">
+
+          <div style="width: 274px;">
+            <div>
+              <a onClick="javascript:urchinTracker ('downloads/9788025423479.jpg');" href="9788025423479.jpg" title="X86 Reference Cover Page" target="_blank">
+                <img src="9788025423479.jpg" alt="X86 Instruction Reference Cover Page" style="width: 274px; height: 194px; border: none;">
+              </a>
+            </div>
+            <div style="text-align: center; margin-bottom: 1em;">
+              <a onClick="javascript:urchinTracker
+              ('downloads/instruction32_preview.pdf');"
+              href="instruction32_preview.pdf" title="front cover, copyright page, and first two pages">
+                Preview 32-bit  edition</a> (PDF)
+            </div>
+          </div>
+
+          <div style="width: 274px;">
+            <div>
+              <a onClick="javascript:urchinTracker ('downloads/9788025423486.jpg');" href="9788025423486.jpg" title="X86 Reference Cover Page" target="_blank">
+                <img src="9788025423486.jpg" alt="X86 Instruction Reference Cover Page" style="width: 274px; height: 194px; border: none;">
+              </a>
+            </div>
+            <div style="text-align: center; margin-bottom: 1em;">
+              <a onClick="javascript:urchinTracker
+              ('downloads/instruction64_preview.pdf');"
+              href="instruction64_preview.pdf" title="front cover, copyright page, and first two pages">
+                Preview 64-bit edition</a> (PDF)
+            </div>
+          </div>
+
+        </div>
+
+        <p>Instruction reference is especially useful for quick look-up for
+        particular instruction mnemonic thanks to sorting by mnemonic.</p>
+
+        <p><!--Complete reference of all instructions, available on
+        today's x86 Intel processors: all general, system, x87&nbsp;FPU,
+        SSE(1), SSE2, SSE3, and SSSE3 instructions. -->More than
+        <strong>900</strong> mnemonics are listed.</p>
+
+<!--
+        <p>Two editions are available: 32-bit edition covers x86-32
+        instruction set, 64-bit edition is specific to x86-64 (x64)
+        instructions. Preview <a onClick="javascript:urchinTracker
+        ('downloads/instruction32_preview.pdf');"
+        href="instruction32_preview.pdf">32-bit edition</a>, preview
+        <a onClick="javascript:urchinTracker
+        ('downloads/instruction64_preview.pdf');"
+        href="instruction64_preview.pdf">64-bit edition</a> (PDF; front
+        cover, copyright page, and first two pages are provided for preview).</p>
+
+        <p>The reference is led by <i>All informations about an
+        instruction in one row</i> idea, which makes possible to put all
+        important information about an instruction on a single row.</p>
+
+        <p>Another idea of this reference is exactness. You can expect
+        exact and exhaustive information about any defined
+        instruction, including undocumented ones. The reference is
+        driven primarily by Intel processor manuals, but reflects also
+        incompatibilies in AMD implementation of x86 instruction set.</p>
+-->
+
+        <h3 id="opcode" style="clear: both;">X86 Opcode Reference</h3>
+
+        <div style="margin-right: 2em; margin-bottom: 1em; float: left;">
+
+          <div style="width: 274px;">
+            <div>
+              <a onClick="javascript:urchinTracker ('downloads/9788025423493.jpg');" href="9788025423493.jpg" title="X86 Reference Cover Page" target="_blank">
+                <img src="9788025423493.jpg" alt="X86 Instruction Reference Cover Page" style="width: 274px; height: 194px; border: none;">
+              </a>
+            </div>
+            <div style="text-align: center; margin-bottom: 1em;">
+              <a onClick="javascript:urchinTracker
+              ('downloads/opcode32_preview.pdf');"
+              href="opcode32_preview.pdf" title="front cover, copyright page, and first two pages">
+                Preview 32-bit  edition</a> (PDF)
+            </div>
+          </div>
+
+          <div style="width: 274px;">
+            <div>
+              <a onClick="javascript:urchinTracker ('downloads/9788025423509.jpg');" href="9788025423509.jpg" title="X86 Reference Cover Page" target="_blank">
+                <img src="9788025423509.jpg" alt="X86 Instruction Reference Cover Page" style="width: 274px; height: 194px; border: none;">
+              </a>
+            </div>
+            <div style="text-align: center; margin-bottom: 1em;">
+              <a onClick="javascript:urchinTracker
+              ('downloads/opcode64_preview.pdf');"
+              href="opcode64_preview.pdf" title="front cover, copyright page, and first two pages">
+                Preview 64-bit edition</a> (PDF)
+            </div>
+          </div>
+
+        </div>
+
+        <p>Opcode reference is great when you need to examine binary
+        code, because it is easy to find a particular opcode.</p>
+
+        <p>More than <strong>800 unique</strong> opcodes are listed.</p>
+
+        <h3 style="clear: both;">Print Details</h3>
+
+        <p>Size A4 landscape (so that all columns fit
+        well), both-sides print. Wear-resistant black plastic comb
+        binding for your comfortable browsing.</p>
+
+        <h3>Setting up the Order</h3>
+
+        <p>If you order more than one edition, <strong>you get 20%
+        off</strong> the total price. The price is
+        <strong>$20</strong> per edition, payment in advance.</p>
+
+        <p>You <strong>will not</strong> be charged for any
+        additionals. All fees, taxes and shipping costs are included
+        within the total price.</p>
+
+        <form name="order" action="http://ref.x86asm.net/store/submit-order.php" method="post" onSubmit="return check_form();">
+          <p>
+            <p><strong>Select Quantity:</strong></p>
+            <table class="noborder" cellpadding="5">
+              <tbody class="noborder">
+                <tr class="noborder">
+                  <td class="noborder">
+                    <select name="instruction32" size="1">
+                      <option value="0">0</option>
+                      <option value="1" selected="selected">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                      <option value="11">11</option>
+                      <option value="12">12</option>
+                      <option value="13">13</option>
+                      <option value="14">14</option>
+                      <option value="15">15</option>
+                      <option value="16">16</option>
+                      <option value="17">17</option>
+                      <option value="18">18</option>
+                      <option value="19">19</option>
+                      <option value="20">20</option>
+                    </select>
+                  </td>
+                  <td class="noborder">
+                    <strong>Instruction Reference, 32-bit Edition</strong><br>
+                    &nbsp;<i>ISBN 978-80-254-2347-9</i><br>
+                    &nbsp;<i>Second Edition, September 2008</i>
+                  </td>
+                  <td class="noborder">24 pages</td>
+                  <td class="noborder"><a onClick="javascript:urchinTracker ('downloads/instruction32_preview.pdf');" href="instruction32_preview.pdf">preview</a>&nbsp;(PDF)</td>
+                </tr>
+                <tr class="noborder">
+                  <td class="noborder">
+                    <select name="instruction64" size="1"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                    </select>
+                  </td>
+                  <td class="noborder">
+                    <strong>Instruction Reference, 64-bit Edition</strong><br>
+                    &nbsp;<i>ISBN 978-80-254-2348-6</i><br>
+                    &nbsp;<i>Second Edition, September 2008</i>
+                  </td>
+                  <td class="noborder">25 pages</td>
+                  <td class="noborder"><a onClick="javascript:urchinTracker ('downloads/instruction64_preview.pdf');" href="instruction64_preview.pdf">preview</a>&nbsp;(PDF)</td>
+                </tr>
+                <tr class="noborder">
+                  <td class="noborder">
+                    <select name="opcode32" size="1"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                    </select>
+                  </td>
+                  <td class="noborder">
+                    <strong>Opcode Reference, 32-bit Edition</strong><br>
+                    &nbsp;<i>ISBN 978-80-254-2349-3</i><br>
+                    &nbsp;<i>First Edition, July 2008</i>
+                  </td>
+                  <td class="noborder">26 pages</td>
+                  <td class="noborder"><a onClick="javascript:urchinTracker ('downloads/opcode32_preview.pdf');" href="opcode32_preview.pdf">preview</a>&nbsp;(PDF)</td>
+                </tr>
+                <tr class="noborder">
+                  <td class="noborder">
+                    <select name="opcode64" size="1"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                    </select>
+                  </td>
+                  <td class="noborder">
+                    <strong>Opcode Reference, 64-bit Edition</strong><br>
+                    &nbsp;<i>ISBN 978-80-254-2350-9</i><br>
+                    &nbsp;<i>First Edition, July 2008</i>
+                  </td>
+                  <td class="noborder">26 pages</td>
+                  <td class="noborder"><a onClick="javascript:urchinTracker ('downloads/opcode64_preview.pdf');" href="opcode64_preview.pdf">preview</a>&nbsp;(PDF)</td>
+                </tr>
+              </tbody>
+            </table>
+          </p>
+
+          <p>
+            <div><strong>Total Price:</strong></div>
+            <div>
+              <input name="price" type="text" size="4" value="" readonly="readonly">&nbsp;USD
+              <input type="button" onclick="get_total_price()" value="Count up">
+            </div>
+          </p>
+
+          <p>
+            <div><strong>Your E-mail:</strong> (required)</div>
+            <div><input type="text" name="sender_email" size="40" value=""></div>
+          </p>
+
+          <p>
+            <div><strong>Your Postal Address:</strong></div>
+            <div>&nbsp;you don't have to enter this information if you'll pay using your credit card or your PayPal account:</div>
+            <div>&nbsp;name, address, city, country (state/province/region), zip/postal code</div>
+            <div><textarea name="address" rows="5" cols="40" value=""></textarea></div>
+          </p>
+
+          <p>
+            <div><strong>Please enter number five as a verification code:</strong> (required)</div>
+            <div>&nbsp;this is to prove you're a human; sorry for the inconvenience</div>
+            <div><input type="text" name="magic" size="40" value=""></div>
+          </p>
+
+          <p>
+            <div><strong>Notes:</strong></div>
+            <div><textarea name="notes" rows="4" cols="40"></textarea></div>
+          </p>
+
+          <p>
+            <input type="submit" value="Preview Order">
+          </p>
+        </form>
+
+        <p>In next step, you'll be asked to confirm the order.</p>
+
+        <hr>
+
+        <p>Having any problems or questions regarding the order?
+        <a href="http://x86asm.net/contact/index.html">Contact me</a>
+        and I&nbsp;will do my best to help you.</p>
+      </div>
+
+    </div>
+
+    <script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      _uacct = "UA-1649193-2";
+      urchinTracker();
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,191 @@
+
+/*
+body, html
+{
+ margin: 0;
+ padding: 0;
+ height: 100%;
+ _overflow: hidden; / Opera doesn't like this - pass it only to MSIE /
+}
+*/
+
+body
+{
+ background-color: #ececf4;
+ font-family: verdana;
+ font-size: 85%;
+ line-height: 160%;
+}
+
+h1
+{
+ line-height: 100%;
+}
+
+h2
+{
+ margin-top: 1.8em;
+ margin-bottom: 0.5em;
+}
+
+h3
+{
+ margin-top: 1em;
+}
+
+/* table styles */
+
+table
+{
+ border-collapse: collapse;
+ font-size: 100%;
+}
+
+thead
+{
+ border: 3px solid black;
+}
+
+tbody
+{
+ border: 2px solid black;
+}
+
+tfoot, tr, th, td
+{
+ border: 1px solid black;
+}
+
+td ul, td ol
+{
+ margin-left: 6px; /* needed only for MSIE 6 */
+ padding-left: 14px;
+}
+
+.noborder
+{
+ border: 0px solid black;
+}
+
+code, pre, kbd
+{
+ font-size: 120%;
+ line-height: 100%;
+}
+
+pre
+{
+/*  background: #444444; gray; #F9F9F9; */
+ margin: 0% 0% 0% 3%; /* (first is top) */
+ padding: 0% 0% 3% 0%; /* both needed and important MSIE6 overflow: auto vertical partial bugfix */
+ width: 92%;
+ overflow: auto;
+ max-height: 400px;
+
+ /* _height: 80px; / NOT WORKING MSIE6 overflow: auto vertical bugfix (height means min-height here) */
+}
+
+blockquote
+{
+ padding: 1% 1% 1% 1%;
+ border: groove #339933;
+}
+
+/*
+.page
+{
+ margin: 0;
+ padding: 0;
+ height: 100%;
+ overflow: auto;
+}
+*/
+
+.page-inside
+{
+/* old margin: 0;*/
+ padding: 1% 4% 1% 28%;
+}
+
+.note
+{
+ margin-left: 10%;
+ margin-right: 15%;
+ text-align: justify;
+ font-size: 90%;
+}
+
+/* old
+.mailform
+{
+ margin: 5% 0% 0% 20%;
+}
+*/
+
+.metainfo
+{
+ width: 92%;
+}
+
+.delimiter
+{
+ width: 80%;
+ margin-top: 6%;
+}
+
+.monospace
+{
+ font-family: "Courier New", "Courier", monospace;
+ /* font-size: 120%; */
+ margin: 0% 0% 0% 3%; /* (first is top) */
+ padding: 0% 0% 3% 0%; /* both needed and important MSIE6 overflow: auto vertical partial bugfix */
+ width: 92%;
+ overflow: auto;
+}
+
+.center
+{
+ text-align: center;
+}
+
+/* menu styles */
+
+.menu
+{
+ position: fixed;       /* MSIE 6 doesn't know this */
+ /* old _position: absolute; */  /* MSIE position: fixed hack */
+ /* old margin: 0; padding: 0; */ /* MSIE width hack */
+ top: 1%;
+ left: 1%;
+ width: 20%;
+/* line-height: 130%;*/
+}
+
+.menu a
+{
+ text-decoration: none;
+}
+
+.menu a:hover
+{
+ text-decoration: underline;
+}
+
+.readmore
+{
+ text-align: right;
+}
+
+/*
+puvodni barva: #3296f4
+
+Fixni pozicovani stranky:
+
+http://www.pixy.cz/pixylophone/2004_05_archiv.html#1084198886
+http://css.interval.cz/clanky/fixni-pozicovani-stranky/
+
+Pozadi s opakovanim:
+
+http://css.interval.cz/clanky/pozadi-s-opakovanim/
+
+*/
