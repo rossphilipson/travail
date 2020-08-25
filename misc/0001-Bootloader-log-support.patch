@@ -1,0 +1,137 @@
+From 29d9af9d29a8ed0bf7ffbd12fd731ddb148b5523 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 21 Jul 2020 09:43:53 -0400
+Subject: [PATCH v2] Bootloader log support
+
+This patch exposes the bootloader log passed to the kernel from a
+bootloader via boot params. Since it uses boot params, the sysfs
+code is x86 specific at this point.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ Documentation/x86/zero-page.txt       |  2 ++
+ arch/x86/include/uapi/asm/bootparam.h |  4 ++-
+ arch/x86/kernel/ksysfs.c              | 52 +++++++++++++++++++++++++++++++++--
+ arch/x86/kernel/setup.c               |  5 ++++
+ 4 files changed, 60 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/x86/zero-page.txt b/Documentation/x86/zero-page.txt
+index 97b7adb..2697ca3 100644
+--- a/Documentation/x86/zero-page.txt
++++ b/Documentation/x86/zero-page.txt
+@@ -23,6 +23,8 @@ Offset	Proto	Name		Meaning
+ 0C0/004	ALL	ext_ramdisk_image ramdisk_image high 32bits
+ 0C4/004	ALL	ext_ramdisk_size  ramdisk_size high 32bits
+ 0C8/004	ALL	ext_cmd_line_ptr  cmd_line_ptr high 32bits
++0CC/008 ALL	bootloader_log_addr Physical address of bootloader log
++0D4/004 ALL	bootloader_log_size Size of bootloader log
+ 140/080	ALL	edid_info	Video mode setup (struct edid_info)
+ 1C0/020	ALL	efi_info	EFI 32 information (struct efi_info)
+ 1E0/004	ALL	alk_mem_k	Alternative mem check, in KB
+diff --git a/arch/x86/include/uapi/asm/bootparam.h b/arch/x86/include/uapi/asm/bootparam.h
+index 13093c7..278c947 100644
+--- a/arch/x86/include/uapi/asm/bootparam.h
++++ b/arch/x86/include/uapi/asm/bootparam.h
+@@ -142,7 +142,9 @@ struct boot_params {
+ 	__u32 ext_ramdisk_image;			/* 0x0c0 */
+ 	__u32 ext_ramdisk_size;				/* 0x0c4 */
+ 	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
+-	__u8  _pad4[116];				/* 0x0cc */
++	__u64 bootloader_log_addr;			/* 0x0cc */
++	__u32 bootloader_log_size;			/* 0x0d4 */
++	__u8  _pad4[104];				/* 0x0d8 */
+ 	struct edid_info edid_info;			/* 0x140 */
+ 	struct efi_info efi_info;			/* 0x1c0 */
+ 	__u32 alt_mem_k;				/* 0x1e0 */
+diff --git a/arch/x86/kernel/ksysfs.c b/arch/x86/kernel/ksysfs.c
+index 8c1cc08..4cf355f 100644
+--- a/arch/x86/kernel/ksysfs.c
++++ b/arch/x86/kernel/ksysfs.c
+@@ -60,6 +60,41 @@ static ssize_t boot_params_data_read(struct file *fp, struct kobject *kobj,
+ 	.bin_attrs = boot_params_data_attrs,
+ };
+ 
++static ssize_t bootloader_log_read(struct file *filp, struct kobject *kobj,
++				   struct bin_attribute *bin_attr,
++				   char *buf, loff_t off, size_t count)
++{
++	void *log;
++
++	if (off > boot_params.bootloader_log_size)
++		return -EINVAL;
++
++	if (count > boot_params.bootloader_log_size - off)
++		count = boot_params.bootloader_log_size - off;
++
++	if (!count)
++		return 0;
++
++	log = memremap(boot_params.bootloader_log_addr, boot_params.bootloader_log_size,
++		       MEMREMAP_WB);
++	if (!log)
++		return -ENOMEM;
++
++	memcpy(buf, log + off, count);
++
++	memunmap(log);
++
++	return count;
++}
++
++static struct bin_attribute bootloader_log_attr __ro_after_init  = {
++	.attr = {
++		.name = "bootloader_log",
++		.mode = S_IRUGO,
++	},
++	.read = &bootloader_log_read,
++};
++
+ static int kobj_to_setup_data_nr(struct kobject *kobj, int *nr)
+ {
+ 	const char *name;
+@@ -324,11 +359,24 @@ static int __init boot_params_ksysfs_init(void)
+ 	if (ret)
+ 		goto out_boot_params_kobj;
+ 
++	if (boot_params.bootloader_log_size) {
++		bootloader_log_attr.size = boot_params.bootloader_log_size;
++		ret = sysfs_create_bin_file(boot_params_kobj, &bootloader_log_attr);
++		if (ret)
++			goto out_create_group;
++	}
++
+ 	ret = create_setup_data_nodes(boot_params_kobj);
+-	if (ret)
+-		goto out_create_group;
++	if (ret) {
++		if (boot_params.bootloader_log_size)
++			goto out_create_bin_file;
++		else
++			goto out_create_group;
++	}
+ 
+ 	return 0;
++out_create_bin_file:
++	sysfs_remove_bin_file(boot_params_kobj, &bootloader_log_attr);
+ out_create_group:
+ 	sysfs_remove_group(boot_params_kobj, &boot_params_attr_group);
+ out_boot_params_kobj:
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 43f1876..2620dec 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -841,6 +841,11 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	early_reserve_initrd();
+ 
++	/* It a bootloader log was passed over, reserve it */
++	if (boot_params.bootloader_log_size)
++		memblock_reserve(boot_params.bootloader_log_addr,
++				 boot_params.bootloader_log_size);
++
+ 	/*
+ 	 * At this point everything still needed from the boot loader
+ 	 * or BIOS or kernel text should be early reserved or marked not
+-- 
+1.8.3.1
+
