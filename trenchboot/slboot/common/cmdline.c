@@ -187,6 +187,8 @@ void linux_parse_cmdline(const char *cmdline)
     cmdline_parse(cmdline, g_linux_cmdline_options, g_linux_param_values);
 }
 
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 uint8_t get_loglvl_prefix(char **pbuf, int *len)
 {
     uint8_t log_level = TBOOT_LOG_LEVEL_ALL;
@@ -621,6 +623,7 @@ bool get_linux_mem(uint64_t *max_mem)
 
     return true;
 }
+//#pragma GCC diagnostic pop
 
 /*
  * Local variables:

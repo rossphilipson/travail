@@ -69,6 +69,7 @@ extern il_kernel_setup_t g_il_kernel_setup;
 extern uint32_t g_min_ram;
 
 static uint32_t g_slaunch_header;
+static uint32_t g_slaunch_entry;
 
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
@@ -446,6 +447,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
             g_il_kernel_setup.boot_params->hdr.slaunch_header);
     g_slaunch_header = ki->mle_header_offset;
+    g_slaunch_entry = ki->sl_stub_entry_offset;
 
     os_sinit_data_t *os_sinit_data = get_os_sinit_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_sinit_data - sizeof(uint64_t));
@@ -559,7 +561,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
 {
     void *mle_ptab_base;
     txt_heap_t *txt_heap;
-    uint32_t *mle_size;
+    uint32_t *mle_size, *mle_entry;
 
     /*
      * find correct SINIT AC module in modules list
@@ -620,7 +622,9 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
      * the 9th dword in.
      */
     mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
+    mle_entry = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
     *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
+    *(mle_entry + 6) = g_slaunch_entry;
 
     printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
     /* (optionally) pause before executing GETSEC[SENTER] */

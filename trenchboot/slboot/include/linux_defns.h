@@ -238,6 +238,7 @@ struct kernel_info {
 	uint32_t size_total;
 	uint32_t setup_type_max;
 	uint32_t mle_header_offset;
+	uint32_t sl_stub_entry_offset;
 };
 
 typedef struct {
