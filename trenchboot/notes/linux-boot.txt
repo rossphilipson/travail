@@ -309,3 +309,9 @@ target area (%rbp)                                relocated image (%rbx)        
      |                                                                             |
      +-----------------------------------------------------------------------------+
        Decompression and final jmp from the uncompressed code to the real kernel
+
+-- Details on kexec --
+
+All the boot params handling can be seen in here: arch/x86/kernel/kexec-bzimage64.c
+
+TODO more on this, maybe move to its own file.

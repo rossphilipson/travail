@@ -249,41 +249,4 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv);
 
-/**
- * Loads a public portion of a key from a file. Files can be the raw key, in the case
- * of symmetric ciphers, or a PEM file.
- *
- * @param path
- *  The path to load from.
- * @param alg
- *  algorithm type to import.
- * @param pub
- *  The public structure to populate.
- * @return
- *  True on success, false on failure.
- */
-bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg,
-        TPM2B_PUBLIC *pub);
-
-/**
- * Retrieves a public portion of an ECC key from a PEM file.
- *
- * @param f
- *  The FILE object that is open for reading the path.
- * @param path
- *  The path to load from.
- * @return
- *  The public structure.
- */
-EC_KEY* tpm2_openssl_get_public_ECC_from_pem(FILE *f, const char *path);
-
-/**
- * Maps an ECC curve to an openssl nid value.
- * @param curve
- *  The curve to map.
- * @return
- *  -1 on error or a >=0 nid on success.
- */
-int tpm2_ossl_curve_to_nid(TPMI_ECC_CURVE curve);
-
 #endif /* LIB_TPM2_OPENSSL_H_ */
