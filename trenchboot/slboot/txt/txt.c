@@ -393,6 +393,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
 {
     txt_heap_t *txt_heap;
     uint64_t *size;
+    uint32_t *mle_size;
     struct tpm_if *tpm = get_tpm();
     os_mle_data_t *os_mle_data;
     struct kernel_info *ki;
@@ -455,9 +456,18 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     tb_memset(os_sinit_data, 0, *size);
     os_sinit_data->version = version;
 
+    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
     /* this is phys addr */
     os_sinit_data->mle_ptab = (uint64_t)(unsigned long)ptab_base;
-    os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
+    if (*(mle_size + 9) != 0) {
+        printk("Protected Mode Size: 0x%x MLE Reported Size: 0x%x\n",
+              (uint32_t)g_il_kernel_setup.protected_mode_size, *(mle_size + 9));
+        os_sinit_data->mle_size = *(mle_size + 9);
+        printk("MLE size set to MLE header reported size: 0x%x\n",
+               (uint32_t)os_sinit_data->mle_size);
+    } else
+        os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
+
     /* this is linear addr (offset from MLE base) of mle header */
     os_sinit_data->mle_hdr_base = g_slaunch_header;
 
@@ -622,7 +632,12 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
      * the 9th dword in.
      */
     mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
-    *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
+    if (*(mle_size + 9) == 0) {
+        printk("Protected Mode Size: 0x%x MLE Reported Size: 0x%x\n",
+              (uint32_t)g_il_kernel_setup.protected_mode_size, *(mle_size + 9));
+        printk("Setting MLE size\n");
+        *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
+    }
 
     printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
     /* (optionally) pause before executing GETSEC[SENTER] */
