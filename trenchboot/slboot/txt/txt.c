@@ -254,7 +254,8 @@ static void *init_event_log(void)
     g_elog->container_ver_minor = EVTLOG_CNTNR_MINOR_VER;
     g_elog->pcr_event_ver_major = EVTLOG_EVT_MAJOR_VER;
     g_elog->pcr_event_ver_minor = EVTLOG_EVT_MINOR_VER;
-    g_elog->size = sizeof(os_mle_data->event_log_buffer);
+    //g_elog->size = sizeof(os_mle_data->event_log_buffer);
+    g_elog->size = MAX_EVENT_LOG_SIZE;
     g_elog->pcr_events_offset = sizeof(*g_elog);
     g_elog->next_event_offset = sizeof(*g_elog);
 
