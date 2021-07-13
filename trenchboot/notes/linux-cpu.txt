@@ -1,0 +1,84 @@
+-- IDT Setup --
+
+Trying to find the best place to put STGI on AMD. It has to be done after
+some IDT is setup. So there are 2 IDTs that are loaded (note don't care about
+32b IDT). The second one is updated 5 times with new descriptors. All the
+functions to setup the IDT descriptors are in arch/x86/kernel/idt.c.
+
+1. Boot IDT
+
+The boot_idt is loaded twice (load_stage1_idt()/load_stage2_idt()) before and
+after relocation. This IDT would technically work. All the descriptors are
+zeroed out so a #NM would just cause a triple fault and reset. STGI can be done
+in sl_main() with this one.
+
+1.5 Bringup IDT
+
+This one is not too much different from the boot IDT but it is in the mainline
+kernel and is setup by head64.c:early_setup_idt()->&bringup_idt_descr. It also has
+all zeroed entries but it is needed since the compressed kernel is gone. NOTE: this
+could be a security concern - the overwritten compressed IDT could be anything.
+
+2. Early IDT
+
+The routine idt_setup_early_traps() is called out of setup_arch() to setup the
+initial bare bones IDT early_idts with just a few valid descriptors. Again #NM
+is not one of the so same result at #1. Note that this is where load_idt() is
+called.
+
+3. Early IDT PF
+
+The routine idt_setup_early_pf() is then called later in setup_arch() to add a
+#PF handler to the IDT.
+
+4. Late IDT
+
+In init/main.c, trap_init() is called. This calls idt_setup_traps() which sets
+up most of the x86 traps. After cpu_init(), it calls idt_setup_ist_traps() to
+setup traps that use interrupt stacks and require a TSS.
+
+5. Finally init_IRQ() is called from init/main.c which calls native_init_IRQ().
+This finally calls idt_setup_apic_and_irq_gates() which sets up the interrupt/IRQ
+vectors.
+
+-- CPU Startup --
+
+Boot processor:
+ - Entry to compressed kernel via x86..compressed/head_64.S:startup_32 (offset 0 of vmlinuz image)
+ - Entry to uncompressed kernel via x86..kernel/head_64.S:startup_64 (offset 0 in vmlinux image)
+   - Call x86..kernel/head64.c:__startup_64
+   - Return and jmp 1f over secondary_startup_64* routines running code in head_64.S
+   - Setup early IDT with early_setup_idt - this is a zeroed IDT.
+   - Fall into .Ljump_to_C_code
+     - lret to initial_code which defaults to x86..kernel/head64.c:x86_64_start_kernel on BSP path
+       (SYM_DATA(initial_code,  .quad x86_64_start_kernel))
+     - x86..kernel/head64.c:x86_64_start_kernel -> x86..kernel/head64.c:xx86_64_start_reservations
+       - init/main.c:start_kernel main setup of BSP and kernel launch
+       - init/main.c:start_kernel -> x86..kernel/setup.c:setup_arch()
+       - Main kernel boot on BSP finished in init/main.c:start_kernel
+
+AP setup:
+ - x86..realmode/init.c setups rmpiggy as early_initcall
+   (trampoline_header->start = (u64) secondary_startup_64; <-- this is tr_start)
+   (see separate docs on how the rmpiggy is setup with RM/PM relocs in init.c)
+ - init/main.c:start_kernel bring up APs
+ - Magic is in kernel/cpu.c, specifically in CPUHP_BRINGUP_CPU->bringup_cpu
+   - calls x86..smp.h/__cpu_up -> smp_ops.cpu_up
+   - smp_ops.cpu_up -> x86..rkernel/smpboot.c:native_cpu_up -> x86..rkernel/smpboot.c:do_boot_cpu
+     - Get rmpiggy values: start_ip = real_mode_header->trampoline_start
+     - Setup trampoline: initial_code = (unsigned long)start_secondary;
+       (initial_code = (unsigned long)start_secondary;)
+     - x86..kernel/smpboot.c:do_boot_cpu -> kernel/smpboot.c:wakeup_cpu_via_init_nmi
+       - x86..rkernel/smpboot.c:wakeup_secondary_cpu_via_init does INIT-SIPI-SIPI
+
+AP startup:
+ - SIPI RM vector -> x86..rm/trampoline_64.S:trampoline_start ->
+ - trampoline_64.S:startup_32 ljmp to dummy trampoline_64.S:startup_64
+ - jmp from x86..rm/trampoline_64.S:startup_64 to symbol tr_start
+   (struct trampoline_header::start is SYM_DATA_LOCAL(tr_start), see rm/init.c above)
+ - Lands in x86..kernel/head_64.S:secondary_startup_64 (end of the rmpiggy at this point)
+ - Falls through boot jmp 1f running same code in head_64.S into .Ljump_to_C_code
+     - lret to initial_code whichs was fixed up to x86..kernel/smpboot.c:start_secondary on AP path
+       (initial_code = (unsigned long)start_secondary;)
+     - x86../cpu/common.c:cpu_init_exception_handling ->load_current_idt copies IDT setup by BSP
+     - Finish AP setup and kernel/sched/idle.c:cpu_startup_entry
