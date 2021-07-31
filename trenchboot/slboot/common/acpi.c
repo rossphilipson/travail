@@ -204,6 +204,8 @@ struct acpi_rsdp
     return rsdp;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 /* this function can find dmar table whether or not it was hidden */
 static struct acpi_table_header *find_table(const char *table_name)
 {
@@ -247,6 +249,7 @@ static struct acpi_table_header *find_table(const char *table_name)
     printk(TBOOT_ERR"can't find %s table.\n", table_name);
     return NULL;
 }
+#pragma GCC diagnostic pop
 
 bool vtd_bios_enabled(void)
 {

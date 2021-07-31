@@ -303,6 +303,8 @@ static bool parse_pci_bdf(const char **bdf, uint32_t *bus, uint32_t *slot,
     return true;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 bool g_psbdf_enabled = false;
 static bool parse_com_psbdf(const char **bdf)
 {
@@ -324,6 +326,7 @@ static bool parse_com_pbbdf(const char **bdf)
 
     return g_pbbdf_enabled;
 }
+#pragma GCC diagnostic pop
 
 static bool parse_com_fmt(const char **fmt)
 {

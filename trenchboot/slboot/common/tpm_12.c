@@ -1047,7 +1047,7 @@ static uint32_t _tpm12_wrap_unseal(uint32_t locality, const uint8_t *in_data,
                                  uint32_t *secret_size, uint8_t *secret)
 {
     uint32_t ret;
-    tpm_nonce_t odd_osap, even_osap;
+    tpm_nonce_t odd_osap = {0}, even_osap = {0};
     tpm_nonce_t nonce_even, nonce_odd, nonce_even_d, nonce_odd_d;
     tpm_authhandle_t hauth, hauth_d;
     tpm_authdata_t shared_secret;
