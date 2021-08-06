@@ -5,7 +5,6 @@
  * Oscillator used by the PIT chip runs at ~ 1.193182 MHz
  */
 
-static int calibrated = 0;
 static u64 ticks_per_ms;
 
 static inline u8 inb(u16 port)
@@ -158,7 +157,6 @@ void pit_calibrate(void)
 
 	/* Get the ticks per millisecond. */
 	ticks_per_ms = end - start;
-	calibrated = 1;
 }
 
 void mdelay(u32 ms)
