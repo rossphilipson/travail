@@ -7,7 +7,7 @@
 
 static u64 ticks_per_ms;
 
-static inline u8 inb(u16 port)
+static inline u8 __inb(u16 port)
 {
 	u8 data;
 
@@ -16,17 +16,17 @@ static inline u8 inb(u16 port)
 	return data;
 }
 
-static inline void outb(u16 port, u8 data)
+static inline void __outb(u16 port, u8 data)
 {
 	asm volatile("outb %0, %w1" : : "a" (data), "Nd" (port));
 }
 
-static inline void cpu_relax(void)
+static inline void __cpu_relax(void)
 {
 	asm volatile ("rep; nop" : : : "memory");
 }
 
-static inline u64 rdtsc(void)
+static inline u64 __rdtsc(void)
 {
 	u32 low, high;
 
@@ -53,8 +53,8 @@ static void pit_sync_period(void)
 	 */
 
 	do {
-		outb(0x43, 0xe8);
-		cpu_relax();
+		__outb(0x43, 0xe8);
+		__cpu_relax();
 		/*
 		 * Port 0x42 - PIT Channel 2 (R)
 		 *
@@ -62,11 +62,11 @@ static void pit_sync_period(void)
 		 * 0x80: bit 7 - Output pin state
 		 * Wait for output to go high:
 		 */
-	} while ( !(inb(0x42) & 0x80) );
+	} while ( !(__inb(0x42) & 0x80) );
 
 	do {
-		outb(0x43, 0xe8);
-		cpu_relax();
+		__outb(0x43, 0xe8);
+		__cpu_relax();
 		/*
 		 * Port 0x42 - PIT Channel 2 (R)
 		 *
@@ -74,7 +74,7 @@ static void pit_sync_period(void)
 		 * 0x80: bit 7 - Output pin state
 		 * Wait for output to go low:
 		 */
-	} while ( inb(0x42) & 0x80 );
+	} while ( __inb(0x42) & 0x80 );
 }
 
 void pit_calibrate(void)
@@ -89,9 +89,9 @@ void pit_calibrate(void)
 	 * Bit 1: Speaker enable
 	 * Gate to speaker enable and disable speaker:
 	 */
-	val = inb(0x61);
+	val = __inb(0x61);
 	val = ((val & ~0x2) | 0x1);
-	outb(0x61, val);
+	__outb(0x61, val);
 
 	/*
 	 * Port 0x43 - PIT Mode/Command register (WO)
@@ -102,7 +102,7 @@ void pit_calibrate(void)
 	 *       bit 7 - Channel 2 select
 	 * Set mode and select channel:
 	 */
-	outb(0x43, 0xb6);
+	__outb(0x43, 0xb6);
 
 	/*
 	 * Use 1193 divisor:
@@ -117,8 +117,8 @@ void pit_calibrate(void)
 	 * Set 16b counter, write lo byte then hi byte.
 	 * Latch value:
 	 */
-	outb(0x42, latch & 0xff);
-	outb(0x42, latch >> 8);
+	__outb(0x42, latch & 0xff);
+	__outb(0x42, latch >> 8);
 
 	/*
 	 * Port 0x43 - PIT Mode/Command register (WO)
@@ -129,8 +129,8 @@ void pit_calibrate(void)
 	 * Get status (bit 4 clear) for channel:
 	 */
 	do {
-		outb(0x43, 0xe8);
-		cpu_relax();
+		__outb(0x43, 0xe8);
+		__cpu_relax();
 		/*
 		 * Port 0x42 - PIT Channel 2 (R)
 		 *
@@ -138,7 +138,7 @@ void pit_calibrate(void)
 		 * 0x40: bit 6 - Null count flags
 		 * If set, counter not yet been loaded and cannot be read back
 		 */
-	} while ( inb(0x42) & 0x40 );
+	} while ( __inb(0x42) & 0x40 );
 
 	/*
 	 * Counter started with new reload value copied into the current
@@ -147,13 +147,13 @@ void pit_calibrate(void)
 	pit_sync_period();
 
 	/* New period just started, get TSC start count. */
-	start = rdtsc();
+	start = __rdtsc();
 
 	/* Synchronize on the next period. */
 	pit_sync_period();
 
 	/* New period just started after ~1ms, get TSC end count. */
-	end = rdtsc();
+	end = __rdtsc();
 
 	/* Get the ticks per millisecond. */
 	ticks_per_ms = end - start;
@@ -166,11 +166,11 @@ void mdelay(u32 ms)
 	if (!ms)
 		return 0;
 
-	ctsc = rdtsc();
+	ctsc = __rdtsc();
 	ftsc = ms * ticks_per_ms;
 
 	while (ctsc < ftsc) {
-		cpu_relax();
-		ctsc = rdtsc();
+		__cpu_relax();
+		ctsc = __rdtsc();
 	}
 }
