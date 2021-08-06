@@ -79,7 +79,8 @@ static void pit_sync_period(void)
 
 void pit_calibrate(void)
 {
-	u8 val, latch;
+	u8 val;
+	u16 latch;
 	u64 start, end;
 
 	/*
@@ -164,7 +165,7 @@ void mdelay(u32 ms)
 	u64 ctsc, ftsc;
 
 	if (!ms)
-		return 0;
+		return;
 
 	ctsc = __rdtsc();
 	ftsc = ms * ticks_per_ms;
