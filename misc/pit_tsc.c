@@ -5,6 +5,9 @@
  * Oscillator used by the PIT chip runs at ~ 1.193182 MHz
  */
 
+static int calibrated = 0;
+static u64 ticks_per_ms;
+
 static inline u8 inb(u16 port)
 {
 	u8 data;
@@ -33,9 +36,52 @@ static inline u64 rdtsc(void)
 	return ((u64)high << 32) | low;
 }
 
+/*
+ * Channel 2, Mode 3 Square Wave:
+ *
+ * In one full period the output pin will be high for period/2 and low for
+ * period/2. After a wait for high, then a low, a new period has started.
+ *
+ * PIT channel 2 is current programmed for a period ~= 1ms.
+ */
+static void pit_sync_period(void)
+{
+	/*
+	 * Port 0x43 - PIT Mode/Command register (WO)
+	 *
+	 * 0xe8: Read Back Command (x2, see below)
+	 * Get status (bit 4 clear) for channel:
+	 */
+
+	do {
+		outb(0x43, 0xe8);
+		cpu_relax();
+		/*
+		 * Port 0x42 - PIT Channel 2 (R)
+		 *
+		 * Read Back Status Byte (Port 0x43 written with bit 4 clear)
+		 * 0x80: bit 7 - Output pin state
+		 * Wait for output to go high:
+		 */
+	} while ( !(inb(0x42) & 0x80) );
+
+	do {
+		outb(0x43, 0xe8);
+		cpu_relax();
+		/*
+		 * Port 0x42 - PIT Channel 2 (R)
+		 *
+		 * Read Back Status Byte (Port 0x43 written with bit 4 clear)
+		 * 0x80: bit 7 - Output pin state
+		 * Wait for output to go low:
+		 */
+	} while ( inb(0x42) & 0x80 );
+}
+
 void pit_calibrate(void)
 {
 	u8 val, latch;
+	u64 start, end;
 
 	/*
 	 * Port 0x61 - KB controller port B control register (RW)
@@ -89,12 +135,44 @@ void pit_calibrate(void)
 		/*
 		 * Port 0x42 - PIT Channel 2 (R)
 		 *
-		 * Read Back Status Byte (Port 0x43, bit 4 clear written)
+		 * Read Back Status Byte (Port 0x43 written with bit 4 clear)
 		 * 0x40: bit 6 - Null count flags
 		 * If set, counter not yet been loaded and cannot be read back
 		 */
 	} while ( inb(0x42) & 0x40 );
 
-	/* Counter started TODO */
+	/*
+	 * Counter started with new reload value copied into the current
+	 * count. Synchronize on the next period.
+	 */
+	pit_sync_period();
 
+	/* New period just started, get TSC start count. */
+	start = rdtsc();
+
+	/* Synchronize on the next period. */
+	pit_sync_period();
+
+	/* New period just started after ~1ms, get TSC end count. */
+	end = rdtsc();
+
+	/* Get the ticks per millisecond. */
+	ticks_per_ms = end - start;
+	calibrated = 1;
+}
+
+void mdelay(u32 ms)
+{
+	u64 ctsc, ftsc;
+
+	if (!ms)
+		return 0;
+
+	ctsc = rdtsc();
+	ftsc = ms * ticks_per_ms;
+
+	while (ctsc < ftsc) {
+		cpu_relax();
+		ctsc = rdtsc();
+	}
 }
