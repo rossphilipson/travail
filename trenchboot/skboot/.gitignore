@@ -1,0 +1,7 @@
+*.o
+*.efi
+*.dsm
+*.hex
+*.gz
+skboot
+skboot-syms
