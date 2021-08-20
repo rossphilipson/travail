@@ -3,21 +3,6 @@
 
 #define SKL_VERSION 0
 
-/* Setup data structs defined in Linux */
-typedef struct __packed {
-    uint64_t next;
-    uint32_t type;
-    uint32_t len;
-    /* data[] */
-} setup_data_t;
-
-typedef struct __packed {
-    uint32_t type;
-    uint32_t reserved;
-    uint64_t len;
-    uint64_t addr;
-} setup_indirect_t;
-
 /* The SL bloc header, first two fields defined by spec */
 typedef struct __packed {
     uint16_t skl_entry_point;
@@ -35,7 +20,7 @@ typedef struct __packed {
 #define SKL_TAG_CLASS_MASK	0xF0
 
 /* Tags with no particular class */
-#define SKL_TAG_NO_CLAS		0x00
+#define SKL_TAG_NO_CLASs	0x00
 #define SKL_TAG_END		0x00
 #define SKL_TAG_SETUP_INDIRECT	0x01
 #define SKL_TAG_TAGS_SIZE	0x0F	/* Always first */
@@ -89,5 +74,8 @@ extern sl_header_t *g_skl_module;
 extern uint32_t g_skl_size;
 
 extern bool is_skl_module(const void *skl_base, uint32_t skl_size);
+extern void print_skl_module(void);
+extern void relocate_skl_module(void);
+extern bool prepare_skl_bootloader_data(void);
 
 #endif /* _SKL_H */

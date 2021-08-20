@@ -33,7 +33,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
@@ -73,6 +72,7 @@
 #define TPM_RETRY               (TPM_BASE + TPM_NON_FATAL)
 
 typedef uint8_t tpm_locality_selection_t;
+
 #define TPM_LOC_ZERO    0x01
 #define TPM_LOC_ONE     0x02
 #define TPM_LOC_TWO     0x04

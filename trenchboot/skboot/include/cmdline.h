@@ -46,7 +46,6 @@ extern void get_skboot_log_targets(void);
 extern bool get_skboot_serial(void);
 extern void get_skboot_baud(void);
 extern void get_skboot_vga_delay(void);
-extern void get_skboot_min_ram(void);
 extern uint32_t get_error_shutdown(void);
 
 /* for parse cmdline of linux kernel, say vga and mem */

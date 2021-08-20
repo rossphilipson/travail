@@ -40,6 +40,36 @@
 
 #define KERNEL_HEADER_OFFSET    0x1F1
 
+/* setup_data/setup_indirect types */
+#define SETUP_NONE             0
+#define SETUP_E820_EXT         1
+#define SETUP_DTB              2
+#define SETUP_PCI              3
+#define SETUP_EFI              4
+#define SETUP_APPLE_PROPERTIES 5
+#define SETUP_JAILHOUSE        6
+#define SETUP_SECURE_LAUNCH    7
+
+#define SETUP_INDIRECT         (1<<31)
+
+/* SETUP_INDIRECT | max(SETUP_*) */
+#define SETUP_TYPE_MAX         (SETUP_INDIRECT | SETUP_SECURE_LAUNCH)
+
+/* Setup data structs defined in Linux */
+typedef struct __attribute__ ((packed)) {
+    uint64_t next;
+    uint32_t type;
+    uint32_t len;
+    /* data[] */
+} setup_data_t;
+
+typedef struct __attribute__ ((packed)) {
+    uint32_t type;
+    uint32_t reserved;
+    uint64_t len;
+    uint64_t addr;
+} setup_indirect_t;
+
 /* linux kernel header */
 typedef struct __attribute__ ((packed)) {
     uint8_t  setup_sects;    /* The size of the setup in sectors */
@@ -247,6 +277,13 @@ typedef struct {
     unsigned long protected_mode_size;
     boot_params_t *boot_params;
 } il_kernel_setup_t;
+
+extern il_kernel_setup_t g_sl_kernel_setup;
+
+extern bool expand_linux_image(const void *linux_image, size_t linux_size,
+                               const void *initrd_image, size_t initrd_size);
+
+extern void linux_skl_setup_indirect(setup_data_t *data);
 
 #endif /* __LINUX_DEFNS_H__ */
 

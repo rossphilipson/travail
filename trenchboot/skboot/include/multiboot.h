@@ -36,8 +36,6 @@
 #ifndef __MULTIBOOT_H__
 #define __MULTIBOOT_H__
 
-#include <config.h>
-
 /* Multiboot Header Definitions of OS image*/
 #define MULTIBOOT_HEADER_MAGIC			0x1BADB002
 #define MULTIBOOT_HEADER_SEARCH_LIMIT 8192

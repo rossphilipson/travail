@@ -33,6 +33,7 @@
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
+#include <processor.h>
 #include <misc.h>
 #include <pci.h>
 #include <com.h>

@@ -37,7 +37,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
@@ -48,7 +47,7 @@
 #include <processor.h>
 #include <misc.h>
 #include <e820.h>
-#include <loader.h>
+#include <linux.h>
 #include <tpm.h>
 #include <cmdline.h>
 #include <skl.h>
@@ -57,8 +56,8 @@
 __data loader_ctx g_loader_ctx = { NULL, 0 };
 __data loader_ctx *g_ldr_ctx = &g_loader_ctx;
 
-__data sl_header_t *g_skl_module = NULL;
-__data uint32_t g_skl_size = 0;
+sl_header_t *g_skl_module = NULL;
+uint32_t g_skl_size = 0;
 
 static uint32_t g_default_error_action = SK_SHUTDOWN_HALT;
 static unsigned int g_cpuid_ext_feat_info;
@@ -66,13 +65,13 @@ static bool is_powercycle_required = true;
 
 static void shutdown_system(uint32_t shutdown_type)
 {
-    static const char *types[] = { "SK_SHUTDOWN_REBOOT", "SK_SHUTDOWN_REBOOT",
+    static const char *types[] = { "SK_SHUTDOWN_REBOOT", "SK_SHUTDOWN_SHUTDOWN",
                                    "SK_SHUTDOWN_HALT" };
     char type[32];
 
     /* NOTE: the TPM close and open current locality is not needed here since */
     /* since that only makes sense if this is called post laucnh which is */
-    /* the case in SLBOOT */
+    /* the case in SKBOOT */
 
     if ( shutdown_type >= ARRAY_SIZE(types) )
         sk_snprintf(type, sizeof(type), "unknown: %u", shutdown_type);
@@ -223,6 +222,25 @@ void error_action(int error)
     shutdown_system(g_default_error_action);
 }
 
+extern void debug_put_chars(void);
+
+static void skinit_launch_environment(void)
+{
+    uint32_t *lapic = (uint32_t *)(LAPIC_BASE + LAPIC_ICR_LO);
+    uint32_t slb = (uint32_t)g_skl_module;
+
+    printk(SKBOOT_INFO"SKINIT assert #INIT on APs\n");
+    *lapic = (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT);
+    delay(10);
+
+    disable_intr();
+
+    printk(SKBOOT_INFO"SKINIT launch SKL - slb: 0x%x\n", slb);
+    asm volatile ("movl %0, %%eax\n"
+	          "skinit\n"
+                  : : "r" (slb));
+}
+
 void begin_launch(void *addr, uint32_t magic)
 {
     const char *cmdline;
@@ -245,7 +263,7 @@ void begin_launch(void *addr, uint32_t magic)
     printk_init();
 
     printk(SKBOOT_INFO"******************* SKBOOT *******************\n");
-    printk(SKBOOT_INFO"   %s\n", SKBOOT_CHANGESET);
+    printk(SKBOOT_INFO"   %s -- @ %p\n", SKBOOT_CHANGESET, _start);
     printk(SKBOOT_INFO"*********************************************\n");
 
     printk(SKBOOT_INFO"command line: %s\n", g_cmdline);
@@ -285,14 +303,24 @@ void begin_launch(void *addr, uint32_t magic)
     if ( !prepare_tpm() )
         error_action(SK_ERR_TPM_NOT_READY);
 
-    /* TODO locate and load LZ */
+    /* locate and load SKL module */
+    if ( !find_skl_module(g_ldr_ctx) )
+        error_action(SK_ERR_NO_SKL);
 
+    relocate_skl_module();
+    print_skl_module();
+
+    /* locate and prepare the secure launch kernel */
     if ( !prepare_intermediate_loader() )
         error_action(SK_ERR_FATAL);
 
+    /* prepare the bootloader data area in the SKL */
+    if ( !prepare_skl_bootloader_data() )
+        error_action(SK_ERR_FATAL);
+
     /* launch the secure environment */
-    /*err = txt_launch_environment(g_ldr_ctx);
-    error_action(err);*/
+    skinit_launch_environment();
+    /* No return */
 }
 
 void handle_exception(void)

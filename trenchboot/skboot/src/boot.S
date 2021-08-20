@@ -33,16 +33,16 @@
  *
  */
 
+#include <skboot.h>
 #include <multiboot.h>
-#include <config.h>
 #include <processor.h>
 
 #define BSP_STACK_SIZE		0x2000
 
-#define cs_sel      1<<3
-#define ds_sel      2<<3
-#define cs16_sel    4<<3
-#define ds16_sel    5<<3
+#define CS_SEL      1<<3
+#define DS_SEL      2<<3
+#define CS16_SEL    4<<3
+#define DS16_SEL    5<<3
 
 .section ".skboot_multiboot_header","w"
         .align 4
@@ -80,13 +80,13 @@ ENTRY(_start)
 ENTRY(__start)
         /* Set up a few descriptors: on entry only CS is guaranteed good. */
         lgdt    %cs:gdt_descr
-        mov     $(ds_sel),%ecx
+        mov     $(DS_SEL),%ecx
         mov     %ecx,%ds
         mov     %ecx,%es
         mov     %ecx,%fs
         mov     %ecx,%gs
         mov     %ecx,%ss
-        ljmp    $(cs_sel),$(1f)
+        ljmp    $(CS_SEL),$(1f)
 1:	leal	bsp_stack,%esp
 
         /* Reset EFLAGS (subsumes CLI and CLD). */
@@ -118,6 +118,32 @@ ENTRY(__start)
         push    %ebx
         call    begin_launch
         ud2
+
+ENTRY(debug_put_chars)
+	pushl	%ecx
+	pushl	%edx
+	pushl	%eax
+	xorl	%ecx, %ecx
+1:
+	cmpb	$5, %cl
+	jz	2f
+	movw	$0x3f8, %dx
+	addw	$5, %dx
+3:
+	inb	%dx, %al
+	testb	$0x20, %al
+	jz	3b
+	movw	$0x3f8, %dx
+	movb	$0x41, %al
+	addb	%cl, %al
+	outb	%al, %dx
+	incb	%cl
+	jmp	1b
+2:
+	popl	%eax
+	popl	%edx
+	popl	%ecx
+	ret
 
 /*
  * interrupt handler
@@ -182,18 +208,18 @@ idt_descr:
 idt_table:
 	.rept 18
 		.word	int_handler - _start
-		.word	cs_sel
+		.word	CS_SEL
 		.word	0x8e00   /* present, DPL=0, 32b, interrupt */
 		.word	(int_handler - _start + SKBOOT_START) >> 16
 	.endr
 	/* for machine-check exception */
 		.word	int_handler - _start
-		.word	cs_sel
+		.word	CS_SEL
 		.word	0x8f00   /* present, DPL=0, 32b, trap */
 		.word	(int_handler - _start + SKBOOT_START) >> 16
 	.rept 237
 		.word	int_handler - _start
-		.word	cs_sel
+		.word	CS_SEL
 		.word	0x8e00   /* present, DPL=0, 32b, interrupt */
 		.word	(int_handler - _start + SKBOOT_START) >> 16
 	.endr

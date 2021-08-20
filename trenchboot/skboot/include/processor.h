@@ -94,7 +94,8 @@
 #define CR4_SMXE 0x00004000/* enable SMX */
 #define CR4_PCIDE 0x00020000/* enable PCID */
 
-#define LAPIC_ICR_LO          0xFEE00300
+#define LAPIC_BASE            0xFEE00000
+#define LAPIC_ICR_LO          0x300
 #define ICR_MODE_INIT         (5<<8)
 #define ICR_DELIVER_EXCL_SELF (3<<18)
 
@@ -120,16 +121,16 @@
 
 static inline void do_cpuid(unsigned int ax, uint32_t *p)
 {
-    __asm__ __volatile__ ("cpuid"
-                          : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
-                          :  "0" (ax));
+    asm volatile ("cpuid"
+                   : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
+                   :  "0" (ax));
 }
 
 static inline void do_cpuid1(unsigned int ax, unsigned int cx, uint32_t *p)
 {
-    __asm__ __volatile__ ("cpuid"
-                          : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
-                          :  "0" (ax), "c" (cx));
+    asm volatile ("cpuid"
+                   : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
+                   :  "0" (ax), "c" (cx));
 }
 
 static always_inline uint32_t cpuid_eax(unsigned int op)
@@ -189,106 +190,115 @@ static always_inline uint32_t cpuid_edx(unsigned int op)
 static inline unsigned long read_cr0(void)
 {
     unsigned long data;
-    __asm__ __volatile__ ("movl %%cr0,%0" : "=r" (data));
+
+    asm volatile ("movl %%cr0,%0" : "=r" (data));
+
     return (data);
 }
 static inline void write_ecx(unsigned long data)
 {
-    __asm__ __volatile__("movl %0,%%ecx" : : "r" (data));
+    asm volatile ("movl %0,%%ecx" : : "r" (data));
 }
+
 static inline unsigned long read_ecx(void)
 {
     unsigned long data;
-    __asm__ __volatile__ ("movl %%ecx,%0" : "=r" (data));
+
+    asm volatile ("movl %%ecx,%0" : "=r" (data));
+
     return (data);
 }
 static inline void write_cr0(unsigned long data)
 {
-    __asm__ __volatile__("movl %0,%%cr0" : : "r" (data));
+    asm volatile ("movl %0,%%cr0" : : "r" (data));
 }
 
 static inline unsigned long read_cr4(void)
 {
     unsigned long data;
-    __asm__ __volatile__ ("movl %%cr4,%0" : "=r" (data));
+
+    asm volatile ("movl %%cr4,%0" : "=r" (data));
+
     return (data);
 }
 static inline void write_cr4(unsigned long data)
 {
-    __asm__ __volatile__ ("movl %0,%%cr4" : : "r" (data));
+    asm volatile ("movl %0,%%cr4" : : "r" (data));
 }
 
 static inline unsigned long read_cr3(void)
 {
     unsigned long data;
-    __asm__ __volatile__ ("movl %%cr3,%0" : "=r" (data));
+
+    asm volatile ("movl %%cr3,%0" : "=r" (data));
+
     return (data);
 }
+
 static inline void write_cr3(unsigned long data)
 {
-    __asm__ __volatile__("movl %0,%%cr3" : : "r" (data) : "memory");
+    asm volatile ("movl %0,%%cr3" : : "r" (data) : "memory");
 }
-
 
 static inline uint32_t read_eflags(void)
 {
     uint32_t ef;
-    __asm__ __volatile__ ("pushfl; popl %0" : "=r" (ef));
+
+    asm volatile ("pushfl; popl %0" : "=r" (ef));
+
     return (ef);
 }
 static inline void write_eflags(uint32_t ef)
 {
-    __asm__ __volatile__ ("pushl %0; popfl" : : "r" (ef));
+    asm volatile ("pushl %0; popfl" : : "r" (ef));
 }
-
 
 static inline void disable_intr(void)
 {
-    __asm__ __volatile__ ("cli" : : : "memory");
-}
-static inline void enable_intr(void)
-{
-    __asm__ __volatile__ ("sti");
+    asm volatile ("cli" : : : "memory");
 }
 
+static inline void enable_intr(void)
+{
+    asm volatile ("sti");
+}
 
 /* was ia32_pause() */
 static inline void cpu_relax(void)
 {
-    __asm__ __volatile__ ("pause");
+    asm volatile ("pause");
 }
-
 
 static inline void halt(void)
 {
-    __asm__ __volatile__ ("hlt");
+    asm volatile ("hlt");
 }
-
 
 static inline unsigned int get_apicid(void)
 {
     return cpuid_edx(0xb);
 }
 
-
 static inline uint64_t rdtsc(void)
 {
-	uint64_t rv;
+    uint64_t rv;
 
-	__asm__ __volatile__ ("rdtsc" : "=A" (rv));
-	return (rv);
+    asm volatile ("rdtsc" : "=A" (rv));
+
+    return (rv);
 }
 
 static inline void wbinvd(void)
 {
-    __asm__ __volatile__ ("wbinvd");
+    asm volatile ("wbinvd");
 }
 
 static inline uint32_t bsrl(uint32_t mask)
 {
-    uint32_t   result;
+    uint32_t result;
 
-    __asm__ __volatile__ ("bsrl %1,%0" : "=r" (result) : "rm" (mask) : "cc");
+    asm volatile ("bsrl %1,%0" : "=r" (result) : "rm" (mask) : "cc");
+
     return (result);
 }
 
@@ -299,17 +309,17 @@ static inline int fls(int mask)
 
 static always_inline void mb(void)
 {
-    __asm__ __volatile__ ("lock;addl $0,0(%%esp)" : : : "memory");
+    asm volatile ("lock;addl $0,0(%%esp)" : : : "memory");
 }
 
 static inline void cpu_monitor(const void *addr, int extensions, int hints)
 {
-    __asm __volatile__ ("monitor;" : :"a" (addr), "c" (extensions), "d"(hints));
+    asm volatile ("monitor;" : :"a" (addr), "c" (extensions), "d"(hints));
 }
 
 static inline void cpu_mwait(int extensions, int hints)
 {
-    __asm __volatile__ ("mwait;" : :"a" (hints), "c" (extensions));
+    asm volatile ("mwait;" : :"a" (hints), "c" (extensions));
 }
 
 #define MSR_APICBASE                           0x01b
@@ -323,13 +333,42 @@ static inline uint64_t rdmsr(uint32_t msr)
 {
     uint64_t rv;
 
-    __asm__ __volatile__ ("rdmsr" : "=A" (rv) : "c" (msr));
+    asm volatile ("rdmsr" : "=A" (rv) : "c" (msr));
     return (rv);
 }
 
 static inline void wrmsr(uint32_t msr, uint64_t newval)
 {
-    __asm__ __volatile__ ("wrmsr" : : "A" (newval), "c" (msr));
+    asm volatile ("wrmsr" : : "A" (newval), "c" (msr));
+}
+
+#define readb(va)	(*(volatile uint8_t *) (va))
+#define readw(va)	(*(volatile uint16_t *) (va))
+
+#define writeb(va, d)	(*(volatile uint8_t *) (va) = (d))
+#define writew(va, d)	(*(volatile uint16_t *) (va) = (d))
+
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t data;
+
+    asm volatile ("inb %w1, %0" : "=a" (data) : "Nd" (port));
+    return (data);
+}
+
+static inline void outb(uint16_t port, uint8_t data)
+{
+    asm volatile ("outb %0, %w1" : : "a" (data), "Nd" (port));
+}
+
+static inline void outw(uint16_t port, uint16_t data)
+{
+    asm volatile ("outw %0, %w1" : : "a" (data), "Nd" (port));
+}
+
+static inline void outl(uint16_t port, uint32_t data)
+{
+    asm volatile ("outl %0, %w1" : : "a" (data), "Nd" (port));
 }
 
 #endif /* __ASSEMBLY__ */

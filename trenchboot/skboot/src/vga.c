@@ -36,6 +36,7 @@
 #include <stdbool.h>
 #include <skboot.h>
 #include <string.h>
+#include <processor.h>
 #include <misc.h>
 #include <vga.h>
 

@@ -295,7 +295,7 @@ void begin_launch(void *addr, uint32_t magic)
 
 void shutdown_system(uint32_t shutdown_type)
 {
-    static const char *types[] = { "TB_SHUTDOWN_REBOOT", "TB_SHUTDOWN_REBOOT",
+    static const char *types[] = { "TB_SHUTDOWN_REBOOT", "TB_SHUTDOWN_SHUTDOWN",
                                    "TB_SHUTDOWN_HALT" };
     char type[32];
 

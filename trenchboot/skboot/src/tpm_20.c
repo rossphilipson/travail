@@ -33,7 +33,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>

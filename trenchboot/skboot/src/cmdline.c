@@ -33,7 +33,6 @@
  *
  */
 #ifndef IS_INCLUDED
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
@@ -73,7 +72,6 @@ static const cmdline_option_t g_skboot_cmdline_options[] = {
     { "serial",     "115200,8n1,0x3f8" },
     /* serial=<baud>[/<clock_hz>][,<DPS>[,<io-base>[,<irq>[,<serial-bdf>[,<bridge-bdf>]]]]] */
     { "vga_delay",  "0" },           /* # secs */
-    { "min_ram", "0" },              /* size in bytes | 0 for no min */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { NULL, NULL }
 };
@@ -434,17 +432,6 @@ void get_skboot_vga_delay(void)
         return;
 
     g_vga_delay = sk_strtoul(vga_delay, NULL, 0);
-}
-
-extern uint32_t g_min_ram;
-void get_skboot_min_ram(void)
-{
-    const char *min_ram = get_option_val(g_skboot_cmdline_options,
-                                         g_skboot_param_values, "min_ram");
-    if ( min_ram == NULL )
-        return;
-
-    g_min_ram = sk_strtoul(min_ram, NULL, 0);
 }
 
 uint32_t get_error_shutdown(void)

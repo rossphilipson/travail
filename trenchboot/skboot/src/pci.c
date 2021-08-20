@@ -36,6 +36,7 @@
 
 #include <types.h>
 #include <skboot.h>
+#include <processor.h>
 #include <pci.h>
 
 enum {

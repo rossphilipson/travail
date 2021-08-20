@@ -36,7 +36,7 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
-extern void print_hex(const char * buf, const void * prtptr, size_t size);
+extern void print_hex(const char *prefix, const void *prtptr, size_t size);
 
 extern void delay(int millisecs);
 
@@ -69,6 +69,11 @@ static inline bool plus_overflow_u32(uint32_t x, uint32_t y)
 static inline bool multiply_overflow_u32(uint32_t x, uint32_t y)
 {
     return (x > 0) ? ((((uint32_t)(~0))/x) < y) : false;
+}
+
+static inline unsigned long max(unsigned long a, unsigned long b)
+{
+    return (a > b) ? a : b;
 }
 
 #define ARRAY_SIZE(a)    (sizeof(a) / sizeof(a[0]))

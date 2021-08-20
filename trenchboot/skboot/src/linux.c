@@ -33,7 +33,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <skboot.h>
 #include <stdbool.h>
@@ -45,15 +44,13 @@
 #include <cmdline.h>
 #include <misc.h>
 #include <processor.h>
+#include <skl.h>
 
 extern loader_ctx *g_ldr_ctx;
-extern uint32_t g_min_ram;
 
 static boot_params_t *boot_params;
 
-extern void *get_skboot_mem_end(void);
-
-il_kernel_setup_t g_il_kernel_setup = {0};
+il_kernel_setup_t g_sl_kernel_setup = {0};
 
 static void
 printk_long(const char *what)
@@ -111,7 +108,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         0x0000 - 0x7FFF     Real mode kernel
         0x8000 - 0x8CFF     Stack and heap
         0x8D00 - 0x90FF     Kernel command line
-        for details, see linux_defns.h
+        for details, see linux.h
     */
 
     /* if setup_sects is zero, set to default value 4 */
@@ -133,7 +130,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( hdr->header != HDRS_MAGIC ) {
         /* old kernel */
         printk(SKBOOT_ERR
-               "Error: Old kernel (< 2.6.20) is not supported by slboot.\n");
+               "Error: Old kernel (< 2.6.20) is not supported by skboot.\n");
         return false;
     }
 
@@ -145,7 +142,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     if ( !(hdr->loadflags & FLAG_LOAD_HIGH) ) {
         printk(SKBOOT_ERR
-               "Error: IL kernel must have the FLAG_LOAD_HIGH loadflag set.\n");
+               "Error: Secure Launch kernel must have the FLAG_LOAD_HIGH loadflag set.\n");
         return false;
     }
 
@@ -191,11 +188,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         /*initrd_base = (max_ram_base + max_ram_size - initrd_size) & PAGE_MASK;*/
 
         /*
+         * TODO used fixed allocation:
          * The location, initrd_base, determined above in the commented out
          * code causes memory corruption. This value leads to the corruption
          * of EFI System Resource Table (ESRT), which is also located in RAM.
          */
-        initrd_base = 0x20000000;
+        initrd_base = SKBOOT_FIXED_INITRD_BASE;
 
         /* should not exceed initrd_addr_max */
         if ( initrd_base + initrd_size > hdr->initrd_addr_max ) {
@@ -238,6 +236,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( have_loader_memlimits(g_ldr_ctx))
         real_mode_base =
             ((get_loader_mem_lower(g_ldr_ctx)) << 10) - REAL_MODE_SIZE;
+    if ( real_mode_base < SKBOOT_E820_COPY_ADDR + SKBOOT_E820_COPY_SIZE )
+        real_mode_base = SKBOOT_E820_COPY_ADDR + SKBOOT_E820_COPY_SIZE;
     if ( real_mode_base > LEGACY_REAL_START )
         real_mode_base = LEGACY_REAL_START;
 
@@ -252,7 +252,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* if kernel is relocatable then move it above skboot */
     /* else it may expand over top of skboot */
-    /* NOTE the IL kernel is not relocatable and shold be loaded at the
+    /* NOTE the SL kernel is not relocatable and should be loaded at the
      * default location */
     if ( hdr->relocatable_kernel ) {
         protected_mode_base = (uint32_t)get_skboot_mem_end();
@@ -348,24 +348,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
            (unsigned long)hdr->cmd_line_ptr,
            (unsigned long)(hdr->cmd_line_ptr + kernel_cmdline_size));
     printk_long((void *)hdr->cmd_line_ptr);
-
-#if 0
-    /* DEBUG create some dummy setup_data blocks */
-    {
-        struct setup_data *data = (struct setup_data *)(unsigned long)0x6c000;
-
-        data->next = 0x6c400;
-        data->type = 10;
-        data->len = 0x40;
-
-        data = (struct setup_data *)(unsigned long)data->next;
-        data->next = 0;
-        data->type = 11;
-        data->len = 0x80;
-
-        hdr->setup_data = 0x6c000;
-    }
-#endif
 
     /* need to put boot_params in real mode area so it gets mapped */
     boot_params = (boot_params_t *)real_mode_base;
@@ -463,11 +445,11 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     sk_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
 
     /* Copy all the handoff information about the loaded IL kernel */
-    g_il_kernel_setup.real_mode_base = real_mode_base;
-    g_il_kernel_setup.real_mode_size = real_mode_size;
-    g_il_kernel_setup.protected_mode_base = protected_mode_base;
-    g_il_kernel_setup.protected_mode_size = protected_mode_size;
-    g_il_kernel_setup.boot_params = boot_params;
+    g_sl_kernel_setup.real_mode_base = real_mode_base;
+    g_sl_kernel_setup.real_mode_size = real_mode_size;
+    g_sl_kernel_setup.protected_mode_base = protected_mode_base;
+    g_sl_kernel_setup.protected_mode_size = protected_mode_size;
+    g_sl_kernel_setup.boot_params = boot_params;
 
     printk(SKBOOT_DETA"Intermediate Loader kernel details:\n");
     printk(SKBOOT_DETA"\treal_mode_base: 0x%x\n", real_mode_base);
@@ -477,6 +459,24 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     printk(SKBOOT_DETA"\tboot_params: 0x%p\n", boot_params);
 
     return true;
+}
+
+void linux_skl_setup_indirect(setup_data_t *data)
+{
+    setup_indirect_t *ind =
+        (setup_indirect_t *)((u8 *)data + sizeof(setup_data_t));
+
+    /* Setup the node */
+    data->type = SETUP_INDIRECT;
+    data->len = sizeof(setup_data_t) + sizeof(setup_indirect_t);
+    ind->type = (SETUP_INDIRECT | SETUP_SECURE_LAUNCH);
+    ind->reserved = 0;
+    ind->len = g_skl_size;
+    ind->addr = (uint64_t)(uint32_t)g_skl_module;
+
+    /* Chain it into the setup_data list, stick it up front */
+    data->next = g_sl_kernel_setup.boot_params->hdr.setup_data;
+    g_sl_kernel_setup.boot_params->hdr.setup_data = (uint64_t)(uint32_t)data;
 }
 
 /*

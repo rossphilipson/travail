@@ -35,7 +35,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
@@ -53,9 +52,6 @@
 
 /* multiboot struct saved so that post_launch() can use it (in skboot.c) */
 extern loader_ctx *g_ldr_ctx;
-extern bool expand_linux_image(const void *linux_image, size_t linux_size,
-                               const void *initrd_image, size_t initrd_size);
-extern void error_action(int error);
 static uint32_t g_mb_orig_size;
 
 #define LOADER_CTX_BAD(xctx) \
@@ -149,113 +145,6 @@ static module_t
     }
     return mt;
 }
-
-#if 0
-void print_mbi(const multiboot_info_t *mbi)
-{
-    /* print mbi for debug */
-    unsigned int i;
-
-    printk(SKBOOT_DETA"print mbi@%p ...\n", mbi);
-    printk(SKBOOT_DETA"\t flags: 0x%x\n", mbi->flags);
-    if ( mbi->flags & MBI_MEMLIMITS )
-        printk(SKBOOT_DETA"\t mem_lower: %uKB, mem_upper: %uKB\n",
-               mbi->mem_lower, mbi->mem_upper);
-    if ( mbi->flags & MBI_BOOTDEV ) {
-        printk(SKBOOT_DETA"\t boot_device.bios_driver: 0x%x\n",
-               mbi->boot_device.bios_driver);
-        printk(SKBOOT_DETA"\t boot_device.top_level_partition: 0x%x\n",
-               mbi->boot_device.top_level_partition);
-        printk(SKBOOT_DETA"\t boot_device.sub_partition: 0x%x\n",
-               mbi->boot_device.sub_partition);
-        printk(SKBOOT_DETA"\t boot_device.third_partition: 0x%x\n",
-               mbi->boot_device.third_partition);
-    }
-    if ( mbi->flags & MBI_CMDLINE ) {
-# define CHUNK_SIZE 72
-        /* Break the command line up into 72 byte chunks */
-        int   cmdlen = sk_strlen(mbi->cmdline);
-        char *cmdptr = (char *)mbi->cmdline;
-        char  chunk[CHUNK_SIZE+1];
-        printk(SKBOOT_DETA"\t cmdline@0x%x: ", mbi->cmdline);
-        chunk[CHUNK_SIZE] = '\0';
-        while (cmdlen > 0) {
-            sk_strncpy(chunk, cmdptr, CHUNK_SIZE);
-            printk(SKBOOT_DETA"\n\t\"%s\"", chunk);
-            cmdptr += CHUNK_SIZE;
-            cmdlen -= CHUNK_SIZE;
-        }
-        printk(SKBOOT_DETA"\n");
-    }
-
-    if ( mbi->flags & MBI_MODULES ) {
-        printk(SKBOOT_DETA"\t mods_count: %u, mods_addr: 0x%x\n",
-               mbi->mods_count, mbi->mods_addr);
-        for ( i = 0; i < mbi->mods_count; i++ ) {
-            module_t *p = (module_t *)(mbi->mods_addr + i*sizeof(module_t));
-            printk(SKBOOT_DETA"\t     %d : mod_start: 0x%x, mod_end: 0x%x\n", i,
-                   p->mod_start, p->mod_end);
-            printk(SKBOOT_DETA"\t         string (@0x%x): \"%s\"\n", p->string,
-                   (char *)p->string);
-        }
-    }
-    if ( mbi->flags & MBI_AOUT ) {
-        const aout_t *p = &(mbi->syms.aout_image);
-        printk(SKBOOT_DETA
-               "\t aout :: tabsize: 0x%x, strsize: 0x%x, addr: 0x%x\n",
-               p->tabsize, p->strsize, p->addr);
-    }
-    if ( mbi->flags & MBI_ELF ) {
-        const elf_t *p = &(mbi->syms.elf_image);
-        printk(SKBOOT_DETA
-               "\t elf :: num: %u, size: 0x%x, addr: 0x%x, shndx: 0x%x\n",
-               p->num, p->size, p->addr, p->shndx);
-    }
-    if ( mbi->flags & MBI_MEMMAP ) {
-        memory_map_t *p;
-        printk(SKBOOT_DETA
-               "\t mmap_length: 0x%x, mmap_addr: 0x%x\n", mbi->mmap_length,
-               mbi->mmap_addr);
-        for ( p = (memory_map_t *)mbi->mmap_addr;
-              (uint32_t)p < mbi->mmap_addr + mbi->mmap_length;
-              p=(memory_map_t *)((uint32_t)p + p->size + sizeof(p->size)) ) {
-	        printk(SKBOOT_DETA"\t     size: 0x%x, base_addr: 0x%04x%04x, "
-                   "length: 0x%04x%04x, type: %u\n", p->size,
-                   p->base_addr_high, p->base_addr_low,
-                   p->length_high, p->length_low, p->type);
-        }
-    }
-    if ( mbi->flags & MBI_DRIVES ) {
-        printk(SKBOOT_DETA"\t drives_length: %u, drives_addr: 0x%x\n",
-               mbi->drives_length, mbi->drives_addr);
-    }
-    if ( mbi->flags & MBI_CONFIG ) {
-        printk(SKBOOT_DETA"\t config_table: 0x%x\n", mbi->config_table);
-    }
-    if ( mbi->flags & MBI_BTLDNAME ) {
-        printk(SKBOOT_DETA"\t boot_loader_name@0x%x: %s\n",
-               mbi->boot_loader_name, (char *)mbi->boot_loader_name);
-    }
-    if ( mbi->flags & MBI_APM ) {
-        printk(SKBOOT_DETA"\t apm_table: 0x%x\n", mbi->apm_table);
-    }
-    if ( mbi->flags & MBI_VBE ) {
-        printk(SKBOOT_DETA"\t vbe_control_info: 0x%x\n"
-               "\t vbe_mode_info: 0x%x\n"
-               "\t vbe_mode: 0x%x\n"
-               "\t vbe_interface_seg: 0x%x\n"
-               "\t vbe_interface_off: 0x%x\n"
-               "\t vbe_interface_len: 0x%x\n",
-               mbi->vbe_control_info,
-               mbi->vbe_mode_info,
-               mbi->vbe_mode,
-               mbi->vbe_interface_seg,
-               mbi->vbe_interface_off,
-               mbi->vbe_interface_len
-              );
-    }
-}
-#endif
 
 bool verify_loader_context(loader_ctx *lctx)
 {
@@ -500,56 +389,6 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
     return NULL;
 }
 
-bool
-find_module_by_pattern(loader_ctx *lctx, void **base, size_t *size,
-                       const void *pattern, size_t len)
-{
-    if ( lctx == NULL || lctx->addr == NULL) {
-        printk(SKBOOT_ERR"Error: context pointer is zero.\n");
-        return false;
-    }
-
-    if ( base == NULL ) {
-        printk(SKBOOT_ERR"Error: base is NULL.\n");
-        return false;
-    }
-
-    *base = NULL;
-    if ( size != NULL )
-        *size = 0;
-
-    if ( 0 == get_module_count(lctx)) {
-        printk(SKBOOT_ERR"Error: no module.\n");
-        return false;
-    }
-
-    for ( unsigned int i = get_module_count(lctx) - 1; i > 0; i-- ) {
-        module_t *m = get_module(lctx, i);
-        /* check size */
-        size_t mod_size = m->mod_end - m->mod_start;
-        if ( len > mod_size ) {
-            printk(SKBOOT_ERR"Error: image size is smaller than data size.\n");
-            return false;
-        }
-
-        for ( unsigned int j = 0; j < (mod_size + len); j++ ) {
-            if ( sk_memcmp((void *)(m->mod_start + j), pattern, len) == 0 ) {
-                *base = (void *)m->mod_start;
-                if ( size != NULL )
-                    *size = mod_size;
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-static unsigned long max(unsigned long a, unsigned long b)
-{
-    return (a > b) ? a : b;
-}
-
 static
 unsigned long get_mbi_mem_end_mb1(const multiboot_info_t *mbi)
 {
@@ -628,13 +467,11 @@ bool prepare_intermediate_loader(void)
     uint64_t base;
     uint64_t size;
 
-    //printk(SKBOOT_INFO"reserving SLBOOT AP wake block (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
-
     /* if using memory logging, reserve log area */
     if ( g_log_targets & SKBOOT_LOG_TARGET_MEMORY ) {
         base = SKBOOT_SERIAL_LOG_ADDR;
         size = SKBOOT_SERIAL_LOG_SIZE;
-        printk(SKBOOT_INFO"reserving SLBOOT memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
+        printk(SKBOOT_INFO"reserving SKBOOT memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
         if ( !e820_protect_region(base, size, E820_RESERVED) )
             error_action(SK_ERR_FATAL);
     }
@@ -647,6 +484,9 @@ bool prepare_intermediate_loader(void)
     if ( !verify_loader_context(g_ldr_ctx) )
         return false;
 
+    /* found SKL module earlier, remove it from MBI */
+    remove_module(g_ldr_ctx, g_skl_module);
+
     printk(SKBOOT_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 
     /* print_mbi(g_mbi); */
@@ -655,7 +495,11 @@ bool prepare_intermediate_loader(void)
     m = get_module(g_ldr_ctx, 0);
     kernel_size = m->mod_end - m->mod_start;
 
-    /* removing the module causes its command line to be set in the MBI */
+    /*
+     * Removing the module causes its command line to be set in the MBI.
+     * This doesn't really matter unless the next kernel is an MBI kernel
+     * like Xen but leave it here so things proceed as expected.
+     */
     kernel_image = remove_first_module(g_ldr_ctx);
     if ( kernel_image == NULL )
         return false;
@@ -866,21 +710,20 @@ get_loader_ctx_end(loader_ctx *lctx)
 bool
 find_skl_module(loader_ctx *lctx)
 {
-    if ( 0 == get_module_count(lctx)) {
+    unsigned int i = get_module_count(lctx);
+
+    if ( i == 0 ) {
         printk(SKBOOT_ERR"no module info\n");
         return false;
     }
 
-    for ( unsigned int i = get_module_count(lctx) - 1; i > 0; i-- ) {
-        module_t *m = get_module(lctx, i);
-        if (lctx->type == 1)
-            printk(SKBOOT_DETA
-                   "checking if module %s is an SKL module...\n",
-                   (const char *)m->string);
-        if (lctx->type == 2)
-            printk(SKBOOT_DETA
-                   "checking if module %s is an SKL module...\n",
-                   (const char *)&(m->string));
+    printk(SKBOOT_DETA"module count: %d\n", (int)i);
+
+    for ( ; i > 0; i-- ) {
+        module_t *m = get_module(lctx, i - 1);
+        printk(SKBOOT_INFO"Checking for SKL module type: %d, index: %d, string: %s\n",
+               lctx->type, (int)(i - 1), (const char *)m->string);
+        print_hex("MOD: ", (void *)m->mod_start, 32);
 
         void *base = (void *)m->mod_start;
         uint32_t size = m->mod_end - (unsigned long)(base);
@@ -891,6 +734,7 @@ find_skl_module(loader_ctx *lctx)
             return true;
         }
     }
+
     /* no SKL found, hosed */
     printk(SKBOOT_ERR"no SKL module found\n");
     return false;
@@ -1125,7 +969,7 @@ void determine_loader_type(void *addr, uint32_t magic)
                 void *mb2_reloc;
 
                 /* Since GRUB is sticking the MB2 structure very close to the
-                 * default location for the kernel, move it just below the SLBOOT
+                 * default location for the kernel, move it just below the SKBOOT
                  * image.
                  */
                 mb2_reloc = (void*)PAGE_DOWN(SKBOOT_BASE_ADDR - g_mb_orig_size);

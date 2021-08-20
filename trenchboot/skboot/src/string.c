@@ -60,9 +60,9 @@ static bool div64(uint64_t num, uint32_t base, uint64_t *quot, uint32_t *rem)
          * use "divl" instead of "/" to avoid the link error
          * undefined reference to `__udivdi3'
          */
-        __asm__ __volatile__ ( "divl %4;"
-                               : "=a"(lquo), "=d"(*rem)
-                               : "a"(low), "d"(hrem), "r"(base));
+        asm volatile ( "divl %4;"
+                       : "=a"(lquo), "=d"(*rem)
+                       : "a"(low), "d"(hrem), "r"(base));
         *quot = (hquo << 32) + lquo;
     }
 

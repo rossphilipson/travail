@@ -39,10 +39,42 @@
 #ifndef __SKBOOT_H__
 #define __SKBOOT_H__
 
-#define SK_ERR_NONE          0
-#define SK_ERR_FATAL         1
-#define SK_ERR_NO_SKINIT     2
-#define SK_ERR_TPM_NOT_READY 3
+/* address skboot will load and execute at */
+#define SKBOOT_START              0x02C04000
+
+/* the beginning of skboot memory */
+#define SKBOOT_BASE_ADDR          0x02C00000
+
+/* these addrs must be in low memory so that they are mapped by the */
+/* kernel at startup */
+
+/* address/size for memory-resident serial log (when enabled) */
+#define SKBOOT_SERIAL_LOG_ADDR        0x60000
+#define SKBOOT_SERIAL_LOG_SIZE        0x08000
+
+/* address/size for TPM event log */
+#define SKBOOT_EVENT_LOG_ADDR        (SKBOOT_SERIAL_LOG_ADDR + \
+                                      SKBOOT_SERIAL_LOG_SIZE)
+#define SKBOOT_EVENT_LOG_SIZE        0x08000
+
+/* address/size for modified e820 table */
+#define SKBOOT_E820_COPY_ADDR         (SKBOOT_EVENT_LOG_ADDR + \
+				       SKBOOT_EVENT_LOG_SIZE)
+#define SKBOOT_E820_COPY_SIZE         0x02000
+
+/* Used as a basic cmdline buffer size for copying cmdlines */
+#define SKBOOT_KERNEL_CMDLINE_SIZE    0x0400
+
+/* Fixed allocation values */
+#define SKBOOT_FIXED_INITRD_BASE      0x20000000
+#define SKBOOT_FIXED_SKL_BASE         0x40000000
+
+#define ENTRY(name)                             \
+  .globl name;                                  \
+  .align 16,0x90;                               \
+  name:
+
+#ifndef __ASSEMBLY__
 
 #ifndef __packed
 #define __packed   __attribute__ ((packed))
@@ -51,33 +83,16 @@
 #define inline        __inline__
 #define always_inline __inline__ __attribute__ ((always_inline))
 
-#define readb(va)	(*(volatile uint8_t *) (va))
-#define readw(va)	(*(volatile uint16_t *) (va))
+#define __data     __attribute__ ((__section__ (".data")))
+#define __text     __attribute__ ((__section__ (".text")))
 
-#define writeb(va, d)	(*(volatile uint8_t *) (va) = (d))
-#define writew(va, d)	(*(volatile uint16_t *) (va) = (d))
+#define __packed   __attribute__ ((packed))
 
-static inline uint8_t inb(uint16_t port)
-{
-	uint8_t	data;
-
-	__asm volatile("inb %w1, %0" : "=a" (data) : "Nd" (port));
-	return (data);
-}
-
-static inline void outb(uint16_t port, uint8_t data)
-{
-	__asm __volatile("outb %0, %w1" : : "a" (data), "Nd" (port));
-}
-
-static inline void outw(uint16_t port, uint16_t data)
-{
-	__asm volatile("outw %0, %w1" : : "a" (data), "Nd" (port));
-}
-
-static inline void outl(uint16_t port, uint32_t data)
-{
-	__asm volatile("outl %0, %w1" : : "a" (data), "Nd" (port));
+#define COMPILE_TIME_ASSERT(e)                 \
+{                                              \
+    struct tmp {                               \
+        int a : ((e) ? 1 : -1);                \
+    };                                         \
 }
 
 typedef struct __packed {
@@ -140,6 +155,38 @@ typedef struct {
 
 #define SLAUNCH_LZ_UUID {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
                              {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
+
+extern char _start[];            /* start of skboot */
+extern char _end[];              /* end of skboot */
+
+/* skboot log level */
+#ifdef NO_SKBOOT_LOGLVL
+#define SKBOOT_NONE
+#define SKBOOT_ERR
+#define SKBOOT_WARN
+#define SKBOOT_INFO
+#define SKBOOT_DETA
+#define SKBOOT_ALL
+#else /* NO_SKBOOT_LOGLVL */
+#define SKBOOT_NONE       "<0>"
+#define SKBOOT_ERR        "<1>"
+#define SKBOOT_WARN       "<2>"
+#define SKBOOT_INFO       "<3>"
+#define SKBOOT_DETA       "<4>"
+#define SKBOOT_ALL        "<5>"
+#endif /* NO_SKBOOT_LOGLVL */
+
+#define SK_ERR_NONE          0
+#define SK_ERR_FATAL         1
+#define SK_ERR_NO_SKINIT     2
+#define SK_ERR_TPM_NOT_READY 3
+#define SK_ERR_NO_SKL        4
+
+extern void error_action(int error);
+
+extern unsigned long get_skboot_mem_end(void);
+
+#endif /* !__ASSEMBLY__ */
 
 #endif    /* __SKBOOT_H__ */
 

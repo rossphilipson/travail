@@ -36,9 +36,6 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-/* Need for other later defines. */
-#include <config.h>
-
 #define NULL ((void*)0)
 
 typedef unsigned char       uint8_t;

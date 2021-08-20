@@ -238,36 +238,33 @@ typedef union {
 //-----------------------------------------------------------------------------
 // CRB I/F related definitions, see TCG PC Client Platform TPM Profile (PTP) Specification, Level 00 Revision 00.43
 //-----------------------------------------------------------------------------
-#define TPM_REG_LOC_STATE           0x00
-#define TPM_REG_LOC_CTRL              0x8
+#define TPM_REG_LOC_STATE        0x00
+#define TPM_REG_LOC_CTRL         0x8
 #define TPM_LOCALITY_STS         0x0C
-#define TPM_INTERFACE_ID        0x30
-#define TPM_CONTROL_AREA       0x40
-#define TPM_CRB_CTRL_REQ              0x40
-#define TPM_CRB_CTRL_STS  0x44
-#define TPM_CRB_CTRL_CANCEL 0x48
-#define TPM_CRB_CTRL_START 0x4C
-#define TPM_CRB_CTRL_CMD_SIZE 0x58
-#define TPM_CRB_CTRL_CMD_ADDR 0x5C
-#define TPM_CRB_CTRL_CMD_HADDR 0x60
-#define TPM_CRB_CTRL_RSP_SIZE 0x64
-#define TPM_CRB_CTRL_RSP_ADDR 0x68
-#define TPM_CRB_DATA_BUFFER 0x80
-#define TPMCRBBUF_LEN      0xF80     //3968 Bytes
+#define TPM_INTERFACE_ID         0x30
+#define TPM_CONTROL_AREA         0x40
+#define TPM_CRB_CTRL_REQ         0x40
+#define TPM_CRB_CTRL_STS         0x44
+#define TPM_CRB_CTRL_CANCEL      0x48
+#define TPM_CRB_CTRL_START       0x4C
+#define TPM_CRB_CTRL_CMD_SIZE    0x58
+#define TPM_CRB_CTRL_CMD_ADDR    0x5C
+#define TPM_CRB_CTRL_CMD_HADDR   0x60
+#define TPM_CRB_CTRL_RSP_SIZE    0x64
+#define TPM_CRB_CTRL_RSP_ADDR    0x68
+#define TPM_CRB_DATA_BUFFER      0x80
+#define TPMCRBBUF_LEN            0xF80     //3968 Bytes
 
-//#define CTRL_AREA_ADDR  (uint32_t) (TPM_CRB_BASE + 0x40) 
-//#define DATA_BUF_ADDR   (uint32_t) (TPM_CRB_BASE + 0x80)
- 
 typedef union {
     u8 _raw[4];                      /* 4-byte reg */
     struct __packed {
-        u8 tpm_establishment   : 1;  
-        u8 loc_assigned         : 1;  
-        u8 active_locality     : 3;  
-        u8 reserved              : 2; 
+        u8 tpm_establishment   : 1;
+        u8 loc_assigned        : 1;
+        u8 active_locality     : 3;
+        u8 reserved            : 2;
         u8 tpm_reg_valid_sts   : 1;  /* RO, 1=other bits are valid */
-	u8 reserved1                   :8;
-        u16 reserved2                :16;	
+	u8 reserved1           : 8;
+        u16 reserved2          : 16;
     };
 } tpm_reg_loc_state_t;
 
@@ -314,7 +311,7 @@ typedef union {
 typedef union {
    uint8_t _raw[4];
    struct __packed{
-   	   uint32_t  cmdReady:1;   
+   	   uint32_t  cmdReady:1;
 	   uint32_t  goIdle:1;
 	   uint32_t  Reserved:30;
    };
@@ -387,7 +384,7 @@ typedef union {
 	};
 } tpm_ctrl_area_t;
 
-// END OF CRB I/F 
+// END OF CRB I/F
 
 /*
  * assumes that all reg types follow above format:
@@ -407,7 +404,6 @@ static inline void _write_tpm_reg(int locality, u32 reg, u8 *_raw, size_t size)
 {
     for ( size_t i = 0; i < size; i++ )  writeb((TPM_LOCALITY_BASE_N(locality) | reg) + i, _raw[i]);
 }
-
 
 /*
  * the following inline function reversely copy the bytes from 'in' to
@@ -466,37 +462,7 @@ struct tpm_if {
 };
 
 struct tpm_if_fp {
-
     bool (*init)(struct tpm_if *ti);
-
-    bool (*pcr_read)(struct tpm_if *ti, u32 locality, u32 pcr, tpm_pcr_value_t *out);
-    bool (*pcr_extend)(struct tpm_if *ti, u32 locality, u32 pcr, const hash_list_t *in);
-    bool (*pcr_reset)(struct tpm_if *ti, u32 locality, u32 pcr);
-    bool (*hash)(struct tpm_if *ti, u32 locality, const u8 *data, u32 data_size, hash_list_t *hl);
-
-    bool (*nv_read)(struct tpm_if *ti, u32 locality, u32 index, u32 offset, u8 *data, u32 *data_size);
-    bool (*nv_write)(struct tpm_if *ti, u32 locality, u32 index, u32 offset, const u8 *data, u32 data_size);
-    bool (*get_nvindex_size)(struct tpm_if *ti, u32 locality, u32 index, u32 *size);
-
-#define TPM_NV_PER_WRITE_STCLEAR  (1<<14) 
-#define TPM_NV_PER_WRITEDEFINE    (1<<13)
-#define TPM_NV_PER_WRITEALL       (1<<12)
-#define TPM_NV_PER_AUTHWRITE      (1<<2)
-#define TPM_NV_PER_OWNERWRITE     (1<<1)
-#define TPM_NV_PER_PPWRITE        (1<<0)
-    bool (*get_nvindex_permission)(struct tpm_if *ti, u32 locality, u32 index, u32 *attribute);
-
-    bool (*seal)(struct tpm_if *ti, u32 locality, u32 in_data_size, const u8 *in_data, u32 *sealed_data_size, u8 *sealed_data);
-    bool (*unseal)(struct tpm_if *ti, u32 locality, u32 sealed_data_size, const u8 *sealed_data, u32 *secret_size, u8 *secret);
-
-    bool (*get_random)(struct tpm_if *ti, u32 locality, u8 *random_data, u32 *data_size);
-
-    uint32_t (*save_state)(struct tpm_if *ti, u32 locality);
-    
-    bool (*context_save)(struct tpm_if *ti, u32 locality, u32 handle, void *context_saved);
-    bool (*context_load)(struct tpm_if *ti, u32 locality, void *context_saved, u32 *handle);
-    bool (*context_flush)(struct tpm_if *ti, u32 locality, u32 handle);
-
     bool (*check)(void);
 };
 
@@ -520,15 +486,11 @@ extern bool tpm_relinquish_locality_crb(uint32_t locality);
 extern struct tpm_if *get_tpm(void);
 extern const struct tpm_if_fp *get_tpm_fp(void);
 
-
-//#define TPM_UNIT_TEST 1
-
 #ifdef TPM_UNIT_TEST
 void tpm_unit_test(void);
 #else
 #define tpm_unit_test()
 #endif   /* TPM_UNIT_TEST */
-
 
 #endif   /* __TPM_H__ */
 

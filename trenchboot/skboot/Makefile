@@ -12,19 +12,19 @@ include $(CURDIR)/Config.mk
 TARGET := $(CURDIR)/skboot
 
 # boot.o must be first
-obj-y := common/boot.o
-obj-y += common/cmdline.o common/com.o common/e820.o
-obj-y += common/linux.o common/loader.o
-obj-y += common/misc.o common/pci.o common/printk.o
-obj-y += common/string.o common/skboot.o common/skl.o
-obj-y += common/sha1.o common/sha256.o
-obj-y += common/tpm.o common/tpm_12.o common/tpm_20.o
-obj-y += common/vga.o
+obj-y := src/boot.o
+obj-y += src/cmdline.o src/com.o src/e820.o
+obj-y += src/linux.o src/loader.o
+obj-y += src/misc.o src/pci.o src/printk.o
+obj-y += src/string.o src/skboot.o src/skl.o
+obj-y += src/sha1.o src/sha256.o
+obj-y += src/tpm.o src/tpm_12.o src/tpm_20.o
+obj-y += src/vga.o
 
 OBJS := $(obj-y)
 
 
-TARGET_LDS := $(CURDIR)/common/skboot.lds
+TARGET_LDS := $(CURDIR)/src/skboot.lds
 
 $(TARGET).gz : $(TARGET)
 	gzip -n -f -9 < $< > $@
@@ -63,7 +63,7 @@ $(DISTDIR)/boot/$(TARGET).gz : $(TARGET).gz
 
 
 clean :
-	rm -f $(TARGET)* *~ include/*~ include/txt/*~ *.o common/*~ txt/*~ common/*.o txt/*.o
+	rm -f $(TARGET)* *~ include/*~ include/txt/*~ *.o src/*~ txt/*~ src/*.o txt/*.o
 	rm -f tags TAGS cscope.files cscope.in.out cscope.out cscope.po.out
 
 

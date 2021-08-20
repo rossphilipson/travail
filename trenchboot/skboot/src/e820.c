@@ -33,7 +33,6 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
 #include <skboot.h>
@@ -43,11 +42,6 @@
 #include <loader.h>
 #include <stdarg.h>
 #include <e820.h>
-
-/* minimum size of RAM (type 1) region that cannot be marked as reserved even
-   if it comes after a reserved region; 0 for no minimum (i.e. current
-   behavior) */
-uint32_t g_min_ram = 0;
 
 /*
  * copy of bootloader/BIOS e820 table with adjusted entries
@@ -236,35 +230,6 @@ static bool protect_region(memory_map_t *e820map, unsigned int *nr_map,
     return true;
 }
 
-/*
- * is_overlapped
- *
- * Detect whether two ranges are overlapped.
- *
- * return: true = overlapped
- */
-static bool is_overlapped(uint64_t base, uint64_t end, uint64_t e820_base,
-                          uint64_t e820_end)
-{
-    uint64_t length = end - base, e820_length = e820_end - e820_base;
-    uint64_t min, max;
-
-    min = (base < e820_base)?base:e820_base;
-    max = (end > e820_end)?end:e820_end;
-
-    /* overlapping */
-    if ( (max - min) < (length + e820_length) )
-        return true;
-
-    if ( (max - min) == (length + e820_length)
-         && ( ((length == 0) && (base > e820_base) && (base < e820_end))
-              || ((e820_length == 0) && (e820_base > base) &&
-                  (e820_base < end)) ) )
-        return true;
-
-    return false;
-}
-
 /* helper funcs for loader.c */
 memory_map_t *get_e820_copy()
 {
@@ -285,8 +250,6 @@ unsigned int get_nr_map()
  */
 bool copy_e820_map(loader_ctx *lctx)
 {
-    get_skboot_min_ram();
-
     g_nr_map = 0;
 
     if (have_loader_memmap(lctx)){
@@ -361,297 +324,9 @@ bool e820_protect_region(uint64_t addr, uint64_t size, uint32_t type)
     return protect_region(g_copy_e820_map, &g_nr_map, addr, size, type);
 }
 
-/*
- * e820_check_region
- *
- * Given a range, check which kind of range it covers
- *
- * return: E820_GAP, it covers gap in e820 map;
- *         E820_MIXED, it covers at least two different kinds of ranges;
- *         E820_XXX, it covers E820_XXX range only;
- *         it will not return 0.
- */
-uint32_t e820_check_region(uint64_t base, uint64_t length)
-{
-    memory_map_t* e820_entry;
-    uint64_t end = base + length, e820_base, e820_end, e820_length;
-    uint32_t type;
-    uint32_t ret = 0;
-    bool gap = true; /* suppose there is always a virtual gap at first */
-
-    e820_base = 0;
-    e820_length = 0;
-
-    for ( unsigned int i = 0; i < g_nr_map; i = gap ? i : i+1, gap = !gap ) {
-        e820_entry = &g_copy_e820_map[i];
-        if ( gap ) {
-            /* deal with the gap in e820 map */
-            e820_base = e820_base + e820_length;
-            e820_length = e820_base_64(e820_entry) - e820_base;
-            type = E820_GAP;
-        }
-        else {
-            /* deal with the normal item in e820 map */
-            e820_base = e820_base_64(e820_entry);
-            e820_length = e820_length_64(e820_entry);
-            type = e820_entry->type;
-        }
-
-        if ( e820_length == 0 )
-            continue; /* if the range is zero, then skip */
-
-        e820_end = e820_base + e820_length;
-
-        if ( !is_overlapped(base, end, e820_base, e820_end) )
-            continue; /* if no overlapping, then skip */
-
-        /* if the value of ret is not assigned before,
-           then set ret to type directly */
-        if ( ret == 0 ) {
-            ret = type;
-            continue;
-        }
-
-        /* if the value of ret is assigned before but ret is equal to type,
-           then no need to do anything */
-        if ( ret == type )
-            continue;
-
-        /* if the value of ret is assigned before but it is GAP,
-           then no need to do anything since any type merged with GAP is GAP */
-        if ( ret == E820_GAP )
-            continue;
-
-        /* if the value of ret is assigned before but it is not GAP and type
-           is GAP now this time, then set ret to GAP since any type merged
-           with GAP is GAP. */
-        if ( type == E820_GAP ) {
-            ret = E820_GAP;
-            continue;
-        }
-
-        /* if the value of ret is assigned before but both ret and type are
-           not GAP and their values are not equal, then set ret to MIXED
-           since any two non-GAP values are merged into MIXED if they are
-           not equal. */
-        ret = E820_MIXED;
-    }
-
-    /* deal with the last gap */
-    if ( is_overlapped(base, end, e820_base + e820_length, (uint64_t)-1) )
-        ret = E820_GAP;
-
-    /* print the result */
-    printk(SKBOOT_DETA" (range from %016Lx to %016Lx is in ", base, base + length);
-    switch (ret) {
-        case E820_RAM:
-            printk(SKBOOT_INFO"E820_RAM)\n"); break;
-        case E820_RESERVED:
-            printk(SKBOOT_INFO"E820_RESERVED)\n"); break;
-        case E820_ACPI:
-            printk(SKBOOT_INFO"E820_ACPI)\n"); break;
-        case E820_NVS:
-            printk(SKBOOT_INFO"E820_NVS)\n"); break;
-        case E820_UNUSABLE:
-            printk(SKBOOT_INFO"E820_UNUSABLE)\n"); break;
-        case E820_GAP:
-            printk(SKBOOT_INFO"E820_GAP)\n"); break;
-        case E820_MIXED:
-            printk(SKBOOT_INFO"E820_MIXED)\n"); break;
-        default:
-            printk(SKBOOT_INFO"UNKNOWN)\n");
-    }
-
-    return ret;
-}
-
-/*
- * e820_reserve_ram
- *
- * Given the range, any ram range in e820 is in it, change type to reserved.
- *
- * return:  false = error
- */
-bool e820_reserve_ram(uint64_t base, uint64_t length)
-{
-    memory_map_t* e820_entry;
-    uint64_t e820_base, e820_length, e820_end;
-    uint64_t end;
-
-    if ( length == 0 )
-        return true;
-
-    end = base + length;
-
-    /* find where our region should cover the ram in e820 */
-    for ( unsigned int i = 0; i < g_nr_map; i++ ) {
-        e820_entry = &g_copy_e820_map[i];
-        e820_base = e820_base_64(e820_entry);
-        e820_length = e820_length_64(e820_entry);
-        e820_end = e820_base + e820_length;
-
-        /* if not ram, no need to deal with */
-        if ( e820_entry->type != E820_RAM )
-            continue;
-
-        /* if the range is before the current ram range, skip the ram range */
-        if ( end <= e820_base )
-            continue;
-        /* if the range is after the current ram range, skip the ram range */
-        if ( base >= e820_end )
-            continue;
-
-        /* case 1: the current ram range is within the range:
-           base, e820_base, e820_end, end */
-        if ( (base <= e820_base) && (e820_end <= end) )
-            e820_entry->type = E820_RESERVED;
-        /* case 2: overlapping:
-           base, e820_base, end, e820_end */
-        else if ( (e820_base >= base) && (end > e820_base) &&
-                  (e820_end > end) ) {
-            /* split the current ram map */
-            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i-1,
-                                      e820_base, (end - e820_base),
-                                      E820_RESERVED) )
-                return false;
-            /* fixup the current ram map */
-            i++;
-            split64b(end, &(g_copy_e820_map[i].base_addr_low),
-                     &(g_copy_e820_map[i].base_addr_high));
-            split64b(e820_end - end, &(g_copy_e820_map[i].length_low),
-                     &(g_copy_e820_map[i].length_high));
-            /* no need to check more */
-            break;
-        }
-        /* case 3: overlapping:
-           e820_base, base, e820_end, end */
-        else if ( (base > e820_base) && (e820_end > base) &&
-                  (end >= e820_end) ) {
-            /* fixup the current ram map */
-            split64b((base - e820_base), &(g_copy_e820_map[i].length_low),
-                     &(g_copy_e820_map[i].length_high));
-            /* split the current ram map */
-            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, base,
-                                      (e820_end - base), E820_RESERVED) )
-                return false;
-            i++;
-        }
-        /* case 4: the range is within the current ram range:
-           e820_base, base, end, e820_end */
-        else if ( (base > e820_base) && (e820_end > end) ) {
-            /* fixup the current ram map */
-            split64b((base - e820_base), &(g_copy_e820_map[i].length_low),
-                     &(g_copy_e820_map[i].length_high));
-            /* split the current ram map */
-            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, base,
-                                      length, E820_RESERVED) )
-                return false;
-            i++;
-            /* fixup the rest of the current ram map */
-            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, end,
-                                      (e820_end - end), e820_entry->type) )
-                return false;
-            i++;
-            /* no need to check more */
-            break;
-        }
-        else {
-            printk(SKBOOT_ERR"we should never get here\n");
-            return false;
-        }
-    }
-
-    return true;
-}
-
 void print_e820_map(void)
 {
     print_map(g_copy_e820_map, g_nr_map);
-}
-
-bool get_ram_ranges(uint64_t *min_lo_ram, uint64_t *max_lo_ram,
-                    uint64_t *min_hi_ram, uint64_t *max_hi_ram)
-{
-    if ( min_lo_ram == NULL || max_lo_ram == NULL ||
-         min_hi_ram == NULL || max_hi_ram == NULL )
-        return false;
-
-    *min_lo_ram = *min_hi_ram = ~0ULL;
-    *max_lo_ram = *max_hi_ram = 0;
-    bool found_reserved_region = false;
-    uint64_t last_min_ram_base = 0, last_min_ram_size = 0;
-
-    /*
-     * if g_min_ram > 0, we will never mark a region > g_min_ram in size
-     * as reserved even if it is after a reserved region (effectively
-     * we ignore reserved regions below the last type 1 region
-     * > g_min_ram in size)
-     * so in order to reserve RAM regions above this last region, we need
-     * to find it first so that we can tell when we have passed it
-     */
-    if ( g_min_ram > 0 ) {
-        get_highest_sized_ram(g_min_ram, 0x100000000ULL, &last_min_ram_base,
-                              &last_min_ram_size);
-        printk(SKBOOT_DETA"highest min_ram (0x%x) region found: base=0x%Lx, size=0x%Lx\n",
-               g_min_ram, last_min_ram_base, last_min_ram_size);
-    }
-
-    for ( unsigned int i = 0; i < g_nr_map; i++ ) {
-        memory_map_t *entry = &g_copy_e820_map[i];
-        uint64_t base = e820_base_64(entry);
-        uint64_t limit = base + e820_length_64(entry);
-
-        if ( entry->type == E820_RAM ) {
-            /* if range straddles 4GB boundary, that is an error */
-            if ( base < 0x100000000ULL && limit > 0x100000000ULL ) {
-                printk(SKBOOT_ERR"e820 memory range straddles 4GB boundary\n");
-                return false;
-            }
-
-            /*
-             * some BIOSes put legacy USB buffers in reserved regions <4GB,
-             * which if DMA protected cause SMM to hang, so make sure that
-             * we don't overlap any of these even if that wastes RAM
-             * ...unless min_ram was specified
-             */
-            if ( !found_reserved_region || base <= last_min_ram_base ) {
-                if ( base < 0x100000000ULL && base < *min_lo_ram )
-                    *min_lo_ram = base;
-                if ( limit <= 0x100000000ULL && limit > *max_lo_ram )
-                    *max_lo_ram = limit;
-            }
-            else {     /* need to reserve low RAM above reserved regions */
-                if ( base < 0x100000000ULL ) {
-                    printk(SKBOOT_DETA"discarding RAM above reserved regions: 0x%Lx - 0x%Lx\n", base, limit);
-                    if ( !e820_reserve_ram(base, limit - base) )
-                        return false;
-                }
-            }
-
-            if ( base >= 0x100000000ULL && base < *min_hi_ram )
-                *min_hi_ram = base;
-            if ( limit > 0x100000000ULL && limit > *max_hi_ram )
-                *max_hi_ram = limit;
-        }
-        else {
-            /* parts of low memory may be reserved for cseg, ISA hole,
-               etc. but these seem OK to DMA protect, so ignore reserved
-               regions <0x100000 */
-            if ( *min_lo_ram != ~0ULL && limit > 0x100000ULL )
-                found_reserved_region = true;
-        }
-    }
-
-    /* no low RAM found */
-    if ( *min_lo_ram >= *max_lo_ram ) {
-        printk(SKBOOT_ERR"no low ram in e820 map\n");
-        return false;
-    }
-    /* no high RAM found */
-    if ( *min_hi_ram >= *max_hi_ram )
-        *min_hi_ram = *max_hi_ram = 0;
-
-    return true;
 }
 
 /* find highest (< <limit>) RAM region of at least <size> bytes */

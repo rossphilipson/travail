@@ -63,8 +63,6 @@ typedef struct {
 #endif
 
 extern void print_loader_ctx(loader_ctx *lctx);
-extern bool find_module_by_pattern(loader_ctx *lctx, void **base, size_t *size,
-                                   const void *pattern, size_t len);
 extern uint32_t find_efi_memmap(loader_ctx *lctx, uint32_t *descr_size,
                                 uint32_t *descr_vers, uint32_t *mmap_size);
 
@@ -86,7 +84,7 @@ extern unsigned long get_loader_ctx_end(loader_ctx *lctx);
 extern bool find_skl_module(loader_ctx *lctx);
 extern void replace_e820_map(loader_ctx *lctx);
 extern bool is_loader_launch_efi(loader_ctx *lctx);
-extern bool get_loader_efi_ptr(loader_ctx *lctx, uint32_t *address, 
+extern bool get_loader_efi_ptr(loader_ctx *lctx, uint32_t *address,
                                uint64_t *long_address);
 extern void load_framebuffer_info(loader_ctx *lctx, void *vscr);
 extern char *get_first_module_cmd(loader_ctx *lctx);
