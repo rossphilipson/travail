@@ -239,6 +239,8 @@ static void skinit_launch_environment(void)
     asm volatile ("movl %0, %%eax\n"
 	          "skinit\n"
                   : : "r" (slb));
+
+    printk(SKBOOT_INFO"SKINIT failed\n");
 }
 
 void begin_launch(void *addr, uint32_t magic)
