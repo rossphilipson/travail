@@ -57,7 +57,7 @@ void relocate_skl_module(void)
 void print_skl_module(void)
 {
     /* Otherwise it looks like the SKL module */
-    printk(SKBOOT_INFO"SKL module @ %p - offsets:\n", g_skl_module);
+    printk(SKBOOT_INFO"SKL module @ %p size: 0x%x - offsets:\n", g_skl_module, g_skl_size);
     printk(SKBOOT_INFO"    entry:            0x%x\n", g_skl_module->skl_entry_point);
     printk(SKBOOT_INFO"    bootloader_data:  0x%x\n", g_skl_module->bootloader_data_offset);
     printk(SKBOOT_INFO"    skl_info:         0x%x\n", g_skl_module->skl_info_offset);
@@ -127,7 +127,7 @@ bool prepare_skl_bootloader_data(void)
     itag = (skl_tag_setup_indirect_t *)((u8 *)ltag + ltag->hdr.len);
     itag->hdr.type = SKL_TAG_SETUP_INDIRECT;
     itag->hdr.len = sizeof(skl_tag_setup_indirect_t);
-    linux_skl_setup_indirect(&itag->data);
+    linux_skl_setup_indirect((setup_data_t *)((u8 *)itag + sizeof(skl_tag_hdr_t)));
     stag->size += itag->hdr.len;
     printk(SKBOOT_INFO"SKL added setup indirect tag\n");
 
