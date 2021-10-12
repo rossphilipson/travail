@@ -231,7 +231,9 @@ static void skinit_launch_environment(void)
 
     printk(SKBOOT_INFO"SKINIT assert #INIT on APs\n");
     *lapic = (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT);
-    delay(10);
+
+    printk(SKBOOT_INFO"Wait for IPI delivery\n");
+    delay(1000);
 
     disable_intr();
 
