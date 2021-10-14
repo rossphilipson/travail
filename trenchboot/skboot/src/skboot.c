@@ -62,6 +62,7 @@ uint32_t g_skl_size = 0;
 static uint32_t g_default_error_action = SK_SHUTDOWN_HALT;
 static unsigned int g_cpuid_ext_feat_info;
 static bool is_powercycle_required = true;
+static uint32_t apic_base;
 
 static void shutdown_system(uint32_t shutdown_type)
 {
@@ -226,11 +227,11 @@ extern void debug_put_chars(void);
 
 static void skinit_launch_environment(void)
 {
-    uint32_t *lapic = (uint32_t *)(LAPIC_BASE + LAPIC_ICR_LO);
+    uint32_t *icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
     uint32_t slb = (uint32_t)g_skl_module;
 
-    printk(SKBOOT_INFO"SKINIT assert #INIT on APs\n");
-    *lapic = (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT);
+    printk(SKBOOT_INFO"SKINIT assert #INIT on APs - ICR reg: %p\n", icr_reg);
+    writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
 
     printk(SKBOOT_INFO"Wait for IPI delivery\n");
     delay(1000);
@@ -276,11 +277,14 @@ void begin_launch(void *addr, uint32_t magic)
         error_action(SK_ERR_FATAL);
 
     /* we should only be executing on the BSP */
-    if ( !(rdmsr(MSR_APICBASE) & APICBASE_BSP) ) {
+    apic_base = (uint32_t)rdmsr(MSR_APICBASE);
+    if ( !(apic_base & APICBASE_BSP) ) {
         printk(SKBOOT_INFO"entry processor is not BSP\n");
         error_action(SK_ERR_FATAL);
     }
-    printk(SKBOOT_INFO"BSP is cpu %u\n", get_apicid());
+    printk(SKBOOT_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
+    /* mask off low order bits to get base address */
+    apic_base &= APICBASE_BASE_MASK;
 
     /* make copy of e820 map that we will use and adjust */
     if ( !copy_e820_map(g_ldr_ctx) )

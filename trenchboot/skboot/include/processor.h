@@ -94,11 +94,6 @@
 #define CR4_SMXE 0x00004000/* enable SMX */
 #define CR4_PCIDE 0x00020000/* enable PCID */
 
-#define LAPIC_BASE            0xFEE00000
-#define LAPIC_ICR_LO          0x300
-#define ICR_MODE_INIT         (5<<8)
-#define ICR_DELIVER_EXCL_SELF (3<<18)
-
 /* From http://fxr.watson.org/fxr/source/i386/include/param.h */
 #define PAGE_SHIFT       12                 /* LOG2(PAGE_SIZE) */
 #define PAGE_SIZE        (1 << PAGE_SHIFT)  /* bytes/page */
@@ -322,12 +317,19 @@ static inline void cpu_mwait(int extensions, int hints)
     asm volatile ("mwait;" : :"a" (hints), "c" (extensions));
 }
 
-#define MSR_APICBASE                           0x01b
-#define MSR_MCG_CAP                            0x179
-#define MSR_MCG_STATUS                         0x17a
-#define MSR_MC0_STATUS                         0x401
+#define MSR_APICBASE         0x01b
+#define MSR_MCG_CAP          0x179
+#define MSR_MCG_STATUS       0x17a
+#define MSR_MC0_STATUS       0x401
 
-#define APICBASE_BSP                           0x00000100
+#define APICBASE_BSP         (1<<8)
+#define XAPIC_ENABLE         (1<<11)
+#define X2APIC_ENABLE        (1<<10)
+#define APICBASE_BASE_MASK   (0xfffff<<12)
+
+#define LAPIC_ICR_LO          0x300
+#define ICR_MODE_INIT         (5<<8)
+#define ICR_DELIVER_EXCL_SELF (3<<18)
 
 static inline uint64_t rdmsr(uint32_t msr)
 {
@@ -347,6 +349,7 @@ static inline void wrmsr(uint32_t msr, uint64_t newval)
 
 #define writeb(va, d)	(*(volatile uint8_t *) (va) = (d))
 #define writew(va, d)	(*(volatile uint16_t *) (va) = (d))
+#define writel(va, d)	(*(volatile uint32_t *) (va) = (d))
 
 static inline uint8_t inb(uint16_t port)
 {
