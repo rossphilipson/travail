@@ -225,16 +225,37 @@ void error_action(int error)
 
 extern void debug_put_chars(void);
 
-static void skinit_launch_environment(void)
+/* Broadcast INIT to all APs except self */
+static void send_init_ipi_shorthand(void)
 {
-    uint32_t *icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
-    uint32_t slb = (uint32_t)g_skl_module;
+    uint32_t *icr_reg;
 
-    printk(SKBOOT_INFO"SKINIT assert #INIT on APs - ICR reg: %p\n", icr_reg);
-    writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
+    /* accessing the ICR depends on the APIC mode */
+    if (apic_base & X2APIC_ENABLE) {
+        mb();
+
+        /* access ICR through MSR */
+        wrmsr(MSR_X2APIC_ICR, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
+        printk(SKBOOT_INFO"SKINIT assert #INIT on APs - x2APIC MSR reg: 0x%x\n", MSR_X2APIC_ICR);
+    } else {
+        /* mask off low order bits to get base address */
+        apic_base &= APICBASE_BASE_MASK;
+        /* access ICR through MMIO */
+        icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
+
+        writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
+        printk(SKBOOT_INFO"SKINIT assert #INIT on APs - xAPIC ICR reg: %p\n", icr_reg);
+    }
 
     printk(SKBOOT_INFO"Wait for IPI delivery\n");
     delay(1000);
+}
+
+static void skinit_launch_environment(void)
+{
+    uint32_t slb = (uint32_t)g_skl_module;
+
+    send_init_ipi_shorthand();
 
     disable_intr();
 
@@ -283,8 +304,6 @@ void begin_launch(void *addr, uint32_t magic)
         error_action(SK_ERR_FATAL);
     }
     printk(SKBOOT_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
-    /* mask off low order bits to get base address */
-    apic_base &= APICBASE_BASE_MASK;
 
     /* make copy of e820 map that we will use and adjust */
     if ( !copy_e820_map(g_ldr_ctx) )

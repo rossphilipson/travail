@@ -328,6 +328,7 @@ static inline void cpu_mwait(int extensions, int hints)
 #define APICBASE_BASE_MASK   (0xfffff<<12)
 
 #define LAPIC_ICR_LO          0x300
+#define MSR_X2APIC_ICR        0x830
 #define ICR_MODE_INIT         (5<<8)
 #define ICR_DELIVER_EXCL_SELF (3<<18)
 
