@@ -461,7 +461,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     return true;
 }
 
-void linux_skl_setup_indirect(setup_data_t *data)
+void linux_skl_setup_indirect(setup_data_t *data, uint32_t adj_size)
 {
     setup_indirect_t *ind =
         (setup_indirect_t *)((u8 *)data + sizeof(setup_data_t));
@@ -471,8 +471,11 @@ void linux_skl_setup_indirect(setup_data_t *data)
     data->len = sizeof(setup_data_t) + sizeof(setup_indirect_t);
     ind->type = (SETUP_INDIRECT | SETUP_SECURE_LAUNCH);
     ind->reserved = 0;
-    ind->len = g_skl_size;
+    ind->len = adj_size;
     ind->addr = (uint64_t)(uint32_t)g_skl_module;
+
+    printk(SKBOOT_INFO"SKL indirect tag setup - addr: %p size: 0x%x\n",
+           g_skl_module, adj_size);
 
     /* Chain it into the setup_data list, stick it up front */
     data->next = g_sl_kernel_setup.boot_params->hdr.setup_data;

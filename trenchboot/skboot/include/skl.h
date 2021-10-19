@@ -15,7 +15,7 @@ typedef struct __packed {
     uint32_t version;
     uint16_t msb_key_algo;
     uint8_t  msb_key_hash[64]; /* Support up to SHA512 */
-} lz_info_t;
+} skl_info_t;
 
 #define SKL_TAG_CLASS_MASK	0xF0
 

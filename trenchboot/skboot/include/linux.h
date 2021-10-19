@@ -255,13 +255,6 @@ struct efi_info {
 	uint32_t efi_memmap_hi;
 };
 
-struct setup_data {
-	uint64_t next;
-	uint32_t type;
-	uint32_t len;
-	/* data */
-};
-
 struct kernel_info {
 	char magic[4];
 	uint32_t size;
@@ -283,7 +276,7 @@ extern il_kernel_setup_t g_sl_kernel_setup;
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
                                const void *initrd_image, size_t initrd_size);
 
-extern void linux_skl_setup_indirect(setup_data_t *data);
+extern void linux_skl_setup_indirect(setup_data_t *data, uint32_t adj_size);
 
 #endif /* __LINUX_DEFNS_H__ */
 
