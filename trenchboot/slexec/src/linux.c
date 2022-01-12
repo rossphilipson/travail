@@ -57,11 +57,11 @@ printk_long(const char *what)
 {
     /* chunk the command line into 70 byte chunks */
 #define CHUNK_SIZE 70
-    int      cmdlen = sk_strlen(what);
+    int      cmdlen = sl_strlen(what);
     const char    *cptr = what;
     char     cmdchunk[CHUNK_SIZE+1];
     while (cmdlen > 0) {
-        sk_strncpy(cmdchunk, cptr, CHUNK_SIZE);
+        sl_strncpy(cmdchunk, cptr, CHUNK_SIZE);
         cmdchunk[CHUNK_SIZE] = 0;
         printk(SLEXEC_INFO"\t%s\n", cmdchunk);
         cmdlen -= CHUNK_SIZE;
@@ -338,11 +338,11 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         return false;
     }
     const size_t kernel_cmdline_size = REAL_END_OFFSET - KERNEL_CMDLINE_OFFSET;
-    size_t kernel_cmdline_strlen = sk_strlen(kernel_cmdline);
+    size_t kernel_cmdline_strlen = sl_strlen(kernel_cmdline);
     if (kernel_cmdline_strlen > kernel_cmdline_size - 1)
         kernel_cmdline_strlen = kernel_cmdline_size - 1;
     sk_memset((void *)hdr->cmd_line_ptr, 0, kernel_cmdline_size);
-    sk_memcpy((void *)hdr->cmd_line_ptr, kernel_cmdline, kernel_cmdline_strlen);
+    sl_memcpy((void *)hdr->cmd_line_ptr, kernel_cmdline, kernel_cmdline_strlen);
 
     printk(SLEXEC_INFO"Linux cmdline from 0x%lx to 0x%lx:\n",
            (unsigned long)hdr->cmd_line_ptr,
@@ -362,7 +362,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         uint32_t descr_size = 0, descr_vers = 0, mmap_size = 0, efi_mmap_addr = 0;
 
         /* loader signature */
-        sk_memcpy(&efi->efi_ldr_sig, "EL64", sizeof(uint32_t));
+        sl_memcpy(&efi->efi_ldr_sig, "EL64", sizeof(uint32_t));
 
         /* EFI system table addr */
         {

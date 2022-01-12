@@ -247,7 +247,7 @@ typedef struct __packed {
 }
 
 #define UNLOAD_BLOB(buf, offset, blob, size) {\
-    sk_memcpy(buf + offset, blob, size);\
+    sl_memcpy(buf + offset, blob, size);\
     offset += size;\
 }
 
@@ -260,7 +260,7 @@ typedef struct __packed {
 }
 
 #define LOAD_BLOB(buf, offset, blob, size) {\
-    sk_memcpy(blob, buf + offset, size);\
+    sl_memcpy(blob, buf + offset, size);\
     offset += size;\
 }
 

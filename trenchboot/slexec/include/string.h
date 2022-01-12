@@ -39,16 +39,16 @@
 #include <stdarg.h>
 #include <types.h>
 
-int	 sk_memcmp(const void *b1, const void *b2, size_t len);
-char	*sk_index(const char *, int);
-int	 sk_strcmp(const char *, const char *);
-size_t	 sk_strlen(const char *);
-int	 sk_strncmp(const char *, const char *, size_t);
-char	*sk_strncpy(char * __restrict, const char * __restrict, size_t);
-void	*sk_memcpy(void *dst, const void *src, size_t len);
-int	 sk_snprintf(char *buf, size_t size, const char *fmt, ...);
-int	 sk_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap);
-unsigned long sk_strtoul(const char *nptr, char **endptr, int base);
+int	 sl_memcmp(const void *b1, const void *b2, size_t len);
+char	*sl_index(const char *, int);
+int	 sl_strcmp(const char *, const char *);
+size_t	 sl_strlen(const char *);
+int	 sl_strncmp(const char *, const char *, size_t);
+char	*sl_strncpy(char * __restrict, const char * __restrict, size_t);
+void	*sl_memcpy(void *dst, const void *src, size_t len);
+int	 sl_snprintf(char *buf, size_t size, const char *fmt, ...);
+int	 sl_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap);
+unsigned long sl_strtoul(const char *nptr, char **endptr, int base);
 
 static inline void *sk_memset(void *b, int c, size_t len)
 {
@@ -62,12 +62,12 @@ static inline void *sk_memset(void *b, int c, size_t len)
 
 static inline void *sk_memmove(void *dest, const void *src, size_t n)
 {
-	return sk_memcpy(dest, src, n);
+	return sl_memcpy(dest, src, n);
 }
 
 static __inline char *sk_strchr(const char *p, int ch)
 {
-	return sk_index(p, ch);
+	return sl_index(p, ch);
 }
 
 #endif /* __STRING_H__ */

@@ -75,9 +75,9 @@ static void shutdown_system(uint32_t shutdown_type)
     /* the case in SLEXEC */
 
     if ( shutdown_type >= ARRAY_SIZE(types) )
-        sk_snprintf(type, sizeof(type), "unknown: %u", shutdown_type);
+        sl_snprintf(type, sizeof(type), "unknown: %u", shutdown_type);
     else {
-        sk_strncpy(type, types[shutdown_type], sizeof(type));
+        sl_strncpy(type, types[shutdown_type], sizeof(type));
         type[sizeof(type) - 1] = '\0';
     }
     printk(SLEXEC_INFO"shutdown_system() called for shutdown_type: %s\n", type);
@@ -278,7 +278,7 @@ void begin_launch(void *addr, uint32_t magic)
     cmdline = get_cmdline(g_ldr_ctx);
     sk_memset(g_cmdline, '\0', sizeof(g_cmdline));
     if ( cmdline )
-        sk_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
+        sl_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
 
     /* always parse cmdline */
     skboot_parse_cmdline();

@@ -111,7 +111,7 @@ static void sha1_step(struct sha1_ctxt *ctxt)
 
 #if LITTLE_ENDIAN
     struct sha1_ctxt tctxt;
-    sk_memcpy(&tctxt.m.b8[0], &ctxt->m.b8[0], 64);
+    sl_memcpy(&tctxt.m.b8[0], &ctxt->m.b8[0], 64);
     ctxt->m.b8[0] = tctxt.m.b8[3]; ctxt->m.b8[1] = tctxt.m.b8[2];
     ctxt->m.b8[2] = tctxt.m.b8[1]; ctxt->m.b8[3] = tctxt.m.b8[0];
     ctxt->m.b8[4] = tctxt.m.b8[7]; ctxt->m.b8[5] = tctxt.m.b8[6];
@@ -243,7 +243,7 @@ static void sha1_loop(struct sha1_ctxt *ctxt,const uint8_t *input,size_t len)
         gaplen = 64 - gapstart;
 
         copysiz = (gaplen < len - off) ? gaplen : len - off;
-        sk_memcpy(&ctxt->m.b8[gapstart],&input[off], copysiz);
+        sl_memcpy(&ctxt->m.b8[gapstart],&input[off], copysiz);
         COUNT += copysiz;
         COUNT %= 64;
         ctxt->c.b64[0] += copysiz * 8;
@@ -259,7 +259,7 @@ static void sha1_result(struct sha1_ctxt *ctxt,unsigned char *digest0)
     digest = (uint8_t *)digest0;
     sha1_pad(ctxt);
 #if BIG_ENDIAN
-    sk_memcpy(digest, &ctxt->h.b8[0],20);
+    sl_memcpy(digest, &ctxt->h.b8[0],20);
 #else
     digest[0] = ctxt->h.b8[3]; digest[1] = ctxt->h.b8[2];
     digest[2] = ctxt->h.b8[1]; digest[3] = ctxt->h.b8[0];

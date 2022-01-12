@@ -36,7 +36,7 @@ bool is_skl_module(const void *skl_base, uint32_t skl_size)
         return false;
     }
 
-    if (sk_memcmp(info->uuid, skl_info.uuid, 16)) {
+    if (sl_memcmp(info->uuid, skl_info.uuid, 16)) {
         printk(SLEXEC_INFO"Possible SKL module incorrect UUID\n");
         return false;
     }
@@ -49,7 +49,7 @@ void relocate_skl_module(void)
     void *dest = (void *)SLEXEC_FIXED_SKL_BASE;
 
     /* TODO hardcoded relocation for now */
-    sk_memcpy(dest, g_skl_module, g_skl_size);
+    sl_memcpy(dest, g_skl_module, g_skl_size);
     printk(SLEXEC_INFO"SKL relocated module from %p to %p\n", g_skl_module, dest);
     g_skl_module = dest;
 }
@@ -88,7 +88,7 @@ bool prepare_skl_bootloader_data(void)
     sha256_buffer((u8 *)g_skl_module,
                   g_skl_module->skl_info_offset,
                   hash.sha256);
-    sk_memcpy((u8 *)htag + sizeof(skl_tag_hash_t),
+    sl_memcpy((u8 *)htag + sizeof(skl_tag_hash_t),
               &hash.sha256[0], SHA256_LENGTH);
     stag->size += htag->hdr.len;
     printk(SLEXEC_INFO"SKL added hash tag for SHA256\n");
@@ -100,7 +100,7 @@ bool prepare_skl_bootloader_data(void)
     sha1_buffer((u8 *)g_skl_module,
                 g_skl_module->skl_info_offset,
                 hash.sha1);
-    sk_memcpy((u8 *)htag + sizeof(skl_tag_hash_t),
+    sl_memcpy((u8 *)htag + sizeof(skl_tag_hash_t),
               &hash.sha1[0], SHA1_LENGTH);
     stag->size += htag->hdr.len;
     printk(SLEXEC_INFO"SKL added hash tag for SHA1\n");

@@ -78,7 +78,7 @@ static void memlog_write(const char *str, unsigned int count)
     if ( g_log->curr_pos + count > g_log->max_size )
         g_log->curr_pos = 0;
 
-    sk_memcpy(&g_log->buf[g_log->curr_pos], str, count);
+    sl_memcpy(&g_log->buf[g_log->curr_pos], str, count);
     g_log->curr_pos += count;
 
     /* if the string wasn't NULL-terminated, then NULL-terminate the log */
@@ -131,7 +131,7 @@ void printk(const char *fmt, ...)
 
     sk_memset(buf, '\0', sizeof(buf));
     va_start(ap, fmt);
-    n = sk_vscnprintf(buf, sizeof(buf), fmt, ap);
+    n = sl_vscnprintf(buf, sizeof(buf), fmt, ap);
 
     log_level = get_loglvl_prefix(&pbuf, &n);
 

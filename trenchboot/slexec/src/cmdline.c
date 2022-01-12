@@ -101,7 +101,7 @@ static const sk_loglvl_map_t g_loglvl_map[] = {
 static const char* get_option_val(const cmdline_option_t *options,  char vals[][MAX_VALUE_LEN],    const char *opt_name)
 {
     for ( int i = 0; options[i].name != NULL; i++ ) {
-        if ( sk_strcmp(options[i].name, opt_name) == 0 )
+        if ( sl_strcmp(options[i].name, opt_name) == 0 )
             return vals[i];
     }
     printk(SLEXEC_ERR"requested unknown option: %s\n", opt_name);
@@ -116,7 +116,7 @@ static void cmdline_parse(const char *cmdline, const cmdline_option_t *options,
 
     /* copy default values to vals[] */
     for ( i = 0; options[i].name != NULL; i++ ) {
-        sk_strncpy(vals[i], options[i].def_val, MAX_VALUE_LEN-1);
+        sl_strncpy(vals[i], options[i].def_val, MAX_VALUE_LEN-1);
         vals[i][MAX_VALUE_LEN-1] = '\0';
     }
 
@@ -136,7 +136,7 @@ static void cmdline_parse(const char *cmdline, const cmdline_option_t *options,
         const char *opt_start = p;
         const char *opt_end = sk_strchr(opt_start, ' ');
         if ( opt_end == NULL )
-            opt_end = opt_start + sk_strlen(opt_start);
+            opt_end = opt_start + sl_strlen(opt_start);
         p = opt_end;
 
         /* find value part; if no value found, use default and continue */
@@ -154,8 +154,8 @@ static void cmdline_parse(const char *cmdline, const cmdline_option_t *options,
 
         /* value found, so copy it */
         for ( i = 0; options[i].name != NULL; i++ ) {
-            if ( sk_strncmp(options[i].name, opt_start, opt_name_size ) == 0 ) {
-                sk_strncpy(vals[i], val_start, copy_size);
+            if ( sl_strncmp(options[i].name, opt_start, opt_name_size ) == 0 ) {
+                sl_strncpy(vals[i], val_start, copy_size);
                 vals[i][copy_size] = '\0'; /* add '\0' to the end of string */
                 break;
             }
@@ -206,9 +206,9 @@ void get_skboot_loglvl(void)
         unsigned int i;
 
         for ( i = 0; i < ARRAY_SIZE(g_loglvl_map); i++ ) {
-            if ( sk_strncmp(loglvl, g_loglvl_map[i].log_name,
-                     sk_strlen(g_loglvl_map[i].log_name)) == 0 ) {
-                loglvl += sk_strlen(g_loglvl_map[i].log_name);
+            if ( sl_strncmp(loglvl, g_loglvl_map[i].log_name,
+                     sl_strlen(g_loglvl_map[i].log_name)) == 0 ) {
+                loglvl += sl_strlen(g_loglvl_map[i].log_name);
 
                 if ( g_loglvl_map[i].log_val == SLEXEC_LOG_LEVEL_NONE ) {
                     g_log_level = SLEXEC_LOG_LEVEL_NONE;
@@ -242,7 +242,7 @@ void get_skboot_log_targets(void)
         return;
 
     /* determine if no targets set explicitly */
-    if ( sk_strcmp(targets, "none") == 0 ) {
+    if ( sl_strcmp(targets, "none") == 0 ) {
         g_log_targets = SLEXEC_LOG_TARGET_NONE; /* print nothing */
         return;
     }
@@ -251,15 +251,15 @@ void get_skboot_log_targets(void)
     g_log_targets = SLEXEC_LOG_TARGET_NONE;
 
     while ( *targets != '\0' ) {
-        if ( sk_strncmp(targets, "memory", 6) == 0 ) {
+        if ( sl_strncmp(targets, "memory", 6) == 0 ) {
             g_log_targets |= SLEXEC_LOG_TARGET_MEMORY;
             targets += 6;
         }
-        else if ( sk_strncmp(targets, "serial", 6) == 0 ) {
+        else if ( sl_strncmp(targets, "serial", 6) == 0 ) {
             g_log_targets |= SLEXEC_LOG_TARGET_SERIAL;
             targets += 6;
         }
-        else if ( sk_strncmp(targets, "vga", 3) == 0 ) {
+        else if ( sl_strncmp(targets, "vga", 3) == 0 ) {
             g_log_targets |= SLEXEC_LOG_TARGET_VGA;
             targets += 3;
         }
@@ -276,15 +276,15 @@ void get_skboot_log_targets(void)
 static bool parse_pci_bdf(const char **bdf, uint32_t *bus, uint32_t *slot,
                           uint32_t *func)
 {
-    *bus = sk_strtoul(*bdf, (char **)bdf, 16);
+    *bus = sl_strtoul(*bdf, (char **)bdf, 16);
     if ( **bdf != ':' )
         return false;
     (*bdf)++;
-    *slot = sk_strtoul(*bdf, (char **)bdf, 16);
+    *slot = sl_strtoul(*bdf, (char **)bdf, 16);
     if ( **bdf != '.' )
         return false;
     (*bdf)++;
-    *func = sk_strtoul(*bdf, (char **)bdf, 16);
+    *func = sl_strtoul(*bdf, (char **)bdf, 16);
 
     return true;
 }
@@ -324,7 +324,7 @@ static bool parse_com_fmt(const char **fmt)
 
 
     /* must specify all values */
-    if ( sk_strlen(*fmt) < 3 )
+    if ( sl_strlen(*fmt) < 3 )
         return false;
 
     /* data bits */
@@ -357,7 +357,7 @@ static bool parse_com_fmt(const char **fmt)
 static bool parse_serial_param(const char *com)
 {
     /* parse baud */
-    g_com_port.comc_curspeed = sk_strtoul(com, (char **)&com, 10);
+    g_com_port.comc_curspeed = sl_strtoul(com, (char **)&com, 10);
     if ( (g_com_port.comc_curspeed < 1200) ||
          (g_com_port.comc_curspeed > 115200) )
         return false;
@@ -365,7 +365,7 @@ static bool parse_serial_param(const char *com)
     /* parse clock hz */
     if ( *com == '/' ) {
         ++com;
-        g_com_port.comc_clockhz = sk_strtoul(com, (char **)&com, 0) << 4;
+        g_com_port.comc_clockhz = sl_strtoul(com, (char **)&com, 0) << 4;
         if ( g_com_port.comc_clockhz == 0 )
             return false;
     }
@@ -383,7 +383,7 @@ static bool parse_serial_param(const char *com)
     if ( *com != ',' )
         goto exit;
     ++com;
-    g_com_port.comc_port = sk_strtoul(com, (char **)&com, 0);
+    g_com_port.comc_port = sl_strtoul(com, (char **)&com, 0);
     if ( g_com_port.comc_port == 0 )
         return false;
 
@@ -391,7 +391,7 @@ static bool parse_serial_param(const char *com)
     if ( *com != ',' )
         goto exit;
     ++com;
-    g_com_port.comc_irq = sk_strtoul(com, (char **)&com, 10);
+    g_com_port.comc_irq = sl_strtoul(com, (char **)&com, 10);
     if ( g_com_port.comc_irq == 0 )
         return false;
 
@@ -430,7 +430,7 @@ void get_skboot_vga_delay(void)
     if ( vga_delay == NULL )
         return;
 
-    g_vga_delay = sk_strtoul(vga_delay, NULL, 0);
+    g_vga_delay = sl_strtoul(vga_delay, NULL, 0);
 }
 
 uint32_t get_error_shutdown(void)
@@ -440,11 +440,11 @@ uint32_t get_error_shutdown(void)
               g_skboot_param_values,
               "error_shutdown");
     if ( error_shutdown != NULL ) {
-        if ( sk_strcmp(error_shutdown, "reboot") == 0 )
+        if ( sl_strcmp(error_shutdown, "reboot") == 0 )
             return SK_SHUTDOWN_REBOOT;
-        if ( sk_strcmp(error_shutdown, "shutdown") == 0 )
+        if ( sl_strcmp(error_shutdown, "shutdown") == 0 )
             return SK_SHUTDOWN_SHUTDOWN;
-        if ( sk_strcmp(error_shutdown, "halt") == 0 )
+        if ( sl_strcmp(error_shutdown, "halt") == 0 )
             return SK_SHUTDOWN_HALT;
     }
 
@@ -463,14 +463,14 @@ bool get_linux_vga(int *vid_mode)
     if ( vga == NULL || vid_mode == NULL )
         return false;
 
-    if ( sk_strcmp(vga, "normal") == 0 )
+    if ( sl_strcmp(vga, "normal") == 0 )
         *vid_mode = 0xFFFF;
-    else if ( sk_strcmp(vga, "ext") == 0 )
+    else if ( sl_strcmp(vga, "ext") == 0 )
         *vid_mode = 0xFFFE;
-    else if ( sk_strcmp(vga, "ask") == 0 )
+    else if ( sl_strcmp(vga, "ask") == 0 )
         *vid_mode = 0xFFFD;
     else
-        *vid_mode = sk_strtoul(vga, NULL, 0);
+        *vid_mode = sl_strtoul(vga, NULL, 0);
 
     return true;
 }
@@ -483,7 +483,7 @@ bool get_linux_mem(uint64_t *max_mem)
     if ( mem == NULL || max_mem == NULL )
         return false;
 
-    *max_mem = sk_strtoul(mem, &last, 0);
+    *max_mem = sl_strtoul(mem, &last, 0);
     if ( *max_mem == 0 )
         return false;
 

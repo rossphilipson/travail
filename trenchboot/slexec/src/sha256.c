@@ -162,7 +162,7 @@ static int sha256_process(sha256_state * md, const unsigned char *in, unsigned l
             inlen -= SHA256_BLOCK_SIZE;
         } else {
            n = MIN(inlen, (SHA256_BLOCK_SIZE - md->curlen));
-           sk_memcpy(md->buf + md->curlen, in, (size_t)n);
+           sl_memcpy(md->buf + md->curlen, in, (size_t)n);
            md->curlen += n;
            in += n;
            inlen -= n;

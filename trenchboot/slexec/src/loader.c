@@ -69,11 +69,11 @@ printk_long(char *what)
 {
     /* chunk the command line into 70 byte chunks */
 #define CHUNK_SIZE 70
-    int      cmdlen = sk_strlen(what);
+    int      cmdlen = sl_strlen(what);
     char    *cptr = what;
     char     cmdchunk[CHUNK_SIZE+1];
     while (cmdlen > 0) {
-        sk_strncpy(cmdchunk, cptr, CHUNK_SIZE);
+        sl_strncpy(cmdchunk, cptr, CHUNK_SIZE);
         cmdchunk[CHUNK_SIZE] = 0;
         printk(SLEXEC_INFO"\t%s\n", cmdchunk);
         cmdlen -= CHUNK_SIZE;
@@ -291,10 +291,10 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
                 printk(SLEXEC_ERR"could not find module cmdline\n");
                 return NULL;
             }
-            if ((sk_strlen(mod_string)) > (sk_strlen(cmdline))){
-                if (sk_strlen(mod_string) >= SLEXEC_KERNEL_CMDLINE_SIZE){
+            if ((sl_strlen(mod_string)) > (sl_strlen(cmdline))){
+                if (sl_strlen(mod_string) >= SLEXEC_KERNEL_CMDLINE_SIZE){
                     printk(SLEXEC_ERR"No room to copy MB2 cmdline [%d < %d]\n",
-                           (int)(sk_strlen(cmdline)), (int)(sk_strlen(mod_string)));
+                           (int)(sl_strlen(cmdline)), (int)(sl_strlen(mod_string)));
                 } else {
                     char *s = mod_string;
                     char *d = cmdbuf;
@@ -371,7 +371,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
                 return NULL;
             }
 
-            grow_mb2_tag(lctx, cur, sk_strlen(cmdbuf) - sk_strlen(cmd->string));
+            grow_mb2_tag(lctx, cur, sl_strlen(cmdbuf) - sl_strlen(cmd->string));
 
             /* now we're all good, except for fixing up cmd */
             {
@@ -395,7 +395,7 @@ unsigned long get_mbi_mem_end_mb1(const multiboot_info_t *mbi)
     unsigned long end = (unsigned long)(mbi + 1);
 
     if ( mbi->flags & MBI_CMDLINE )
-        end = max(end, mbi->cmdline + sk_strlen((char *)mbi->cmdline) + 1);
+        end = max(end, mbi->cmdline + sl_strlen((char *)mbi->cmdline) + 1);
     if ( mbi->flags & MBI_MODULES ) {
         end = max(end, mbi->mods_addr + mbi->mods_count * sizeof(module_t));
         unsigned int i;
@@ -403,7 +403,7 @@ unsigned long get_mbi_mem_end_mb1(const multiboot_info_t *mbi)
             module_t *p = get_module_mb1(mbi, i);
             if ( p == NULL )
                 break;
-            end = max(end, p->string + sk_strlen((char *)p->string) + 1);
+            end = max(end, p->string + sl_strlen((char *)p->string) + 1);
         }
     }
     if ( mbi->flags & MBI_AOUT ) {
@@ -424,7 +424,7 @@ unsigned long get_mbi_mem_end_mb1(const multiboot_info_t *mbi)
     /*  GET CONFIGURATION bios call", so skip it */
     if ( mbi->flags & MBI_BTLDNAME )
         end = max(end, mbi->boot_loader_name
-                       + sk_strlen((char *)mbi->boot_loader_name) + 1);
+                       + sl_strlen((char *)mbi->boot_loader_name) + 1);
     if ( mbi->flags & MBI_APM )
         /* per Grub-multiboot-Main Part2 Rev94-Structures, apm size is 20 */
         end = max(end, mbi->apm_table + 20);
@@ -973,7 +973,7 @@ void determine_loader_type(void *addr, uint32_t magic)
                  * image.
                  */
                 mb2_reloc = (void*)PAGE_DOWN(SLEXEC_BASE_ADDR - g_mb_orig_size);
-                sk_memcpy(mb2_reloc, addr, g_mb_orig_size);
+                sl_memcpy(mb2_reloc, addr, g_mb_orig_size);
                 g_ldr_ctx->addr = mb2_reloc;
                 addr = mb2_reloc;
                 printk(SLEXEC_INFO"MB2 relocated to: %p size: %x\n",

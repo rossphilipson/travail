@@ -42,20 +42,22 @@
 
 static bool div64(uint64_t num, uint32_t base, uint64_t *quot, uint32_t *rem)
 {
+    uint32_t high = num >> 32;
+    uint32_t low = (uint32_t)num;
+
     /* check exceptions */
     if ( (quot == NULL) || (rem == NULL) || (base == 0) )
         return false;
 
-    uint32_t high = num >> 32;
-    uint32_t low = (uint32_t)num;
     if ( high == 0 ) {
         *quot = low / base;
         *rem = low % base;
     }
     else {
-        uint64_t hquo = high / base;			\
+        uint64_t hquo = high / base;
         uint32_t hrem = high % base;
         uint32_t lquo;
+
         /*
          * use "divl" instead of "/" to avoid the link error
          * undefined reference to `__udivdi3'
@@ -118,7 +120,7 @@ typedef struct {
     bool digit;
 } modifiers_t;
 
-/* 
+/*
  * write the string into the buffer regarding flags
  * return the position of the buffer after writing
  */
@@ -128,8 +130,10 @@ static unsigned long write_string_to_buffer(char *buf, size_t buf_len,
                                             modifiers_t *mods)
 {
     unsigned int i;
-    if (mods->precision > 0) 
+
+    if (mods->precision > 0)
         strlen = (strlen > mods->precision) ? mods->precision : strlen;
+
     mods->width = ( mods->width > strlen ) ? mods->width - strlen : 0;
     if ( mods->flag & LEFT_ALIGNED ) { /* left align */
         for ( i = 0; i < strlen; i++ )
@@ -244,7 +248,7 @@ static size_t int2str(long long val, char *str, size_t strlen,
     return length;
 }
 
-int sk_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap)
+int sl_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap)
 {
     unsigned int buf_pos = 0; /* return value doesn't count the last '\0' */
     const char *fmt_ptr;
@@ -311,7 +315,7 @@ handle_width:
             fmt_ptr++;
         }
         else
-            mods.width = sk_strtoul(fmt_ptr, (char **)&fmt_ptr, 10);
+            mods.width = sl_strtoul(fmt_ptr, (char **)&fmt_ptr, 10);
 
         if ( *fmt_ptr == '.' ) {
             /* skip . */
@@ -323,7 +327,7 @@ handle_width:
                 fmt_ptr++;
             }
             else
-                mods.precision = sk_strtoul(fmt_ptr, (char **)&fmt_ptr, 10);
+                mods.precision = sl_strtoul(fmt_ptr, (char **)&fmt_ptr, 10);
         }
 
         /* parsing qualifier: h l L;
@@ -378,7 +382,7 @@ handle_width:
                 str[0] = (char)va_arg(ap, int);
                 mods.digit = false;
                 buf_pos = write_string_to_buffer(
-                              buf, size, buf_pos, str, sk_strlen(str), &mods);
+                              buf, size, buf_pos, str, sl_strlen(str), &mods);
                 break;
             }
         case 's':
@@ -388,7 +392,7 @@ handle_width:
                 str = va_arg(ap, char *);
                 mods.digit = false;
                 buf_pos = write_string_to_buffer(
-                              buf, size, buf_pos, str, sk_strlen(str), &mods);
+                              buf, size, buf_pos, str, sl_strlen(str), &mods);
                 break;
             }
         case 'o':
@@ -426,7 +430,7 @@ handle_width:
             break;
         case '%':
             buf_pos = write_char_to_buffer(buf, size, buf_pos, '%');
-            break; 
+            break;
         default:
             success = false;
             break;
@@ -435,22 +439,26 @@ handle_width:
         fmt_ptr++;         /* skip the above character */
         if ( success )
             fmt = fmt_ptr;
-        else
+        else {
             /* parsing % substring error, treat it as a normal string */
             /* *fmt = '%' */
             buf_pos = write_char_to_buffer(buf, size, buf_pos, *fmt++);
+        }
     } /* while */
 
     buf[buf_pos - 1] = '\0'; /* if the buffer is overflowed. */
     return buf_pos - 1;
 }
 
-int sk_snprintf(char *buf, size_t size, const char *fmt, ...)
+int sl_snprintf(char *buf, size_t size, const char *fmt, ...)
 {
     va_list ap;
+    int count;
+
     va_start(ap, fmt);
-    int count = sk_vscnprintf(buf, size, fmt, ap);
-	va_end(ap);
+    count = sl_vscnprintf(buf, size, fmt, ap);
+    va_end(ap);
+
     return count;
 }
 
@@ -458,64 +466,68 @@ int sk_snprintf(char *buf, size_t size, const char *fmt, ...)
  * index() is also present as the strchr() in the kernel; it does exactly the
  * same thing as it's userland equivalent.
  */
-char *sk_index(p, ch)
-	const char *p;
-	int ch;
+char *sl_index(p, ch)
 {
-	union {
-		const char *cp;
-		char *p;
-	} u;
+    const char *p;
+    int ch;
 
-	if (p == NULL)
-		return(NULL);
-	u.cp = p;
-	for (;; ++u.p) {
-		if (*u.p == ch)
-			return(u.p);
-		if (*u.p == '\0')
-			return(NULL);
-	}
-	/* NOTREACHED */
+    union {
+        const char *cp;
+        char *p;
+    } u;
+
+    if (p == NULL)
+        return(NULL);
+
+    u.cp = p;
+
+    for (;; ++u.p) {
+        if (*u.p == ch)
+            return (u.p);
+        if (*u.p == '\0')
+            return NULL;
+    }
+    /* NOTREACHED */
 }
 
 /*
  * Compare memory regions.
  */
-int sk_memcmp(const void *s1, const void *s2, size_t n)
+int sl_memcmp(const void *s1, const void *s2, size_t n)
 {
-	if (s1 == NULL || s2 == NULL)
-		return (-1);
+    if (s1 == NULL || s2 == NULL)
+        return (-1);
 
-	if (s1 == s2)
-		return (0);
+    if (s1 == s2)
+        return (0);
 
-	if (n != 0) {
-		const unsigned char *p1 = s1, *p2 = s2;
+    if (n != 0) {
+        const unsigned char *p1 = s1, *p2 = s2;
 
-		do {
-			if (*p1++ != *p2++)
-				return (*--p1 - *--p2);
-		} while (--n != 0);
-	}
-	return (0);
+        do {
+            if (*p1++ != *p2++)
+                return (*--p1 - *--p2);
+        } while (--n != 0);
+    }
+
+    return (0);
 }
 
 /*
  * sizeof(word) MUST BE A POWER OF TWO
  * SO THAT wmask BELOW IS ALL ONES
  */
-typedef	int	word;		/* "word" used for optimal copy speed */
+typedef	int    word;		/* "word" used for optimal copy speed */
 
-#define	wsize	sizeof(word)
-#define wmask	(wsize - 1)
+#define	wsize  sizeof(word)
+#define wmask  (wsize - 1)
 
 /*
  * Copy a block of memory, handling overlap.
  * This is the routine that actually implements
  * (the portable versions of) bcopy, memcpy, and memmove.
  */
-void *sk_memcpy(void *dst0, const void *src0, size_t length)
+void *sl_memcpy(void *dst0, const void *src0, size_t length)
 {
 	char		*dst;
 	const char	*src;
@@ -597,20 +609,23 @@ done:
 /*
  * Compare strings.
  */
-int sk_strcmp(s1, s2)
-	register const char *s1, *s2;
+int sl_strcmp(s1, s2)
 {
-	if (s1 == NULL || s2 == NULL)
-		return(-1);
-	if (s1 == s2)
-		return(0);
-	while (*s1 == *s2++)
-		if (*s1++ == 0)
-			return (0);
-	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
+    register const char *s1, *s2;
+
+    if (s1 == NULL || s2 == NULL)
+        return (-1);
+    if (s1 == s2)
+        return (0);
+
+    while (*s1 == *s2++)
+        if (*s1++ == 0)
+            return (0);
+
+    return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
 }
 
-size_t sk_strlen(str)
+size_t sl_strlen(str)
 	const char *str;
 {
 	register const char *s;
@@ -621,46 +636,51 @@ size_t sk_strlen(str)
 	return(s - str);
 }
 
-int sk_strncmp(s1, s2, n)
-	register const char *s1, *s2;
-	register size_t n;
+int sl_strncmp(s1, s2, n)
 {
-	if (s1 == NULL || s2 == NULL)
-		return(-1);
-	if (n == 0 || s1 == s2)
-		return (0);
-	do {
-		if (*s1 != *s2++)
-			return (*(const unsigned char *)s1 -
-				*(const unsigned char *)(s2 - 1));
-		if (*s1++ == 0)
-			break;
-	} while (--n != 0);
-	return (0);
+    register const char *s1, *s2;
+    register size_t n;
+
+    if (s1 == NULL || s2 == NULL)
+        return(-1);
+    if (n == 0 || s1 == s2)
+        return (0);
+
+    do {
+        if (*s1 != *s2++)
+            return (*(const unsigned char *)s1 -
+                    *(const unsigned char *)(s2 - 1));
+        if (*s1++ == 0)
+            break;
+    } while (--n != 0);
+
+    return (0);
 }
 
 /*
  * Copy src to dst, truncating or null-padding to always copy n bytes.
  * Return dst.
  */
-char *sk_strncpy(char * __restrict dst, const char * __restrict src, size_t n)
+char *sl_strncpy(char * __restrict dst, const char * __restrict src, size_t n)
 {
-	if (dst == NULL || src == NULL)
-		return NULL;
-	if (n != 0) {
-		register char *d = dst;
-		register const char *s = src;
+    if (dst == NULL || src == NULL)
+        return NULL;
 
-		do {
-			if ((*d++ = *s++) == 0) {
-				/* NUL pad the remaining n-1 bytes */
-				while (--n != 0)
-					*d++ = 0;
-				break;
-			}
-		} while (--n != 0);
-	}
-	return (dst);
+    if (n != 0) {
+        register char *d = dst;
+        register const char *s = src;
+
+        do {
+            if ((*d++ = *s++) == 0) {
+                /* NUL pad the remaining n-1 bytes */
+                while (--n != 0)
+                   *d++ = 0;
+                break;
+            }
+        } while (--n != 0);
+    }
+
+    return (dst);
 }
 
 #define ULONG_MAX     0xFFFFFFFFUL
@@ -671,7 +691,7 @@ char *sk_strncpy(char * __restrict dst, const char * __restrict src, size_t n)
  * Ignores `locale' stuff.  Assumes that the upper and lower case
  * alphabets and digits are each contiguous.
  */
-unsigned long sk_strtoul(const char *nptr, char **endptr, int base)
+unsigned long sl_strtoul(const char *nptr, char **endptr, int base)
 {
 	const char *s = nptr;
 	unsigned long acc;
