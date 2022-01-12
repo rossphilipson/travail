@@ -1,8 +1,8 @@
 /*
- * skboot.c: main entry point and pre-launch code for Trenchboot
+ * slexec.c: main entry point and pre-launch code for Trenchboot
  *
  * Used to be:
- * skboot.c: main entry point and "generic" routines for measured launch
+ * slexec.c: main entry point and "generic" routines for measured launch
  *          support
  *
  * Copyright (c) 2006-2010, Intel Corporation
@@ -112,7 +112,7 @@ static void shutdown_system(uint32_t shutdown_type)
     }
 }
 
-unsigned long get_skboot_mem_end(void)
+unsigned long get_slexec_mem_end(void)
 {
     return PAGE_UP((unsigned long)&_end);
 }
@@ -281,7 +281,7 @@ void begin_launch(void *addr, uint32_t magic)
         sl_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
 
     /* always parse cmdline */
-    skboot_parse_cmdline();
+    slexec_parse_cmdline();
 
     g_default_error_action = get_error_shutdown();
 

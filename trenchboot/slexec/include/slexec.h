@@ -39,10 +39,10 @@
 #ifndef __SLEXEC_H__
 #define __SLEXEC_H__
 
-/* address skboot will load and execute at */
+/* address slexec will load and execute at */
 #define SLEXEC_START              0x02C04000
 
-/* the beginning of skboot memory */
+/* the beginning of slexec memory */
 #define SLEXEC_BASE_ADDR          0x02C00000
 
 /* these addrs must be in low memory so that they are mapped by the */
@@ -136,7 +136,7 @@ extern void sha256_buffer(const unsigned char *buffer, size_t len,
 #define SL_SHUTDOWN_HALT        2
 
 /*
- * used to log skboot printk output
+ * used to log slexec printk output
  */
 #define ZIP_COUNT_MAX 10
 typedef struct {
@@ -147,7 +147,7 @@ typedef struct {
     uint16_t   zip_size[ZIP_COUNT_MAX];
     uint8_t    zip_count;
     char       buf[];
-} skboot_log_t;
+} slexec_log_t;
 
 /* {C0192526-6B30-4db4-844C-A3E953B88174} */
 #define SLEXEC_LOG_UUID   {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
@@ -156,10 +156,10 @@ typedef struct {
 #define SKINIT_LZ_UUID    {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
                              {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
 
-extern char _start[];            /* start of skboot */
-extern char _end[];              /* end of skboot */
+extern char _start[];            /* start of slexec */
+extern char _end[];              /* end of slexec */
 
-/* skboot log level */
+/* slexec log level */
 #ifdef NO_SLEXEC_LOGLVL
 #define SLEXEC_NONE
 #define SLEXEC_ERR
@@ -184,7 +184,7 @@ extern char _end[];              /* end of skboot */
 
 extern void error_action(int error);
 
-extern unsigned long get_skboot_mem_end(void);
+extern unsigned long get_slexec_mem_end(void);
 
 #endif /* !__ASSEMBLY__ */
 

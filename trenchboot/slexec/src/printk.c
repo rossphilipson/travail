@@ -49,19 +49,19 @@ uint8_t g_log_targets = SLEXEC_LOG_TARGET_SERIAL | SLEXEC_LOG_TARGET_VGA;
  */
 
 /* memory-based serial log (ensure in .data section so that not cleared) */
-__data skboot_log_t *g_log = NULL;
+__data slexec_log_t *g_log = NULL;
 
 static void memlog_init(void)
 {
     if ( g_log == NULL ) {
-        g_log = (skboot_log_t *)SLEXEC_SERIAL_LOG_ADDR;
+        g_log = (slexec_log_t *)SLEXEC_SERIAL_LOG_ADDR;
         g_log->uuid = (uuid_t)SLEXEC_LOG_UUID;
         g_log->curr_pos = 0;
     }
 
     /* initialize these post-launch as well, since bad/malicious values */
     /* could compromise environment */
-    g_log = (skboot_log_t *)SLEXEC_SERIAL_LOG_ADDR;
+    g_log = (slexec_log_t *)SLEXEC_SERIAL_LOG_ADDR;
     g_log->max_size = SLEXEC_SERIAL_LOG_SIZE - sizeof(*g_log);
 
     /* if we're calling this post-launch, verify that curr_pos is valid */
@@ -94,13 +94,13 @@ static void memlog_write(const char *str, unsigned int count)
 void printk_init(void)
 {
     /* parse loglvl from string to int */
-    get_skboot_loglvl();
+    get_slexec_loglvl();
 
     /* parse logging targets */
-    get_skboot_log_targets();
+    get_slexec_log_targets();
 
     /* parse serial settings */
-    if ( !get_skboot_serial() )
+    if ( !get_slexec_serial() )
         g_log_targets &= ~SLEXEC_LOG_TARGET_SERIAL;
 
     if ( g_log_targets & SLEXEC_LOG_TARGET_MEMORY )
@@ -109,7 +109,7 @@ void printk_init(void)
         serial_init();
     if ( g_log_targets & SLEXEC_LOG_TARGET_VGA ) {
         vga_init();
-        get_skboot_vga_delay(); /* parse vga delay time */
+        get_slexec_vga_delay(); /* parse vga delay time */
     }
 }
 

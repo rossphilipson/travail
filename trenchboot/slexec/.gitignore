@@ -3,5 +3,5 @@
 *.dsm
 *.hex
 *.gz
-skboot
-skboot-syms
+slexec
+slexec-syms

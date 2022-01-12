@@ -1,5 +1,5 @@
 /*
- * boot.S: assembly bootstrapping code for skboot module
+ * boot.S: assembly bootstrapping code for slexec module
  *
  * Copyright (c) 2006-2010, Intel Corporation
  * All rights reserved.
@@ -44,7 +44,7 @@
 #define CS16_SEL    4<<3
 #define DS16_SEL    5<<3
 
-.section ".skboot_multiboot_header","w"
+.section ".slexec_multiboot_header","w"
         .align 4
 /* multiboot header */
 multiboot_header:

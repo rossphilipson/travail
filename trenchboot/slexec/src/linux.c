@@ -130,7 +130,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( hdr->header != HDRS_MAGIC ) {
         /* old kernel */
         printk(SLEXEC_ERR
-               "Error: Old kernel (< 2.6.20) is not supported by skboot.\n");
+               "Error: Old kernel (< 2.6.20) is not supported by slexec.\n");
         return false;
     }
 
@@ -211,7 +211,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             /* set the starting address just below the image */
             initrd_base = (uint32_t)linux_image - initrd_size;
             initrd_base = initrd_base & PAGE_MASK;
-            /* make sure we're still in usable RAM and above skboot end address*/
+            /* make sure we're still in usable RAM and above slexec end address*/
             if( initrd_base < max_ram_base ){
                 printk(SLEXEC_ERR"no available memory for initrd\n");
                 return false;
@@ -250,12 +250,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* calc location of protected mode part */
     protected_mode_size = linux_size - real_mode_size;
 
-    /* if kernel is relocatable then move it above skboot */
-    /* else it may expand over top of skboot */
+    /* if kernel is relocatable then move it above slexec */
+    /* else it may expand over top of slexec */
     /* NOTE the SL kernel is not relocatable and should be loaded at the
      * default location */
     if ( hdr->relocatable_kernel ) {
-        protected_mode_base = (uint32_t)get_skboot_mem_end();
+        protected_mode_base = (uint32_t)get_slexec_mem_end();
         /* fix possible mbi overwrite in grub2 case */
         /* assuming grub2 only used for relocatable kernel */
         /* assuming mbi & components are contiguous */
@@ -441,7 +441,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* Clear out some boot_params we don't want dangling around */
-    sk_memset((void *)boot_params->skboot_shared_addr, 0, 8);
+    sk_memset((void *)boot_params->slexec_shared_addr, 0, 8);
     sk_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
 
     /* Copy all the handoff information about the loaded IL kernel */

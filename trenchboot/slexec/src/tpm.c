@@ -51,7 +51,7 @@ __data struct tpm_if g_tpm = {
     .timeout.timeout_d = TIMEOUT_D,
 };
 
-u16 skboot_alg_list[] = {HASH_ALG_SHA1, HASH_ALG_SHA256};
+u16 slexec_alg_list[] = {HASH_ALG_SHA1, HASH_ALG_SHA256};
 
 /* Global variables for TPM status register */
 static tpm20_reg_sts_t       g_reg_sts, *g_reg_sts_20 = &g_reg_sts;

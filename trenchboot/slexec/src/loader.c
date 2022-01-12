@@ -50,7 +50,7 @@
 #include <skl.h>
 #include <cmdline.h>
 
-/* multiboot struct saved so that post_launch() can use it (in skboot.c) */
+/* multiboot struct saved so that post_launch() can use it (in slexec.c) */
 extern loader_ctx *g_ldr_ctx;
 static uint32_t g_mb_orig_size;
 

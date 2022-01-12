@@ -40,12 +40,12 @@
 extern char g_cmdline[CMDLINE_SIZE];
 
 
-extern void skboot_parse_cmdline(void);
-extern void get_skboot_loglvl(void);
-extern void get_skboot_log_targets(void);
-extern bool get_skboot_serial(void);
-extern void get_skboot_baud(void);
-extern void get_skboot_vga_delay(void);
+extern void slexec_parse_cmdline(void);
+extern void get_slexec_loglvl(void);
+extern void get_slexec_log_targets(void);
+extern bool get_slexec_serial(void);
+extern void get_slexec_baud(void);
+extern void get_slexec_vga_delay(void);
 extern uint32_t get_error_shutdown(void);
 
 /* for parse cmdline of linux kernel, say vga and mem */

@@ -417,8 +417,8 @@ static inline void _reverse_copy(uint8_t *out, uint8_t *in, uint32_t count)
         out[i] = in[count - i - 1];
 }
 
-/* alg id list supported by skboot */
-extern u16 skboot_alg_list[];
+/* alg id list supported by slexec */
+extern u16 slexec_alg_list[];
 
 typedef sk_hash_t tpm_digest_t;
 typedef tpm_digest_t tpm_pcr_value_t;

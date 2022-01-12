@@ -402,7 +402,7 @@ static bool tpm20_pcr_reset(struct tpm_if *ti, uint32_t locality, uint32_t pcr)
 static bool alg_is_supported(u16 alg)
 {
     for (int i=0; i<2; i++) {
-        if (alg == skboot_alg_list[i])
+        if (alg == slexec_alg_list[i])
             return true;
     }
 
@@ -465,9 +465,9 @@ static bool tpm20_init(struct tpm_if *ti)
             ti->alg_count++;
         }
     }
-    printk(SLEXEC_INFO"skboot: supported alg count = %d\n", ti->alg_count);
+    printk(SLEXEC_INFO"slexec: supported alg count = %d\n", ti->alg_count);
     for (unsigned int i=0; i<ti->alg_count; i++)
-        printk(SLEXEC_INFO"skboot: hash alg = %08X\n", ti->algs[i]);
+        printk(SLEXEC_INFO"slexec: hash alg = %08X\n", ti->algs[i]);
 
     /* reset debug PCR 16 */
     if (!tpm20_pcr_reset(ti, ti->cur_loc, 16)){

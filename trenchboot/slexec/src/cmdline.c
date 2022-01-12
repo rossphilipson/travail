@@ -45,7 +45,7 @@
 #endif
 /*
  * copy of original command line
- * part of skboot measurement (hence in .text section)
+ * part of slexec measurement (hence in .text section)
  */
 __data char g_cmdline[CMDLINE_SIZE] = { 0 };
 
@@ -65,7 +65,7 @@ typedef struct {
  */
 
 /* global option array for command line */
-static const cmdline_option_t g_skboot_cmdline_options[] = {
+static const cmdline_option_t g_slexec_cmdline_options[] = {
     { "loglvl",     "all" },         /* all|err,warn,info|none */
     { "logging",    "serial,vga" },  /* vga,serial,memory|none */
     { "serial",     "115200,8n1,0x3f8" },
@@ -74,7 +74,7 @@ static const cmdline_option_t g_skboot_cmdline_options[] = {
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { NULL, NULL }
 };
-static char g_skboot_param_values[ARRAY_SIZE(g_skboot_cmdline_options)][MAX_VALUE_LEN];
+static char g_slexec_param_values[ARRAY_SIZE(g_slexec_cmdline_options)][MAX_VALUE_LEN];
 
 static const cmdline_option_t g_linux_cmdline_options[] = {
     { "vga", "" },
@@ -163,9 +163,9 @@ static void cmdline_parse(const char *cmdline, const cmdline_option_t *options,
     }
 }
 
-void skboot_parse_cmdline(void)
+void slexec_parse_cmdline(void)
 {
-    cmdline_parse(g_cmdline, g_skboot_cmdline_options, g_skboot_param_values);
+    cmdline_parse(g_cmdline, g_slexec_cmdline_options, g_slexec_param_values);
 }
 
 void linux_parse_cmdline(const char *cmdline)
@@ -189,10 +189,10 @@ uint8_t get_loglvl_prefix(char **pbuf, int *len)
     return log_level;
 }
 
-void get_skboot_loglvl(void)
+void get_slexec_loglvl(void)
 {
-    const char *loglvl = get_option_val(g_skboot_cmdline_options,
-                                        g_skboot_param_values, "loglvl");
+    const char *loglvl = get_option_val(g_slexec_cmdline_options,
+                                        g_slexec_param_values, "loglvl");
     if ( loglvl == NULL )
         return;
 
@@ -232,10 +232,10 @@ void get_skboot_loglvl(void)
     }
 }
 
-void get_skboot_log_targets(void)
+void get_slexec_log_targets(void)
 {
-    const char *targets = get_option_val(g_skboot_cmdline_options,
-                                         g_skboot_param_values, "logging");
+    const char *targets = get_option_val(g_slexec_cmdline_options,
+                                         g_slexec_param_values, "logging");
 
     /* nothing set, leave defaults */
     if ( targets == NULL || *targets == '\0' )
@@ -413,20 +413,20 @@ static bool parse_serial_param(const char *com)
     return true;
 }
 
-bool get_skboot_serial(void)
+bool get_slexec_serial(void)
 {
-    const char *serial = get_option_val(g_skboot_cmdline_options,
-                                        g_skboot_param_values, "serial");
+    const char *serial = get_option_val(g_slexec_cmdline_options,
+                                        g_slexec_param_values, "serial");
     if ( serial == NULL || *serial == '\0' )
         return false;
 
     return parse_serial_param(serial);
 }
 
-void get_skboot_vga_delay(void)
+void get_slexec_vga_delay(void)
 {
-    const char *vga_delay = get_option_val(g_skboot_cmdline_options,
-                                           g_skboot_param_values, "vga_delay");
+    const char *vga_delay = get_option_val(g_slexec_cmdline_options,
+                                           g_slexec_param_values, "vga_delay");
     if ( vga_delay == NULL )
         return;
 
@@ -436,8 +436,8 @@ void get_skboot_vga_delay(void)
 uint32_t get_error_shutdown(void)
 {
     const char *error_shutdown =
-       get_option_val(g_skboot_cmdline_options,
-              g_skboot_param_values,
+       get_option_val(g_slexec_cmdline_options,
+              g_slexec_param_values,
               "error_shutdown");
     if ( error_shutdown != NULL ) {
         if ( sl_strcmp(error_shutdown, "reboot") == 0 )
