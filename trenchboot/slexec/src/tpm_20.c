@@ -35,7 +35,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <printk.h>
 #include <misc.h>
 #include <processor.h>
@@ -391,7 +391,7 @@ static bool tpm20_pcr_reset(struct tpm_if *ti, uint32_t locality, uint32_t pcr)
 
     ret = _tpm20_pcr_reset(locality, &reset_in, &reset_out);
     if (ret != TPM_RC_SUCCESS) {
-        printk(SKBOOT_WARN"TPM: Pcr %d Reset return value = %08X\n", pcr, ret);
+        printk(SLEXEC_WARN"TPM: Pcr %d Reset return value = %08X\n", pcr, ret);
         ti->error = ret;
         return false;
     }
@@ -446,15 +446,15 @@ static bool tpm20_init(struct tpm_if *ti)
     event_in.data.t.buffer[3] = 0xaa;
     ret = _tpm20_pcr_event(ti->cur_loc, &event_in, &event_out);
     if (ret != TPM_RC_SUCCESS) {
-        printk(SKBOOT_WARN"TPM: PcrEvent not successful, return value = %08X\n", ret);
+        printk(SLEXEC_WARN"TPM: PcrEvent not successful, return value = %08X\n", ret);
         ti->error = ret;
         return false;
     }
     ti->banks = event_out.digests.count;
-    printk(SKBOOT_INFO"TPM: supported bank count = %d\n", ti->banks);
+    printk(SLEXEC_INFO"TPM: supported bank count = %d\n", ti->banks);
     for (i=0; i<ti->banks; i++) {
         ti->algs_banks[i] = event_out.digests.digests[i].hash_alg;;
-        printk(SKBOOT_INFO"TPM: bank alg = %08x\n", ti->algs_banks[i]);
+        printk(SLEXEC_INFO"TPM: bank alg = %08x\n", ti->algs_banks[i]);
     }
 
     /* init supported alg list */
@@ -465,13 +465,13 @@ static bool tpm20_init(struct tpm_if *ti)
             ti->alg_count++;
         }
     }
-    printk(SKBOOT_INFO"skboot: supported alg count = %d\n", ti->alg_count);
+    printk(SLEXEC_INFO"skboot: supported alg count = %d\n", ti->alg_count);
     for (unsigned int i=0; i<ti->alg_count; i++)
-        printk(SKBOOT_INFO"skboot: hash alg = %08X\n", ti->algs[i]);
+        printk(SLEXEC_INFO"skboot: hash alg = %08X\n", ti->algs[i]);
 
     /* reset debug PCR 16 */
     if (!tpm20_pcr_reset(ti, ti->cur_loc, 16)){
-        printk(SKBOOT_WARN"TPM: tpm20_pcr_reset failed...\n");
+        printk(SLEXEC_WARN"TPM: tpm20_pcr_reset failed...\n");
 	return false;
     }
 

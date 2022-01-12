@@ -39,7 +39,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <stdarg.h>
 #include <string.h>
 #include <printk.h>
@@ -66,13 +66,13 @@ static uint32_t apic_base;
 
 static void shutdown_system(uint32_t shutdown_type)
 {
-    static const char *types[] = { "SK_SHUTDOWN_REBOOT", "SK_SHUTDOWN_SHUTDOWN",
-                                   "SK_SHUTDOWN_HALT" };
+    static const char *types[] = { "SL_SHUTDOWN_REBOOT", "SL_SHUTDOWN_SHUTDOWN",
+                                   "SL_SHUTDOWN_HALT" };
     char type[32];
 
     /* NOTE: the TPM close and open current locality is not needed here since */
     /* since that only makes sense if this is called post laucnh which is */
-    /* the case in SKBOOT */
+    /* the case in SLEXEC */
 
     if ( shutdown_type >= ARRAY_SIZE(types) )
         sk_snprintf(type, sizeof(type), "unknown: %u", shutdown_type);
@@ -80,10 +80,10 @@ static void shutdown_system(uint32_t shutdown_type)
         sk_strncpy(type, types[shutdown_type], sizeof(type));
         type[sizeof(type) - 1] = '\0';
     }
-    printk(SKBOOT_INFO"shutdown_system() called for shutdown_type: %s\n", type);
+    printk(SLEXEC_INFO"shutdown_system() called for shutdown_type: %s\n", type);
 
     switch( shutdown_type ) {
-        case SK_SHUTDOWN_REBOOT:
+        case SL_SHUTDOWN_REBOOT:
             if ( is_powercycle_required ) {
                 /* powercycle by writing 0x0a+0x0e to port 0xcf9 */
                 /* (supported by all TXT-capable chipsets) */
@@ -101,11 +101,11 @@ static void shutdown_system(uint32_t shutdown_type)
                 outb(0xcf9, 0x06);
             }
             break;
-        case SK_SHUTDOWN_SHUTDOWN:
+        case SL_SHUTDOWN_SHUTDOWN:
             /* TODO implement S5 */
             break;
         /* FALLTHROUGH */
-        case SK_SHUTDOWN_HALT:
+        case SL_SHUTDOWN_HALT:
         default:
             while ( true )
                 halt();
@@ -129,24 +129,24 @@ static bool prepare_cpu(void)
 
     /* must be in protected mode */
     if ( !(cr0 & CR0_PE) ) {
-        printk(SKBOOT_ERR"ERR: not in protected mode\n");
+        printk(SLEXEC_ERR"ERR: not in protected mode\n");
         return false;
     }
 
     /* cache must be enabled (CR0.CD = CR0.NW = 0) */
     if ( cr0 & CR0_CD ) {
-        printk(SKBOOT_INFO"CR0.CD set\n");
+        printk(SLEXEC_INFO"CR0.CD set\n");
         cr0 &= ~CR0_CD;
     }
     if ( cr0 & CR0_NW ) {
-        printk(SKBOOT_INFO"CR0.NW set\n");
+        printk(SLEXEC_INFO"CR0.NW set\n");
         cr0 &= ~CR0_NW;
     }
 
     /* native FPU error reporting must be enabled for proper */
     /* interaction behavior */
     if ( !(cr0 & CR0_NE) ) {
-        printk(SKBOOT_INFO"CR0.NE not set\n");
+        printk(SLEXEC_INFO"CR0.NE not set\n");
         cr0 |= CR0_NE;
     }
 
@@ -155,11 +155,11 @@ static bool prepare_cpu(void)
     /* cannot be in virtual-8086 mode (EFLAGS.VM=1) */
     eflags = read_eflags();
     if ( eflags & X86_EFLAGS_VM ) {
-        printk(SKBOOT_INFO"EFLAGS.VM set\n");
+        printk(SLEXEC_INFO"EFLAGS.VM set\n");
         write_eflags(eflags | ~X86_EFLAGS_VM);
     }
 
-    printk(SKBOOT_INFO"CR0 and EFLAGS OK\n");
+    printk(SLEXEC_INFO"CR0 and EFLAGS OK\n");
 
     /*
      * verify all machine check status registers are clear (unless
@@ -169,7 +169,7 @@ static bool prepare_cpu(void)
     /* no machine check in progress (IA32_MCG_STATUS.MCIP=1) */
     mcg_stat = rdmsr(MSR_MCG_STATUS);
     if ( mcg_stat & 0x04 ) {
-        printk(SKBOOT_ERR"machine check in progress\n");
+        printk(SLEXEC_ERR"machine check in progress\n");
         return false;
     }
 
@@ -178,12 +178,12 @@ static bool prepare_cpu(void)
     for ( unsigned int i = 0; i < (mcg_cap & 0xff); i++ ) {
         mcg_stat = rdmsr(MSR_MC0_STATUS + 4*i);
         if ( mcg_stat & (1ULL << 63) ) {
-            printk(SKBOOT_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
+            printk(SLEXEC_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
             return false;
         }
     }
 
-    printk(SKBOOT_INFO"Machine Check OK\n");
+    printk(SLEXEC_INFO"Machine Check OK\n");
 
     return true;
 }
@@ -199,7 +199,7 @@ static bool platform_architecture(void)
          && regs[3] == 0x69746e65 ) /* "enti" */
         return true;
 
-    printk(SKBOOT_ERR"Error: platform is neither Intel or AMD\n");
+    printk(SLEXEC_ERR"Error: platform is neither Intel or AMD\n");
     return false;
 }
 
@@ -208,7 +208,7 @@ static int supports_skinit(void)
     g_cpuid_ext_feat_info = cpuid_ecx(0x80000001);
 
     if (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_SKINIT) {
-        printk(SKBOOT_INFO"SKINIT CPU and all needed capabilities present\n");
+        printk(SLEXEC_INFO"SKINIT CPU and all needed capabilities present\n");
         return SK_ERR_NONE;
     }
     return SK_ERR_NO_SKINIT;
@@ -219,7 +219,7 @@ void error_action(int error)
     if ( error == SK_ERR_NONE )
         return;
 
-    printk(SKBOOT_ERR"error action invoked for: %x\n", error);
+    printk(SLEXEC_ERR"error action invoked for: %x\n", error);
     shutdown_system(g_default_error_action);
 }
 
@@ -236,7 +236,7 @@ static void send_init_ipi_shorthand(void)
 
         /* access ICR through MSR */
         wrmsr(MSR_X2APIC_ICR, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
-        printk(SKBOOT_INFO"SKINIT assert #INIT on APs - x2APIC MSR reg: 0x%x\n", MSR_X2APIC_ICR);
+        printk(SLEXEC_INFO"SKINIT assert #INIT on APs - x2APIC MSR reg: 0x%x\n", MSR_X2APIC_ICR);
     } else {
         /* mask off low order bits to get base address */
         apic_base &= APICBASE_BASE_MASK;
@@ -244,10 +244,10 @@ static void send_init_ipi_shorthand(void)
         icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
 
         writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
-        printk(SKBOOT_INFO"SKINIT assert #INIT on APs - xAPIC ICR reg: %p\n", icr_reg);
+        printk(SLEXEC_INFO"SKINIT assert #INIT on APs - xAPIC ICR reg: %p\n", icr_reg);
     }
 
-    printk(SKBOOT_INFO"Wait for IPI delivery\n");
+    printk(SLEXEC_INFO"Wait for IPI delivery\n");
     delay(1000);
 }
 
@@ -259,12 +259,12 @@ static void skinit_launch_environment(void)
 
     disable_intr();
 
-    printk(SKBOOT_INFO"SKINIT launch SKL - slb: 0x%x\n", slb);
+    printk(SLEXEC_INFO"SKINIT launch SKL - slb: 0x%x\n", slb);
     asm volatile ("movl %0, %%eax\n"
 	          "skinit\n"
                   : : "r" (slb));
 
-    printk(SKBOOT_INFO"SKINIT failed\n");
+    printk(SLEXEC_INFO"SKINIT failed\n");
 }
 
 void begin_launch(void *addr, uint32_t magic)
@@ -272,7 +272,7 @@ void begin_launch(void *addr, uint32_t magic)
     const char *cmdline;
     int err;
 
-    /* this is the SKBOOT module loader type, either MB1 or MB2 */
+    /* this is the SLEXEC module loader type, either MB1 or MB2 */
     determine_loader_type(addr, magic);
 
     cmdline = get_cmdline(g_ldr_ctx);
@@ -288,11 +288,11 @@ void begin_launch(void *addr, uint32_t magic)
     /* initialize all logging targets */
     printk_init();
 
-    printk(SKBOOT_INFO"******************* SKBOOT *******************\n");
-    printk(SKBOOT_INFO"   %s -- @ %p\n", SKBOOT_CHANGESET, _start);
-    printk(SKBOOT_INFO"*********************************************\n");
+    printk(SLEXEC_INFO"******************* SLEXEC *******************\n");
+    printk(SLEXEC_INFO"   %s -- @ %p\n", SLEXEC_CHANGESET, _start);
+    printk(SLEXEC_INFO"*********************************************\n");
 
-    printk(SKBOOT_INFO"command line: %s\n", g_cmdline);
+    printk(SLEXEC_INFO"command line: %s\n", g_cmdline);
 
     if ( !platform_architecture() )
         error_action(SK_ERR_FATAL);
@@ -300,10 +300,10 @@ void begin_launch(void *addr, uint32_t magic)
     /* we should only be executing on the BSP */
     apic_base = (uint32_t)rdmsr(MSR_APICBASE);
     if ( !(apic_base & APICBASE_BSP) ) {
-        printk(SKBOOT_INFO"entry processor is not BSP\n");
+        printk(SLEXEC_INFO"entry processor is not BSP\n");
         error_action(SK_ERR_FATAL);
     }
-    printk(SKBOOT_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
+    printk(SLEXEC_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
 
     /* make copy of e820 map that we will use and adjust */
     if ( !copy_e820_map(g_ldr_ctx) )
@@ -352,7 +352,7 @@ void begin_launch(void *addr, uint32_t magic)
 
 void handle_exception(void)
 {
-    printk(SKBOOT_INFO"Received exception; shutting down...\n");
+    printk(SLEXEC_INFO"Received exception; shutting down...\n");
 }
 
 /*

@@ -42,7 +42,7 @@
  */
 
 #include <types.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <string.h>
 
 struct sha1_ctxt {

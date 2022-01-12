@@ -37,7 +37,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <printk.h>
 #include <string.h>
 #include <misc.h>
@@ -75,7 +75,7 @@ printk_long(char *what)
     while (cmdlen > 0) {
         sk_strncpy(cmdchunk, cptr, CHUNK_SIZE);
         cmdchunk[CHUNK_SIZE] = 0;
-        printk(SKBOOT_INFO"\t%s\n", cmdchunk);
+        printk(SLEXEC_INFO"\t%s\n", cmdchunk);
         cmdlen -= CHUNK_SIZE;
         cptr += CHUNK_SIZE;
     }
@@ -85,12 +85,12 @@ static module_t
 *get_module_mb1(const multiboot_info_t *mbi, unsigned int i)
 {
     if ( mbi == NULL ) {
-        printk(SKBOOT_ERR"Error: mbi pointer is zero.\n");
+        printk(SLEXEC_ERR"Error: mbi pointer is zero.\n");
         return NULL;
     }
 
     if ( i >= mbi->mods_count ) {
-        printk(SKBOOT_ERR"invalid module #\n");
+        printk(SLEXEC_ERR"invalid module #\n");
         return NULL;
     }
 
@@ -153,7 +153,7 @@ bool verify_loader_context(loader_ctx *lctx)
         return false;
     count = get_module_count(lctx);
     if (count < 1){
-        printk(SKBOOT_ERR"Error: no MB%d modules\n", lctx->type);
+        printk(SLEXEC_ERR"Error: no MB%d modules\n", lctx->type);
         return false;
     } else
         return true;
@@ -165,14 +165,14 @@ static bool remove_mb2_tag(loader_ctx *lctx, struct mb2_tag *cur)
     struct mb2_tag *next, *end;
     next = next_mb2_tag(cur);
     if (next == NULL){
-        printk(SKBOOT_ERR"missing next tag in remove_mb2_tag\n");
+        printk(SLEXEC_ERR"missing next tag in remove_mb2_tag\n");
         return false;
     }
     /* where do we stop? */
     end = (struct mb2_tag *)(lctx->addr + 8);
     end = find_mb2_tag_type(end, MB2_TAG_TYPE_END);
     if (end == NULL){
-        printk(SKBOOT_ERR"remove_mb2_tag, no end tag!!!!\n");
+        printk(SLEXEC_ERR"remove_mb2_tag, no end tag!!!!\n");
         return false;
     }
     e = (uint8_t *) end + end->size;
@@ -220,7 +220,7 @@ grow_mb2_tag(loader_ctx *lctx, struct mb2_tag *which, uint32_t how_much)
     /* check to make sure there's actually room for the growth */
     slack = g_mb_orig_size - *(uint32_t *) (lctx->addr);
     if (growth > slack){
-        printk(SKBOOT_ERR"YIKES!!! grow_mb2_tag slack %d < growth %d\n",
+        printk(SLEXEC_ERR"YIKES!!! grow_mb2_tag slack %d < growth %d\n",
                slack, growth);
     }
 
@@ -252,7 +252,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
 
     /* not found */
     if ( m == NULL ) {
-        printk(SKBOOT_ERR"could not find module to remove\n");
+        printk(SLEXEC_ERR"could not find module to remove\n");
         return NULL;
     }
 
@@ -278,22 +278,22 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
         /* multiboot 2 */
         /* if we're removing the first module (i.e. the "kernel") then */
         /* need to adjust some mbi fields as well */
-        char cmdbuf[SKBOOT_KERNEL_CMDLINE_SIZE];
+        char cmdbuf[SLEXEC_KERNEL_CMDLINE_SIZE];
         cmdbuf[0] = '\0';
         if ( mod_start == NULL ) {
             char *cmdline = get_cmdline(lctx);
             char *mod_string = get_module_cmd(lctx, m);
             if ( cmdline == NULL ) {
-                printk(SKBOOT_ERR"could not find cmdline\n");
+                printk(SLEXEC_ERR"could not find cmdline\n");
                 return NULL;
             }
             if ( mod_string == NULL ) {
-                printk(SKBOOT_ERR"could not find module cmdline\n");
+                printk(SLEXEC_ERR"could not find module cmdline\n");
                 return NULL;
             }
             if ((sk_strlen(mod_string)) > (sk_strlen(cmdline))){
-                if (sk_strlen(mod_string) >= SKBOOT_KERNEL_CMDLINE_SIZE){
-                    printk(SKBOOT_ERR"No room to copy MB2 cmdline [%d < %d]\n",
+                if (sk_strlen(mod_string) >= SLEXEC_KERNEL_CMDLINE_SIZE){
+                    printk(SLEXEC_ERR"No room to copy MB2 cmdline [%d < %d]\n",
                            (int)(sk_strlen(cmdline)), (int)(sk_strlen(mod_string)));
                 } else {
                     char *s = mod_string;
@@ -347,7 +347,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
                     cur_mod = NULL;
             }
             if (cur_mod == NULL){
-                printk(SKBOOT_ERR"remove_module() for MB2 failed\n");
+                printk(SLEXEC_ERR"remove_module() for MB2 failed\n");
                 return NULL;
             }
 
@@ -367,7 +367,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
             cur = find_mb2_tag_type(cur, MB2_TAG_TYPE_CMDLINE);
             cmd = (struct mb2_tag_string *) cur;
             if (cmd == NULL){
-                printk(SKBOOT_ERR"remove_modules MB2 shuffle NULL cmd\n");
+                printk(SLEXEC_ERR"remove_modules MB2 shuffle NULL cmd\n");
                 return NULL;
             }
 
@@ -468,17 +468,17 @@ bool prepare_intermediate_loader(void)
     uint64_t size;
 
     /* if using memory logging, reserve log area */
-    if ( g_log_targets & SKBOOT_LOG_TARGET_MEMORY ) {
-        base = SKBOOT_SERIAL_LOG_ADDR;
-        size = SKBOOT_SERIAL_LOG_SIZE;
-        printk(SKBOOT_INFO"reserving SKBOOT memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
+    if ( g_log_targets & SLEXEC_LOG_TARGET_MEMORY ) {
+        base = SLEXEC_SERIAL_LOG_ADDR;
+        size = SLEXEC_SERIAL_LOG_SIZE;
+        printk(SLEXEC_INFO"reserving SLEXEC memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
         if ( !e820_protect_region(base, size, E820_RESERVED) )
             error_action(SK_ERR_FATAL);
     }
 
     /* replace map in loader context with copy */
     replace_e820_map(g_ldr_ctx);
-    printk(SKBOOT_DETA"adjusted e820 map:\n");
+    printk(SLEXEC_ERR"adjusted e820 map:\n");
     print_e820_map();
 
     if ( !verify_loader_context(g_ldr_ctx) )
@@ -487,7 +487,7 @@ bool prepare_intermediate_loader(void)
     /* found SKL module earlier, remove it from MBI */
     remove_module(g_ldr_ctx, g_skl_module);
 
-    printk(SKBOOT_INFO"Assuming Intermediate Loader kernel is Linux format\n");
+    printk(SLEXEC_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 
     /* print_mbi(g_mbi); */
 
@@ -713,15 +713,15 @@ find_skl_module(loader_ctx *lctx)
     unsigned int i = get_module_count(lctx);
 
     if ( i == 0 ) {
-        printk(SKBOOT_ERR"no module info\n");
+        printk(SLEXEC_ERR"no module info\n");
         return false;
     }
 
-    printk(SKBOOT_DETA"module count: %d\n", (int)i);
+    printk(SLEXEC_ERR"module count: %d\n", (int)i);
 
     for ( ; i > 0; i-- ) {
         module_t *m = get_module(lctx, i - 1);
-        printk(SKBOOT_INFO"Checking for SKL module type: %d, index: %d, string: %s\n",
+        printk(SLEXEC_INFO"Checking for SKL module type: %d, index: %d, string: %s\n",
                lctx->type, (int)(i - 1), (const char *)m->string);
         print_hex("MOD: ", (void *)m->mod_start, 32);
 
@@ -730,13 +730,13 @@ find_skl_module(loader_ctx *lctx)
         if ( is_skl_module(base, size) ){
             g_skl_module = (sl_header_t *)base;
             g_skl_size = size;
-            printk(SKBOOT_DETA"SKL module found\n");
+            printk(SLEXEC_ERR"SKL module found\n");
             return true;
         }
     }
 
     /* no SKL found, hosed */
-    printk(SKBOOT_ERR"no SKL module found\n");
+    printk(SLEXEC_ERR"no SKL module found\n");
     return false;
 }
 
@@ -765,14 +765,14 @@ replace_e820_map(loader_ctx *lctx)
             struct mb2_tag *map = (struct mb2_tag *)(lctx->addr + 8);
             map = find_mb2_tag_type(map, MB2_TAG_TYPE_MMAP);
             if (map == NULL){
-                printk(SKBOOT_ERR"MB2 map not found\n");
+                printk(SLEXEC_ERR"MB2 map not found\n");
                 return;
             }
             if (false ==
                 grow_mb2_tag(lctx, map,
                              sizeof(memory_map_t) *
                              ((get_nr_map()) - old_memmap_entry_count))){
-                printk(SKBOOT_ERR"MB2 failed to grow e820 map tag\n");
+                printk(SLEXEC_ERR"MB2 failed to grow e820 map tag\n");
                 return;
             }
         }
@@ -784,7 +784,7 @@ replace_e820_map(loader_ctx *lctx)
             new = get_e820_copy();
             old = get_loader_memmap(lctx);
             if ( old == NULL ) {
-                printk(SKBOOT_ERR"old memory map not found\n");
+                printk(SLEXEC_ERR"old memory map not found\n");
                 return;
             }
             for (i = 0; i < (get_nr_map()); i++){
@@ -793,10 +793,10 @@ replace_e820_map(loader_ctx *lctx)
             }
         }
         /*
-           printk(SKBOOT_INFO"AFTER replace_e820_map, loader context:\n");
+           printk(SLEXEC_INFO"AFTER replace_e820_map, loader context:\n");
            print_loader_ctx(lctx);
         */
-        printk(SKBOOT_INFO"replaced memory map:\n");
+        printk(SLEXEC_INFO"replaced memory map:\n");
         print_e820_map();
         return;
     }
@@ -806,13 +806,13 @@ replace_e820_map(loader_ctx *lctx)
 void print_loader_ctx(loader_ctx *lctx)
 {
     if (lctx->type != MB2_ONLY){
-        printk(SKBOOT_ERR"this routine only prints out multiboot 2\n");
+        printk(SLEXEC_ERR"this routine only prints out multiboot 2\n");
         return;
     } else {
         struct mb2_tag *start = (struct mb2_tag *)(lctx->addr + 8);
-        printk(SKBOOT_INFO"MB2 dump, size %d\n", *(uint32_t *)lctx->addr);
+        printk(SLEXEC_INFO"MB2 dump, size %d\n", *(uint32_t *)lctx->addr);
         while (start != NULL){
-            printk(SKBOOT_INFO"MB2 tag found of type %d size %d ",
+            printk(SLEXEC_INFO"MB2 tag found of type %d size %d ",
                    start->type, start->size);
             switch (start->type){
             case MB2_TAG_TYPE_CMDLINE:
@@ -820,7 +820,7 @@ void print_loader_ctx(loader_ctx *lctx)
                 {
                     struct mb2_tag_string *ts =
                         (struct mb2_tag_string *) start;
-                    printk(SKBOOT_INFO"%s", ts->string);
+                    printk(SLEXEC_INFO"%s", ts->string);
                 }
                 break;
             case MB2_TAG_TYPE_MODULE:
@@ -833,7 +833,7 @@ void print_loader_ctx(loader_ctx *lctx)
             default:
                 break;
             }
-            printk(SKBOOT_INFO"\n");
+            printk(SLEXEC_INFO"\n");
             start = next_mb2_tag(start);
         }
         return;
@@ -885,7 +885,7 @@ find_efi_memmap(loader_ctx *lctx, uint32_t *descr_size,
     *descr_vers = efi_mmap->descr_vers;
     *mmap_size = efi_mmap->size - sizeof(struct mb2_tag_efi_mmap);
     if (*mmap_size % *descr_size) {
-        printk(SKBOOT_WARN "EFI memmmap (0x%x) should be a multiple of descriptor size (0x%x)\n",
+        printk(SLEXEC_WARN "EFI memmmap (0x%x) should be a multiple of descriptor size (0x%x)\n",
 	       *mmap_size, *descr_size);
     }
     return (uint32_t)(&efi_mmap->efi_mmap);
@@ -969,14 +969,14 @@ void determine_loader_type(void *addr, uint32_t magic)
                 void *mb2_reloc;
 
                 /* Since GRUB is sticking the MB2 structure very close to the
-                 * default location for the kernel, move it just below the SKBOOT
+                 * default location for the kernel, move it just below the SLEXEC
                  * image.
                  */
-                mb2_reloc = (void*)PAGE_DOWN(SKBOOT_BASE_ADDR - g_mb_orig_size);
+                mb2_reloc = (void*)PAGE_DOWN(SLEXEC_BASE_ADDR - g_mb_orig_size);
                 sk_memcpy(mb2_reloc, addr, g_mb_orig_size);
                 g_ldr_ctx->addr = mb2_reloc;
                 addr = mb2_reloc;
-                printk(SKBOOT_INFO"MB2 relocated to: %p size: %x\n",
+                printk(SLEXEC_INFO"MB2 relocated to: %p size: %x\n",
                        addr, g_mb_orig_size);
 
                 /* we may as well do this here--if we received an ELF

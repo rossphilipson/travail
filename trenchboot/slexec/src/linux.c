@@ -34,7 +34,7 @@
  */
 
 #include <types.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <stdbool.h>
 #include <printk.h>
 #include <string.h>
@@ -63,7 +63,7 @@ printk_long(const char *what)
     while (cmdlen > 0) {
         sk_strncpy(cmdchunk, cptr, CHUNK_SIZE);
         cmdchunk[CHUNK_SIZE] = 0;
-        printk(SKBOOT_INFO"\t%s\n", cmdchunk);
+        printk(SLEXEC_INFO"\t%s\n", cmdchunk);
         cmdlen -= CHUNK_SIZE;
         cptr += CHUNK_SIZE;
     }
@@ -83,24 +83,24 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* Check param */
     if ( linux_image == NULL ) {
-        printk(SKBOOT_ERR"Error: Linux kernel image is zero.\n");
+        printk(SLEXEC_ERR"Error: Linux kernel image is zero.\n");
         return false;
     }
 
     if ( linux_size == 0 ) {
-        printk(SKBOOT_ERR"Error: Linux kernel size is zero.\n");
+        printk(SLEXEC_ERR"Error: Linux kernel size is zero.\n");
         return false;
     }
 
     if ( linux_size < sizeof(linux_kernel_header_t) ) {
-        printk(SKBOOT_ERR"Error: Linux kernel size is too small.\n");
+        printk(SLEXEC_ERR"Error: Linux kernel size is too small.\n");
         return false;
     }
 
     hdr = (linux_kernel_header_t *)(linux_image + KERNEL_HEADER_OFFSET);
 
     if ( hdr == NULL ) {
-        printk(SKBOOT_ERR"Error: Linux kernel header is zero.\n");
+        printk(SLEXEC_ERR"Error: Linux kernel header is zero.\n");
         return false;
     }
 
@@ -115,7 +115,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( hdr->setup_sects == 0 )
         hdr->setup_sects = DEFAULT_SECTOR_NUM;
     if ( hdr->setup_sects > MAX_SECTOR_NUM ) {
-        printk(SKBOOT_ERR
+        printk(SLEXEC_ERR
                "Error: Linux setup sectors %d exceed maximum limitation 64.\n",
                 hdr->setup_sects);
         return false;
@@ -129,19 +129,19 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* compare to the magic number */
     if ( hdr->header != HDRS_MAGIC ) {
         /* old kernel */
-        printk(SKBOOT_ERR
+        printk(SLEXEC_ERR
                "Error: Old kernel (< 2.6.20) is not supported by skboot.\n");
         return false;
     }
 
     if ( hdr->version < 0x0205 ) {
-        printk(SKBOOT_ERR
+        printk(SLEXEC_ERR
                "Error: Old kernel (<2.6.20) is not supported by slboot.\n");
         return false;
     }
 
     if ( !(hdr->loadflags & FLAG_LOAD_HIGH) ) {
-        printk(SKBOOT_ERR
+        printk(SLEXEC_ERR
                "Error: Secure Launch kernel must have the FLAG_LOAD_HIGH loadflag set.\n");
         return false;
     }
@@ -169,20 +169,20 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         get_highest_sized_ram(initrd_size, mem_limit,
                               &max_ram_base, &max_ram_size);
         if ( max_ram_size == 0 ) {
-            printk(SKBOOT_ERR"not enough RAM for initrd\n");
+            printk(SLEXEC_ERR"not enough RAM for initrd\n");
             return false;
         }
         if ( initrd_size > max_ram_size ) {
-            printk(SKBOOT_ERR"initrd_size is too large\n");
+            printk(SLEXEC_ERR"initrd_size is too large\n");
             return false;
         }
         if ( max_ram_base > ((uint64_t)(uint32_t)(~0)) ) {
-            printk(SKBOOT_ERR"max_ram_base is too high\n");
+            printk(SLEXEC_ERR"max_ram_base is too high\n");
             return false;
         }
         if ( plus_overflow_u32((uint32_t)max_ram_base,
                  (uint32_t)(max_ram_size - initrd_size)) ) {
-            printk(SKBOOT_ERR"max_ram overflows\n");
+            printk(SLEXEC_ERR"max_ram overflows\n");
             return false;
         }
         /*initrd_base = (max_ram_base + max_ram_size - initrd_size) & PAGE_MASK;*/
@@ -193,12 +193,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
          * code causes memory corruption. This value leads to the corruption
          * of EFI System Resource Table (ESRT), which is also located in RAM.
          */
-        initrd_base = SKBOOT_FIXED_INITRD_BASE;
+        initrd_base = SLEXEC_FIXED_INITRD_BASE;
 
         /* should not exceed initrd_addr_max */
         if ( initrd_base + initrd_size > hdr->initrd_addr_max ) {
             if ( hdr->initrd_addr_max < initrd_size ) {
-                printk(SKBOOT_ERR"initrd_addr_max is too small\n");
+                printk(SLEXEC_ERR"initrd_addr_max is too small\n");
                 return false;
             }
             initrd_base = hdr->initrd_addr_max - initrd_size;
@@ -213,13 +213,13 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             initrd_base = initrd_base & PAGE_MASK;
             /* make sure we're still in usable RAM and above skboot end address*/
             if( initrd_base < max_ram_base ){
-                printk(SKBOOT_ERR"no available memory for initrd\n");
+                printk(SLEXEC_ERR"no available memory for initrd\n");
                 return false;
             }
         }
 
         sk_memmove((void *)initrd_base, initrd_image, initrd_size);
-        printk(SKBOOT_DETA"Initrd from 0x%lx to 0x%lx\n",
+        printk(SLEXEC_ERR"Initrd from 0x%lx to 0x%lx\n",
                (unsigned long)initrd_base,
                (unsigned long)(initrd_base + initrd_size));
 
@@ -236,14 +236,14 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( have_loader_memlimits(g_ldr_ctx))
         real_mode_base =
             ((get_loader_mem_lower(g_ldr_ctx)) << 10) - REAL_MODE_SIZE;
-    if ( real_mode_base < SKBOOT_E820_COPY_ADDR + SKBOOT_E820_COPY_SIZE )
-        real_mode_base = SKBOOT_E820_COPY_ADDR + SKBOOT_E820_COPY_SIZE;
+    if ( real_mode_base < SLEXEC_E820_COPY_ADDR + SLEXEC_E820_COPY_SIZE )
+        real_mode_base = SLEXEC_E820_COPY_ADDR + SLEXEC_E820_COPY_SIZE;
     if ( real_mode_base > LEGACY_REAL_START )
         real_mode_base = LEGACY_REAL_START;
 
     real_mode_size = (hdr->setup_sects + 1) * SECTOR_SIZE;
     if ( real_mode_size > KERNEL_CMDLINE_OFFSET ) {
-        printk(SKBOOT_ERR"realmode data is too large\n");
+        printk(SLEXEC_ERR"realmode data is too large\n");
         return false;
     }
 
@@ -265,7 +265,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         /* overflow? */
         if ( plus_overflow_u32(protected_mode_base,
                  hdr->kernel_alignment - 1) ) {
-            printk(SKBOOT_ERR"protected_mode_base overflows\n");
+            printk(SLEXEC_ERR"protected_mode_base overflows\n");
             return false;
         }
         /* round it up to kernel alignment */
@@ -278,7 +278,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
                 /* bzImage:0x100000 */
         /* overflow? */
         if ( plus_overflow_u32(protected_mode_base, protected_mode_size) ) {
-            printk(SKBOOT_ERR
+            printk(SLEXEC_ERR
                    "protected_mode_base plus protected_mode_size overflows\n");
             return false;
         }
@@ -287,7 +287,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             uint32_t mem_upper = get_loader_mem_upper(g_ldr_ctx);
             if ( (protected_mode_base + protected_mode_size)
                     > ((mem_upper << 10) + 0x100000) ) {
-                printk(SKBOOT_ERR
+                printk(SLEXEC_ERR
                        "Error: Linux protected mode part (0x%lx ~ 0x%lx) "
                        "exceeds mem_upper (0x%lx ~ 0x%lx).\n",
                        (unsigned long)protected_mode_base,
@@ -300,7 +300,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
         }
     }
     else {
-        printk(SKBOOT_ERR"Error: Linux protected mode not loaded high\n");
+        printk(SLEXEC_ERR"Error: Linux protected mode not loaded high\n");
         return false;
     }
 
@@ -309,7 +309,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
     /* load real-mode part */
     sk_memmove((void *)real_mode_base, linux_image, real_mode_size);
-    printk(SKBOOT_DETA"Kernel (real mode) from 0x%lx to 0x%lx size: 0x%lx\n",
+    printk(SLEXEC_ERR"Kernel (real mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)linux_image,
            (unsigned long)real_mode_base,
            (unsigned long)real_mode_size);
@@ -317,7 +317,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* load protected-mode part */
     sk_memmove((void *)protected_mode_base, linux_image + real_mode_size,
             protected_mode_size);
-    printk(SKBOOT_DETA"Kernel (protected mode) from 0x%lx to 0x%lx size: 0x%lx\n",
+    printk(SLEXEC_ERR"Kernel (protected mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)(linux_image + real_mode_size),
            (unsigned long)protected_mode_base,
            (unsigned long)protected_mode_size);
@@ -334,7 +334,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     /* copy cmdline */
     const char *kernel_cmdline = get_cmdline(g_ldr_ctx);
     if ( kernel_cmdline == NULL ) {
-        printk(SKBOOT_ERR"Error: kernel cmdline not available\n");
+        printk(SLEXEC_ERR"Error: kernel cmdline not available\n");
         return false;
     }
     const size_t kernel_cmdline_size = REAL_END_OFFSET - KERNEL_CMDLINE_OFFSET;
@@ -344,7 +344,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     sk_memset((void *)hdr->cmd_line_ptr, 0, kernel_cmdline_size);
     sk_memcpy((void *)hdr->cmd_line_ptr, kernel_cmdline, kernel_cmdline_strlen);
 
-    printk(SKBOOT_INFO"Linux cmdline from 0x%lx to 0x%lx:\n",
+    printk(SLEXEC_INFO"Linux cmdline from 0x%lx to 0x%lx:\n",
            (unsigned long)hdr->cmd_line_ptr,
            (unsigned long)(hdr->cmd_line_ptr + kernel_cmdline_size));
     printk_long((void *)hdr->cmd_line_ptr);
@@ -375,14 +375,14 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
                     efi->efi_systable_hi = 0;
                 }
             } else {
-                printk(SKBOOT_INFO"failed to get efi system table ptr\n");
+                printk(SLEXEC_INFO"failed to get efi system table ptr\n");
             }
         }
 
         efi_mmap_addr = find_efi_memmap(g_ldr_ctx, &descr_size,
                                         &descr_vers, &mmap_size);
         if (!efi_mmap_addr) {
-            printk(SKBOOT_INFO"failed to get EFI memory map\n");
+            printk(SLEXEC_INFO"failed to get EFI memory map\n");
             efi->efi_memdescr_size = 0x1; // Avoid div by 0 in kernel.
             efi->efi_memmap_size = 0;
             efi->efi_memmap = 0;
@@ -397,9 +397,9 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
              */
             efi->efi_memmap_hi = 0;
 
-            printk(SKBOOT_INFO "EFI memmap: memmap base: 0x%x, memmap size: 0x%x\n",
+            printk(SLEXEC_INFO "EFI memmap: memmap base: 0x%x, memmap size: 0x%x\n",
                   efi->efi_memmap, efi->efi_memmap_size);
-            printk(SKBOOT_INFO "EFI memmap: descr size: 0x%x, descr version: 0x%x\n",
+            printk(SLEXEC_INFO "EFI memmap: descr size: 0x%x, descr version: 0x%x\n",
                   efi->efi_memdescr_size, efi->efi_memdescr_ver);
          }
 
@@ -413,7 +413,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
 
         memory_map_t *p = get_loader_memmap(g_ldr_ctx);
         if ( p == NULL ) {
-            printk(SKBOOT_ERR"Error: no memory map available\n");
+            printk(SLEXEC_ERR"Error: no memory map available\n");
             return false;
         }
         uint32_t memmap_start = (uint32_t) p;
@@ -451,12 +451,12 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     g_sl_kernel_setup.protected_mode_size = protected_mode_size;
     g_sl_kernel_setup.boot_params = boot_params;
 
-    printk(SKBOOT_DETA"Intermediate Loader kernel details:\n");
-    printk(SKBOOT_DETA"\treal_mode_base: 0x%x\n", real_mode_base);
-    printk(SKBOOT_DETA"\treal_mode_size: 0x%lx\n", real_mode_size);
-    printk(SKBOOT_DETA"\tprotected_mode_base: 0x%x\n", protected_mode_base);
-    printk(SKBOOT_DETA"\tprotected_mode_size: 0x%lx\n", protected_mode_size);
-    printk(SKBOOT_DETA"\tboot_params: 0x%p\n", boot_params);
+    printk(SLEXEC_ERR"Intermediate Loader kernel details:\n");
+    printk(SLEXEC_ERR"\treal_mode_base: 0x%x\n", real_mode_base);
+    printk(SLEXEC_ERR"\treal_mode_size: 0x%lx\n", real_mode_size);
+    printk(SLEXEC_ERR"\tprotected_mode_base: 0x%x\n", protected_mode_base);
+    printk(SLEXEC_ERR"\tprotected_mode_size: 0x%lx\n", protected_mode_size);
+    printk(SLEXEC_ERR"\tboot_params: 0x%p\n", boot_params);
 
     return true;
 }
@@ -474,7 +474,7 @@ void linux_skl_setup_indirect(setup_data_t *data, uint32_t adj_size)
     ind->len = adj_size;
     ind->addr = (uint64_t)(uint32_t)g_skl_module;
 
-    printk(SKBOOT_INFO"SKL indirect tag setup - addr: %p size: 0x%x\n",
+    printk(SLEXEC_INFO"SKL indirect tag setup - addr: %p size: 0x%x\n",
            g_skl_module, adj_size);
 
     /* Chain it into the setup_data list, stick it up front */

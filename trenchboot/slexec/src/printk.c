@@ -34,15 +34,15 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <stdarg.h>
 #include <string.h>
 #include <misc.h>
 #include <printk.h>
 #include <cmdline.h>
 
-uint8_t g_log_level = SKBOOT_LOG_LEVEL_ALL;
-uint8_t g_log_targets = SKBOOT_LOG_TARGET_SERIAL | SKBOOT_LOG_TARGET_VGA;
+uint8_t g_log_level = SLEXEC_LOG_LEVEL_ALL;
+uint8_t g_log_targets = SLEXEC_LOG_TARGET_SERIAL | SLEXEC_LOG_TARGET_VGA;
 
 /*
  * memory logging
@@ -54,15 +54,15 @@ __data skboot_log_t *g_log = NULL;
 static void memlog_init(void)
 {
     if ( g_log == NULL ) {
-        g_log = (skboot_log_t *)SKBOOT_SERIAL_LOG_ADDR;
-        g_log->uuid = (uuid_t)SKBOOT_LOG_UUID;
+        g_log = (skboot_log_t *)SLEXEC_SERIAL_LOG_ADDR;
+        g_log->uuid = (uuid_t)SLEXEC_LOG_UUID;
         g_log->curr_pos = 0;
     }
 
     /* initialize these post-launch as well, since bad/malicious values */
     /* could compromise environment */
-    g_log = (skboot_log_t *)SKBOOT_SERIAL_LOG_ADDR;
-    g_log->max_size = SKBOOT_SERIAL_LOG_SIZE - sizeof(*g_log);
+    g_log = (skboot_log_t *)SLEXEC_SERIAL_LOG_ADDR;
+    g_log->max_size = SLEXEC_SERIAL_LOG_SIZE - sizeof(*g_log);
 
     /* if we're calling this post-launch, verify that curr_pos is valid */
     if ( g_log->curr_pos > g_log->max_size )
@@ -101,13 +101,13 @@ void printk_init(void)
 
     /* parse serial settings */
     if ( !get_skboot_serial() )
-        g_log_targets &= ~SKBOOT_LOG_TARGET_SERIAL;
+        g_log_targets &= ~SLEXEC_LOG_TARGET_SERIAL;
 
-    if ( g_log_targets & SKBOOT_LOG_TARGET_MEMORY )
+    if ( g_log_targets & SLEXEC_LOG_TARGET_MEMORY )
         memlog_init();
-    if ( g_log_targets & SKBOOT_LOG_TARGET_SERIAL )
+    if ( g_log_targets & SLEXEC_LOG_TARGET_SERIAL )
         serial_init();
-    if ( g_log_targets & SKBOOT_LOG_TARGET_VGA ) {
+    if ( g_log_targets & SLEXEC_LOG_TARGET_VGA ) {
         vga_init();
         get_skboot_vga_delay(); /* parse vga delay time */
     }
@@ -115,9 +115,9 @@ void printk_init(void)
 
 #define WRITE_LOGS(s, n) \
     do {                                                                 \
-        if (g_log_targets & SKBOOT_LOG_TARGET_MEMORY) memlog_write(s, n); \
-        if (g_log_targets & SKBOOT_LOG_TARGET_SERIAL) serial_write(s, n); \
-        if (g_log_targets & SKBOOT_LOG_TARGET_VGA) vga_write(s, n);       \
+        if (g_log_targets & SLEXEC_LOG_TARGET_MEMORY) memlog_write(s, n); \
+        if (g_log_targets & SLEXEC_LOG_TARGET_SERIAL) serial_write(s, n); \
+        if (g_log_targets & SLEXEC_LOG_TARGET_VGA) vga_write(s, n);       \
     } while (0)
 
 void printk(const char *fmt, ...)
@@ -138,9 +138,9 @@ void printk(const char *fmt, ...)
     if ( !(g_log_level & log_level) )
         goto exit;
 
-    /* prepend "SKBOOT: " if the last line that was printed ended with a '\n' */
+    /* prepend "SLEXEC: " if the last line that was printed ended with a '\n' */
     if ( last_line_cr )
-        WRITE_LOGS("SKBOOT: ", 8);
+        WRITE_LOGS("SLEXEC: ", 8);
 
     last_line_cr = (n > 0 && (*(pbuf+n-1) == '\n'));
     WRITE_LOGS(pbuf, n);

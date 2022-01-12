@@ -35,7 +35,7 @@
  */
 
 #include <types.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <processor.h>
 #include <pci.h>
 

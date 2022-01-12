@@ -33,7 +33,7 @@
  *
  */
 
-#include <skboot.h>
+#include <slexec.h>
 #include <multiboot.h>
 #include <processor.h>
 
@@ -210,18 +210,18 @@ idt_table:
 		.word	int_handler - _start
 		.word	CS_SEL
 		.word	0x8e00   /* present, DPL=0, 32b, interrupt */
-		.word	(int_handler - _start + SKBOOT_START) >> 16
+		.word	(int_handler - _start + SLEXEC_START) >> 16
 	.endr
 	/* for machine-check exception */
 		.word	int_handler - _start
 		.word	CS_SEL
 		.word	0x8f00   /* present, DPL=0, 32b, trap */
-		.word	(int_handler - _start + SKBOOT_START) >> 16
+		.word	(int_handler - _start + SLEXEC_START) >> 16
 	.rept 237
 		.word	int_handler - _start
 		.word	CS_SEL
 		.word	0x8e00   /* present, DPL=0, 32b, interrupt */
-		.word	(int_handler - _start + SKBOOT_START) >> 16
+		.word	(int_handler - _start + SLEXEC_START) >> 16
 	.endr
 idt_table_end:
 

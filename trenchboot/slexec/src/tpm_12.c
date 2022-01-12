@@ -35,7 +35,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <printk.h>
 #include <misc.h>
 #include <processor.h>
@@ -150,7 +150,7 @@ static uint32_t _tpm12_submit_cmd(uint32_t locality, uint16_t tag, uint32_t cmd,
     uint32_t    cmd_size, rsp_size = 0;
 
     if ( out_size == NULL ) {
-        printk(SKBOOT_WARN"TPM: invalid param for _tpm12_submit_cmd()\n");
+        printk(SLEXEC_WARN"TPM: invalid param for _tpm12_submit_cmd()\n");
         return TPM_BAD_PARAMETER;
     }
 
@@ -163,7 +163,7 @@ static uint32_t _tpm12_submit_cmd(uint32_t locality, uint16_t tag, uint32_t cmd,
     cmd_size = CMD_HEAD_SIZE + arg_size;
 
     if ( cmd_size > TPM_CMD_SIZE_MAX ) {
-        printk(SKBOOT_WARN"TPM: cmd exceeds the max supported size.\n");
+        printk(SLEXEC_WARN"TPM: cmd exceeds the max supported size.\n");
         return TPM_BAD_PARAMETER;
     }
 
@@ -275,7 +275,7 @@ static uint32_t tpm12_get_capability(uint32_t locality, tpm_capability_area_t ca
     uint32_t ret, offset, out_size, size;
 
     if ( sub_cap == NULL || resp_size == NULL || resp == NULL ) {
-        printk(SKBOOT_WARN"TPM: tpm12_get_capability() bad parameter\n");
+        printk(SLEXEC_WARN"TPM: tpm12_get_capability() bad parameter\n");
         return TPM_BAD_PARAMETER;
     }
 
@@ -289,10 +289,10 @@ static uint32_t tpm12_get_capability(uint32_t locality, tpm_capability_area_t ca
     ret = tpm12_submit_cmd(locality, TPM_ORD_GET_CAPABILITY, offset, &out_size);
 
 #ifdef TPM_TRACE
-    printk(SKBOOT_DETA"TPM: get capability, return value = %08X\n", ret);
+    printk(SLEXEC_ERR"TPM: get capability, return value = %08X\n", ret);
 #endif
     if ( ret != TPM_SUCCESS ) {
-        printk(SKBOOT_DETA"TPM: get capability, return value = %08X\n", ret);
+        printk(SLEXEC_ERR"TPM: get capability, return value = %08X\n", ret);
         return ret;
     }
 
@@ -300,7 +300,7 @@ static uint32_t tpm12_get_capability(uint32_t locality, tpm_capability_area_t ca
     LOAD_INTEGER(WRAPPER_OUT_BUF, offset, size);
     if ( *resp_size < size ||
          size != out_size - sizeof(*resp_size) ) {
-        printk(SKBOOT_WARN"TPM: capability response too small\n");
+        printk(SLEXEC_WARN"TPM: capability response too small\n");
         return TPM_FAIL;
     }
     *resp_size = size;
@@ -354,7 +354,7 @@ static uint32_t tpm12_get_flags(uint32_t locality, uint32_t flag_id,
     tpm_structure_tag_t tag;
 
     if ( flags == NULL ) {
-        printk(SKBOOT_WARN"TPM: tpm12_get_flags() bad parameter\n");
+        printk(SLEXEC_WARN"TPM: tpm12_get_flags() bad parameter\n");
         return TPM_BAD_PARAMETER;
     }
 
@@ -366,7 +366,7 @@ static uint32_t tpm12_get_flags(uint32_t locality, uint32_t flag_id,
                              sub_cap, &resp_size, flags);
 
 #ifdef TPM_TRACE
-    printk(SKBOOT_DETA"TPM: get flags %08X, return value = %08X\n", flag_id, ret);
+    printk(SLEXEC_ERR"TPM: get flags %08X, return value = %08X\n", flag_id, ret);
 #endif
     if ( ret != TPM_SUCCESS )
         return ret;
@@ -374,7 +374,7 @@ static uint32_t tpm12_get_flags(uint32_t locality, uint32_t flag_id,
     /* 1.2 spec, main part 2, rev 103 add one more byte to permanent flags, to
        be backward compatible, not assume all expected bytes can be gotten */
     if ( resp_size > flag_size ) {
-        printk(SKBOOT_WARN"TPM: tpm12_get_flags() response size too small\n");
+        printk(SLEXEC_WARN"TPM: tpm12_get_flags() response size too small\n");
         return TPM_FAIL;
     }
 
@@ -397,7 +397,7 @@ static uint32_t tpm12_get_timeout(uint32_t locality,
     uint32_t resp[4];
 
     if ( (prop == NULL) || (prop_size < sizeof(resp)) ) {
-        printk(SKBOOT_WARN"TPM: tpm12_get_timeout() bad parameter\n");
+        printk(SLEXEC_WARN"TPM: tpm12_get_timeout() bad parameter\n");
         return TPM_BAD_PARAMETER;
     }
 
@@ -409,13 +409,13 @@ static uint32_t tpm12_get_timeout(uint32_t locality,
                              sub_cap, &resp_size, prop);
 
 #ifdef TPM_TRACE
-    printk(SKBOOT_DETA"TPM: get prop %08X, return value = %08X\n", prop_id, ret);
+    printk(SLEXEC_ERR"TPM: get prop %08X, return value = %08X\n", prop_id, ret);
 #endif
     if ( ret != TPM_SUCCESS )
         return ret;
 
     if ( resp_size != prop_size ) {
-        printk(SKBOOT_WARN"TPM: tpm_get_property() response size incorrect\n");
+        printk(SLEXEC_WARN"TPM: tpm_get_property() response size incorrect\n");
         return TPM_FAIL;
     }
 
@@ -443,7 +443,7 @@ static bool tpm12_init(struct tpm_if *ti)
 
     locality = ti->cur_loc;
     if ( !tpm_validate_locality(locality) ) {
-        printk(SKBOOT_WARN"TPM is not available.\n");
+        printk(SLEXEC_WARN"TPM is not available.\n");
         return false;
     }
 
@@ -452,12 +452,12 @@ static bool tpm12_init(struct tpm_if *ti)
     ret = tpm12_get_flags(locality, TPM_CAP_FLAG_PERMANENT,
                         (uint8_t *)&pflags, sizeof(pflags));
     if ( ret != TPM_SUCCESS ) {
-        printk(SKBOOT_WARN"TPM is disabled or deactivated.\n");
+        printk(SLEXEC_WARN"TPM is disabled or deactivated.\n");
         ti->error = ret;
         return false;
     }
     if ( pflags.disable ) {
-        printk(SKBOOT_WARN"TPM is disabled.\n");
+        printk(SLEXEC_WARN"TPM is disabled.\n");
         return false;
     }
 
@@ -465,22 +465,22 @@ static bool tpm12_init(struct tpm_if *ti)
     ret = tpm12_get_flags(locality, TPM_CAP_FLAG_VOLATILE,
                         (uint8_t *)&vflags, sizeof(vflags));
     if ( ret != TPM_SUCCESS ) {
-        printk(SKBOOT_WARN"TPM is disabled or deactivated.\n");
+        printk(SLEXEC_WARN"TPM is disabled or deactivated.\n");
         ti->error = ret;
         return false;
     }
     if ( vflags.deactivated ) {
-        printk(SKBOOT_WARN"TPM is deactivated.\n");
+        printk(SLEXEC_WARN"TPM is deactivated.\n");
         return false;
     }
 
-    printk(SKBOOT_INFO"TPM is ready\n");
-    printk(SKBOOT_DETA"TPM nv_locked: %s\n", (pflags.nv_locked != 0) ? "TRUE" : "FALSE");
+    printk(SLEXEC_INFO"TPM is ready\n");
+    printk(SLEXEC_ERR"TPM nv_locked: %s\n", (pflags.nv_locked != 0) ? "TRUE" : "FALSE");
 
     /* get tpm timeout values */
     ret = tpm12_get_timeout(locality, (uint8_t *)&timeout, sizeof(timeout));
     if ( ret != TPM_SUCCESS ) {
-        printk(SKBOOT_WARN"TPM timeout values are not achieved, "
+        printk(SLEXEC_WARN"TPM timeout values are not achieved, "
                "default values will be used.\n");
         ti->error = ret;
     } else {
@@ -492,7 +492,7 @@ static bool tpm12_init(struct tpm_if *ti)
         ti->timeout.timeout_b = timeout[1]/1000;
         ti->timeout.timeout_c = timeout[2]/1000;
         ti->timeout.timeout_d = timeout[3]/1000;
-        printk(SKBOOT_DETA"TPM timeout values: A: %u, B: %u, C: %u, D: %u\n",
+        printk(SLEXEC_ERR"TPM timeout values: A: %u, B: %u, C: %u, D: %u\n",
                ti->timeout.timeout_a, ti->timeout.timeout_b, ti->timeout.timeout_c,
                ti->timeout.timeout_d);
         /*
@@ -501,19 +501,19 @@ static bool tpm12_init(struct tpm_if *ti)
          */
         if ( ti->timeout.timeout_a < TIMEOUT_A ) {
             ti->timeout.timeout_a = TIMEOUT_A;
-            printk(SKBOOT_WARN"Wrong timeout A, fallback to %u\n", TIMEOUT_A);
+            printk(SLEXEC_WARN"Wrong timeout A, fallback to %u\n", TIMEOUT_A);
         }
         if ( ti->timeout.timeout_b < TIMEOUT_B ) {
             ti->timeout.timeout_b = TIMEOUT_B;
-            printk(SKBOOT_WARN"Wrong timeout B, fallback to %u\n", TIMEOUT_B);
+            printk(SLEXEC_WARN"Wrong timeout B, fallback to %u\n", TIMEOUT_B);
         }
         if ( ti->timeout.timeout_c < TIMEOUT_C ) {
             ti->timeout.timeout_c = TIMEOUT_C;
-            printk(SKBOOT_WARN"Wrong timeout C, fallback to %u\n", TIMEOUT_C);
+            printk(SLEXEC_WARN"Wrong timeout C, fallback to %u\n", TIMEOUT_C);
         }
         if ( ti->timeout.timeout_d < TIMEOUT_D ) {
             ti->timeout.timeout_d = TIMEOUT_D;
-            printk(SKBOOT_WARN"Wrong timeout D, fallback to %u\n", TIMEOUT_D);
+            printk(SLEXEC_WARN"Wrong timeout D, fallback to %u\n", TIMEOUT_D);
         }
     }
 

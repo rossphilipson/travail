@@ -34,7 +34,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <string.h>
 #include <processor.h>
 #include <misc.h>

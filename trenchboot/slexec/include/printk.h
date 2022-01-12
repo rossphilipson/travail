@@ -38,17 +38,17 @@
 #include <com.h>
 #include <vga.h>
 
-#define SKBOOT_LOG_LEVEL_NONE    0x00
-#define SKBOOT_LOG_LEVEL_ERR     0x01
-#define SKBOOT_LOG_LEVEL_WARN    0x02
-#define SKBOOT_LOG_LEVEL_INFO    0x04
-#define SKBOOT_LOG_LEVEL_DETA    0x08
-#define SKBOOT_LOG_LEVEL_ALL     0xFF
+#define SLEXEC_LOG_LEVEL_NONE    0x00
+#define SLEXEC_LOG_LEVEL_ERR     0x01
+#define SLEXEC_LOG_LEVEL_WARN    0x02
+#define SLEXEC_LOG_LEVEL_INFO    0x04
+#define SLEXEC_LOG_LEVEL_DETA    0x08
+#define SLEXEC_LOG_LEVEL_ALL     0xFF
 
-#define SKBOOT_LOG_TARGET_NONE   0x00
-#define SKBOOT_LOG_TARGET_VGA    0x01
-#define SKBOOT_LOG_TARGET_SERIAL 0x02
-#define SKBOOT_LOG_TARGET_MEMORY 0x04
+#define SLEXEC_LOG_TARGET_NONE   0x00
+#define SLEXEC_LOG_TARGET_VGA    0x01
+#define SLEXEC_LOG_TARGET_SERIAL 0x02
+#define SLEXEC_LOG_TARGET_MEMORY 0x04
 
 extern uint8_t g_log_level;
 extern uint8_t g_log_targets;

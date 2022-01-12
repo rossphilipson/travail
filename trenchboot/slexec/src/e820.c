@@ -35,7 +35,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <printk.h>
 #include <cmdline.h>
 #include <string.h>
@@ -47,9 +47,9 @@
  * copy of bootloader/BIOS e820 table with adjusted entries
  * this version will replace original in mbi
  */
-#define MAX_E820_ENTRIES      (SKBOOT_E820_COPY_SIZE / sizeof(memory_map_t))
+#define MAX_E820_ENTRIES      (SLEXEC_E820_COPY_SIZE / sizeof(memory_map_t))
 static unsigned int g_nr_map;
-static memory_map_t *g_copy_e820_map = (memory_map_t *)SKBOOT_E820_COPY_ADDR;
+static memory_map_t *g_copy_e820_map = (memory_map_t *)SLEXEC_E820_COPY_ADDR;
 
 static inline void split64b(uint64_t val, uint32_t *val_lo, uint32_t *val_hi)  {
      *val_lo = (uint32_t)(val & 0xffffffff);
@@ -87,7 +87,7 @@ static void print_map(memory_map_t *e820, int nr_map)
         base_addr = e820_base_64(entry);
         length = e820_length_64(entry);
 
-        printk(SKBOOT_DETA"\t%016Lx - %016Lx  (%d)\n",
+        printk(SLEXEC_ERR"\t%016Lx - %016Lx  (%d)\n",
                (unsigned long long)base_addr,
                (unsigned long long)(base_addr + length),
                entry->type);
@@ -255,7 +255,7 @@ bool copy_e820_map(loader_ctx *lctx)
     if (have_loader_memmap(lctx)){
         uint32_t memmap_length = get_loader_memmap_length(lctx);
         memory_map_t *memmap = get_loader_memmap(lctx);
-        printk(SKBOOT_DETA"original e820 map:\n");
+        printk(SLEXEC_ERR"original e820 map:\n");
         print_map(memmap, memmap_length/sizeof(memory_map_t));
 
         uint32_t entry_offset = 0;
@@ -284,12 +284,12 @@ bool copy_e820_map(loader_ctx *lctx)
 
         }
         if ( g_nr_map == MAX_E820_ENTRIES ) {
-            printk(SKBOOT_ERR"Too many e820 entries\n");
+            printk(SLEXEC_ERR"Too many e820 entries\n");
             return false;
         }
     }
     else if ( have_loader_memlimits(lctx) ) {
-        printk(SKBOOT_DETA"no e820 map, mem_lower=%x, mem_upper=%x\n",
+        printk(SLEXEC_ERR"no e820 map, mem_lower=%x, mem_upper=%x\n",
                get_loader_mem_lower(lctx), get_loader_mem_upper(lctx));
 
         /* lower limit is 0x00000000 - <mem_lower>*0x400 (i.e. in kb) */
@@ -312,7 +312,7 @@ bool copy_e820_map(loader_ctx *lctx)
         g_nr_map = 2;
     }
     else {
-        printk(SKBOOT_ERR"no e820 map nor memory limits provided\n");
+        printk(SLEXEC_ERR"no e820 map nor memory limits provided\n");
         return false;
     }
 

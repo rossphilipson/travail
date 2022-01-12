@@ -35,7 +35,7 @@
 
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <printk.h>
 #include <processor.h>
 #include <ctype.h>
@@ -48,10 +48,10 @@ void print_hex(const char *prefix, const void *prtptr, size_t size)
 {
     for ( size_t i = 0; i < size; i++ ) {
         if ( i % 16 == 0 && prefix != NULL )
-            printk(SKBOOT_DETA"\n%s", prefix);
-        printk(SKBOOT_DETA"%02x ", *(uint8_t *)prtptr++);
+            printk(SLEXEC_ERR"\n%s", prefix);
+        printk(SLEXEC_ERR"%02x ", *(uint8_t *)prtptr++);
     }
-    printk(SKBOOT_DETA"\n");
+    printk(SLEXEC_ERR"\n");
 }
 
 static bool g_calibrated = false;

@@ -35,10 +35,9 @@
 #ifndef IS_INCLUDED
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <ctype.h>
 #include <string.h>
-#include <skboot.h>
 #include <misc.h>
 #include <printk.h>
 #include <cmdline.h>
@@ -91,12 +90,12 @@ typedef struct {
 
 /* map */
 static const sk_loglvl_map_t g_loglvl_map[] = {
-    { "none",  SKBOOT_LOG_LEVEL_NONE  },
-    { "err",   SKBOOT_LOG_LEVEL_ERR   },
-    { "warn",  SKBOOT_LOG_LEVEL_WARN  },
-    { "info",  SKBOOT_LOG_LEVEL_INFO  },
-    { "detail",SKBOOT_LOG_LEVEL_DETA  },
-    { "all",   SKBOOT_LOG_LEVEL_ALL   },
+    { "none",  SLEXEC_LOG_LEVEL_NONE  },
+    { "err",   SLEXEC_LOG_LEVEL_ERR   },
+    { "warn",  SLEXEC_LOG_LEVEL_WARN  },
+    { "info",  SLEXEC_LOG_LEVEL_INFO  },
+    { "detail",SLEXEC_LOG_LEVEL_DETA  },
+    { "all",   SLEXEC_LOG_LEVEL_ALL   },
 };
 
 static const char* get_option_val(const cmdline_option_t *options,  char vals[][MAX_VALUE_LEN],    const char *opt_name)
@@ -105,7 +104,7 @@ static const char* get_option_val(const cmdline_option_t *options,  char vals[][
         if ( sk_strcmp(options[i].name, opt_name) == 0 )
             return vals[i];
     }
-    printk(SKBOOT_ERR"requested unknown option: %s\n", opt_name);
+    printk(SLEXEC_ERR"requested unknown option: %s\n", opt_name);
     return NULL;
 }
 
@@ -176,7 +175,7 @@ void linux_parse_cmdline(const char *cmdline)
 
 uint8_t get_loglvl_prefix(char **pbuf, int *len)
 {
-    uint8_t log_level = SKBOOT_LOG_LEVEL_ALL;
+    uint8_t log_level = SLEXEC_LOG_LEVEL_ALL;
 
     if ( *len > 2 && **pbuf == '<' && *(*pbuf+2) == '>'
                   && isdigit(*(*pbuf+1)) ) {
@@ -201,7 +200,7 @@ void get_skboot_loglvl(void)
     while ( isspace(*loglvl) )
         loglvl++;
 
-    g_log_level = SKBOOT_LOG_LEVEL_NONE;
+    g_log_level = SLEXEC_LOG_LEVEL_NONE;
 
     while ( *loglvl != '\0' ) {
         unsigned int i;
@@ -211,8 +210,8 @@ void get_skboot_loglvl(void)
                      sk_strlen(g_loglvl_map[i].log_name)) == 0 ) {
                 loglvl += sk_strlen(g_loglvl_map[i].log_name);
 
-                if ( g_loglvl_map[i].log_val == SKBOOT_LOG_LEVEL_NONE ) {
-                    g_log_level = SKBOOT_LOG_LEVEL_NONE;
+                if ( g_loglvl_map[i].log_val == SLEXEC_LOG_LEVEL_NONE ) {
+                    g_log_level = SLEXEC_LOG_LEVEL_NONE;
                     return;
                 }
                 else {
@@ -244,24 +243,24 @@ void get_skboot_log_targets(void)
 
     /* determine if no targets set explicitly */
     if ( sk_strcmp(targets, "none") == 0 ) {
-        g_log_targets = SKBOOT_LOG_TARGET_NONE; /* print nothing */
+        g_log_targets = SLEXEC_LOG_TARGET_NONE; /* print nothing */
         return;
     }
 
     /* else init to nothing and parse the possible targets */
-    g_log_targets = SKBOOT_LOG_TARGET_NONE;
+    g_log_targets = SLEXEC_LOG_TARGET_NONE;
 
     while ( *targets != '\0' ) {
         if ( sk_strncmp(targets, "memory", 6) == 0 ) {
-            g_log_targets |= SKBOOT_LOG_TARGET_MEMORY;
+            g_log_targets |= SLEXEC_LOG_TARGET_MEMORY;
             targets += 6;
         }
         else if ( sk_strncmp(targets, "serial", 6) == 0 ) {
-            g_log_targets |= SKBOOT_LOG_TARGET_SERIAL;
+            g_log_targets |= SLEXEC_LOG_TARGET_SERIAL;
             targets += 6;
         }
         else if ( sk_strncmp(targets, "vga", 3) == 0 ) {
-            g_log_targets |= SKBOOT_LOG_TARGET_VGA;
+            g_log_targets |= SLEXEC_LOG_TARGET_VGA;
             targets += 3;
         }
         else

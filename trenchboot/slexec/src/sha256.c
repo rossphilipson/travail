@@ -1,6 +1,6 @@
 #include <types.h>
 #include <stdbool.h>
-#include <skboot.h>
+#include <slexec.h>
 #include <string.h>
 
 #define STORE64H(x, y)                                                                   \
