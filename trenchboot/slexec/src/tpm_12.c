@@ -525,7 +525,7 @@ static bool tpm12_init(struct tpm_if *ti)
     ti->banks = 1;
     ti->alg_count = 1;
     ti->algs[0] = HASH_ALG_SHA1;
-    ti->extpol = SK_EXTPOL_FIXED;
+    ti->extpol = SL_EXTPOL_FIXED;
     ti->cur_alg = HASH_ALG_SHA1;
 
     /* init NV index */

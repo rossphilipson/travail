@@ -441,15 +441,15 @@ uint32_t get_error_shutdown(void)
               "error_shutdown");
     if ( error_shutdown != NULL ) {
         if ( sl_strcmp(error_shutdown, "reboot") == 0 )
-            return SK_SHUTDOWN_REBOOT;
+            return SL_SHUTDOWN_REBOOT;
         if ( sl_strcmp(error_shutdown, "shutdown") == 0 )
-            return SK_SHUTDOWN_SHUTDOWN;
+            return SL_SHUTDOWN_SHUTDOWN;
         if ( sl_strcmp(error_shutdown, "halt") == 0 )
-            return SK_SHUTDOWN_HALT;
+            return SL_SHUTDOWN_HALT;
     }
 
     /* TODO change to shutdown when implemented */
-    return SK_SHUTDOWN_HALT;
+    return SL_SHUTDOWN_HALT;
 }
 
 /*

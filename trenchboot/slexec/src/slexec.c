@@ -59,7 +59,7 @@ __data loader_ctx *g_ldr_ctx = &g_loader_ctx;
 sl_header_t *g_skl_module = NULL;
 uint32_t g_skl_size = 0;
 
-static uint32_t g_default_error_action = SK_SHUTDOWN_HALT;
+static uint32_t g_default_error_action = SL_SHUTDOWN_HALT;
 static unsigned int g_cpuid_ext_feat_info;
 static bool is_powercycle_required = true;
 static uint32_t apic_base;
@@ -209,14 +209,14 @@ static int supports_skinit(void)
 
     if (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_SKINIT) {
         printk(SLEXEC_INFO"SKINIT CPU and all needed capabilities present\n");
-        return SK_ERR_NONE;
+        return SL_ERR_NONE;
     }
-    return SK_ERR_NO_SKINIT;
+    return SL_ERR_NO_SKINIT;
 }
 
 void error_action(int error)
 {
-    if ( error == SK_ERR_NONE )
+    if ( error == SL_ERR_NONE )
         return;
 
     printk(SLEXEC_ERR"error action invoked for: %x\n", error);
@@ -295,19 +295,19 @@ void begin_launch(void *addr, uint32_t magic)
     printk(SLEXEC_INFO"command line: %s\n", g_cmdline);
 
     if ( !platform_architecture() )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     /* we should only be executing on the BSP */
     apic_base = (uint32_t)rdmsr(MSR_APICBASE);
     if ( !(apic_base & APICBASE_BSP) ) {
         printk(SLEXEC_INFO"entry processor is not BSP\n");
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
     }
     printk(SLEXEC_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
 
     /* make copy of e820 map that we will use and adjust */
     if ( !copy_e820_map(g_ldr_ctx) )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     /* we need to make sure this is a (SKINIT) capable platform before using */
     /* any of the features, incl. those required to check if the environment */
@@ -317,33 +317,33 @@ void begin_launch(void *addr, uint32_t magic)
 
     /* make TPM ready for measured launch */
     if ( !tpm_detect() )
-       error_action(SK_ERR_TPM_NOT_READY);
+       error_action(SL_ERR_TPM_NOT_READY);
 
     /* ensure there are modules */
     if ( !verify_loader_context(g_ldr_ctx) )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     /* make the CPU ready for secure launch */
     if ( !prepare_cpu() )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     if ( !prepare_tpm() )
-        error_action(SK_ERR_TPM_NOT_READY);
+        error_action(SL_ERR_TPM_NOT_READY);
 
     /* locate and load SKL module */
     if ( !find_skl_module(g_ldr_ctx) )
-        error_action(SK_ERR_NO_SKL);
+        error_action(SL_ERR_NO_SKL);
 
     relocate_skl_module();
     print_skl_module();
 
     /* locate and prepare the secure launch kernel */
     if ( !prepare_intermediate_loader() )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     /* prepare the bootloader data area in the SKL */
     if ( !prepare_skl_bootloader_data() )
-        error_action(SK_ERR_FATAL);
+        error_action(SL_ERR_FATAL);
 
     /* launch the secure environment */
     skinit_launch_environment();

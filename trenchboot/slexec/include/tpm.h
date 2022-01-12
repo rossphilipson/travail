@@ -448,9 +448,9 @@ struct tpm_if {
     /*
      * Only for version>=2. PCR extend policy.
      */
-#define SK_EXTPOL_AGILE         0
-#define SK_EXTPOL_EMBEDDED      1
-#define SK_EXTPOL_FIXED         2
+#define SL_EXTPOL_AGILE         0
+#define SL_EXTPOL_EMBEDDED      1
+#define SL_EXTPOL_FIXED         2
     u8 extpol;
     u16 cur_alg;
 

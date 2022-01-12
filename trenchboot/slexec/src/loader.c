@@ -473,7 +473,7 @@ bool prepare_intermediate_loader(void)
         size = SLEXEC_SERIAL_LOG_SIZE;
         printk(SLEXEC_INFO"reserving SLEXEC memory log (%Lx - %Lx) in e820 table\n", base, (base + size - 1));
         if ( !e820_protect_region(base, size, E820_RESERVED) )
-            error_action(SK_ERR_FATAL);
+            error_action(SL_ERR_FATAL);
     }
 
     /* replace map in loader context with copy */

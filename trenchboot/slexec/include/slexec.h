@@ -176,11 +176,11 @@ extern char _end[];              /* end of slexec */
 #define SLEXEC_ALL        "<5>"
 #endif /* NO_SLEXEC_LOGLVL */
 
-#define SK_ERR_NONE          0
-#define SK_ERR_FATAL         1
-#define SK_ERR_NO_SKINIT     2
-#define SK_ERR_TPM_NOT_READY 3
-#define SK_ERR_NO_SKL        4
+#define SL_ERR_NONE          0
+#define SL_ERR_FATAL         1
+#define SL_ERR_NO_SKINIT     2
+#define SL_ERR_TPM_NOT_READY 3
+#define SL_ERR_NO_SKL        4
 
 extern void error_action(int error);
 
