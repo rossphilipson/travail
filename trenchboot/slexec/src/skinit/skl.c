@@ -11,13 +11,13 @@
 #include <skl.h>
 
 skl_info_t skl_info = {
-	.uuid = {
-		0x78, 0xf1, 0x26, 0x8e, 0x04, 0x92, 0x11, 0xe9,
-		0x83, 0x2a, 0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x02,
-	},
-	.version = SKL_VERSION,
-	.msb_key_algo = 0x14,
-	.msb_key_hash = { 0 },
+    .uuid = {
+        0x78, 0xf1, 0x26, 0x8e, 0x04, 0x92, 0x11, 0xe9,
+        0x83, 0x2a, 0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x02,
+    },
+    .version = SKL_VERSION,
+    .msb_key_algo = 0x14,
+    .msb_key_hash = { 0 },
 };
 
 bool is_skl_module(const void *skl_base, uint32_t skl_size)
@@ -71,7 +71,7 @@ bool prepare_skl_bootloader_data(void)
     skl_tag_evtlog_t *ltag;
     skl_tag_setup_indirect_t *itag;
     skl_tag_hdr_t *etag;
-    sk_hash_t hash;
+    sl_hash_t hash;
 
     /* Size tag is always first */
     stag = (skl_tag_tags_size_t *)((u8 *)g_skl_module + g_skl_module->bootloader_data_offset);

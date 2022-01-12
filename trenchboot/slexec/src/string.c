@@ -466,11 +466,8 @@ int sl_snprintf(char *buf, size_t size, const char *fmt, ...)
  * index() is also present as the strchr() in the kernel; it does exactly the
  * same thing as it's userland equivalent.
  */
-char *sl_index(p, ch)
+char *sl_index(const char *p, int ch)
 {
-    const char *p;
-    int ch;
-
     union {
         const char *cp;
         char *p;
@@ -609,10 +606,8 @@ done:
 /*
  * Compare strings.
  */
-int sl_strcmp(s1, s2)
+int sl_strcmp(register const char *s1, register const char *s2)
 {
-    register const char *s1, *s2;
-
     if (s1 == NULL || s2 == NULL)
         return (-1);
     if (s1 == s2)
@@ -636,11 +631,9 @@ size_t sl_strlen(str)
 	return(s - str);
 }
 
-int sl_strncmp(s1, s2, n)
+int sl_strncmp(register const char *s1, register const char *s2,
+               register size_t n)
 {
-    register const char *s1, *s2;
-    register size_t n;
-
     if (s1 == NULL || s2 == NULL)
         return(-1);
     if (n == 0 || s1 == s2)

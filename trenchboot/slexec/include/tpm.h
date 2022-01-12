@@ -159,7 +159,7 @@ typedef struct __packed {
 
 typedef struct {
     uint16_t  alg;
-    sk_hash_t hash;
+    sl_hash_t hash;
 } hash_entry_t;
 
 typedef struct {
@@ -420,7 +420,7 @@ static inline void _reverse_copy(uint8_t *out, uint8_t *in, uint32_t count)
 /* alg id list supported by slexec */
 extern u16 slexec_alg_list[];
 
-typedef sk_hash_t tpm_digest_t;
+typedef sl_hash_t tpm_digest_t;
 typedef tpm_digest_t tpm_pcr_value_t;
 
 struct tpm_if;
