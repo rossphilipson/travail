@@ -50,6 +50,11 @@
 #include <skl.h>
 #include <cmdline.h>
 
+/* TODO the MB2 handling has some issues, especially when things are moved or
+ * made bigger in the MB2 data area. See cc66e042d1e3f8e675ea520202a20681e5f00553
+ * e.g.
+ */
+
 /* multiboot struct saved so that post_launch() can use it (in slexec.c) */
 extern loader_ctx *g_ldr_ctx;
 static uint32_t g_mb_orig_size;

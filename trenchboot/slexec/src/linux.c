@@ -192,6 +192,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
          * The location, initrd_base, determined above in the commented out
          * code causes memory corruption. This value leads to the corruption
          * of EFI System Resource Table (ESRT), which is also located in RAM.
+         *
+         * NEED better memory allocator to avoid fixed addesses like this.
          */
         initrd_base = SLEXEC_FIXED_INITRD_BASE;
 

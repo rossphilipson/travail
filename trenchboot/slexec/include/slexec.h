@@ -42,6 +42,11 @@
 /* address slexec will load and execute at */
 #define SLEXEC_START              0x02C04000
 
+/*
+ * TODO this address is important due to non-PIC code but rather
+ * arbitrary and hardcoded. Can slexec be made PIC/PIE? Or some
+ * other option?
+ */
 /* the beginning of slexec memory */
 #define SLEXEC_BASE_ADDR          0x02C00000
 
@@ -65,7 +70,7 @@
 /* Used as a basic cmdline buffer size for copying cmdlines */
 #define SLEXEC_KERNEL_CMDLINE_SIZE    0x0400
 
-/* Fixed allocation values */
+/* TODO Fixed allocation values */
 #define SLEXEC_FIXED_INITRD_BASE      0x20000000
 #define SLEXEC_FIXED_SKL_BASE         0x40000000
 
@@ -96,11 +101,11 @@
 }
 
 typedef struct __packed {
-  uint32_t    data1;
-  uint16_t    data2;
-  uint16_t    data3;
-  uint16_t    data4;
-  uint8_t     data5[6];
+    uint32_t    data1;
+    uint16_t    data2;
+    uint16_t    data3;
+    uint16_t    data4;
+    uint8_t     data5[6];
 } uuid_t;
 
 #define HASH_ALG_SHA1_LG 0x0000  /* legacy define for SHA1 */
@@ -150,10 +155,10 @@ typedef struct {
 } slexec_log_t;
 
 /* {C0192526-6B30-4db4-844C-A3E953B88174} */
-#define SLEXEC_LOG_UUID   {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
+#define SLEXEC_LOG_UUID {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                               {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
 
-#define SKINIT_LZ_UUID    {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
+#define SKINIT_LZ_UUID  {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
                              {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
 
 extern char _start[];            /* start of slexec */
