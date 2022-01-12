@@ -526,81 +526,76 @@ typedef	int    word;		/* "word" used for optimal copy speed */
  */
 void *sl_memcpy(void *dst0, const void *src0, size_t length)
 {
-	char		*dst;
-	const char	*src;
-	size_t		t;
+    char *dst;
+    const char *src;
+    size_t t;
 
-	dst = dst0;
-	src = src0;
+    dst = dst0;
+    src = src0;
 
-	if (dst0 == NULL || src0 == NULL)
-		return NULL;
-	if (length == 0 || dst == src) {	/* nothing to do */
-		goto done;
-	}
+    if (dst0 == NULL || src0 == NULL)
+        return NULL;
 
-	/*
-	 * Macros: loop-t-times; and loop-t-times, t>0
-	 */
+    if (length == 0 || dst == src) /* nothing to do */
+        goto done;
+
+/* Macros: loop-t-times; and loop-t-times, t>0 */
 #define	TLOOP(s) if (t) TLOOP1(s)
 #define	TLOOP1(s) do { s; } while (--t)
 
-	if ((unsigned long)dst < (unsigned long)src) {
-		/*
-		 * Copy forward.
-		 */
-		t = (int)src;	/* only need low bits */
+    if ((unsigned long)dst < (unsigned long)src) {
+        /* Copy forward. */
+        t = (int)src; /* only need low bits */
 
-		if ((t | (int)dst) & wmask) {
-			/*
-			 * Try to align operands.  This cannot be done
-			 * unless the low bits match.
-			 */
-			if ((t ^ (int)dst) & wmask || length < wsize) {
-				t = length;
-			} else {
-				t = wsize - (t & wmask);
-			}
+        if ((t | (int)dst) & wmask) {
+            /*
+             * Try to align operands.  This cannot be done
+             * unless the low bits match.
+             */
+            if ((t ^ (int)dst) & wmask || length < wsize)
+                t = length;
+            else
+                t = wsize - (t & wmask);
 
-			length -= t;
-			TLOOP1(*dst++ = *src++);
-		}
-		/*
-		 * Copy whole words, then mop up any trailing bytes.
-		 */
-		t = length / wsize;
-		TLOOP(*(word *)dst = *(const word *)src; src += wsize;
-		    dst += wsize);
-		t = length & wmask;
-		TLOOP(*dst++ = *src++);
-	} else {
-		/*
-		 * Copy backwards.  Otherwise essentially the same.
-		 * Alignment works as before, except that it takes
-		 * (t&wmask) bytes to align, not wsize-(t&wmask).
-		 */
-		src += length;
-		dst += length;
-		t = (int)src;
+            length -= t;
+            TLOOP1(*dst++ = *src++);
+        }
 
-		if ((t | (int)dst) & wmask) {
-			if ((t ^ (int)dst) & wmask || length <= wsize) {
-				t = length;
-			} else {
-				t &= wmask;
-			}
+        /* Copy whole words, then mop up any trailing bytes. */
+        t = length / wsize;
+        TLOOP(*(word *)dst = *(const word *)src; src += wsize;
+        dst += wsize);
+        t = length & wmask;
+        TLOOP(*dst++ = *src++);
+    } else {
+        /*
+         * Copy backwards.  Otherwise essentially the same.
+         * Alignment works as before, except that it takes
+         * (t&wmask) bytes to align, not wsize-(t&wmask).
+         */
+        src += length;
+        dst += length;
+        t = (int)src;
 
-			length -= t;
-			TLOOP1(*--dst = *--src);
-		}
-		t = length / wsize;
-		TLOOP(src -= wsize; dst -= wsize;
-		    *(word *)dst = *(const word *)src);
-		t = length & wmask;
-		TLOOP(*--dst = *--src);
-	}
+        if ((t | (int)dst) & wmask) {
+            if ((t ^ (int)dst) & wmask || length <= wsize)
+                t = length;
+            else
+                t &= wmask;
+
+            length -= t;
+            TLOOP1(*--dst = *--src);
+        }
+
+        t = length / wsize;
+        TLOOP(src -= wsize; dst -= wsize;
+        *(word *)dst = *(const word *)src);
+        t = length & wmask;
+        TLOOP(*--dst = *--src);
+    }
+
 done:
-	return (dst0);
+    return (dst0);
 }
 
 /*
@@ -686,59 +681,66 @@ char *sl_strncpy(char * __restrict dst, const char * __restrict src, size_t n)
  */
 unsigned long sl_strtoul(const char *nptr, char **endptr, int base)
 {
-	const char *s = nptr;
-	unsigned long acc;
-	unsigned char c;
-	unsigned long cutoff;
-	int neg = 0, any, cutlim;
+    const char *s = nptr;
+    unsigned long acc, cutoff;
+    unsigned char c;
+    int neg = 0, any, cutlim;
 
-	if (nptr == NULL)
-		return ULONG_MAX;
-	/*
-	 * See strtol for comments as to the logic used.
-	 */
-	do {
-		c = *s++;
-	} while (isspace(c));
-	if (c == '-') {
-		neg = 1;
-		c = *s++;
-	} else if (c == '+')
-		c = *s++;
-	if ((base == 0 || base == 16) &&
-	    c == '0' && (*s == 'x' || *s == 'X')) {
-		c = s[1];
-		s += 2;
-		base = 16;
-	}
-	if (base == 0)
-		base = c == '0' ? 8 : 10;
-	cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
-	for (acc = 0, any = 0;; c = *s++) {
-		if (isdigit(c))
-			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
-		else
-			break;
-		if (c >= base)
-			break;
-		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
-			any = -1;
-		else {
-			any = 1;
-			acc *= base;
-			acc += c;
-		}
-	}
-	if (any < 0) {
-		acc = ULONG_MAX;
-	} else if (neg)
-		acc = -acc;
-	if (endptr != 0)
-		*((const char **)endptr) = any ? s - 1 : nptr;
-	return (acc);
+    if (nptr == NULL)
+        return ULONG_MAX;
+
+    /* See strtol for comments as to the logic used. */
+    do {
+        c = *s++;
+    } while (isspace(c));
+
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else if (c == '+')
+        c = *s++;
+
+    if ((base == 0 || base == 16) &&
+        c == '0' && (*s == 'x' || *s == 'X')) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
+
+    cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
+    cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
+    for (acc = 0, any = 0;; c = *s++) {
+        if (isdigit(c))
+            c -= '0';
+        else if (isalpha(c))
+            c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+        else
+            break;
+
+        if (c >= base)
+            break;
+
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+            any = -1;
+        else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+
+    if (any < 0)
+        acc = ULONG_MAX;
+    else if (neg)
+        acc = -acc;
+
+    if (endptr != 0)
+        *((const char **)endptr) = any ? s - 1 : nptr;
+
+    return (acc);
 }
 
 /*
