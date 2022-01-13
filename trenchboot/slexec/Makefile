@@ -7,6 +7,8 @@
 # slexec makefile
 #
 
+# TODO make slexec PIE
+
 include $(CURDIR)/Config.mk
 
 TARGET := $(CURDIR)/slexec

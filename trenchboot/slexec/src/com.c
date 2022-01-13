@@ -80,26 +80,26 @@ static void comc_pci_setup(void)
 {
     if ( g_psbdf_enabled ) {
         if ( g_pbbdf_enabled ) {
-            pcireg_cfgwrite(g_com_port.comc_pbbdf.bus,
-                            g_com_port.comc_pbbdf.slot,
-                            g_com_port.comc_pbbdf.func,
-                            PCIR_IOBASEL_1,
-                            (g_com_port.comc_port & 0xF000)
-                            | ((g_com_port.comc_port & 0xF000) >> 8),
-                            2);
+            pci_write(g_com_port.comc_pbbdf.bus,
+                      g_com_port.comc_pbbdf.slot,
+                      g_com_port.comc_pbbdf.func,
+                      PCIR_IOBASEL_1,
+                      (g_com_port.comc_port & 0xF000)
+                      | ((g_com_port.comc_port & 0xF000) >> 8),
+                       2);
         }
-        pcireg_cfgwrite(g_com_port.comc_psbdf.bus,
-                        g_com_port.comc_psbdf.slot,
-                        g_com_port.comc_psbdf.func,
-                        PCIR_BARS,
-                        g_com_port.comc_port | 0x1,
-                        4);
-        pcireg_cfgwrite(g_com_port.comc_psbdf.bus,
-                        g_com_port.comc_psbdf.slot,
-                        g_com_port.comc_psbdf.func,
-                        PCIR_COMMAND,
-                        0x1,
-                        2);
+        pci_write(g_com_port.comc_psbdf.bus,
+                  g_com_port.comc_psbdf.slot,
+                  g_com_port.comc_psbdf.func,
+                  PCIR_BARS,
+                  g_com_port.comc_port | 0x1,
+                  4);
+        pci_write(g_com_port.comc_psbdf.bus,
+                  g_com_port.comc_psbdf.slot,
+                  g_com_port.comc_psbdf.func,
+                  PCIR_COMMAND,
+                  0x1,
+                  2);
     }
 }
 

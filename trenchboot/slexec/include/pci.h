@@ -30,8 +30,8 @@
  * Portions copyright (c) 2010, Intel Corporation
  */
 
-#ifndef __PCI_CFGREG_H__
-#define __PCI_CFGREG_H__
+#ifndef __PCI_H__
+#define __PCI_H__
 
 #define PCI_BUSMAX	255     /* highest supported bus number */
 #define PCI_SLOTMAX	31      /* highest supported slot number */
@@ -58,9 +58,10 @@
 #define	PCIR_BARS	0x10
 #define	PCIR_IOBASEL_1	0x1c
 
-void pcireg_cfgwrite(int bus, int slot, int func, int reg, int data, int bytes);
+int pci_read(int bus, int slot, int func, int reg, int bytes);
+void pci_write(int bus, int slot, int func, int reg, int data, int bytes);
 
-#endif /* __PCI_CFGREG_H__ */
+#endif /* __PCI_H__ */
 /*
  * Local variables:
  * mode: C

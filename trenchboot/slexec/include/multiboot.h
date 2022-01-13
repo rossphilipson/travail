@@ -208,7 +208,7 @@ struct mb2_tag_mmap
   uint32_t size;
   uint32_t entry_size;
   uint32_t entry_version;
-  struct mb2_mmap_entry entries[0];  
+  struct mb2_mmap_entry entries[0];
 };
 
 struct mb2_tag_module

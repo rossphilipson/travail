@@ -40,10 +40,10 @@
 #include <pci.h>
 
 enum {
-	CFGMECH_NONE = 0,
-	CFGMECH_1,
-	CFGMECH_2,
-	CFGMECH_PCIE,
+    CFGMECH_NONE = 0,
+    CFGMECH_1,
+    CFGMECH_2,
+    CFGMECH_PCIE,
 };
 
 static const int cfgmech = CFGMECH_1;
@@ -54,80 +54,103 @@ static const int cfgmech = CFGMECH_1;
 
 /* enable configuration space accesses and return data port address */
 static int
-pci_cfgenable(unsigned bus, unsigned slot, unsigned func, int reg, int bytes)
+pci_enable(unsigned bus, unsigned slot, unsigned func, int reg, int bytes)
 {
-	int dataport = 0;
+    int dataport = 0;
 
-	if (bus <= PCI_BUSMAX
-	    && slot <= PCI_SLOTMAX
-	    && func <= PCI_FUNCMAX
-	    && (unsigned)reg <= PCI_REGMAX
-	    && bytes != 3
-	    && (unsigned)bytes <= 4
-	    && (reg & (bytes - 1)) == 0) {
-		switch (cfgmech) {
-		case CFGMECH_PCIE:
-		case CFGMECH_1:
-			outl(CONF1_ADDR_PORT, (1 << 31)
-			    | (bus << 16) | (slot << 11)
-			    | (func << 8) | (reg & ~0x03));
-			dataport = CONF1_DATA_PORT + (reg & 0x03);
-			break;
-		case CFGMECH_2:
-			outb(CONF2_ENABLE_PORT, 0xf0 | (func << 1));
-			outb(CONF2_FORWARD_PORT, bus);
-			dataport = 0xc000 | (slot << 8) | reg;
-			break;
+    if (bus <= PCI_BUSMAX
+        && slot <= PCI_SLOTMAX
+        && func <= PCI_FUNCMAX
+        && (unsigned)reg <= PCI_REGMAX
+        && bytes != 3
+        && (unsigned)bytes <= 4
+        && (reg & (bytes - 1)) == 0) {
+        switch (cfgmech) {
+        case CFGMECH_PCIE:
+        case CFGMECH_1:
+            outl(CONF1_ADDR_PORT, (1 << 31)
+                 | (bus << 16) | (slot << 11)
+                 | (func << 8) | (reg & ~0x03));
+            dataport = CONF1_DATA_PORT + (reg & 0x03);
+            break;
+        case CFGMECH_2:
+            outb(CONF2_ENABLE_PORT, 0xf0 | (func << 1));
+            outb(CONF2_FORWARD_PORT, bus);
+            dataport = 0xc000 | (slot << 8) | reg;
         default:
             break;
-		}
-	}
-	return (dataport);
+        }
+    }
+
+    return (dataport);
 }
 
 /* disable configuration space accesses */
 static void
-pci_cfgdisable(void)
+pci_disable(void)
 {
-	switch (cfgmech) {
-	case CFGMECH_PCIE:
-	case CFGMECH_1:
-		/*
-		 * Do nothing for the config mechanism 1 case.
-		 * Writing a 0 to the address port can apparently
-		 * confuse some bridges and cause spurious
-		 * access failures.
-		 */
-		break;
-	case CFGMECH_2:
-		outb(CONF2_ENABLE_PORT, 0);
-		break;
+    switch (cfgmech) {
+    case CFGMECH_PCIE:
+    case CFGMECH_1:
+        /*
+         * Do nothing for the config mechanism 1 case.
+         * Writing a 0 to the address port can apparently
+         * confuse some bridges and cause spurious
+         * access failures.
+         */
+        break;
+    case CFGMECH_2:
+        outb(CONF2_ENABLE_PORT, 0);
     default:
         break;
-	}
+    }
 }
 
-void pcireg_cfgwrite(int bus, int slot, int func, int reg, int data, int bytes)
+int pci_read(int bus, int slot, int func, int reg, int bytes)
 {
-	int port;
+    int data = -1;
+    int port;
 
-	port = pci_cfgenable(bus, slot, func, reg, bytes);
-	if (port != 0) {
-		switch (bytes) {
-		case 1:
-			outb(port, data);
-			break;
-		case 2:
-			outw(port, data);
-			break;
-		case 4:
-			outl(port, data);
-			break;
+    port = pci_enable(bus, slot, func, reg, bytes);
+    if (port != 0) {
+        switch (bytes) {
+        case 1:
+            data = inb(port);
+            break;
+        case 2:
+            data = inw(port);
+            break;
+        case 4:
+            data = inl(port);
         default:
             break;
-		}
-		pci_cfgdisable();
-	}
+        }
+        pci_disable();
+    }
+
+    return (data);
+}
+
+void pci_write(int bus, int slot, int func, int reg, int data, int bytes)
+{
+    int port;
+
+    port = pci_enable(bus, slot, func, reg, bytes);
+    if (port != 0) {
+        switch (bytes) {
+        case 1:
+            outb(port, data);
+            break;
+        case 2:
+            outw(port, data);
+            break;
+        case 4:
+            outl(port, data);
+        default:
+           break;
+        }
+        pci_disable();
+    }
 }
 
 /*

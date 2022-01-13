@@ -72,11 +72,6 @@ uint16_t e_shnum; /* Number of section header entries */
 uint16_t e_shstrndx; /* Section name string table index */
 } elf64_header_t;
 
-
-
-
-
-
 /* e_ident[] Identification Indexes */
 #define EI_MAG0        0         /* File identification */
 #define EI_MAG1        1         /* File identification */
@@ -167,8 +162,6 @@ uint64_t p_align; /* Alignment of segment */
 #define MB_MAGIC       0x2badb002
 
 #endif /* __ELF_DEFNS_H__ */
-
-
 
 /*
  * Local variables:
