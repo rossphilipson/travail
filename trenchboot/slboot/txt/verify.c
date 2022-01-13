@@ -199,34 +199,6 @@ tb_error_t supports_txt(void)
     return TB_ERR_TXT_NOT_SUPPORTED;
 }
 
-/* TODO this does not belong here, move to txt.c */
-void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
-                  uint64_t min_lo_ram, uint64_t max_lo_ram,
-                  uint64_t min_hi_ram, uint64_t max_hi_ram)
-{
-    printk(TBOOT_DETA"min_lo_ram: 0x%Lx, max_lo_ram: 0x%Lx\n", min_lo_ram, max_lo_ram);
-    printk(TBOOT_DETA"min_hi_ram: 0x%Lx, max_hi_ram: 0x%Lx\n", min_hi_ram, max_hi_ram);
-
-    /*
-     * base must be 2M-aligned and size must be multiple of 2M
-     * (so round bases and sizes down--rounding size up might conflict
-     *  with a BIOS-reserved region and cause problems; in practice, rounding
-     *  base down doesn't)
-     * we want to protect all of usable mem so that any kernel allocations
-     * before VT-d remapping is enabled are protected
-     */
-
-    min_lo_ram &= ~0x1fffffULL;
-    uint64_t lo_size = (max_lo_ram - min_lo_ram) & ~0x1fffffULL;
-    os_sinit_data->vtd_pmr_lo_base = min_lo_ram;
-    os_sinit_data->vtd_pmr_lo_size = lo_size;
-
-    min_hi_ram &= ~0x1fffffULL;
-    uint64_t hi_size = (max_hi_ram - min_hi_ram) & ~0x1fffffULL;
-    os_sinit_data->vtd_pmr_hi_base = min_hi_ram;
-    os_sinit_data->vtd_pmr_hi_size = hi_size;
-}
-
 tb_error_t txt_verify_platform(void)
 {
     txt_heap_t *txt_heap;

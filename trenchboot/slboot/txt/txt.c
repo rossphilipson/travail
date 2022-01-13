@@ -72,9 +72,11 @@ static uint32_t g_slaunch_header;
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
 
-extern void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
-                         uint64_t min_lo_ram, uint64_t max_lo_ram,
-                         uint64_t min_hi_ram, uint64_t max_hi_ram);
+static __data event_log_container_t *g_elog = NULL;
+static __data heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
+static __data heap_event_log_ptr_elt2_1_t *g_elog_2_1 = NULL;
+static __data uint32_t g_using_da = 0;
+__data acm_hdr_t *g_sinit = 0;
 
 static void print_file_info(void)
 {
@@ -115,7 +117,6 @@ static void dump_page_tables(void *ptab_base)
 /*
  * build_mle_pagetable()
  */
-
 static void *calculate_ptab_base_size(uint32_t *ptab_size)
 {
     uint32_t pages;
@@ -237,9 +238,6 @@ static void *build_mle_pagetable(void)
     return ptab_base;
 }
 
-static __data event_log_container_t *g_elog = NULL;
-static __data heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
-static __data heap_event_log_ptr_elt2_1_t *g_elog_2_1 = NULL;
 
 /* should be called after os_mle_data initialized */
 static void *init_event_log(void)
@@ -282,6 +280,7 @@ static void init_evtlog_desc(heap_event_log_ptr_elt2_t *evt_log)
     unsigned int i;
     os_mle_data_t *os_mle_data = get_os_mle_data_start(get_txt_heap());
     struct tpm_if *tpm = get_tpm();
+
     switch (tpm->extpol) {
     case TB_EXTPOL_AGILE:
         for (i=0; i<evt_log->count; i++) {
@@ -348,8 +347,8 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
     heap_ext_data_element_t* elt = elts;
     heap_event_log_ptr_elt_t* evt_log;
     struct tpm_if *tpm = get_tpm();
-
     int log_type = get_evtlog_type();
+
     if ( log_type == EVTLOG_TPM12 ) {
         evt_log = (heap_event_log_ptr_elt_t *)elt->data;
         evt_log->event_log_phys_addr = (uint64_t)(unsigned long)init_event_log();
@@ -383,8 +382,32 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
     elt->size = sizeof(*elt);
 }
 
-__data uint32_t g_using_da = 0;
-__data acm_hdr_t *g_sinit = 0;
+static void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
+                         uint64_t min_lo_ram, uint64_t max_lo_ram,
+                         uint64_t min_hi_ram, uint64_t max_hi_ram)
+{
+    printk(TBOOT_DETA"min_lo_ram: 0x%Lx, max_lo_ram: 0x%Lx\n", min_lo_ram, max_lo_ram);
+    printk(TBOOT_DETA"min_hi_ram: 0x%Lx, max_hi_ram: 0x%Lx\n", min_hi_ram, max_hi_ram);
+
+    /*
+     * base must be 2M-aligned and size must be multiple of 2M
+     * (so round bases and sizes down--rounding size up might conflict
+     *  with a BIOS-reserved region and cause problems; in practice, rounding
+     *  base down doesn't)
+     * we want to protect all of usable mem so that any kernel allocations
+     * before VT-d remapping is enabled are protected
+     */
+
+    min_lo_ram &= ~0x1fffffULL;
+    uint64_t lo_size = (max_lo_ram - min_lo_ram) & ~0x1fffffULL;
+    os_sinit_data->vtd_pmr_lo_base = min_lo_ram;
+    os_sinit_data->vtd_pmr_lo_size = lo_size;
+
+    min_hi_ram &= ~0x1fffffULL;
+    uint64_t hi_size = (max_hi_ram - min_hi_ram) & ~0x1fffffULL;
+    os_sinit_data->vtd_pmr_hi_base = min_hi_ram;
+    os_sinit_data->vtd_pmr_hi_size = hi_size;
+}
 
 /*
  * sets up TXT heap
@@ -397,6 +420,8 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     struct tpm_if *tpm = get_tpm();
     os_mle_data_t *os_mle_data;
     struct kernel_info *ki;
+    uint32_t version;
+    uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
 
     txt_heap = get_txt_heap();
 
@@ -437,7 +462,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
      * OS/loader to SINIT data
      */
     /* check sinit supported os_sinit_data version */
-    uint32_t version = get_supported_os_sinit_data_ver(sinit);
+    version = get_supported_os_sinit_data_ver(sinit);
     if ( version < MIN_OS_SINIT_DATA_VER ) {
         printk(TBOOT_ERR"unsupported OS to SINIT data version(%u) in sinit\n",
                version);
@@ -472,8 +497,6 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_sinit_data->mle_hdr_base = g_slaunch_header;
 
     /* VT-d PMRs */
-    uint64_t min_lo_ram, max_lo_ram, min_hi_ram, max_hi_ram;
-
     if ( !get_ram_ranges(&min_lo_ram, &max_lo_ram, &min_hi_ram, &max_hi_ram) )
         return NULL;
 
@@ -640,9 +663,10 @@ bool txt_prepare_cpu(void)
     unsigned long eflags, cr0;
     uint64_t mcg_cap, mcg_stat;
 
+    /* TODO part of this can probably be shared with SKINIT code */
+
     /* must be running at CPL 0 => this is implicit in even getting this far */
     /* since our bootstrap code loads a GDT, etc. */
-
     cr0 = read_cr0();
 
     /* must be in protected mode */

@@ -284,8 +284,6 @@ static inline void write_priv_config_reg(uint32_t reg, uint64_t val)
     write_config_reg(TXT_PRIV_CONFIG_REGS_BASE, reg, val);
 }
 
-extern uint32_t g_using_da;
-
 extern void txt_display_errors(void);
 extern bool txt_has_error(void);
 extern tb_error_t supports_txt(void);
@@ -300,7 +298,6 @@ extern bool txt_is_powercycle_required(void);
 extern int get_evtlog_type(void);
 
 #endif      /* __TXT_TXT_H__ */
-
 
 /*
  * Local variables:
