@@ -47,7 +47,7 @@
 #include <loader.h>
 #include <acpi.h>
 #include <mle.h>
-#include <txt/config_regs.h>
+#include <txt/txt.h>
 #include <txt/mtrrs.h>
 #include <txt/acmod.h>
 #include <tpm.h>

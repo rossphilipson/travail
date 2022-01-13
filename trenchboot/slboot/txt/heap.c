@@ -47,10 +47,9 @@
 #include <tpm.h>
 #include <loader.h>
 #include <tb_error.h>
-#include <txt/mtrrs.h>
-#include <txt/config_regs.h>
-#include <txt/heap.h>
 #include <txt/txt.h>
+#include <txt/mtrrs.h>
+#include <txt/heap.h>
 
 /*
  * extended data elements

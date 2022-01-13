@@ -47,7 +47,7 @@
 #include <tb_error.h>
 #include <tpm.h>
 #include <slboot.h>
-#include <txt/config_regs.h>
+#include <txt/txt.h>
 #include <cmdline.h>
 
 #define TB_LAUNCH_ERR_IDX     0x20000002      /* launch error index */

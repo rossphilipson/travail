@@ -46,8 +46,10 @@
 #include <uuid.h>
 #include <mle.h>
 #include <hash.h>
+#include <slboot.h>
+#include <loader.h>
+#include <txt/txt.h>
 #include <txt/acmod.h>
-#include <txt/config_regs.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 #include <txt/smx.h>

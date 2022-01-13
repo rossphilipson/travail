@@ -57,7 +57,6 @@
 #include <acpi.h>
 #include <linux_defns.h>
 #include <txt/txt.h>
-#include <txt/config_regs.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 #include <txt/acmod.h>

@@ -62,7 +62,6 @@
 #include <txt/txt.h>
 #include <txt/smx.h>
 #include <txt/mtrrs.h>
-#include <txt/config_regs.h>
 #include <txt/heap.h>
 #include <acpi.h>
 #include <cmdline.h>

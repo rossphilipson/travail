@@ -45,7 +45,6 @@
 #include <misc.h>
 #include <pci_cfgreg.h>
 #include <e820.h>
-#include <txt/config_regs.h>
 
 /* minimum size of RAM (type 1) region that cannot be marked as reserved even
    if it comes after a reserved region; 0 for no minimum (i.e. current
