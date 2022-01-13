@@ -46,19 +46,19 @@ extern loader_ctx *g_ldr_ctx;
 #ifndef __MULTIBOOT_H__
 /* a few useful utility types */
 typedef struct {
-	uint32_t mod_start;
-	uint32_t mod_end;
-	uint32_t string;
-	uint32_t reserved;
+    uint32_t mod_start;
+    uint32_t mod_end;
+    uint32_t string;
+    uint32_t reserved;
 } module_t;
 
 typedef struct {
-	uint32_t size;
-	uint32_t base_addr_low;
-	uint32_t base_addr_high;
-	uint32_t length_low;
-	uint32_t length_high;
-	uint32_t type;
+    uint32_t size;
+    uint32_t base_addr_low;
+    uint32_t base_addr_high;
+    uint32_t length_low;
+    uint32_t length_high;
+    uint32_t type;
 } memory_map_t;
 #endif
 

@@ -167,46 +167,46 @@ typedef struct __attribute__ ((packed)) {
 } boot_params_t;
 
 typedef struct __attribute__ ((packed)) {
-        u8  orig_x;                                                 /* 0x00 */
-        u8  orig_y;                                                 /* 0x01 */
-        u16 ext_mem_k;          /* extended memory size in kb */    /* 0x02 */
-        u16 orig_video_page;                                        /* 0x04 */
-        u8  orig_video_mode;    /* representing the specific mode
-                                that was in effect when booting */  /* 0x06 */
-        u8  orig_video_cols;                                        /* 0x07 */
-        u16 unused2;                                                /* 0x08 */
-        u16 orig_video_ega_bx;  /* video state and installed
-                                memory */                           /* 0x0a */
-        u16 unused3;                                                /* 0x0c */
-        u8  orig_video_lines;                                       /* 0x0e */
-        u8  orig_video_isVGA;   /* distinguish between VGA text
-                                and vesa lfb based screen setups */ /* 0x0f */
-        u16 orig_video_points;  /* font height */                   /* 0x10 */
+    u8  orig_x;                                                 /* 0x00 */
+    u8  orig_y;                                                 /* 0x01 */
+    u16 ext_mem_k;          /* extended memory size in kb */    /* 0x02 */
+    u16 orig_video_page;                                        /* 0x04 */
+    u8  orig_video_mode;    /* representing the specific mode
+                            that was in effect when booting */  /* 0x06 */
+    u8  orig_video_cols;                                        /* 0x07 */
+    u16 unused2;                                                /* 0x08 */
+    u16 orig_video_ega_bx;  /* video state and installed
+                            memory */                           /* 0x0a */
+    u16 unused3;                                                /* 0x0c */
+    u8  orig_video_lines;                                       /* 0x0e */
+    u8  orig_video_isVGA;   /* distinguish between VGA text
+                            and vesa lfb based screen setups */ /* 0x0f */
+    u16 orig_video_points;  /* font height */                   /* 0x10 */
 
-        u16 lfb_width;												/* 0x12 */
-        u16 lfb_height;												/* 0x14 */
-        u16 lfb_depth;												/* 0x16 */
-        u32 lfb_base;												/* 0x18 */
-        u32 lfb_size;												/* 0x1c */
+    u16 lfb_width;          /* 0x12 */
+    u16 lfb_height;         /* 0x14 */
+    u16 lfb_depth;          /* 0x16 */
+    u32 lfb_base;           /* 0x18 */
+    u32 lfb_size;           /* 0x1c */
 
-        u16 cl_magic;												/* 0x20 */
-        u16 cl_offset;												/* 0x22 */
+    u16 cl_magic;           /* 0x20 */
+    u16 cl_offset;          /* 0x22 */
 
-        u16 lfb_line_len;											/* 0x24 */
-        u8  red_mask_size;											/* 0x26 */
-        u8  red_field_pos;											/* 0x27 */
-        u8  green_mask_size;										/* 0x28 */
-        u8  green_field_pos;										/* 0x29 */
-        u8  blue_mask_size;											/* 0x2a */
-        u8  blue_field_pos;											/* 0x2b */
-        u8  reserved_mask_size;										/* 0x2c */
-        u8  reserved_field_pos;										/* 0x2d */
-        u16 vesapm_segment;											/* 0x2e */
-        u16 vesapm_offset;											/* 0x30 */
-        u16 lfb_pages;												/* 0x32 */
-        u16 vesa_attrib;											/* 0x34 */
-        u32 capabilities;											/* 0x36 */
-        /* padding out to 0x40 */
+    u16 lfb_line_len;       /* 0x24 */
+    u8  red_mask_size;      /* 0x26 */
+    u8  red_field_pos;      /* 0x27 */
+    u8  green_mask_size;    /* 0x28 */
+    u8  green_field_pos;    /* 0x29 */
+    u8  blue_mask_size;	    /* 0x2a */
+    u8  blue_field_pos;	    /* 0x2b */
+    u8  reserved_mask_size; /* 0x2c */
+    u8  reserved_field_pos; /* 0x2d */
+    u16 vesapm_segment;	    /* 0x2e */
+    u16 vesapm_offset;      /* 0x30 */
+    u16 lfb_pages;          /* 0x32 */
+    u16 vesa_attrib;        /* 0x34 */
+    u32 capabilities;       /* 0x36 */
+    /* padding out to 0x40 */
 } screen_info_t;
 
 /* recommended layout
@@ -245,22 +245,22 @@ typedef struct __attribute__ ((packed)) {
 #define REAL_MODE_SIZE          REAL_END_OFFSET - REAL_KERNEL_OFFSET
 
 struct efi_info {
-	uint32_t efi_ldr_sig;
-	uint32_t efi_systable;
-	uint32_t efi_memdescr_size;
-	uint32_t efi_memdescr_ver;
-	uint32_t efi_memmap;
-	uint32_t efi_memmap_size;
-	uint32_t efi_systable_hi;
-	uint32_t efi_memmap_hi;
+    uint32_t efi_ldr_sig;
+    uint32_t efi_systable;
+    uint32_t efi_memdescr_size;
+    uint32_t efi_memdescr_ver;
+    uint32_t efi_memmap;
+    uint32_t efi_memmap_size;
+    uint32_t efi_systable_hi;
+    uint32_t efi_memmap_hi;
 };
 
 struct kernel_info {
-	char magic[4];
-	uint32_t size;
-	uint32_t size_total;
-	uint32_t setup_type_max;
-	uint32_t mle_header_offset;
+    char magic[4];
+    uint32_t size;
+    uint32_t size_total;
+    uint32_t setup_type_max;
+    uint32_t mle_header_offset;
 };
 
 typedef struct {

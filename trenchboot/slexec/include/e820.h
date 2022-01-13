@@ -69,12 +69,12 @@ typedef struct __packed {
 } e820entry_t;
 
 typedef struct {
-	uint32_t type;
-	uint32_t pad;
-	uint64_t phys_addr;
-	uint64_t virt_addr;
-	uint64_t num_pages;
-	uint64_t attribute;
+    uint32_t type;
+    uint32_t pad;
+    uint64_t phys_addr;
+    uint64_t virt_addr;
+    uint64_t num_pages;
+    uint64_t attribute;
 } efi_memory_desc_t;
 
 extern memory_map_t *get_e820_copy(void);

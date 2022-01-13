@@ -52,22 +52,32 @@ unsigned long sl_strtoul(const char *nptr, char **endptr, int base);
 
 static inline void *sk_memset(void *b, int c, size_t len)
 {
-	char *bb;
+    char *bb;
 
-	for (bb = (char *)b; len--; )
-		*bb++ = c;
+    for (bb = (char *)b; len--; )
+        *bb++ = c;
 
-	return (b);
+    return (b);
 }
 
 static inline void *sk_memmove(void *dest, const void *src, size_t n)
 {
-	return sl_memcpy(dest, src, n);
+    return sl_memcpy(dest, src, n);
 }
 
 static __inline char *sk_strchr(const char *p, int ch)
 {
-	return sl_index(p, ch);
+    return sl_index(p, ch);
 }
 
 #endif /* __STRING_H__ */
+
+/*
+ * Local variables:
+ * mode: C
+ * c-set-style: "BSD"
+ * c-basic-offset: 4
+ * tab-width: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

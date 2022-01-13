@@ -198,351 +198,351 @@ typedef u64                            CONTEXT_COUNTER;
 // Table 11 -- TPM_CC Constants <I/O,S>
 typedef u32 TPM_CC;
 
-#define TPM_CC_FIRST                         (TPM_CC)(0x0000011F)    
-#define TPM_CC_PP_FIRST                      (TPM_CC)(0x0000011F)    
-#define TPM_CC_NV_UndefineSpaceSpecial       (TPM_CC)(0x0000011F)    
-#define TPM_CC_EvictControl                  (TPM_CC)(0x00000120)    
-#define TPM_CC_HierarchyControl              (TPM_CC)(0x00000121)    
-#define TPM_CC_NV_UndefineSpace              (TPM_CC)(0x00000122)    
-#define TPM_CC_ChangeEPS                     (TPM_CC)(0x00000124)    
-#define TPM_CC_ChangePPS                     (TPM_CC)(0x00000125)    
-#define TPM_CC_Clear                         (TPM_CC)(0x00000126)    
-#define TPM_CC_ClearControl                  (TPM_CC)(0x00000127)    
-#define TPM_CC_ClockSet                      (TPM_CC)(0x00000128)    
-#define TPM_CC_HierarchyChangeAuth           (TPM_CC)(0x00000129)    
-#define TPM_CC_NV_DefineSpace                (TPM_CC)(0x0000012A)    
-#define TPM_CC_PCR_Allocate                  (TPM_CC)(0x0000012B)    
-#define TPM_CC_PCR_SetAuthPolicy             (TPM_CC)(0x0000012C)    
-#define TPM_CC_PP_Commands                   (TPM_CC)(0x0000012D)    
-#define TPM_CC_SetPrimaryPolicy              (TPM_CC)(0x0000012E)    
-#define TPM_CC_FieldUpgradeStart             (TPM_CC)(0x0000012F)    
-#define TPM_CC_ClockRateAdjust               (TPM_CC)(0x00000130)    
-#define TPM_CC_CreatePrimary                 (TPM_CC)(0x00000131)    
-#define TPM_CC_NV_GlobalWriteLock            (TPM_CC)(0x00000132)    
-#define TPM_CC_PP_LAST                       (TPM_CC)(0x00000132)    
-#define TPM_CC_GetCommandAuditDigest         (TPM_CC)(0x00000133)    
-#define TPM_CC_NV_Increment                  (TPM_CC)(0x00000134)    
-#define TPM_CC_NV_SetBits                    (TPM_CC)(0x00000135)    
-#define TPM_CC_NV_Extend                     (TPM_CC)(0x00000136)    
-#define TPM_CC_NV_Write                      (TPM_CC)(0x00000137)    
-#define TPM_CC_NV_WriteLock                  (TPM_CC)(0x00000138)    
-#define TPM_CC_DictionaryAttackLockReset     (TPM_CC)(0x00000139)    
-#define TPM_CC_DictionaryAttackParameters    (TPM_CC)(0x0000013A)    
-#define TPM_CC_NV_ChangeAuth                 (TPM_CC)(0x0000013B)    
-#define TPM_CC_PCR_Event                     (TPM_CC)(0x0000013C)    
-#define TPM_CC_PCR_Reset                     (TPM_CC)(0x0000013D)    
-#define TPM_CC_SequenceComplete              (TPM_CC)(0x0000013E)    
-#define TPM_CC_SetAlgorithmSet               (TPM_CC)(0x0000013F)    
-#define TPM_CC_SetCommandCodeAuditStatus     (TPM_CC)(0x00000140)    
-#define TPM_CC_FieldUpgradeData              (TPM_CC)(0x00000141)    
-#define TPM_CC_IncrementalSelfTest           (TPM_CC)(0x00000142)    
-#define TPM_CC_SelfTest                      (TPM_CC)(0x00000143)    
-#define TPM_CC_Startup                       (TPM_CC)(0x00000144)    
-#define TPM_CC_Shutdown                      (TPM_CC)(0x00000145)    
-#define TPM_CC_StirRandom                    (TPM_CC)(0x00000146)    
-#define TPM_CC_ActivateCredential            (TPM_CC)(0x00000147)    
-#define TPM_CC_Certify                       (TPM_CC)(0x00000148)    
-#define TPM_CC_PolicyNV                      (TPM_CC)(0x00000149)    
-#define TPM_CC_CertifyCreation               (TPM_CC)(0x0000014A)    
-#define TPM_CC_Duplicate                     (TPM_CC)(0x0000014B)    
-#define TPM_CC_GetTime                       (TPM_CC)(0x0000014C)    
-#define TPM_CC_GetSessionAuditDigest         (TPM_CC)(0x0000014D)    
-#define TPM_CC_NV_Read                       (TPM_CC)(0x0000014E)    
-#define TPM_CC_NV_ReadLock                   (TPM_CC)(0x0000014F)    
-#define TPM_CC_ObjectChangeAuth              (TPM_CC)(0x00000150)    
-#define TPM_CC_PolicySecret                  (TPM_CC)(0x00000151)    
-#define TPM_CC_Rewrap                        (TPM_CC)(0x00000152)    
-#define TPM_CC_Create                        (TPM_CC)(0x00000153)    
-#define TPM_CC_ECDH_ZGen                     (TPM_CC)(0x00000154)    
-#define TPM_CC_HMAC                          (TPM_CC)(0x00000155)    
-#define TPM_CC_Import                        (TPM_CC)(0x00000156)    
-#define TPM_CC_Load                          (TPM_CC)(0x00000157)    
-#define TPM_CC_Quote                         (TPM_CC)(0x00000158)    
-#define TPM_CC_RSA_Decrypt                   (TPM_CC)(0x00000159)    
-#define TPM_CC_HMAC_Start                    (TPM_CC)(0x0000015B)    
-#define TPM_CC_SequenceUpdate                (TPM_CC)(0x0000015C)    
-#define TPM_CC_Sign                          (TPM_CC)(0x0000015D)    
-#define TPM_CC_Unseal                        (TPM_CC)(0x0000015E)    
-#define TPM_CC_PolicySigned                  (TPM_CC)(0x00000160)    
-#define TPM_CC_ContextLoad                   (TPM_CC)(0x00000161)    
-#define TPM_CC_ContextSave                   (TPM_CC)(0x00000162)    
-#define TPM_CC_ECDH_KeyGen                   (TPM_CC)(0x00000163)    
-#define TPM_CC_EncryptDecrypt                (TPM_CC)(0x00000164)    
-#define TPM_CC_FlushContext                  (TPM_CC)(0x00000165)    
-#define TPM_CC_LoadExternal                  (TPM_CC)(0x00000167)    
-#define TPM_CC_MakeCredential                (TPM_CC)(0x00000168)    
-#define TPM_CC_NV_ReadPublic                 (TPM_CC)(0x00000169)    
-#define TPM_CC_PolicyAuthorize               (TPM_CC)(0x0000016A)    
-#define TPM_CC_PolicyAuthValue               (TPM_CC)(0x0000016B)    
-#define TPM_CC_PolicyCommandCode             (TPM_CC)(0x0000016C)    
-#define TPM_CC_PolicyCounterTimer            (TPM_CC)(0x0000016D)    
-#define TPM_CC_PolicyCpHash                  (TPM_CC)(0x0000016E)    
-#define TPM_CC_PolicyLocality                (TPM_CC)(0x0000016F)    
-#define TPM_CC_PolicyNameHash                (TPM_CC)(0x00000170)    
-#define TPM_CC_PolicyOR                      (TPM_CC)(0x00000171)    
-#define TPM_CC_PolicyTicket                  (TPM_CC)(0x00000172)    
-#define TPM_CC_ReadPublic                    (TPM_CC)(0x00000173)    
-#define TPM_CC_RSA_Encrypt                   (TPM_CC)(0x00000174)    
-#define TPM_CC_StartAuthSession              (TPM_CC)(0x00000176)    
-#define TPM_CC_VerifySignature               (TPM_CC)(0x00000177)    
-#define TPM_CC_ECC_Parameters                (TPM_CC)(0x00000178)    
-#define TPM_CC_FirmwareRead                  (TPM_CC)(0x00000179)    
-#define TPM_CC_GetCapability                 (TPM_CC)(0x0000017A)    
-#define TPM_CC_GetRandom                     (TPM_CC)(0x0000017B)    
-#define TPM_CC_GetTestResult                 (TPM_CC)(0x0000017C)    
-#define TPM_CC_Hash                          (TPM_CC)(0x0000017D)    
-#define TPM_CC_PCR_Read                      (TPM_CC)(0x0000017E)    
-#define TPM_CC_PolicyPCR                     (TPM_CC)(0x0000017F)    
-#define TPM_CC_PolicyRestart                 (TPM_CC)(0x00000180)    
-#define TPM_CC_ReadClock                     (TPM_CC)(0x00000181)    
-#define TPM_CC_PCR_Extend                    (TPM_CC)(0x00000182)    
-#define TPM_CC_PCR_SetAuthValue              (TPM_CC)(0x00000183)    
-#define TPM_CC_NV_Certify                    (TPM_CC)(0x00000184)    
-#define TPM_CC_EventSequenceComplete         (TPM_CC)(0x00000185)    
-#define TPM_CC_HashSequenceStart             (TPM_CC)(0x00000186)    
-#define TPM_CC_PolicyPhysicalPresence        (TPM_CC)(0x00000187)    
-#define TPM_CC_PolicyDuplicationSelect       (TPM_CC)(0x00000188)    
-#define TPM_CC_PolicyGetDigest               (TPM_CC)(0x00000189)    
-#define TPM_CC_TestParms                     (TPM_CC)(0x0000018A)    
-#define TPM_CC_Commit                        (TPM_CC)(0x0000018B)    
-#define TPM_CC_PolicyPassword                (TPM_CC)(0x0000018C)    
-#define TPM_CC_SM2_ZGen                      (TPM_CC)(0x0000018D)    
-#define TPM_CC_LAST                          (TPM_CC)(0x0000018D)    
+#define TPM_CC_FIRST                         (TPM_CC)(0x0000011F)
+#define TPM_CC_PP_FIRST                      (TPM_CC)(0x0000011F)
+#define TPM_CC_NV_UndefineSpaceSpecial       (TPM_CC)(0x0000011F)
+#define TPM_CC_EvictControl                  (TPM_CC)(0x00000120)
+#define TPM_CC_HierarchyControl              (TPM_CC)(0x00000121)
+#define TPM_CC_NV_UndefineSpace              (TPM_CC)(0x00000122)
+#define TPM_CC_ChangeEPS                     (TPM_CC)(0x00000124)
+#define TPM_CC_ChangePPS                     (TPM_CC)(0x00000125)
+#define TPM_CC_Clear                         (TPM_CC)(0x00000126)
+#define TPM_CC_ClearControl                  (TPM_CC)(0x00000127)
+#define TPM_CC_ClockSet                      (TPM_CC)(0x00000128)
+#define TPM_CC_HierarchyChangeAuth           (TPM_CC)(0x00000129)
+#define TPM_CC_NV_DefineSpace                (TPM_CC)(0x0000012A)
+#define TPM_CC_PCR_Allocate                  (TPM_CC)(0x0000012B)
+#define TPM_CC_PCR_SetAuthPolicy             (TPM_CC)(0x0000012C)
+#define TPM_CC_PP_Commands                   (TPM_CC)(0x0000012D)
+#define TPM_CC_SetPrimaryPolicy              (TPM_CC)(0x0000012E)
+#define TPM_CC_FieldUpgradeStart             (TPM_CC)(0x0000012F)
+#define TPM_CC_ClockRateAdjust               (TPM_CC)(0x00000130)
+#define TPM_CC_CreatePrimary                 (TPM_CC)(0x00000131)
+#define TPM_CC_NV_GlobalWriteLock            (TPM_CC)(0x00000132)
+#define TPM_CC_PP_LAST                       (TPM_CC)(0x00000132)
+#define TPM_CC_GetCommandAuditDigest         (TPM_CC)(0x00000133)
+#define TPM_CC_NV_Increment                  (TPM_CC)(0x00000134)
+#define TPM_CC_NV_SetBits                    (TPM_CC)(0x00000135)
+#define TPM_CC_NV_Extend                     (TPM_CC)(0x00000136)
+#define TPM_CC_NV_Write                      (TPM_CC)(0x00000137)
+#define TPM_CC_NV_WriteLock                  (TPM_CC)(0x00000138)
+#define TPM_CC_DictionaryAttackLockReset     (TPM_CC)(0x00000139)
+#define TPM_CC_DictionaryAttackParameters    (TPM_CC)(0x0000013A)
+#define TPM_CC_NV_ChangeAuth                 (TPM_CC)(0x0000013B)
+#define TPM_CC_PCR_Event                     (TPM_CC)(0x0000013C)
+#define TPM_CC_PCR_Reset                     (TPM_CC)(0x0000013D)
+#define TPM_CC_SequenceComplete              (TPM_CC)(0x0000013E)
+#define TPM_CC_SetAlgorithmSet               (TPM_CC)(0x0000013F)
+#define TPM_CC_SetCommandCodeAuditStatus     (TPM_CC)(0x00000140)
+#define TPM_CC_FieldUpgradeData              (TPM_CC)(0x00000141)
+#define TPM_CC_IncrementalSelfTest           (TPM_CC)(0x00000142)
+#define TPM_CC_SelfTest                      (TPM_CC)(0x00000143)
+#define TPM_CC_Startup                       (TPM_CC)(0x00000144)
+#define TPM_CC_Shutdown                      (TPM_CC)(0x00000145)
+#define TPM_CC_StirRandom                    (TPM_CC)(0x00000146)
+#define TPM_CC_ActivateCredential            (TPM_CC)(0x00000147)
+#define TPM_CC_Certify                       (TPM_CC)(0x00000148)
+#define TPM_CC_PolicyNV                      (TPM_CC)(0x00000149)
+#define TPM_CC_CertifyCreation               (TPM_CC)(0x0000014A)
+#define TPM_CC_Duplicate                     (TPM_CC)(0x0000014B)
+#define TPM_CC_GetTime                       (TPM_CC)(0x0000014C)
+#define TPM_CC_GetSessionAuditDigest         (TPM_CC)(0x0000014D)
+#define TPM_CC_NV_Read                       (TPM_CC)(0x0000014E)
+#define TPM_CC_NV_ReadLock                   (TPM_CC)(0x0000014F)
+#define TPM_CC_ObjectChangeAuth              (TPM_CC)(0x00000150)
+#define TPM_CC_PolicySecret                  (TPM_CC)(0x00000151)
+#define TPM_CC_Rewrap                        (TPM_CC)(0x00000152)
+#define TPM_CC_Create                        (TPM_CC)(0x00000153)
+#define TPM_CC_ECDH_ZGen                     (TPM_CC)(0x00000154)
+#define TPM_CC_HMAC                          (TPM_CC)(0x00000155)
+#define TPM_CC_Import                        (TPM_CC)(0x00000156)
+#define TPM_CC_Load                          (TPM_CC)(0x00000157)
+#define TPM_CC_Quote                         (TPM_CC)(0x00000158)
+#define TPM_CC_RSA_Decrypt                   (TPM_CC)(0x00000159)
+#define TPM_CC_HMAC_Start                    (TPM_CC)(0x0000015B)
+#define TPM_CC_SequenceUpdate                (TPM_CC)(0x0000015C)
+#define TPM_CC_Sign                          (TPM_CC)(0x0000015D)
+#define TPM_CC_Unseal                        (TPM_CC)(0x0000015E)
+#define TPM_CC_PolicySigned                  (TPM_CC)(0x00000160)
+#define TPM_CC_ContextLoad                   (TPM_CC)(0x00000161)
+#define TPM_CC_ContextSave                   (TPM_CC)(0x00000162)
+#define TPM_CC_ECDH_KeyGen                   (TPM_CC)(0x00000163)
+#define TPM_CC_EncryptDecrypt                (TPM_CC)(0x00000164)
+#define TPM_CC_FlushContext                  (TPM_CC)(0x00000165)
+#define TPM_CC_LoadExternal                  (TPM_CC)(0x00000167)
+#define TPM_CC_MakeCredential                (TPM_CC)(0x00000168)
+#define TPM_CC_NV_ReadPublic                 (TPM_CC)(0x00000169)
+#define TPM_CC_PolicyAuthorize               (TPM_CC)(0x0000016A)
+#define TPM_CC_PolicyAuthValue               (TPM_CC)(0x0000016B)
+#define TPM_CC_PolicyCommandCode             (TPM_CC)(0x0000016C)
+#define TPM_CC_PolicyCounterTimer            (TPM_CC)(0x0000016D)
+#define TPM_CC_PolicyCpHash                  (TPM_CC)(0x0000016E)
+#define TPM_CC_PolicyLocality                (TPM_CC)(0x0000016F)
+#define TPM_CC_PolicyNameHash                (TPM_CC)(0x00000170)
+#define TPM_CC_PolicyOR                      (TPM_CC)(0x00000171)
+#define TPM_CC_PolicyTicket                  (TPM_CC)(0x00000172)
+#define TPM_CC_ReadPublic                    (TPM_CC)(0x00000173)
+#define TPM_CC_RSA_Encrypt                   (TPM_CC)(0x00000174)
+#define TPM_CC_StartAuthSession              (TPM_CC)(0x00000176)
+#define TPM_CC_VerifySignature               (TPM_CC)(0x00000177)
+#define TPM_CC_ECC_Parameters                (TPM_CC)(0x00000178)
+#define TPM_CC_FirmwareRead                  (TPM_CC)(0x00000179)
+#define TPM_CC_GetCapability                 (TPM_CC)(0x0000017A)
+#define TPM_CC_GetRandom                     (TPM_CC)(0x0000017B)
+#define TPM_CC_GetTestResult                 (TPM_CC)(0x0000017C)
+#define TPM_CC_Hash                          (TPM_CC)(0x0000017D)
+#define TPM_CC_PCR_Read                      (TPM_CC)(0x0000017E)
+#define TPM_CC_PolicyPCR                     (TPM_CC)(0x0000017F)
+#define TPM_CC_PolicyRestart                 (TPM_CC)(0x00000180)
+#define TPM_CC_ReadClock                     (TPM_CC)(0x00000181)
+#define TPM_CC_PCR_Extend                    (TPM_CC)(0x00000182)
+#define TPM_CC_PCR_SetAuthValue              (TPM_CC)(0x00000183)
+#define TPM_CC_NV_Certify                    (TPM_CC)(0x00000184)
+#define TPM_CC_EventSequenceComplete         (TPM_CC)(0x00000185)
+#define TPM_CC_HashSequenceStart             (TPM_CC)(0x00000186)
+#define TPM_CC_PolicyPhysicalPresence        (TPM_CC)(0x00000187)
+#define TPM_CC_PolicyDuplicationSelect       (TPM_CC)(0x00000188)
+#define TPM_CC_PolicyGetDigest               (TPM_CC)(0x00000189)
+#define TPM_CC_TestParms                     (TPM_CC)(0x0000018A)
+#define TPM_CC_Commit                        (TPM_CC)(0x0000018B)
+#define TPM_CC_PolicyPassword                (TPM_CC)(0x0000018C)
+#define TPM_CC_SM2_ZGen                      (TPM_CC)(0x0000018D)
+#define TPM_CC_LAST                          (TPM_CC)(0x0000018D)
 
 // Table 15 -- TPM_RC Constants <O,S>
 typedef u32 TPM_RCS;    // The 'safe' error codes
 typedef u32 TPM_RC;
 
-#define TPM_RC_SUCCESS              (TPM_RC)(0x000)    
-#define TPM_RC_BAD_TAG              (TPM_RC)(0x030)    
-#define RC_VER1                     (TPM_RC)(0x100)    
-#define TPM_RC_INITIALIZE           (TPM_RC)(RC_VER1 + 0x000)    
-#define TPM_RC_FAILURE              (TPM_RC)(RC_VER1 + 0x001)    
-#define TPM_RC_SEQUENCE             (TPM_RC)(RC_VER1 + 0x003)    
-#define TPM_RC_PRIVATE              (TPM_RC)(RC_VER1 + 0x00B)    
-#define TPM_RC_HMAC                 (TPM_RC)(RC_VER1 + 0x019)    
-#define TPM_RC_DISABLED             (TPM_RC)(RC_VER1 + 0x020)    
-#define TPM_RC_EXCLUSIVE            (TPM_RC)(RC_VER1 + 0x021)    
-#define TPM_RC_AUTH_TYPE            (TPM_RC)(RC_VER1 + 0x024)    
-#define TPM_RC_AUTH_MISSING         (TPM_RC)(RC_VER1 + 0x025)    
-#define TPM_RC_POLICY               (TPM_RC)(RC_VER1 + 0x026)    
-#define TPM_RC_PCR                  (TPM_RC)(RC_VER1 + 0x027)    
-#define TPM_RC_PCR_CHANGED          (TPM_RC)(RC_VER1 + 0x028)    
-#define TPM_RC_UPGRADE              (TPM_RC)(RC_VER1 + 0x02D)    
-#define TPM_RC_TOO_MANY_CONTEXTS    (TPM_RC)(RC_VER1 + 0x02E)    
-#define TPM_RC_AUTH_UNAVAILABLE     (TPM_RC)(RC_VER1 + 0x02F)    
-#define TPM_RC_REBOOT               (TPM_RC)(RC_VER1 + 0x030)    
-#define TPM_RC_UNBALANCED           (TPM_RC)(RC_VER1 + 0x031)    
-#define TPM_RC_COMMAND_SIZE         (TPM_RC)(RC_VER1 + 0x042)    
-#define TPM_RC_COMMAND_CODE         (TPM_RC)(RC_VER1 + 0x043)    
-#define TPM_RC_AUTHSIZE             (TPM_RC)(RC_VER1 + 0x044)    
-#define TPM_RC_AUTH_CONTEXT         (TPM_RC)(RC_VER1 + 0x045)    
-#define TPM_RC_NV_RANGE             (TPM_RC)(RC_VER1 + 0x046)    
-#define TPM_RC_NV_SIZE              (TPM_RC)(RC_VER1 + 0x047)    
-#define TPM_RC_NV_LOCKED            (TPM_RC)(RC_VER1 + 0x048)    
-#define TPM_RC_NV_AUTHORIZATION     (TPM_RC)(RC_VER1 + 0x049)    
-#define TPM_RC_NV_UNINITIALIZED     (TPM_RC)(RC_VER1 + 0x04A)    
-#define TPM_RC_NV_SPACE             (TPM_RC)(RC_VER1 + 0x04B)    
-#define TPM_RC_NV_DEFINED           (TPM_RC)(RC_VER1 + 0x04C)    
-#define TPM_RC_BAD_CONTEXT          (TPM_RC)(RC_VER1 + 0x050)    
-#define TPM_RC_CPHASH               (TPM_RC)(RC_VER1 + 0x051)    
-#define TPM_RC_PARENT               (TPM_RC)(RC_VER1 + 0x052)    
-#define TPM_RC_NEEDS_TEST           (TPM_RC)(RC_VER1 + 0x053)    
-#define TPM_RC_NO_RESULT            (TPM_RC)(RC_VER1 + 0x054)    
-#define TPM_RC_SENSITIVE            (TPM_RC)(RC_VER1 + 0x055)    
-#define RC_MAX_FM0                  (TPM_RC)(RC_VER1 + 0x07F)    
-#define RC_FMT1                     (TPM_RC)(0x080)    
-#define TPM_RC_ASYMMETRIC           (TPM_RC)(RC_FMT1 + 0x001)    
+#define TPM_RC_SUCCESS              (TPM_RC)(0x000)
+#define TPM_RC_BAD_TAG              (TPM_RC)(0x030)
+#define RC_VER1                     (TPM_RC)(0x100)
+#define TPM_RC_INITIALIZE           (TPM_RC)(RC_VER1 + 0x000)
+#define TPM_RC_FAILURE              (TPM_RC)(RC_VER1 + 0x001)
+#define TPM_RC_SEQUENCE             (TPM_RC)(RC_VER1 + 0x003)
+#define TPM_RC_PRIVATE              (TPM_RC)(RC_VER1 + 0x00B)
+#define TPM_RC_HMAC                 (TPM_RC)(RC_VER1 + 0x019)
+#define TPM_RC_DISABLED             (TPM_RC)(RC_VER1 + 0x020)
+#define TPM_RC_EXCLUSIVE            (TPM_RC)(RC_VER1 + 0x021)
+#define TPM_RC_AUTH_TYPE            (TPM_RC)(RC_VER1 + 0x024)
+#define TPM_RC_AUTH_MISSING         (TPM_RC)(RC_VER1 + 0x025)
+#define TPM_RC_POLICY               (TPM_RC)(RC_VER1 + 0x026)
+#define TPM_RC_PCR                  (TPM_RC)(RC_VER1 + 0x027)
+#define TPM_RC_PCR_CHANGED          (TPM_RC)(RC_VER1 + 0x028)
+#define TPM_RC_UPGRADE              (TPM_RC)(RC_VER1 + 0x02D)
+#define TPM_RC_TOO_MANY_CONTEXTS    (TPM_RC)(RC_VER1 + 0x02E)
+#define TPM_RC_AUTH_UNAVAILABLE     (TPM_RC)(RC_VER1 + 0x02F)
+#define TPM_RC_REBOOT               (TPM_RC)(RC_VER1 + 0x030)
+#define TPM_RC_UNBALANCED           (TPM_RC)(RC_VER1 + 0x031)
+#define TPM_RC_COMMAND_SIZE         (TPM_RC)(RC_VER1 + 0x042)
+#define TPM_RC_COMMAND_CODE         (TPM_RC)(RC_VER1 + 0x043)
+#define TPM_RC_AUTHSIZE             (TPM_RC)(RC_VER1 + 0x044)
+#define TPM_RC_AUTH_CONTEXT         (TPM_RC)(RC_VER1 + 0x045)
+#define TPM_RC_NV_RANGE             (TPM_RC)(RC_VER1 + 0x046)
+#define TPM_RC_NV_SIZE              (TPM_RC)(RC_VER1 + 0x047)
+#define TPM_RC_NV_LOCKED            (TPM_RC)(RC_VER1 + 0x048)
+#define TPM_RC_NV_AUTHORIZATION     (TPM_RC)(RC_VER1 + 0x049)
+#define TPM_RC_NV_UNINITIALIZED     (TPM_RC)(RC_VER1 + 0x04A)
+#define TPM_RC_NV_SPACE             (TPM_RC)(RC_VER1 + 0x04B)
+#define TPM_RC_NV_DEFINED           (TPM_RC)(RC_VER1 + 0x04C)
+#define TPM_RC_BAD_CONTEXT          (TPM_RC)(RC_VER1 + 0x050)
+#define TPM_RC_CPHASH               (TPM_RC)(RC_VER1 + 0x051)
+#define TPM_RC_PARENT               (TPM_RC)(RC_VER1 + 0x052)
+#define TPM_RC_NEEDS_TEST           (TPM_RC)(RC_VER1 + 0x053)
+#define TPM_RC_NO_RESULT            (TPM_RC)(RC_VER1 + 0x054)
+#define TPM_RC_SENSITIVE            (TPM_RC)(RC_VER1 + 0x055)
+#define RC_MAX_FM0                  (TPM_RC)(RC_VER1 + 0x07F)
+#define RC_FMT1                     (TPM_RC)(0x080)
+#define TPM_RC_ASYMMETRIC           (TPM_RC)(RC_FMT1 + 0x001)
 #define TPM_RCS_ASYMMETRIC          (TPM_RCS)(RC_FMT1 + 0x001)
-#define TPM_RC_ATTRIBUTES           (TPM_RC)(RC_FMT1 + 0x002)    
+#define TPM_RC_ATTRIBUTES           (TPM_RC)(RC_FMT1 + 0x002)
 #define TPM_RCS_ATTRIBUTES          (TPM_RCS)(RC_FMT1 + 0x002)
-#define TPM_RC_HASH                 (TPM_RC)(RC_FMT1 + 0x003)    
+#define TPM_RC_HASH                 (TPM_RC)(RC_FMT1 + 0x003)
 #define TPM_RCS_HASH                (TPM_RCS)(RC_FMT1 + 0x003)
-#define TPM_RC_VALUE                (TPM_RC)(RC_FMT1 + 0x004)    
+#define TPM_RC_VALUE                (TPM_RC)(RC_FMT1 + 0x004)
 #define TPM_RCS_VALUE               (TPM_RCS)(RC_FMT1 + 0x004)
-#define TPM_RC_HIERARCHY            (TPM_RC)(RC_FMT1 + 0x005)    
+#define TPM_RC_HIERARCHY            (TPM_RC)(RC_FMT1 + 0x005)
 #define TPM_RCS_HIERARCHY           (TPM_RCS)(RC_FMT1 + 0x005)
-#define TPM_RC_KEY_SIZE             (TPM_RC)(RC_FMT1 + 0x007)    
+#define TPM_RC_KEY_SIZE             (TPM_RC)(RC_FMT1 + 0x007)
 #define TPM_RCS_KEY_SIZE            (TPM_RCS)(RC_FMT1 + 0x007)
-#define TPM_RC_MGF                  (TPM_RC)(RC_FMT1 + 0x008)    
+#define TPM_RC_MGF                  (TPM_RC)(RC_FMT1 + 0x008)
 #define TPM_RCS_MGF                 (TPM_RCS)(RC_FMT1 + 0x008)
-#define TPM_RC_MODE                 (TPM_RC)(RC_FMT1 + 0x009)    
+#define TPM_RC_MODE                 (TPM_RC)(RC_FMT1 + 0x009)
 #define TPM_RCS_MODE                (TPM_RCS)(RC_FMT1 + 0x009)
-#define TPM_RC_TYPE                 (TPM_RC)(RC_FMT1 + 0x00A)    
+#define TPM_RC_TYPE                 (TPM_RC)(RC_FMT1 + 0x00A)
 #define TPM_RCS_TYPE                (TPM_RCS)(RC_FMT1 + 0x00A)
-#define TPM_RC_HANDLE               (TPM_RC)(RC_FMT1 + 0x00B)    
+#define TPM_RC_HANDLE               (TPM_RC)(RC_FMT1 + 0x00B)
 #define TPM_RCS_HANDLE              (TPM_RCS)(RC_FMT1 + 0x00B)
-#define TPM_RC_KDF                  (TPM_RC)(RC_FMT1 + 0x00C)    
+#define TPM_RC_KDF                  (TPM_RC)(RC_FMT1 + 0x00C)
 #define TPM_RCS_KDF                 (TPM_RCS)(RC_FMT1 + 0x00C)
-#define TPM_RC_RANGE                (TPM_RC)(RC_FMT1 + 0x00D)    
+#define TPM_RC_RANGE                (TPM_RC)(RC_FMT1 + 0x00D)
 #define TPM_RCS_RANGE               (TPM_RCS)(RC_FMT1 + 0x00D)
-#define TPM_RC_AUTH_FAIL            (TPM_RC)(RC_FMT1 + 0x00E)    
+#define TPM_RC_AUTH_FAIL            (TPM_RC)(RC_FMT1 + 0x00E)
 #define TPM_RCS_AUTH_FAIL           (TPM_RCS)(RC_FMT1 + 0x00E)
-#define TPM_RC_NONCE                (TPM_RC)(RC_FMT1 + 0x00F)    
+#define TPM_RC_NONCE                (TPM_RC)(RC_FMT1 + 0x00F)
 #define TPM_RCS_NONCE               (TPM_RCS)(RC_FMT1 + 0x00F)
-#define TPM_RC_PP                   (TPM_RC)(RC_FMT1 + 0x010)    
+#define TPM_RC_PP                   (TPM_RC)(RC_FMT1 + 0x010)
 #define TPM_RCS_PP                  (TPM_RCS)(RC_FMT1 + 0x010)
-#define TPM_RC_SCHEME               (TPM_RC)(RC_FMT1 + 0x012)    
+#define TPM_RC_SCHEME               (TPM_RC)(RC_FMT1 + 0x012)
 #define TPM_RCS_SCHEME              (TPM_RCS)(RC_FMT1 + 0x012)
-#define TPM_RC_SIZE                 (TPM_RC)(RC_FMT1 + 0x015)    
+#define TPM_RC_SIZE                 (TPM_RC)(RC_FMT1 + 0x015)
 #define TPM_RCS_SIZE                (TPM_RCS)(RC_FMT1 + 0x015)
-#define TPM_RC_SYMMETRIC            (TPM_RC)(RC_FMT1 + 0x016)    
+#define TPM_RC_SYMMETRIC            (TPM_RC)(RC_FMT1 + 0x016)
 #define TPM_RCS_SYMMETRIC           (TPM_RCS)(RC_FMT1 + 0x016)
-#define TPM_RC_TAG                  (TPM_RC)(RC_FMT1 + 0x017)    
+#define TPM_RC_TAG                  (TPM_RC)(RC_FMT1 + 0x017)
 #define TPM_RCS_TAG                 (TPM_RCS)(RC_FMT1 + 0x017)
-#define TPM_RC_SELECTOR             (TPM_RC)(RC_FMT1 + 0x018)    
+#define TPM_RC_SELECTOR             (TPM_RC)(RC_FMT1 + 0x018)
 #define TPM_RCS_SELECTOR            (TPM_RCS)(RC_FMT1 + 0x018)
-#define TPM_RC_INSUFFICIENT         (TPM_RC)(RC_FMT1 + 0x01A)    
+#define TPM_RC_INSUFFICIENT         (TPM_RC)(RC_FMT1 + 0x01A)
 #define TPM_RCS_INSUFFICIENT        (TPM_RCS)(RC_FMT1 + 0x01A)
-#define TPM_RC_SIGNATURE            (TPM_RC)(RC_FMT1 + 0x01B)    
+#define TPM_RC_SIGNATURE            (TPM_RC)(RC_FMT1 + 0x01B)
 #define TPM_RCS_SIGNATURE           (TPM_RCS)(RC_FMT1 + 0x01B)
-#define TPM_RC_KEY                  (TPM_RC)(RC_FMT1 + 0x01C)    
+#define TPM_RC_KEY                  (TPM_RC)(RC_FMT1 + 0x01C)
 #define TPM_RCS_KEY                 (TPM_RCS)(RC_FMT1 + 0x01C)
-#define TPM_RC_POLICY_FAIL          (TPM_RC)(RC_FMT1 + 0x01D)    
+#define TPM_RC_POLICY_FAIL          (TPM_RC)(RC_FMT1 + 0x01D)
 #define TPM_RCS_POLICY_FAIL         (TPM_RCS)(RC_FMT1 + 0x01D)
-#define TPM_RC_INTEGRITY            (TPM_RC)(RC_FMT1 + 0x01F)    
+#define TPM_RC_INTEGRITY            (TPM_RC)(RC_FMT1 + 0x01F)
 #define TPM_RCS_INTEGRITY           (TPM_RCS)(RC_FMT1 + 0x01F)
-#define TPM_RC_TICKET               (TPM_RC)(RC_FMT1 + 0x020)    
+#define TPM_RC_TICKET               (TPM_RC)(RC_FMT1 + 0x020)
 #define TPM_RCS_TICKET              (TPM_RCS)(RC_FMT1 + 0x020)
-#define TPM_RC_RESERVED_BITS        (TPM_RC)(RC_FMT1 + 0x021)    
+#define TPM_RC_RESERVED_BITS        (TPM_RC)(RC_FMT1 + 0x021)
 #define TPM_RCS_RESERVED_BITS       (TPM_RCS)(RC_FMT1 + 0x021)
-#define TPM_RC_BAD_AUTH             (TPM_RC)(RC_FMT1 + 0x022)    
+#define TPM_RC_BAD_AUTH             (TPM_RC)(RC_FMT1 + 0x022)
 #define TPM_RCS_BAD_AUTH            (TPM_RCS)(RC_FMT1 + 0x022)
-#define TPM_RC_EXPIRED              (TPM_RC)(RC_FMT1 + 0x023)    
+#define TPM_RC_EXPIRED              (TPM_RC)(RC_FMT1 + 0x023)
 #define TPM_RCS_EXPIRED             (TPM_RCS)(RC_FMT1 + 0x023)
-#define TPM_RC_POLICY_CC            (TPM_RC)(RC_FMT1 + 0x024 )    
+#define TPM_RC_POLICY_CC            (TPM_RC)(RC_FMT1 + 0x024 )
 #define TPM_RCS_POLICY_CC           (TPM_RCS)(RC_FMT1 + 0x024 )
-#define TPM_RC_BINDING              (TPM_RC)(RC_FMT1 + 0x025)    
+#define TPM_RC_BINDING              (TPM_RC)(RC_FMT1 + 0x025)
 #define TPM_RCS_BINDING             (TPM_RCS)(RC_FMT1 + 0x025)
-#define TPM_RC_CURVE                (TPM_RC)(RC_FMT1 + 0x026)    
+#define TPM_RC_CURVE                (TPM_RC)(RC_FMT1 + 0x026)
 #define TPM_RCS_CURVE               (TPM_RCS)(RC_FMT1 + 0x026)
-#define TPM_RC_ECC_POINT            (TPM_RC)(RC_FMT1 + 0x027)    
+#define TPM_RC_ECC_POINT            (TPM_RC)(RC_FMT1 + 0x027)
 #define TPM_RCS_ECC_POINT           (TPM_RCS)(RC_FMT1 + 0x027)
-#define RC_WARN                     (TPM_RC)(0x900)    
-#define TPM_RC_CONTEXT_GAP          (TPM_RC)(RC_WARN + 0x001)    
-#define TPM_RC_OBJECT_MEMORY        (TPM_RC)(RC_WARN + 0x002)    
-#define TPM_RC_SESSION_MEMORY       (TPM_RC)(RC_WARN + 0x003)    
-#define TPM_RC_MEMORY               (TPM_RC)(RC_WARN + 0x004)    
-#define TPM_RC_SESSION_HANDLES      (TPM_RC)(RC_WARN + 0x005)    
-#define TPM_RC_OBJECT_HANDLES       (TPM_RC)(RC_WARN + 0x006)    
-#define TPM_RC_LOCALITY             (TPM_RC)(RC_WARN + 0x007)    
-#define TPM_RC_YIELDED              (TPM_RC)(RC_WARN + 0x008)    
-#define TPM_RC_CANCELLED            (TPM_RC)(RC_WARN + 0x009)    
-#define TPM_RC_TESTING              (TPM_RC)(RC_WARN + 0x00A)    
-#define TPM_RC_REFERENCE_H0         (TPM_RC)(RC_WARN + 0x010)    
-#define TPM_RC_REFERENCE_H1         (TPM_RC)(RC_WARN + 0x011)    
-#define TPM_RC_REFERENCE_H2         (TPM_RC)(RC_WARN + 0x012)    
-#define TPM_RC_REFERENCE_H3         (TPM_RC)(RC_WARN + 0x013)    
-#define TPM_RC_REFERENCE_H4         (TPM_RC)(RC_WARN + 0x014)    
-#define TPM_RC_REFERENCE_H5         (TPM_RC)(RC_WARN + 0x015)    
-#define TPM_RC_REFERENCE_H6         (TPM_RC)(RC_WARN + 0x016)    
-#define TPM_RC_REFERENCE_S0         (TPM_RC)(RC_WARN + 0x018)    
-#define TPM_RC_REFERENCE_S1         (TPM_RC)(RC_WARN + 0x019)    
-#define TPM_RC_REFERENCE_S2         (TPM_RC)(RC_WARN + 0x01A)    
-#define TPM_RC_REFERENCE_S3         (TPM_RC)(RC_WARN + 0x01B)    
-#define TPM_RC_REFERENCE_S4         (TPM_RC)(RC_WARN + 0x01C)    
-#define TPM_RC_REFERENCE_S5         (TPM_RC)(RC_WARN + 0x01D)    
-#define TPM_RC_REFERENCE_S6         (TPM_RC)(RC_WARN + 0x01E)    
-#define TPM_RC_NV_RATE              (TPM_RC)(RC_WARN + 0x020)    
-#define TPM_RC_LOCKOUT              (TPM_RC)(RC_WARN + 0x021)    
-#define TPM_RC_RETRY                (TPM_RC)(RC_WARN + 0x022)    
-#define TPM_RC_NV_UNAVAILABLE       (TPM_RC)(RC_WARN + 0x023)    
-#define TPM_RC_NOT_USED             (TPM_RC)(RC_WARN + 0x7F)    
-#define TPM_RC_H                    (TPM_RC)(0x000)    
-#define TPM_RC_P                    (TPM_RC)(0x040)    
-#define TPM_RC_S                    (TPM_RC)(0x800)    
-#define TPM_RC_1                    (TPM_RC)(0x100)    
-#define TPM_RC_2                    (TPM_RC)(0x200)    
-#define TPM_RC_3                    (TPM_RC)(0x300)    
-#define TPM_RC_4                    (TPM_RC)(0x400)    
-#define TPM_RC_5                    (TPM_RC)(0x500)    
-#define TPM_RC_6                    (TPM_RC)(0x600)    
-#define TPM_RC_7                    (TPM_RC)(0x700)    
-#define TPM_RC_8                    (TPM_RC)(0x800)    
-#define TPM_RC_9                    (TPM_RC)(0x900)    
-#define TPM_RC_A                    (TPM_RC)(0xA00)    
-#define TPM_RC_B                    (TPM_RC)(0xB00)    
-#define TPM_RC_C                    (TPM_RC)(0xC00)    
-#define TPM_RC_D                    (TPM_RC)(0xD00)    
-#define TPM_RC_E                    (TPM_RC)(0xE00)    
-#define TPM_RC_F                    (TPM_RC)(0xF00)    
-#define TPM_RC_N_MASK               (TPM_RC)(0xF00) 
+#define RC_WARN                     (TPM_RC)(0x900)
+#define TPM_RC_CONTEXT_GAP          (TPM_RC)(RC_WARN + 0x001)
+#define TPM_RC_OBJECT_MEMORY        (TPM_RC)(RC_WARN + 0x002)
+#define TPM_RC_SESSION_MEMORY       (TPM_RC)(RC_WARN + 0x003)
+#define TPM_RC_MEMORY               (TPM_RC)(RC_WARN + 0x004)
+#define TPM_RC_SESSION_HANDLES      (TPM_RC)(RC_WARN + 0x005)
+#define TPM_RC_OBJECT_HANDLES       (TPM_RC)(RC_WARN + 0x006)
+#define TPM_RC_LOCALITY             (TPM_RC)(RC_WARN + 0x007)
+#define TPM_RC_YIELDED              (TPM_RC)(RC_WARN + 0x008)
+#define TPM_RC_CANCELLED            (TPM_RC)(RC_WARN + 0x009)
+#define TPM_RC_TESTING              (TPM_RC)(RC_WARN + 0x00A)
+#define TPM_RC_REFERENCE_H0         (TPM_RC)(RC_WARN + 0x010)
+#define TPM_RC_REFERENCE_H1         (TPM_RC)(RC_WARN + 0x011)
+#define TPM_RC_REFERENCE_H2         (TPM_RC)(RC_WARN + 0x012)
+#define TPM_RC_REFERENCE_H3         (TPM_RC)(RC_WARN + 0x013)
+#define TPM_RC_REFERENCE_H4         (TPM_RC)(RC_WARN + 0x014)
+#define TPM_RC_REFERENCE_H5         (TPM_RC)(RC_WARN + 0x015)
+#define TPM_RC_REFERENCE_H6         (TPM_RC)(RC_WARN + 0x016)
+#define TPM_RC_REFERENCE_S0         (TPM_RC)(RC_WARN + 0x018)
+#define TPM_RC_REFERENCE_S1         (TPM_RC)(RC_WARN + 0x019)
+#define TPM_RC_REFERENCE_S2         (TPM_RC)(RC_WARN + 0x01A)
+#define TPM_RC_REFERENCE_S3         (TPM_RC)(RC_WARN + 0x01B)
+#define TPM_RC_REFERENCE_S4         (TPM_RC)(RC_WARN + 0x01C)
+#define TPM_RC_REFERENCE_S5         (TPM_RC)(RC_WARN + 0x01D)
+#define TPM_RC_REFERENCE_S6         (TPM_RC)(RC_WARN + 0x01E)
+#define TPM_RC_NV_RATE              (TPM_RC)(RC_WARN + 0x020)
+#define TPM_RC_LOCKOUT              (TPM_RC)(RC_WARN + 0x021)
+#define TPM_RC_RETRY                (TPM_RC)(RC_WARN + 0x022)
+#define TPM_RC_NV_UNAVAILABLE       (TPM_RC)(RC_WARN + 0x023)
+#define TPM_RC_NOT_USED             (TPM_RC)(RC_WARN + 0x7F)
+#define TPM_RC_H                    (TPM_RC)(0x000)
+#define TPM_RC_P                    (TPM_RC)(0x040)
+#define TPM_RC_S                    (TPM_RC)(0x800)
+#define TPM_RC_1                    (TPM_RC)(0x100)
+#define TPM_RC_2                    (TPM_RC)(0x200)
+#define TPM_RC_3                    (TPM_RC)(0x300)
+#define TPM_RC_4                    (TPM_RC)(0x400)
+#define TPM_RC_5                    (TPM_RC)(0x500)
+#define TPM_RC_6                    (TPM_RC)(0x600)
+#define TPM_RC_7                    (TPM_RC)(0x700)
+#define TPM_RC_8                    (TPM_RC)(0x800)
+#define TPM_RC_9                    (TPM_RC)(0x900)
+#define TPM_RC_A                    (TPM_RC)(0xA00)
+#define TPM_RC_B                    (TPM_RC)(0xB00)
+#define TPM_RC_C                    (TPM_RC)(0xC00)
+#define TPM_RC_D                    (TPM_RC)(0xD00)
+#define TPM_RC_E                    (TPM_RC)(0xE00)
+#define TPM_RC_F                    (TPM_RC)(0xF00)
+#define TPM_RC_N_MASK               (TPM_RC)(0xF00)
 
 // Table 18 -- TPM_ST Constants <I/O,S>
 typedef u16 TPM_ST;
 
-#define TPM_ST_RSP_COMMAND             (TPM_ST)(0x00C4)    
-#define TPM_ST_NULL                    (TPM_ST)(0X8000)    
-#define TPM_ST_NO_SESSIONS             (TPM_ST)(0x8001)    
-#define TPM_ST_SESSIONS                (TPM_ST)(0x8002)    
-#define TPM_ST_ATTEST_NV               (TPM_ST)(0x8014)    
-#define TPM_ST_ATTEST_COMMAND_AUDIT    (TPM_ST)(0x8015)    
-#define TPM_ST_ATTEST_SESSION_AUDIT    (TPM_ST)(0x8016)    
-#define TPM_ST_ATTEST_CERTIFY          (TPM_ST)(0x8017)    
-#define TPM_ST_ATTEST_QUOTE            (TPM_ST)(0x8018)    
-#define TPM_ST_ATTEST_TIME             (TPM_ST)(0x8019)    
-#define TPM_ST_ATTEST_CREATION         (TPM_ST)(0x801A)    
-#define TPM_ST_CREATION                (TPM_ST)(0x8021)    
-#define TPM_ST_VERIFIED                (TPM_ST)(0x8022)    
-#define TPM_ST_AUTH_SECRET             (TPM_ST)(0x8023)    
-#define TPM_ST_HASHCHECK               (TPM_ST)(0x8024)    
-#define TPM_ST_AUTH_SIGNED             (TPM_ST)(0x8025)    
-#define TPM_ST_FU_MANIFEST             (TPM_ST)(0x8029) 
+#define TPM_ST_RSP_COMMAND             (TPM_ST)(0x00C4)
+#define TPM_ST_NULL                    (TPM_ST)(0X8000)
+#define TPM_ST_NO_SESSIONS             (TPM_ST)(0x8001)
+#define TPM_ST_SESSIONS                (TPM_ST)(0x8002)
+#define TPM_ST_ATTEST_NV               (TPM_ST)(0x8014)
+#define TPM_ST_ATTEST_COMMAND_AUDIT    (TPM_ST)(0x8015)
+#define TPM_ST_ATTEST_SESSION_AUDIT    (TPM_ST)(0x8016)
+#define TPM_ST_ATTEST_CERTIFY          (TPM_ST)(0x8017)
+#define TPM_ST_ATTEST_QUOTE            (TPM_ST)(0x8018)
+#define TPM_ST_ATTEST_TIME             (TPM_ST)(0x8019)
+#define TPM_ST_ATTEST_CREATION         (TPM_ST)(0x801A)
+#define TPM_ST_CREATION                (TPM_ST)(0x8021)
+#define TPM_ST_VERIFIED                (TPM_ST)(0x8022)
+#define TPM_ST_AUTH_SECRET             (TPM_ST)(0x8023)
+#define TPM_ST_HASHCHECK               (TPM_ST)(0x8024)
+#define TPM_ST_AUTH_SIGNED             (TPM_ST)(0x8025)
+#define TPM_ST_FU_MANIFEST             (TPM_ST)(0x8029)
 
 // Table 19 -- TPM_SU Constants <I>
 typedef u16 TPM_SU;
 
-#define    TPM_SU_CLEAR     (TPM_SU)(0x0000)    
-#define    TPM_SU_STATE     (TPM_SU)(0x0001) 
+#define    TPM_SU_CLEAR     (TPM_SU)(0x0000)
+#define    TPM_SU_STATE     (TPM_SU)(0x0001)
 
 // Table 21 -- TPM_CAP Constants <I/O,S>
 typedef u32 TPM_CAP;
 
-#define TPM_CAP_FIRST              (TPM_CAP)(0x00000000)    
-#define TPM_CAP_ALGS               (TPM_CAP)(0x00000000)    
-#define TPM_CAP_HANDLES            (TPM_CAP)(0x00000001)    
-#define TPM_CAP_COMMANDS           (TPM_CAP)(0x00000002)    
-#define TPM_CAP_PP_COMMANDS        (TPM_CAP)(0x00000003)    
-#define TPM_CAP_AUDIT_COMMANDS     (TPM_CAP)(0x00000004)    
-#define TPM_CAP_PCRS               (TPM_CAP)(0x00000005)    
-#define TPM_CAP_TPM_PROPERTIES     (TPM_CAP)(0x00000006)    
-#define TPM_CAP_PCR_PROPERTIES     (TPM_CAP)(0x00000007)    
-#define TPM_CAP_ECC_CURVES         (TPM_CAP)(0x00000008)    
-#define TPM_CAP_LAST               (TPM_CAP)(0x00000008)    
-#define TPM_CAP_VENDOR_PROPERTY    (TPM_CAP)(0x00000100) 
+#define TPM_CAP_FIRST              (TPM_CAP)(0x00000000)
+#define TPM_CAP_ALGS               (TPM_CAP)(0x00000000)
+#define TPM_CAP_HANDLES            (TPM_CAP)(0x00000001)
+#define TPM_CAP_COMMANDS           (TPM_CAP)(0x00000002)
+#define TPM_CAP_PP_COMMANDS        (TPM_CAP)(0x00000003)
+#define TPM_CAP_AUDIT_COMMANDS     (TPM_CAP)(0x00000004)
+#define TPM_CAP_PCRS               (TPM_CAP)(0x00000005)
+#define TPM_CAP_TPM_PROPERTIES     (TPM_CAP)(0x00000006)
+#define TPM_CAP_PCR_PROPERTIES     (TPM_CAP)(0x00000007)
+#define TPM_CAP_ECC_CURVES         (TPM_CAP)(0x00000008)
+#define TPM_CAP_LAST               (TPM_CAP)(0x00000008)
+#define TPM_CAP_VENDOR_PROPERTY    (TPM_CAP)(0x00000100)
 
 // Table 25 -- Handles Types <I/O>
 typedef u32     TPM_HANDLE;
 typedef u8      TPM_HT;
 
-#define TPM_HT_PCR               (TPM_HT)(0x00)    
-#define TPM_HT_NV_INDEX          (TPM_HT)(0x01)    
-#define TPM_HT_HMAC_SESSION      (TPM_HT)(0x02)    
-#define TPM_HT_LOADED_SESSION    (TPM_HT)(0x02)    
-#define TPM_HT_POLICY_SESSION    (TPM_HT)(0x03)    
-#define TPM_HT_ACTIVE_SESSION    (TPM_HT)(0x03)    
-#define TPM_HT_PERMANENT         (TPM_HT)(0x40)    
-#define TPM_HT_TRANSIENT         (TPM_HT)(0x80)    
-#define TPM_HT_PERSISTENT        (TPM_HT)(0x81) 
+#define TPM_HT_PCR               (TPM_HT)(0x00)
+#define TPM_HT_NV_INDEX          (TPM_HT)(0x01)
+#define TPM_HT_HMAC_SESSION      (TPM_HT)(0x02)
+#define TPM_HT_LOADED_SESSION    (TPM_HT)(0x02)
+#define TPM_HT_POLICY_SESSION    (TPM_HT)(0x03)
+#define TPM_HT_ACTIVE_SESSION    (TPM_HT)(0x03)
+#define TPM_HT_PERMANENT         (TPM_HT)(0x40)
+#define TPM_HT_TRANSIENT         (TPM_HT)(0x80)
+#define TPM_HT_PERSISTENT        (TPM_HT)(0x81)
 
 // Table 27 -- TPM_RH Constants <I,S>
 typedef u32 TPM_RH;
 
-#define TPM_RH_FIRST          (TPM_RH)(0x40000000)    
-#define TPM_RH_SRK            (TPM_RH)(0x40000000)    
-#define TPM_RH_OWNER          (TPM_RH)(0x40000001)    
-#define TPM_RH_REVOKE         (TPM_RH)(0x40000002)    
-#define TPM_RH_TRANSPORT      (TPM_RH)(0x40000003)    
-#define TPM_RH_OPERATOR       (TPM_RH)(0x40000004)    
-#define TPM_RH_ADMIN          (TPM_RH)(0x40000005)    
-#define TPM_RH_EK             (TPM_RH)(0x40000006)    
-#define TPM_RH_NULL           (TPM_RH)(0x40000007)    
-#define TPM_RH_UNASSIGNED     (TPM_RH)(0x40000008)    
-#define TPM_RS_PW             (TPM_RH)(0x40000009)    
-#define TPM_RH_LOCKOUT        (TPM_RH)(0x4000000A)    
-#define TPM_RH_ENDORSEMENT    (TPM_RH)(0x4000000B)    
-#define TPM_RH_PLATFORM       (TPM_RH)(0x4000000C)    
-#define TPM_RH_LAST           (TPM_RH)(0x4000000C) 
+#define TPM_RH_FIRST          (TPM_RH)(0x40000000)
+#define TPM_RH_SRK            (TPM_RH)(0x40000000)
+#define TPM_RH_OWNER          (TPM_RH)(0x40000001)
+#define TPM_RH_REVOKE         (TPM_RH)(0x40000002)
+#define TPM_RH_TRANSPORT      (TPM_RH)(0x40000003)
+#define TPM_RH_OPERATOR       (TPM_RH)(0x40000004)
+#define TPM_RH_ADMIN          (TPM_RH)(0x40000005)
+#define TPM_RH_EK             (TPM_RH)(0x40000006)
+#define TPM_RH_NULL           (TPM_RH)(0x40000007)
+#define TPM_RH_UNASSIGNED     (TPM_RH)(0x40000008)
+#define TPM_RS_PW             (TPM_RH)(0x40000009)
+#define TPM_RH_LOCKOUT        (TPM_RH)(0x4000000A)
+#define TPM_RH_ENDORSEMENT    (TPM_RH)(0x4000000B)
+#define TPM_RH_PLATFORM       (TPM_RH)(0x4000000C)
+#define TPM_RH_LAST           (TPM_RH)(0x4000000C)
 
 #define RC_ContextSave_saveHandle      (TPM_RC_P + TPM_RC_1)
 #define RC_ContextLoad_context         (TPM_RC_P + TPM_RC_1)
@@ -695,8 +695,8 @@ typedef union {
 
 // Table 79 -- TPMU_NAME Structure
 typedef union {
-    TPMT_HA digest;  
-    u32     handle;  
+    TPMT_HA digest;
+    u32     handle;
 } TPMU_NAME ;
 
 // Table 79 -- TPM2B_NAME Structure <I/O>
@@ -765,7 +765,7 @@ typedef struct {
 
 // Table 103 -- TPMU_CAPABILITIES Union <O,S>
 typedef union {
-    TPML_ALG_PROPERTY  algs;  
+    TPML_ALG_PROPERTY  algs;
 } TPMU_CAPABILITIES;
 
 // Table 104 -- TPMS_CAPABILITY_DATA Structure <O,S>
@@ -796,7 +796,7 @@ typedef union {
 #ifdef TPM_ALG_SM4
     u16     sm4;
 #endif
-    u16     sym;  
+    u16     sym;
 } TPMU_SYM_MODE ;
 
 // Table 126 -- TPMT_SYM_DEF_OBJECT Structure <I/O>
@@ -862,10 +862,10 @@ typedef struct {
 // Table 136 -- TPMU_SCHEME_KEYEDHASH Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_HMAC
-    TPMS_SCHEME_HMAC  hmac;  
+    TPMS_SCHEME_HMAC  hmac;
 #endif
 #ifdef TPM_ALG_XOR
-    TPMS_SCHEME_XOR  xor;  
+    TPMS_SCHEME_XOR  xor;
 #endif
 
 } TPMU_SCHEME_KEYEDHASH;
@@ -894,22 +894,22 @@ typedef struct {
 // Table 141 -- TPMU_SIG_SCHEME Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_RSASSA
-    TPMS_SCHEME_RSASSA  rsassa;  
+    TPMS_SCHEME_RSASSA  rsassa;
 #endif
 #ifdef TPM_ALG_RSAPSS
-    TPMS_SCHEME_RSAPSS  rsapss;  
+    TPMS_SCHEME_RSAPSS  rsapss;
 #endif
 #ifdef TPM_ALG_ECDSA
-    TPMS_SCHEME_ECDSA  ecdsa;  
+    TPMS_SCHEME_ECDSA  ecdsa;
 #endif
 #ifdef TPM_ALG_SM2
-    TPMS_SCHEME_SM2  sm2;  
+    TPMS_SCHEME_SM2  sm2;
 #endif
 #ifdef TPM_ALG_ECDAA
-    TPMS_SCHEME_ECDAA  ecdaa;  
+    TPMS_SCHEME_ECDAA  ecdaa;
 #endif
 #ifdef TPM_ALG_ECSCHNORR
-    TPMS_SCHEME_ECSCHNORR  ec_schnorr;  
+    TPMS_SCHEME_ECSCHNORR  ec_schnorr;
 #endif
 #ifdef TPM_ALG_HMAC
     TPMS_SCHEME_HMAC  hmac;
@@ -946,16 +946,16 @@ typedef struct {
 // Table 149 -- TPMU_KDF_SCHEME Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_MGF1
-    TPMS_SCHEME_MGF1  mgf1;  
+    TPMS_SCHEME_MGF1  mgf1;
 #endif
 #ifdef TPM_ALG_KDF1_SP800_56a
-    TPMS_SCHEME_KDF1_SP800_56a  kdf1_SP800_56a;  
+    TPMS_SCHEME_KDF1_SP800_56a  kdf1_SP800_56a;
 #endif
 #ifdef TPM_ALG_KDF2
-    TPMS_SCHEME_KDF2  kdf2;  
+    TPMS_SCHEME_KDF2  kdf2;
 #endif
 #ifdef TPM_ALG_KDF1_SP800_108
-    TPMS_SCHEME_KDF1_SP800_108  kdf1_sp800_108;  
+    TPMS_SCHEME_KDF1_SP800_108  kdf1_sp800_108;
 #endif
 } TPMU_KDF_SCHEME ;
 
@@ -968,27 +968,27 @@ typedef struct {
 // Table 152 -- TPMU_ASYM_SCHEME Union <I/O>
 typedef union {
 #ifdef TPM_ALG_RSASSA
-    TPMS_SCHEME_RSASSA  rsassa;  
+    TPMS_SCHEME_RSASSA  rsassa;
 #endif
 #ifdef TPM_ALG_RSAPSS
-    TPMS_SCHEME_RSAPSS  rsapss;  
+    TPMS_SCHEME_RSAPSS  rsapss;
 #endif
 #ifdef TPM_ALG_OAEP
-    TPMS_SCHEME_OAEP  oaep;  
+    TPMS_SCHEME_OAEP  oaep;
 #endif
 #ifdef TPM_ALG_ECDSA
-    TPMS_SCHEME_ECDSA  ecdsa;  
+    TPMS_SCHEME_ECDSA  ecdsa;
 #endif
 #ifdef TPM_ALG_SM2
-    TPMS_SCHEME_SM2  sm2;  
+    TPMS_SCHEME_SM2  sm2;
 #endif
 #ifdef TPM_ALG_ECDAA
-    TPMS_SCHEME_ECDAA  ecdaa;  
+    TPMS_SCHEME_ECDAA  ecdaa;
 #endif
 #ifdef TPM_ALG_ECSCHNORR
-    TPMS_SCHEME_ECSCHNORR  ec_schnorr;  
+    TPMS_SCHEME_ECSCHNORR  ec_schnorr;
 #endif
-    TPMS_SCHEME_SIGHASH  any;  
+    TPMS_SCHEME_SIGHASH  any;
 
 } TPMU_ASYM_SCHEME;
 
@@ -1052,16 +1052,16 @@ typedef struct {
 // Table 176 -- TPMU_PUBLIC_ID Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_KEYEDHASH
-    TPM2B_DIGEST  keyed_hash;  
+    TPM2B_DIGEST  keyed_hash;
 #endif
 #ifdef TPM_ALG_SYMCIPHER
-    TPM2B_DIGEST  sym;  
+    TPM2B_DIGEST  sym;
 #endif
 #ifdef TPM_ALG_RSA
-    TPM2B_PUBLIC_KEY_RSA  rsa;  
+    TPM2B_PUBLIC_KEY_RSA  rsa;
 #endif
 #ifdef TPM_ALG_ECC
-    TPMS_ECC_POINT  ecc;  
+    TPMS_ECC_POINT  ecc;
 #endif
 } TPMU_PUBLIC_ID;
 
@@ -1095,18 +1095,18 @@ typedef struct {
 // Table 181 -- TPMU_PUBLIC_PARMS Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_KEYEDHASH
-    TPMS_KEYEDHASH_PARMS  keyed_hash;  
+    TPMS_KEYEDHASH_PARMS  keyed_hash;
 #endif
 #ifdef TPM_ALG_SYMCIPHER
-    TPMT_SYM_DEF_OBJECT  sym;  
+    TPMT_SYM_DEF_OBJECT  sym;
 #endif
 #ifdef TPM_ALG_RSA
-    TPMS_RSA_PARMS  rsa;  
+    TPMS_RSA_PARMS  rsa;
 #endif
 #ifdef TPM_ALG_ECC
-    TPMS_ECC_PARMS  ecc;  
+    TPMS_ECC_PARMS  ecc;
 #endif
-    TPMS_ASYM_PARMS  asym;  
+    TPMS_ASYM_PARMS  asym;
 
 } TPMU_PUBLIC_PARMS;
 
@@ -1134,18 +1134,18 @@ typedef union {
 // Table 186 -- TPMU_SENSITIVE_COMPOSITE Union <I/O,S>
 typedef union {
 #ifdef TPM_ALG_RSA
-    TPM2B_PRIVATE_KEY_RSA  rsa;  
+    TPM2B_PRIVATE_KEY_RSA  rsa;
 #endif
 #ifdef TPM_ALG_ECC
-    TPM2B_ECC_PARAMETER  ecc;  
+    TPM2B_ECC_PARAMETER  ecc;
 #endif
 #ifdef TPM_ALG_KEYEDHASH
-    TPM2B_SENSITIVE_DATA  bits;  
+    TPM2B_SENSITIVE_DATA  bits;
 #endif
 #ifdef TPM_ALG_SYMCIPHER
-    TPM2B_SYM_KEY  sym;  
+    TPM2B_SYM_KEY  sym;
 #endif
-    TPM2B_SENSITIVE_DATA  any;  
+    TPM2B_SENSITIVE_DATA  any;
 
 } TPMU_SENSITIVE_COMPOSITE ;
 
@@ -1280,7 +1280,7 @@ typedef union {
 } TPM2B_CREATION_DATA;
 
 
-#define MAX_SESSIONS 3    
+#define MAX_SESSIONS 3
 
 // Input structure for session data for a single session,
 typedef struct {
@@ -1532,20 +1532,20 @@ typedef struct {
     TPM_CMD_SESSIONS_OUT sessions;
 } tpm_unseal_out;
 
-typedef struct { 
-    TPMI_DH_CONTEXT saveHandle; 
+typedef struct {
+    TPMI_DH_CONTEXT saveHandle;
 } tpm_contextsave_in;
 
-typedef struct { 
-    TPMS_CONTEXT context; 
+typedef struct {
+    TPMS_CONTEXT context;
 } tpm_contextsave_out;
 
-typedef struct { 
-    TPMS_CONTEXT context; 
+typedef struct {
+    TPMS_CONTEXT context;
 } tpm_contextload_in;
 
-typedef struct { 
-    TPMI_DH_CONTEXT loadedHandle; 
+typedef struct {
+    TPMI_DH_CONTEXT loadedHandle;
 } tpm_contextload_out;
 
 typedef struct {

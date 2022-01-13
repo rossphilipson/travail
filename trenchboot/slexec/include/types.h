@@ -56,7 +56,7 @@ typedef unsigned char       u_int8_t;
 typedef unsigned short      u_int16_t;
 typedef unsigned int        u_int32_t;
 
-/* 
+/*
  * This should be unsigned int but gets an error in
  *   policy.c that expects it to be an unsigned long.
  */

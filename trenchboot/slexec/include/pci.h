@@ -62,6 +62,7 @@ int pci_read(int bus, int slot, int func, int reg, int bytes);
 void pci_write(int bus, int slot, int func, int reg, int data, int bytes);
 
 #endif /* __PCI_H__ */
+
 /*
  * Local variables:
  * mode: C
