@@ -8,7 +8,7 @@
 #include <loader.h>
 #include <e820.h>
 #include <linux.h>
-#include <skl.h>
+#include <skinit/skl.h>
 
 skl_info_t skl_info = {
     .uuid = {

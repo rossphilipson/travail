@@ -44,7 +44,7 @@
 #include <cmdline.h>
 #include <misc.h>
 #include <processor.h>
-#include <skl.h>
+#include <skinit/skl.h>
 
 extern loader_ctx *g_ldr_ctx;
 

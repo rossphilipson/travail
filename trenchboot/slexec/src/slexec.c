@@ -50,7 +50,7 @@
 #include <linux.h>
 #include <tpm.h>
 #include <cmdline.h>
-#include <skl.h>
+#include <skinit/skl.h>
 
 /* loader context struct saved so that post_launch() can use it */
 __data loader_ctx g_loader_ctx = { NULL, 0 };

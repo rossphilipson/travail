@@ -47,7 +47,7 @@
 #include <e820.h>
 #include <elf.h>
 #include <linux.h>
-#include <skl.h>
+#include <skinit/skl.h>
 #include <cmdline.h>
 
 /* TODO the MB2 handling has some issues, especially when things are moved or
