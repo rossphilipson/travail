@@ -65,7 +65,6 @@ typedef struct {
 extern void print_loader_ctx(loader_ctx *lctx);
 extern bool find_module_by_pattern(loader_ctx *lctx, void **base, size_t *size,
                                    const void *pattern, size_t len);
-extern bool find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size);
 extern bool find_platform_sinit_module(loader_ctx *lctx, void **base, 
                                        uint32_t *size);
 

@@ -49,8 +49,6 @@ extern void get_tboot_fmt(void);
 extern void get_tboot_vga_delay(void);
 extern bool get_tboot_prefer_da(void);
 extern void get_tboot_min_ram(void);
-extern bool get_tboot_call_racm(void);
-extern bool get_tboot_call_racm_check(void);
 extern bool get_tboot_ignore_prev_err(void);
 extern void get_tboot_extpol(void);
 extern bool get_tboot_force_tpm2_legacy_log(void);

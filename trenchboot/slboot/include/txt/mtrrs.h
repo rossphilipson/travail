@@ -135,10 +135,8 @@ typedef struct __packed {
 extern bool set_mtrrs_for_acmod(const acm_hdr_t *hdr);
 extern void save_mtrrs(mtrr_state_t *saved_state);
 extern void set_all_mtrrs(bool enable);
-extern bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type);
 
 #endif /*__TXT_MTRRS_H__ */
-
 
 /*
  * Local variables:

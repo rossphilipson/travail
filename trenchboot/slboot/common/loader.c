@@ -900,45 +900,6 @@ get_loader_ctx_end(loader_ctx *lctx)
 }
 
 /*
- * will go through all modules to find an RACM that matches the platform
- * (size can be NULL)
- */
-bool
-find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size)
-{
-    if ( base != NULL )
-        *base = NULL;
-    if ( size != NULL )
-        *size = 0;
-
-    if ( 0 == get_module_count(lctx)) {
-        printk(TBOOT_ERR"no module info\n");
-        return false;
-    }
-
-    for ( int i = get_module_count(lctx) - 1; i >= 0; i-- ) {
-        module_t *m = get_module(lctx, i);
-        printk(TBOOT_DETA
-               "checking if module %s is an RACM for this platform...\n",
-               get_module_cmd(lctx, m));
-        void *base2 = (void *)m->mod_start;
-        uint32_t size2 = m->mod_end - (unsigned long)(base2);
-        if ( is_racm_acmod(base2, size2, false) &&
-             does_acmod_match_platform((acm_hdr_t *)base2) ) {
-            if ( base != NULL )
-                *base = base2;
-            if ( size != NULL )
-                *size = size2;
-            printk(TBOOT_DETA"RACM matches platform\n");
-            return true;
-        }
-    }
-    /* no RACM found for this platform */
-    printk(TBOOT_ERR"no RACM found\n");
-    return false;
-}
-
-/*
  * will go through all modules to find an SINIT that matches the platform
  * (size can be NULL)
  */

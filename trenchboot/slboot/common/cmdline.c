@@ -80,7 +80,6 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "vga_delay",  "0" },           /* # secs */
     { "pcr_map", "legacy" },         /* legacy|da */
     { "min_ram", "0" },              /* size in bytes | 0 for no min */
-    { "call_racm", "false" },        /* true|false|check */
     { "extpol",    "sha1" },         /*agile|embedded|sha1|sha256|sm3|... */
     { "ignore_prev_err", "true"},    /* true|false */
     { "force_tpm2_legacy_log", "false"}, /* true|false */
@@ -466,24 +465,6 @@ void get_tboot_min_ram(void)
         return;
 
     g_min_ram = tb_strtoul(min_ram, NULL, 0);
-}
-
-bool get_tboot_call_racm(void)
-{
-    const char *call_racm = get_option_val(g_tboot_cmdline_options,
-                                       g_tboot_param_values, "call_racm");
-    if ( call_racm == NULL || tb_strcmp(call_racm, "true") != 0 )
-        return false;
-    return true;
-}
-
-bool get_tboot_call_racm_check(void)
-{
-    const char *call_racm = get_option_val(g_tboot_cmdline_options,
-                                       g_tboot_param_values, "call_racm");
-    if ( call_racm == NULL || tb_strcmp(call_racm, "check") != 0 )
-        return false;
-    return true;
 }
 
 void get_tboot_extpol(void)

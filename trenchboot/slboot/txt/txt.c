@@ -574,19 +574,6 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     txt_heap_t *txt_heap;
     uint32_t *mle_size;
 
-    /*
-     * find correct SINIT AC module in modules list
-     */
-    // find_platform_sinit_module(lctx, (void **)&g_sinit, NULL);
-    /* if it is newer than BIOS-provided version, then copy it to */
-    /* BIOS reserved region */
-    // g_sinit = copy_sinit(g_sinit);
-    // if ( g_sinit == NULL )
-    //    return TB_ERR_SINIT_NOT_PRESENT;
-    /* do some checks on it */
-    // if ( !verify_acmod(g_sinit) )
-    //   return TB_ERR_ACMOD_VERIFY_FAILED;
-
     /* print some debug info */
     print_file_info();
 
@@ -646,47 +633,6 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
         delay(g_vga_delay * 1000);
     __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
     printk(TBOOT_INFO"ERROR--we should not get here!\n");
-    return TB_ERR_FATAL;
-}
-
-tb_error_t txt_launch_racm(loader_ctx *lctx)
-{
-    acm_hdr_t *racm = NULL;
-
-    /*
-     * find correct revocation AC module in modules list
-     */
-    find_platform_racm(lctx, (void **)&racm, NULL);
-    if ( racm == NULL )
-        return TB_ERR_SINIT_NOT_PRESENT;
-    /* copy it to a 32KB aligned memory address */
-    racm = copy_racm(racm);
-    if ( racm == NULL )
-        return TB_ERR_SINIT_NOT_PRESENT;
-    /* do some checks on it */
-    if ( !verify_racm(racm) )
-        return TB_ERR_ACMOD_VERIFY_FAILED;
-
-    /* set MTRRs properly for AC module (RACM) */
-    if ( !set_mtrrs_for_acmod(racm) )
-        return TB_ERR_FATAL;
-
-    /* clear MSEG_BASE/SIZE registers */
-    write_pub_config_reg(TXTCR_MSEG_BASE, 0);
-    write_pub_config_reg(TXTCR_MSEG_SIZE, 0);
-
-    printk(TBOOT_INFO"executing GETSEC[ENTERACCS]...\n");
-    /* (optionally) pause before executing GETSEC[ENTERACCS] */
-    if ( g_vga_delay > 0 )
-        delay(g_vga_delay * 1000);
-    __getsec_enteraccs((uint32_t)racm, (racm->size)*4, 0xF0);
-    /* powercycle by writing 0x0a+0x0e to port 0xcf9, */
-    /* warm reset by write 0x06 to port 0xcf9 */
-    //outb(0xcf9, 0x0a);
-    //outb(0xcf9, 0x0e);
-    outb(0xcf9, 0x06);
-
-    printk(TBOOT_ERR"ERROR--we should not get here!\n");
     return TB_ERR_FATAL;
 }
 

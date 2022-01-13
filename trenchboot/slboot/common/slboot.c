@@ -122,61 +122,6 @@ static bool platform_architecture(void)
     return true;
 }
 
-#define ICR_LOW 0x300
-
-static void startup_rlps(void)
-{
-    uint32_t rlp_count = ((cpuid_ecx(1) >> 16) & 0xff) - 1;
-    uint32_t apicbase = (uint32_t)rdmsr(MSR_APICBASE) & 0xfffffffffffff000;
-
-    if ( rlp_count == 0 )
-        return;
-
-    /* send init ipi to all rlp -- Dest Shorthand: 11, Delivery Mode: 101 */
-    writel(apicbase + ICR_LOW, 0xc0500);
-}
-
-static void launch_racm(void)
-{
-    tb_error_t err;
-
-    if ( !platform_architecture() )
-        error_action(TB_ERR_FATAL);
-
-    /* bsp check & tpm check done by caller */
-    /* SMX must be supported */
-    if ( !(cpuid_ecx(1) & CPUID_X86_FEATURE_SMX) )
-        error_action(TB_ERR_SMX_NOT_SUPPORTED);
-
-    /* Enable SMX */
-    write_cr4(read_cr4() | CR4_SMXE);
-
-    /* prepare cpu */
-    if ( !prepare_cpu() )
-        error_action(TB_ERR_FATAL);
-
-    /* prepare tpm */
-    if ( !prepare_tpm() )
-        error_action(TB_ERR_TPM_NOT_READY);
-
-    /* Place RLPs in Wait for SIPI state */
-    startup_rlps();
-
-    /* Verify loader context */
-    if ( !verify_loader_context(g_ldr_ctx) )
-        error_action(TB_ERR_FATAL);
-
-    /* load racm */
-    err = txt_launch_racm(g_ldr_ctx);
-    error_action(err);
-}
-
-void check_racm_result(void)
-{
-    txt_get_racm_error();
-    shutdown_system(TB_SHUTDOWN_SHUTDOWN);
-}
-
 void begin_launch(void *addr, uint32_t magic)
 {
     const char *cmdline;
@@ -203,10 +148,6 @@ void begin_launch(void *addr, uint32_t magic)
     printk(TBOOT_INFO"*********************************************\n");
 
     printk(TBOOT_INFO"command line: %s\n", g_cmdline);
-
-    /* if telled to check revocation acm result, go with simplified path */
-    if ( get_tboot_call_racm_check() )
-        check_racm_result(); /* never return */
 
     /* RLM scaffolding
        if (g_ldr_ctx->type == 2)
@@ -252,10 +193,6 @@ void begin_launch(void *addr, uint32_t magic)
 
     /* verify SE enablement status */
     verify_IA32_se_svn_status(g_sinit);
-
-    /* if telled to call revocation acm, go with simplified path */
-    if ( get_tboot_call_racm() )
-        launch_racm(); /* never return */
 
     /* print any errors on last boot, which must be from TXT launch */
     txt_display_errors();
