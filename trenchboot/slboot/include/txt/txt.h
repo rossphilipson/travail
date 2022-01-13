@@ -36,7 +36,60 @@
 #ifndef __TXT_TXT_H__
 #define __TXT_TXT_H__
 
-// #include <multiboot.h>
+/*
+ * error values for processor error codes (ERRORCODE.external = 0)
+ */
+#define TXT_ERR_PROC_LEGACY_SHUTDOWN          0
+#define TXT_ERR_PROC_INVALID_ACM_MEM_TYPE     5
+#define TXT_ERR_PROC_UNSUPPORTED_ACM          6
+#define TXT_ERR_PROC_AUTH_FAIL                7
+#define TXT_ERR_PROC_INVALID_ACM_FORMAT       8
+#define TXT_ERR_PROC_UNEXPECTED_HITM          9
+#define TXT_ERR_PROC_INVALID_EVENT           10
+#define TXT_ERR_PROC_INVALID_JOIN_FORMAT     11
+#define TXT_ERR_PROC_UNRECOVERABLE_MCE       12
+#define TXT_ERR_PROC_VMX_ABORT               13
+#define TXT_ERR_PROC_ACM_CORRUPT             14
+#define TXT_ERR_PROC_INVALID_VIDB_RATIO      15
+
+/*
+ * for SW errors (ERRORCODE.external = 1)
+ */
+typedef union {
+    uint32_t _raw;
+    struct {
+        uint32_t  err1     : 15;     /* specific to src */
+        uint32_t  src      : 1;      /* 0=ACM, 1=other */
+        uint32_t  err2     : 14;     /* specific to src */
+        uint32_t  external : 1;      /* always 1 for this type */
+        uint32_t  valid    : 1;      /* always 1 */
+    };
+} txt_errorcode_sw_t;
+
+/*
+ * ACM errors (txt_errorcode_sw_t.src=0), format of err1+src+err2 fields
+ */
+typedef union __attribute__((packed)){
+    uint32_t _raw;
+    struct __attribute__((packed)){
+        uint32_t acm_type  : 4;  /* 0000=BIOS ACM, 0001=SINIT, */
+                                 /* 0010-1111=reserved */
+        uint32_t progress  : 6;
+        uint32_t error     : 5;
+        uint32_t src       : 1;  /* above value */
+        union __attribute__((packed)){
+            struct __attribute__((packed)) {  /* progress=0x0d, error=1010 */
+                uint32_t tpm_err    : 9;
+                uint32_t reserved1  : 5;
+            };
+            struct __attribute__((packed)) {  /* progress=0x10 */
+                uint32_t lcp_minor  : 6;
+                uint32_t lcp_index  : 3;
+                uint32_t reserved2  : 5;
+            };
+        }; /* sub-error */
+    };
+} acmod_error_t;
 
 /* TPM event log types */
 #define EVTLOG_UNKNOWN       0

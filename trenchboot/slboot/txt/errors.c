@@ -43,7 +43,6 @@
 #include <tb_error.h>
 #include <txt/txt.h>
 #include <txt/config_regs.h>
-#include <txt/errorcode.h>
 
 void txt_display_errors(void)
 {
