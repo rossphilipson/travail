@@ -101,8 +101,6 @@ typedef struct __packed {
 } tpm12_pcr_event_t;
 
 
-//Event Log Header
-
 /*
 To allow parsers to identify the log format based on the content of the log, the first event
 of the log is formatted as a TCG_PCR_EVENT structure independent of the format for
@@ -122,30 +120,28 @@ typedef struct __packed {
 } tcg_pcr_event;
 
 typedef struct {
-    uint16_t       hash_alg;
-    uint8_t        digest[];
-} TPMT_HA_1;
+    uint16_t hash_alg;
+    uint8_t  digest[];
+} tpmt_ha_1;
 
 typedef struct {
-    uint32_t         count;
-    TPMT_HA_1     digests[5];
-} TPML_DIGEST_VALUES_1;
+    uint32_t  count;
+    tpmt_ha_1 digests[5];
+} tpml_digest_values_1;
 
-//TCG compliant TPM event log
+/* TCG compliant TPM event log */
 typedef struct __packed {
     uint32_t pcr_index;
     uint32_t event_type;
-    TPML_DIGEST_VALUES_1 digest; //List of digests extended to pcr_index banks
+    tpml_digest_values_1 digest; //List of digests extended to pcr_index banks
     uint32_t event_size;
     uint8_t event[];
 } tcg_pcr_event2;
-
 
 typedef struct __packed {
     uint16_t algorithm_id;
     uint16_t digest_size;
 } tcg_efi_spec_id_event_algorithm_size;
-
 
 typedef struct __packed {
     uint8_t signature[16];
@@ -227,10 +223,10 @@ typedef struct __packed {
 } heap_event_log_ptr_elt2_t;
 
 typedef struct {
-	uint64_t phys_addr;
-	uint32_t allcoated_event_container_size;
-	uint32_t first_record_offset;
-	uint32_t next_record_offset;
+    uint64_t phys_addr;
+    uint32_t allcoated_event_container_size;
+    uint32_t first_record_offset;
+    uint32_t next_record_offset;
 } heap_event_log_ptr_elt2_1_t;
 
 /*
@@ -369,7 +365,7 @@ typedef struct __packed {
  *   8
  */
 
-typedef void   txt_heap_t;
+typedef void txt_heap_t;
 
 /* this is a common use with annoying casting, so make it an inline */
 static inline txt_heap_t *get_txt_heap(void)
@@ -431,7 +427,6 @@ extern bool verify_bios_data(const txt_heap_t *txt_heap);
 extern void print_os_sinit_data(const os_sinit_data_t *os_sinit_data);
 
 #endif      /* __TXT_HEAP_H__ */
-
 
 /*
  * Local variables:

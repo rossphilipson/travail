@@ -33,7 +33,6 @@
  *
  */
 
-#ifndef IS_INCLUDED
 #include <config.h>
 #include <types.h>
 #include <stdbool.h>
@@ -52,7 +51,6 @@
 #include <txt/config_regs.h>
 #include <txt/heap.h>
 #include <txt/txt.h>
-#endif
 
 /*
  * extended data elements
@@ -98,7 +96,7 @@ static inline void print_heap_hash(const sha1_hash_t hash)
     print_hash((const tb_hash_t *)hash, TB_HALG_SHA1);
 }
 
-void print_event(const tpm12_pcr_event_t *evt)
+static void print_event(const tpm12_pcr_event_t *evt)
 {
     printk(TBOOT_DETA"\t\t\t Event:\n");
     printk(TBOOT_DETA"\t\t\t     PCRIndex: %u\n", evt->pcr_index);
@@ -145,7 +143,7 @@ static void print_evt_log_ptr_elt(const heap_ext_data_element_t *elt)
                       elog_elt->event_log_phys_addr);
 }
 
-void print_event_2(void *evt, uint16_t alg)
+static void print_event_2(void *evt, uint16_t alg)
 {
     uint32_t hash_size, data_size;
     void *next = evt;
@@ -188,7 +186,7 @@ void print_event_2(void *evt, uint16_t alg)
          printk(TBOOT_DETA"\n");
 }
 
-uint32_t print_event_2_1_log_header(void *evt)
+static uint32_t print_event_2_1_log_header(void *evt)
 {
     tcg_pcr_event *evt_ptr = (tcg_pcr_event *)evt;
     tcg_efi_specid_event_strcut *evt_data_ptr = (tcg_efi_specid_event_strcut *) evt_ptr->event_data;
@@ -320,16 +318,6 @@ static void print_evt_log_ptr_elt_2(const heap_ext_data_element_t *elt)
         next = (void *)(unsigned long)log_descr->phys_addr +
                 log_descr->next_event_offset;
 
-        //It is required for each of the non-SHA1 event log the first entry to be the following
-        //TPM1.2 style TCG_PCR_EVENT record specifying type of the log:
-        //TCG_PCR_EVENT.PCRIndex = 0
-        //TCG_PCR_EVENT.EventType = 0x03 // EV_NO_ACTION per TCG EFI
-                                       // Platform specification
-        //TCG_PCR_EVENT.Digest = {00…00} // 20 zeros
-        //TCG_PCR_EVENT.EventDataSize = sizeof(TCG_LOG_DESCRIPTOR).
-        //TCG_PCR_EVENT.EventData = TCG_LOG_DESCRIPTOR
-        //The digest of this record MUST NOT be extended into any PCR.
-
         if (log_descr->alg != TB_HALG_SHA1){
             print_event_2(curr, TB_HALG_SHA1);
             curr += sizeof(tpm12_pcr_event_t) + sizeof(tpm20_log_descr_t);
@@ -370,7 +358,6 @@ static void print_evt_log_ptr_elt_2_1(const heap_ext_data_element_t *elt)
         curr += print_event_2_1(curr);
     }
 }
-
 
 static void print_ext_data_elts(const heap_ext_data_element_t elts[])
 {
@@ -422,8 +409,6 @@ static void print_bios_data(const bios_data_t *bios_data, uint64_t size)
     if ( bios_data->version >= 4 && size > sizeof(*bios_data) + sizeof(size) )
         print_ext_data_elts(bios_data->ext_data_elts);
 }
-
-#ifndef IS_INCLUDED
 
 static bool verify_bios_spec_ver_elt(const heap_ext_data_element_t *elt)
 {
@@ -710,8 +695,6 @@ void print_os_sinit_data(const os_sinit_data_t *os_sinit_data)
     if ( os_sinit_data->version >= 6 )
         print_ext_data_elts(os_sinit_data->ext_data_elts);
 }
-
-#endif
 
 /*
  * Local variables:

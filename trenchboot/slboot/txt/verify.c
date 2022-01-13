@@ -200,6 +200,7 @@ tb_error_t supports_txt(void)
     return TB_ERR_TXT_NOT_SUPPORTED;
 }
 
+/* TODO this does not belong here, move to txt.c */
 void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
                   uint64_t min_lo_ram, uint64_t max_lo_ram,
                   uint64_t min_hi_ram, uint64_t max_hi_ram)

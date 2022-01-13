@@ -46,7 +46,6 @@
 
 extern void txt_display_errors(void);
 extern bool txt_has_error(void);
-extern void txt_get_racm_error(void);
 extern tb_error_t supports_txt(void);
 extern tb_error_t txt_verify_platform(void);
 extern bool txt_prepare_cpu(void);
