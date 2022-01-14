@@ -176,11 +176,15 @@ static always_inline uint32_t cpuid_edx(unsigned int op)
     return regs[3];
 }
 
-#define CPUID_X86_FEATURE_XMM3   (1<<0)
-#define CPUID_X86_FEATURE_VMX    (1<<5)
-#define CPUID_X86_FEATURE_SMX    (1<<6)
+#define CPUID_X86_MANUFACTURER_LEAF     0x0
 
-#define CPUID_X86_FEATURE_SKINIT (1<<12)
+#define CPUID_X86_FEATURE_INFO_LEAF     0x1
+#define CPUID_X86_FEATURE_XMM3          (1<<0)
+#define CPUID_X86_FEATURE_VMX           (1<<5)
+#define CPUID_X86_FEATURE_SMX           (1<<6)
+
+#define CPUID_X86_EXT_FEATURE_INFO_LEAF 0x80000001
+#define CPUID_X86_EXT_FEATURE_SKINIT    (1<<12)
 
 static inline unsigned long read_cr0(void)
 {

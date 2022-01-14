@@ -43,6 +43,11 @@
 #include <linux.h>
 #include <skinit/skl.h>
 
+/*
+ * CPUID extended feature info
+ */
+// TODO static unsigned int g_cpuid_ext_feat_info = 0;
+
 /* Broadcast INIT to all APs except self */
 static void send_init_ipi_shorthand(void)
 {

@@ -53,6 +53,7 @@
 #include <skinit/skl.h>
 #include <skinit/skinit.h>
 
+uint32_t g_architecture = SL_ARCH_NONE;
 uint32_t apic_base;
 
 /* loader context struct saved so that post_launch() can use it */
@@ -60,7 +61,7 @@ loader_ctx g_loader_ctx = { NULL, 0 };
 loader_ctx *g_ldr_ctx = &g_loader_ctx;
 
 static uint32_t g_default_error_action = SL_SHUTDOWN_HALT;
-static unsigned int g_cpuid_ext_feat_info;
+static unsigned int g_cpuid_ext_feat_info; // TODO goes away
 static bool is_powercycle_required = true;
 
 static void shutdown_system(uint32_t shutdown_type)
@@ -197,24 +198,56 @@ static bool prepare_cpu(void)
 /* TODO merge TXT verify into txt.c? */
 static bool platform_architecture(void)
 {
+    unsigned long f1, f2;
+     /* eax: regs[0], ebx: regs[1], ecx: regs[2], edx: regs[3] */
     uint32_t regs[4];
 
-    do_cpuid(0, regs);
+    /* is CPUID supported? */
+    /* (it's supported if ID flag in EFLAGS can be set and cleared) */
+    asm volatile ("pushf\n\t"
+                  "pushf\n\t"
+                  "pop %0\n\t"
+                  "mov %0,%1\n\t"
+                  "xor %2,%0\n\t"
+                  "push %0\n\t"
+                  "popf\n\t"
+                  "pushf\n\t"
+                  "pop %0\n\t"
+                  "popf\n\t"
+                  : "=&r" (f1), "=&r" (f2)
+        :          "ir" (X86_EFLAGS_ID));
+    if ( ((f1^f2) & X86_EFLAGS_ID) == 0 ) {
+        printk(SLEXEC_ERR"CPUID instruction is not supported.\n");
+        return false;
+    }
 
-    if ( regs[1] == 0x68747541 /* "Auth" */
-         && regs[2] == 0x444d4163   /* "cAMD" */
-         && regs[3] == 0x69746e65 ) /* "enti" */
-        return true;
+    do_cpuid(CPUID_X86_MANUFACTURER_LEAF, regs);
 
-    printk(SLEXEC_ERR"Error: platform is neither Intel or AMD\n");
-    return false;
+    if ( regs[1] == 0x756e6547        /* "Genu" */
+         && regs[2] == 0x6c65746e     /* "ntel" */
+         && regs[3] == 0x49656e69 ) { /* "ineI" */
+        printk(SLEXEC_INFO"Platform is Intel\n");
+        g_architecture = SL_ARCH_TXT;
+    }
+    else if ( regs[1] == 0x68747541   /* "Auth" */
+         && regs[2] == 0x444d4163     /* "cAMD" */
+         && regs[3] == 0x69746e65 ) { /* "enti" */
+        printk(SLEXEC_INFO"Platform is AMD\n");
+        g_architecture = SL_ARCH_SKINIT;
+    }
+    else {
+        printk(SLEXEC_ERR"Error: platform is neither Intel or AMD\n");
+        return false;
+    }
+
+    return true;
 }
 
 static int supports_skinit(void)
 {
-    g_cpuid_ext_feat_info = cpuid_ecx(0x80000001);
+    g_cpuid_ext_feat_info = cpuid_ecx(CPUID_X86_EXT_FEATURE_INFO_LEAF);
 
-    if (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_SKINIT) {
+    if (g_cpuid_ext_feat_info & CPUID_X86_EXT_FEATURE_SKINIT) {
         printk(SLEXEC_INFO"SKINIT CPU and all needed capabilities present\n");
         return SL_ERR_NONE;
     }

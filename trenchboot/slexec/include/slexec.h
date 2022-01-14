@@ -158,6 +158,10 @@ typedef struct {
 #define SLEXEC_LOG_UUID {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                               {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
 
+#define SL_ARCH_NONE   0
+#define SL_ARCH_TXT    1
+#define SL_ARCH_SKINIT 2
+
 extern char _start[];            /* start of slexec */
 extern char _end[];              /* end of slexec */
 

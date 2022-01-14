@@ -60,9 +60,9 @@
 extern long s3_flag;
 
 /*
- * CPUID extended feature info
+ * CPUID feature info
  */
-static unsigned int g_cpuid_ext_feat_info;
+static unsigned int g_cpuid_feat_info = 0;
 
 /*
  * IA32_FEATURE_CONTROL_MSR
@@ -72,43 +72,13 @@ static unsigned long g_feat_ctrl_msr;
 
 static bool read_processor_info(void)
 {
-    unsigned long f1, f2;
-     /* eax: regs[0], ebx: regs[1], ecx: regs[2], edx: regs[3] */
-    uint32_t regs[4];
+    /* TODO CPUID supported and mfg checks moved to platform function */
 
-    /* is CPUID supported? */
-    /* (it's supported if ID flag in EFLAGS can be set and cleared) */
-    asm("pushf\n\t"
-        "pushf\n\t"
-        "pop %0\n\t"
-        "mov %0,%1\n\t"
-        "xor %2,%0\n\t"
-        "push %0\n\t"
-        "popf\n\t"
-        "pushf\n\t"
-        "pop %0\n\t"
-        "popf\n\t"
-        : "=&r" (f1), "=&r" (f2)
-        : "ir" (X86_EFLAGS_ID));
-    if ( ((f1^f2) & X86_EFLAGS_ID) == 0 ) {
-        g_cpuid_ext_feat_info = 0;
-        printk(TBOOT_ERR"CPUID instruction is not supported.\n");
-        return false;
-    }
-
-    do_cpuid(0, regs);
-    if ( regs[1] != 0x756e6547        /* "Genu" */
-         || regs[2] != 0x6c65746e     /* "ntel" */
-         || regs[3] != 0x49656e69 ) { /* "ineI" */
-        g_cpuid_ext_feat_info = 0;
-        printk(TBOOT_ERR"Non-Intel CPU detected.\n");
-        return false;
-    }
-    g_cpuid_ext_feat_info = cpuid_ecx(1);
+    g_cpuid_feat_info = cpuid_ecx(CPUID_X86_FEATURE_INFO_LEAF);
 
     /* read feature control msr only if processor supports VMX or SMX instructions */
-    if ( (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_VMX) ||
-         (g_cpuid_ext_feat_info & CPUID_X86_FEATURE_SMX) ) {
+    if ( (g_cpuid_feat_info & CPUID_X86_FEATURE_VMX) ||
+         (g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
         g_feat_ctrl_msr = rdmsr(MSR_IA32_FEATURE_CONTROL);
         printk(TBOOT_DETA"IA32_FEATURE_CONTROL_MSR: %08lx\n", g_feat_ctrl_msr);
     }
@@ -119,7 +89,7 @@ static bool read_processor_info(void)
 static bool supports_smx(void)
 {
     /* check that processor supports SMX instructions */
-    if ( !(g_cpuid_ext_feat_info & CPUID_X86_FEATURE_SMX) ) {
+    if ( !(g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
         printk(TBOOT_ERR"ERR: CPU does not support SMX\n");
         return false;
     }
