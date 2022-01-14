@@ -51,18 +51,17 @@
 #include <tpm.h>
 #include <cmdline.h>
 #include <skinit/skl.h>
+#include <skinit/skinit.h>
 
 /* loader context struct saved so that post_launch() can use it */
 __data loader_ctx g_loader_ctx = { NULL, 0 };
 __data loader_ctx *g_ldr_ctx = &g_loader_ctx;
 
-sl_header_t *g_skl_module = NULL;
-uint32_t g_skl_size = 0;
+uint32_t apic_base;
 
 static uint32_t g_default_error_action = SL_SHUTDOWN_HALT;
 static unsigned int g_cpuid_ext_feat_info;
 static bool is_powercycle_required = true;
-static uint32_t apic_base;
 
 static void shutdown_system(uint32_t shutdown_type)
 {
@@ -117,6 +116,12 @@ unsigned long get_slexec_mem_end(void)
     return PAGE_UP((unsigned long)&_end);
 }
 
+uint32_t get_apic_base(void)
+{
+    return apic_base;
+}
+
+/* TODO this is similar to TXT version too */
 static bool prepare_cpu(void)
 {
     unsigned long eflags, cr0;
@@ -188,6 +193,8 @@ static bool prepare_cpu(void)
     return true;
 }
 
+/* TODO these two can share and mirron TXT functions like them */
+/* TODO merge TXT verify into txt.c? */
 static bool platform_architecture(void)
 {
     uint32_t regs[4];
@@ -221,50 +228,6 @@ void error_action(int error)
 
     printk(SLEXEC_ERR"error action invoked for: %x\n", error);
     shutdown_system(g_default_error_action);
-}
-
-extern void debug_put_chars(void);
-
-/* Broadcast INIT to all APs except self */
-static void send_init_ipi_shorthand(void)
-{
-    uint32_t *icr_reg;
-
-    /* accessing the ICR depends on the APIC mode */
-    if (apic_base & X2APIC_ENABLE) {
-        mb();
-
-        /* access ICR through MSR */
-        wrmsr(MSR_X2APIC_ICR, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
-        printk(SLEXEC_INFO"SKINIT assert #INIT on APs - x2APIC MSR reg: 0x%x\n", MSR_X2APIC_ICR);
-    } else {
-        /* mask off low order bits to get base address */
-        apic_base &= APICBASE_BASE_MASK;
-        /* access ICR through MMIO */
-        icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
-
-        writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
-        printk(SLEXEC_INFO"SKINIT assert #INIT on APs - xAPIC ICR reg: %p\n", icr_reg);
-    }
-
-    printk(SLEXEC_INFO"Wait for IPI delivery\n");
-    delay(1000);
-}
-
-static void skinit_launch_environment(void)
-{
-    uint32_t slb = (uint32_t)g_skl_module;
-
-    send_init_ipi_shorthand();
-
-    disable_intr();
-
-    printk(SLEXEC_INFO"SKINIT launch SKL - slb: 0x%x\n", slb);
-    asm volatile ("movl %0, %%eax\n"
-	          "skinit\n"
-                  : : "r" (slb));
-
-    printk(SLEXEC_INFO"SKINIT failed\n");
 }
 
 void begin_launch(void *addr, uint32_t magic)

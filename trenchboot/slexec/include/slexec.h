@@ -158,9 +158,6 @@ typedef struct {
 #define SLEXEC_LOG_UUID {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                               {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
 
-#define SKINIT_LZ_UUID  {0x78f1268e, 0x0492, 0x11e9, 0x832a, \
-                             {0xc8, 0x5b, 0x76, 0xc4, 0xcc, 0x03 }}
-
 extern char _start[];            /* start of slexec */
 extern char _end[];              /* end of slexec */
 
@@ -190,6 +187,9 @@ extern char _end[];              /* end of slexec */
 extern void error_action(int error);
 
 extern unsigned long get_slexec_mem_end(void);
+extern uint32_t get_apic_base(void);
+
+extern void debug_put_chars(void);
 
 #endif /* !__ASSEMBLY__ */
 

@@ -22,7 +22,7 @@ obj-y += src/string.o src/slexec.o
 obj-y += src/sha1.o src/sha256.o
 obj-y += src/tpm.o src/tpm_12.o src/tpm_20.o
 obj-y += src/vga.o
-obj-y += src/skinit/skl.o
+obj-y += src/skinit/skinit.o src/skinit/skl.o
 
 OBJS := $(obj-y)
 
