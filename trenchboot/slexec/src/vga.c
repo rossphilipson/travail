@@ -40,10 +40,11 @@
 #include <misc.h>
 #include <vga.h>
 
-static uint16_t * const screen = (uint16_t * const)VGA_BASE;
-static __data uint8_t cursor_x, cursor_y;
-static __data unsigned int num_lines;
 uint8_t g_vga_delay = 0;       /* default to no delay */
+
+static uint16_t * const screen = (uint16_t * const)VGA_BASE;
+static uint8_t cursor_x, cursor_y;
+static unsigned int num_lines;
 
 static inline void reset_screen(void)
 {

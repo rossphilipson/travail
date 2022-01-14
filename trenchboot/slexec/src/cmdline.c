@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef IS_INCLUDED
+
 #include <types.h>
 #include <stdbool.h>
 #include <slexec.h>
@@ -42,12 +42,12 @@
 #include <printk.h>
 #include <cmdline.h>
 #include <multiboot.h>
-#endif
+
 /*
  * copy of original command line
  * part of slexec measurement (hence in .text section)
  */
-__data char g_cmdline[CMDLINE_SIZE] = { 0 };
+char g_cmdline[CMDLINE_SIZE] = { 0 };
 
 /* Used for kernel command line parameter setup */
 typedef struct {

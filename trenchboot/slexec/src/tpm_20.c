@@ -43,6 +43,8 @@
 #include <tpm.h>
 #include <tpm_20.h>
 
+u32 handle2048 = 0;
+
 static u8 cmd_buf[MAX_COMMAND_SIZE];
 static u8 rsp_buf[MAX_RESPONSE_SIZE];
 
@@ -367,8 +369,6 @@ static uint32_t _tpm20_pcr_reset(uint32_t locality,
 
     return ret;
 }
-
-__data u32 handle2048 = 0;
 
 TPM_CMD_SESSION_DATA_IN pw_session;
 static void create_pw_session(TPM_CMD_SESSION_DATA_IN *ses)

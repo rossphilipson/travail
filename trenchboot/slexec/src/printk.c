@@ -49,7 +49,7 @@ uint8_t g_log_targets = SLEXEC_LOG_TARGET_SERIAL | SLEXEC_LOG_TARGET_VGA;
  */
 
 /* memory-based serial log (ensure in .data section so that not cleared) */
-__data slexec_log_t *g_log = NULL;
+slexec_log_t *g_log = NULL;
 
 static void memlog_init(void)
 {

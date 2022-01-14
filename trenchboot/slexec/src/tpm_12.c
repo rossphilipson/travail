@@ -109,6 +109,8 @@ typedef uint8_t tpm_locality_selection_t;
 #define TPM_CMD_SIZE_MAX        768
 #define TPM_RSP_SIZE_MAX        768
 
+tpm_pcr_value_t post_launch_pcr17, post_launch_pcr18;
+
 /*
  * The _tpm12_submit_cmd function comes with 2 global buffers: cmd_buf & rsp_buf.
  * Before calling, caller should fill cmd arguements into cmd_buf via
@@ -136,8 +138,6 @@ typedef uint8_t tpm_locality_selection_t;
  */
 static uint8_t     cmd_buf[TPM_CMD_SIZE_MAX];
 static uint8_t     rsp_buf[TPM_RSP_SIZE_MAX];
-
-__data tpm_pcr_value_t post_launch_pcr17, post_launch_pcr18;
 
 #define WRAPPER_IN_BUF          (cmd_buf + CMD_HEAD_SIZE)
 #define WRAPPER_OUT_BUF         (rsp_buf + RSP_HEAD_SIZE)

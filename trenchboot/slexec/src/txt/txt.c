@@ -63,20 +63,18 @@
 #include <txt/smx.h>
 #include <io.h>
 
+acm_hdr_t *g_sinit = 0;
+
 extern il_kernel_setup_t g_il_kernel_setup;
-
 extern uint32_t g_min_ram;
-
-static uint32_t g_slaunch_header;
-
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
 
-static __data event_log_container_t *g_elog = NULL;
-static __data heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
-static __data heap_event_log_ptr_elt2_1_t *g_elog_2_1 = NULL;
-static __data uint32_t g_using_da = 0;
-__data acm_hdr_t *g_sinit = 0;
+static uint32_t g_slaunch_header;
+static event_log_container_t *g_elog = NULL;
+static heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
+static heap_event_log_ptr_elt2_1_t *g_elog_2_1 = NULL;
+static uint32_t g_using_da = 0;
 
 static void print_file_info(void)
 {

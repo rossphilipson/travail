@@ -42,8 +42,8 @@
 #include <string.h>
 #include <tpm.h>
 
-__data uint8_t g_tpm_ver = TPM_VER_UNKNOWN;
-__data struct tpm_if g_tpm = {
+uint8_t g_tpm_ver = TPM_VER_UNKNOWN;
+struct tpm_if g_tpm = {
     .cur_loc = 0,
     .timeout.timeout_a = TIMEOUT_A,
     .timeout.timeout_b = TIMEOUT_B,
@@ -51,13 +51,12 @@ __data struct tpm_if g_tpm = {
     .timeout.timeout_d = TIMEOUT_D,
 };
 
+uint8_t g_tpm_family = 0;
 u16 slexec_alg_list[] = {HASH_ALG_SHA1, HASH_ALG_SHA256};
 
 /* Global variables for TPM status register */
 static tpm20_reg_sts_t       g_reg_sts, *g_reg_sts_20 = &g_reg_sts;
 static tpm12_reg_sts_t       *g_reg_sts_12 = (tpm12_reg_sts_t *)&g_reg_sts;
-
-uint8_t g_tpm_family = 0;
 
 /* TPM_DATA_FIFO_x */
 #define TPM_REG_DATA_FIFO        0x24

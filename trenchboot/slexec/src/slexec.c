@@ -53,11 +53,11 @@
 #include <skinit/skl.h>
 #include <skinit/skinit.h>
 
-/* loader context struct saved so that post_launch() can use it */
-__data loader_ctx g_loader_ctx = { NULL, 0 };
-__data loader_ctx *g_ldr_ctx = &g_loader_ctx;
-
 uint32_t apic_base;
+
+/* loader context struct saved so that post_launch() can use it */
+loader_ctx g_loader_ctx = { NULL, 0 };
+loader_ctx *g_ldr_ctx = &g_loader_ctx;
 
 static uint32_t g_default_error_action = SL_SHUTDOWN_HALT;
 static unsigned int g_cpuid_ext_feat_info;
