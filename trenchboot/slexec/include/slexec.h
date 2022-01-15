@@ -190,6 +190,7 @@ extern char _end[];              /* end of slexec */
 #define SL_ERR_VTD_NOT_SUPPORTED    5
 #define SL_ERR_SKINIT_NOT_SUPPORTED 6
 #define SL_ERR_NO_SKL               7
+#define SL_ERR_PREV_TXT_ERROR       9
 
 extern void error_action(int error);
 

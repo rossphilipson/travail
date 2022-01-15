@@ -132,7 +132,6 @@ void error_action(int error)
     shutdown_system(g_default_error_action);
 }
 
-/* TODO this is similar to TXT version too */
 static bool prepare_cpu(void)
 {
     unsigned long eflags, cr0;
@@ -313,20 +312,40 @@ void begin_launch(void *addr, uint32_t magic)
     if ( !copy_e820_map(g_ldr_ctx) )
         error_action(SL_ERR_FATAL);
 
-    /* we need to make sure this is a (SKINIT) capable platform before using */
-    /* any of the features, incl. those required to check if the environment */
-    /* has already been launched */
-    err = supports_skinit();
-    error_action(err);
-   /* TODO for TXT call txt_verify_platform(). This will call supports_txt()
-    * and supports_smx(). CPUID for features already moved out of read processor
-    * function. Also call verify_IA32_se_svn_status() and txt_display_errors()
-    * first.
-    */
-
     /* make TPM ready for measured launch */
     if ( !tpm_detect() )
        error_action(SL_ERR_TPM_NOT_READY);
+
+    if (g_architecture == SL_ARCH_TXT) {
+        /* TODO NOTE CPUID for features already moved out of read processorfunction.*/ 
+
+        /* we need to make sure this is a (TXT-) capable platform before using */
+        /* any of the features, incl. those required to check if the environment */
+        /* has already been launched */
+
+        /* need to verify that platform supports TXT before we can check error */
+        /* (this includes TPM support). despite the name this function also */
+        /* enables SMX mode in CR4. it needs to be done before attempting to */
+        /* verify the ACMOD */
+
+        /* TODO call supports_txt(). find a new name for it too */
+
+        /* TODO call verify_IA32_se_svn_status */
+
+        /* print any errors on last boot, which must be from TXT launch */
+        txt_display_errors();
+        if (txt_has_error() && !get_ignore_prev_err())
+            error_action(SL_ERR_PREV_TXT_ERROR);
+
+        /* TODO call verify_platform */
+    }
+    else {
+        /* we need to make sure this is a (SKINIT) capable platform before using */
+        /* any of the features, incl. those required to check if the environment */
+        /* has already been launched */
+        err = supports_skinit();
+        error_action(err);
+    }
 
     /* ensure there are modules */
     if ( !verify_loader_context(g_ldr_ctx) )
@@ -339,13 +358,16 @@ void begin_launch(void *addr, uint32_t magic)
     if ( !prepare_tpm() )
         error_action(SL_ERR_TPM_NOT_READY);
 
+    /* else ------------ */
     /* locate and load SKL module */
     if ( !find_skl_module(g_ldr_ctx) )
         error_action(SL_ERR_NO_SKL);
-    /* TODO need to refactor the copy_sinit stuff here */
+    /* TODO need to refactor the copy_sinit stuff here. It should
+       be ok to do it here out of order with original code. */
 
     relocate_skl_module();
     print_skl_module();
+    /* else ------------ */
 
     /* locate and prepare the secure launch kernel */
     if ( !prepare_intermediate_loader() )

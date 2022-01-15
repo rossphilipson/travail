@@ -71,6 +71,7 @@ static const cmdline_option_t g_slexec_cmdline_options[] = {
     { "serial",     "115200,8n1,0x3f8" },
     /* serial=<baud>[/<clock_hz>][,<DPS>[,<io-base>[,<irq>[,<serial-bdf>[,<bridge-bdf>]]]]] */
     { "vga_delay",  "0" },           /* # secs */
+    { "ignore_prev_err", "true"},    /* true|false */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { NULL, NULL }
 };
@@ -431,6 +432,17 @@ void get_slexec_vga_delay(void)
         return;
 
     g_vga_delay = sl_strtoul(vga_delay, NULL, 0);
+}
+
+bool get_ignore_prev_err(void)
+{
+    const char *ignore_prev_err =
+            get_option_val(g_slexec_cmdline_options,
+                           g_slexec_param_values,
+                           "ignore_prev_err");
+    if ( ignore_prev_err == NULL || sl_strcmp(ignore_prev_err, "true") == 0 )
+            return true;
+    return false;
 }
 
 uint32_t get_error_shutdown(void)

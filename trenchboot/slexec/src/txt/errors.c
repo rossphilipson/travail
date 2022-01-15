@@ -33,14 +33,13 @@
  *
  */
 
-#include <config.h>
-#include <stdbool.h>
 #include <types.h>
+#include <stdbool.h>
+#include <slexec.h>
+#include <stdarg.h>
 #include <string.h>
 #include <printk.h>
-#include <uuid.h>
 #include <loader.h>
-#include <tb_error.h>
 #include <txt/txt.h>
 
 void txt_display_errors(void)
@@ -56,35 +55,35 @@ void txt_display_errors(void)
      */
     err = (txt_errorcode_t)read_pub_config_reg(TXTCR_ERRORCODE);
     if (txt_has_error() == false)
-        printk(TBOOT_INFO"TXT.ERRORCODE: 0x%Lx\n", err._raw);
+        printk(SLEXEC_INFO"TXT.ERRORCODE: 0x%Lx\n", err._raw);
     else
-        printk(TBOOT_ERR"TXT.ERRORCODE: 0x%Lx\n", err._raw);
+        printk(SLEXEC_ERR"TXT.ERRORCODE: 0x%Lx\n", err._raw);
 
     /* AC module error (don't know how to parse other errors) */
     if ( err.valid ) {
         if ( err.external == 0 )       /* processor error */
-            printk(TBOOT_ERR"\t processor error 0x%x\n", (uint32_t)err.type);
+            printk(SLEXEC_ERR"\t processor error 0x%x\n", (uint32_t)err.type);
         else {                         /* external SW error */
             sw_err._raw = err.type;
             if ( sw_err.src == 1 )     /* unknown SW error */
-                printk(TBOOT_ERR"unknown SW error 0x%x:0x%x\n", sw_err.err1, sw_err.err2);
+                printk(SLEXEC_ERR"unknown SW error 0x%x:0x%x\n", sw_err.err1, sw_err.err2);
             else {                     /* ACM error */
                 acmod_err._raw = sw_err._raw;
                 if ( acmod_err._raw == 0x0 || acmod_err._raw == 0x1 ||
                      acmod_err._raw == 0x9 )
-                    printk(TBOOT_INFO"AC module error : acm_type=0x%x, progress=0x%02x, "
+                    printk(SLEXEC_INFO"AC module error : acm_type=0x%x, progress=0x%02x, "
                            "error=0x%x\n", acmod_err.acm_type, acmod_err.progress,
                            acmod_err.error);
                 else
-                    printk(TBOOT_ERR"AC module error : acm_type=0x%x, progress=0x%02x, "
+                    printk(SLEXEC_ERR"AC module error : acm_type=0x%x, progress=0x%02x, "
                            "error=0x%x\n", acmod_err.acm_type, acmod_err.progress,
                            acmod_err.error);
                 /* error = 0x0a, progress = 0x0d => TPM error */
                 if ( acmod_err.error == 0x0a && acmod_err.progress == 0x0d )
-                    printk(TBOOT_ERR"TPM error code = 0x%x\n", acmod_err.tpm_err);
+                    printk(SLEXEC_ERR"TPM error code = 0x%x\n", acmod_err.tpm_err);
                 /* progress = 0x10 => LCP2 error */
                 else if ( acmod_err.progress == 0x10 && acmod_err.lcp_minor != 0 )
-                    printk(TBOOT_ERR"LCP2 error:  minor error = 0x%x, index = %u\n",
+                    printk(SLEXEC_ERR"LCP2 error:  minor error = 0x%x, index = %u\n",
                            acmod_err.lcp_minor, acmod_err.lcp_index);
             }
         }
@@ -95,18 +94,18 @@ void txt_display_errors(void)
      */
     ests = (txt_ests_t)read_pub_config_reg(TXTCR_ESTS);
     if (ests._raw == 0)
-        printk(TBOOT_INFO"TXT.ESTS: 0x%Lx\n", ests._raw);
+        printk(SLEXEC_INFO"TXT.ESTS: 0x%Lx\n", ests._raw);
     else
-        printk(TBOOT_ERR"TXT.ESTS: 0x%Lx\n", ests._raw);
+        printk(SLEXEC_ERR"TXT.ESTS: 0x%Lx\n", ests._raw);
 
     /*
      * display TXT.E2STS error
      */
     e2sts = (txt_e2sts_t)read_pub_config_reg(TXTCR_E2STS);
     if (e2sts._raw == 0 || e2sts._raw == 0x200000000)
-        printk(TBOOT_INFO"TXT.E2STS: 0x%Lx\n", e2sts._raw);
+        printk(SLEXEC_INFO"TXT.E2STS: 0x%Lx\n", e2sts._raw);
     else
-        printk(TBOOT_ERR"TXT.E2STS: 0x%Lx\n", e2sts._raw);
+        printk(SLEXEC_ERR"TXT.E2STS: 0x%Lx\n", e2sts._raw);
 }
 
 bool txt_has_error(void)
