@@ -60,9 +60,18 @@ uint32_t apic_base;
 loader_ctx g_loader_ctx = { NULL, 0 };
 loader_ctx *g_ldr_ctx = &g_loader_ctx;
 
-static uint32_t g_default_error_action = SL_SHUTDOWN_HALT;
-static unsigned int g_cpuid_ext_feat_info; // TODO goes away
+static uint32_t g_default_error_action = SL_SHUTDOWN_REBOOT;
 static bool is_powercycle_required = true;
+
+unsigned long get_slexec_mem_end(void)
+{
+    return PAGE_UP((unsigned long)&_end);
+}
+
+uint32_t get_apic_base(void)
+{
+    return apic_base;
+}
 
 static void shutdown_system(uint32_t shutdown_type)
 {
@@ -112,14 +121,13 @@ static void shutdown_system(uint32_t shutdown_type)
     }
 }
 
-unsigned long get_slexec_mem_end(void)
+void error_action(int error)
 {
-    return PAGE_UP((unsigned long)&_end);
-}
+    if ( error == SL_ERR_NONE )
+        return;
 
-uint32_t get_apic_base(void)
-{
-    return apic_base;
+    printk(SLEXEC_ERR"error action invoked for: %x\n", error);
+    shutdown_system(g_default_error_action);
 }
 
 /* TODO this is similar to TXT version too */
@@ -194,8 +202,6 @@ static bool prepare_cpu(void)
     return true;
 }
 
-/* TODO these two can share and mirron TXT functions like them */
-/* TODO merge TXT verify into txt.c? */
 static bool platform_architecture(void)
 {
     unsigned long f1, f2;
@@ -241,26 +247,6 @@ static bool platform_architecture(void)
     }
 
     return true;
-}
-
-static int supports_skinit(void)
-{
-    g_cpuid_ext_feat_info = cpuid_ecx(CPUID_X86_EXT_FEATURE_INFO_LEAF);
-
-    if (g_cpuid_ext_feat_info & CPUID_X86_EXT_FEATURE_SKINIT) {
-        printk(SLEXEC_INFO"SKINIT CPU and all needed capabilities present\n");
-        return SL_ERR_NONE;
-    }
-    return SL_ERR_NO_SKINIT;
-}
-
-void error_action(int error)
-{
-    if ( error == SL_ERR_NONE )
-        return;
-
-    printk(SLEXEC_ERR"error action invoked for: %x\n", error);
-    shutdown_system(g_default_error_action);
 }
 
 void begin_launch(void *addr, uint32_t magic)
@@ -329,6 +315,7 @@ void begin_launch(void *addr, uint32_t magic)
     /* locate and load SKL module */
     if ( !find_skl_module(g_ldr_ctx) )
         error_action(SL_ERR_NO_SKL);
+    /* TODO need to refactor the copy_sinit stuff here */
 
     relocate_skl_module();
     print_skl_module();

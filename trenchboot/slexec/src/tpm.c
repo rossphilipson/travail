@@ -691,7 +691,7 @@ bool release_locality(uint32_t locality)
     return false;
 }
 
-bool tpm_relinquish_locality_crb(uint32_t locality)
+bool release_locality_crb(uint32_t locality)
 {
     uint32_t i;
     tpm_reg_loc_state_t reg_loc_state;
@@ -746,7 +746,7 @@ bool prepare_tpm(void)
      * (: locality is not active)
      */
     if (is_tpm_crb())
-        return tpm_relinquish_locality_crb(0);
+        return release_locality_crb(0);
     else
         return release_locality(0);
 }

@@ -46,7 +46,18 @@
 /*
  * CPUID extended feature info
  */
-// TODO static unsigned int g_cpuid_ext_feat_info = 0;
+static unsigned int g_cpuid_ext_feat_info = 0;
+
+int supports_skinit(void)
+{
+    g_cpuid_ext_feat_info = cpuid_ecx(CPUID_X86_EXT_FEATURE_INFO_LEAF);
+
+    if (g_cpuid_ext_feat_info & CPUID_X86_EXT_FEATURE_SKINIT) {
+        printk(SLEXEC_INFO"SKINIT CPU and all needed capabilities present\n");
+        return SL_ERR_NONE;
+    }
+    return SL_ERR_SKINIT_NOT_SUPPORTED;
+}
 
 /* Broadcast INIT to all APs except self */
 static void send_init_ipi_shorthand(void)

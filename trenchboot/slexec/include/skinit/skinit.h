@@ -33,6 +33,7 @@
 #ifndef _SKINIT_H
 #define _SKINIT_H
 
+int supports_skinit(void);
 void skinit_launch_environment(void);
 
 #endif /* _SKINIT_H */
