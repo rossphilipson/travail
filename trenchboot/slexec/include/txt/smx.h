@@ -99,8 +99,12 @@ typedef struct {
     bool preserve_mce;
 } getsec_parameters_t;
 
-extern bool get_parameters(getsec_parameters_t *params);
-
+/* TODO extern bool smx_get_parameters(getsec_parameters_t *params); */
+static bool smx_get_parameters(getsec_parameters_t *params)
+{
+    sl_memset(params, 0, sizeof(getsec_parameters_t));
+    return true;
+}
 
 static inline void __getsec_senter(uint32_t sinit_base, uint32_t sinit_size)
 {

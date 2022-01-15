@@ -772,8 +772,8 @@ bool verify_acmod(const acm_hdr_t *acm_hdr)
         return false;
     }
 
-    if ( !get_parameters(&params) ) {
-        printk(TBOOT_ERR"get_parameters() failed\n");
+    if ( !smx_get_parameters(&params) ) {
+        printk(TBOOT_ERR"smx_get_parameters() failed\n");
         return false;
     }
 

@@ -34,34 +34,26 @@
  *
  */
 
-#include <config.h>
-#include <stdbool.h>
 #include <types.h>
-#include <tb_error.h>
-#include <msr.h>
-#include <compiler.h>
+#include <stdbool.h>
+#include <slexec.h>
+#include <stdarg.h>
 #include <string.h>
-#include <misc.h>
-#include <page.h>
-#include <processor.h>
 #include <printk.h>
-#include <atomic.h>
-#include <tpm.h>
-#include <uuid.h>
 #include <loader.h>
+#include <processor.h>
+#include <misc.h>
 #include <e820.h>
-#include <slboot.h>
-#include <mle.h>
-#include <hash.h>
+#include <linux.h>
+#include <tpm.h>
 #include <cmdline.h>
-#include <acpi.h>
-#include <linux_defns.h>
+#include <txt/smx.h>
+#include <txt/mle.h>
 #include <txt/txt.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 #include <txt/acmod.h>
 #include <txt/smx.h>
-#include <io.h>
 
 acm_hdr_t *g_sinit = 0;
 
@@ -78,9 +70,9 @@ static uint32_t g_using_da = 0;
 
 static void print_file_info(void)
 {
-    printk(TBOOT_DETA"file addresses:\n");
-    printk(TBOOT_DETA"\t &_start=%p\n", &_start);
-    printk(TBOOT_DETA"\t &_end=%p\n", &_end);
+    printk(SLEXEC_DETA"file addresses:\n");
+    printk(SLEXEC_DETA"\t &_start=%p\n", &_start);
+    printk(SLEXEC_DETA"\t &_end=%p\n", &_end);
 }
 
 #if 0
@@ -91,7 +83,7 @@ static void dump_page_tables(void *ptab_base)
     int i, j;
 
     pg_dir_ptr_tab = (uint64_t*)ptab_base;
-    printk(TBOOT_DETA"PDPE(0)=0x%llx\n", pg_dir_ptr_tab[0] & PAGE_MASK);
+    printk(SLEXEC_DETA"PDPE(0)=0x%llx\n", pg_dir_ptr_tab[0] & PAGE_MASK);
 
     pde = (uint64_t*)(uint32_t)(pg_dir_ptr_tab[0] & PAGE_MASK);
 
@@ -99,14 +91,14 @@ static void dump_page_tables(void *ptab_base)
         if (pde[i] == 0)
             break;
 
-        printk(TBOOT_DETA"  PDE(%d)=0x%llx\n", i, pde[i]);
+        printk(SLEXEC_DETA"  PDE(%d)=0x%llx\n", i, pde[i]);
         pte = (uint64_t*)(uint32_t)(pde[i] & PAGE_MASK);
 
         for (j = 0; j < 512; j++) {
             if (pte[j] == 0)
                 break;
 
-            printk(TBOOT_DETA"    PTE(%d)=0x%llx\n", j, pte[j]);
+            printk(SLEXEC_DETA"    PTE(%d)=0x%llx\n", j, pte[j]);
         }
     }
 }
@@ -130,7 +122,7 @@ static void *calculate_ptab_base_size(uint32_t *ptab_size)
     *ptab_size = pages*PAGE_SIZE;
     ptab_base = (void*)(PAGE_DOWN(g_il_kernel_setup.protected_mode_base) - *ptab_size);
 
-    printk(TBOOT_DETA"Page table start=0x%x, size=0x%x, count=0x%x\n",
+    printk(SLEXEC_DETA"Page table start=0x%x, size=0x%x, count=0x%x\n",
            (uint32_t)ptab_base, *ptab_size, pages);
 
     return ptab_base;
@@ -160,17 +152,17 @@ static void *build_mle_pagetable(void)
     uint32_t mle_start = g_il_kernel_setup.protected_mode_base;
     uint32_t mle_size = g_il_kernel_setup.protected_mode_size;
 
-    printk(TBOOT_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
+    printk(SLEXEC_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
            mle_start, mle_start+mle_size, mle_size);
 
     if ( mle_size > SLBOOT_MAX_MLE_SIZE ) {
-        printk(TBOOT_ERR"MLE size exceeds maximum size allowable (1Gb)\n");
+        printk(SLEXEC_ERR"MLE size exceeds maximum size allowable (1Gb)\n");
         return NULL;
     }
 
     /* should start on page boundary */
     if ( mle_start & ~PAGE_MASK ) {
-        printk(TBOOT_ERR"MLE start is not page-aligned\n");
+        printk(SLEXEC_ERR"MLE start is not page-aligned\n");
         return NULL;
     }
 
@@ -182,13 +174,13 @@ static void *build_mle_pagetable(void)
     if ( g_il_kernel_setup.boot_params->hdr.relocatable_kernel ) {
         ptab_base = calculate_ptab_base_size(&ptab_size);
         if ( !ptab_base ) {
-            printk(TBOOT_ERR"MLE size exceeds space available for page tables\n");
+            printk(SLEXEC_ERR"MLE size exceeds space available for page tables\n");
             return NULL;
         }
     }
     else {
         if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED ) {
-            printk(TBOOT_ERR"MLE size exceeds size allowable in low mem\n");
+            printk(SLEXEC_ERR"MLE size exceeds size allowable in low mem\n");
             return NULL;
         }
         ptab_size = SLBOOT_MLEPT_SIZE;
@@ -196,7 +188,7 @@ static void *build_mle_pagetable(void)
     }
 
     tb_memset(ptab_base, 0, ptab_size);
-    printk(TBOOT_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
+    printk(SLEXEC_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
 
     pg_dir_ptr_tab = ptab_base;
     pg_dir         = pg_dir_ptr_tab + PAGE_SIZE;
@@ -266,11 +258,11 @@ static void init_evtlog_desc_1(heap_event_log_ptr_elt2_1_t *evt_log)
     evt_log->allcoated_event_container_size = 2*PAGE_SIZE;
     evt_log->first_record_offset = 0;
     evt_log->next_record_offset = 0;
-    printk(TBOOT_DETA"TCG compliant TPM 2.0 event log descriptor:\n");
-    printk(TBOOT_DETA"\t phys_addr = 0x%LX\n",  evt_log->phys_addr);
-    printk(TBOOT_DETA"\t allcoated_event_container_size = 0x%x \n", evt_log->allcoated_event_container_size);
-    printk(TBOOT_DETA"\t first_record_offset = 0x%x \n", evt_log->first_record_offset);
-    printk(TBOOT_DETA"\t next_record_offset = 0x%x \n", evt_log->next_record_offset);
+    printk(SLEXEC_DETA"TCG compliant TPM 2.0 event log descriptor:\n");
+    printk(SLEXEC_DETA"\t phys_addr = 0x%LX\n",  evt_log->phys_addr);
+    printk(SLEXEC_DETA"\t allcoated_event_container_size = 0x%x \n", evt_log->allcoated_event_container_size);
+    printk(SLEXEC_DETA"\t first_record_offset = 0x%x \n", evt_log->first_record_offset);
+    printk(SLEXEC_DETA"\t next_record_offset = 0x%x \n", evt_log->next_record_offset);
 }
 
 static void init_evtlog_desc(heap_event_log_ptr_elt2_t *evt_log)
@@ -331,12 +323,12 @@ int get_evtlog_type(void)
             txt_caps_t sinit_caps = get_sinit_capabilities(g_sinit);
             return sinit_caps.tcg_event_log_format ? EVTLOG_TPM2_TCG : EVTLOG_TPM2_LEGACY;
         } else {
-            printk(TBOOT_ERR"SINIT not found\n");
+            printk(SLEXEC_ERR"SINIT not found\n");
         }
     } else {
-        printk(TBOOT_ERR"Unknown TPM major version: %d\n", tpm->major);
+        printk(SLEXEC_ERR"Unknown TPM major version: %d\n", tpm->major);
     }
-    printk(TBOOT_ERR"Unable to determine log type\n");
+    printk(SLEXEC_ERR"Unable to determine log type\n");
     return EVTLOG_UNKNOWN;
 }
 
@@ -357,8 +349,8 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
         init_evtlog_desc_1(g_elog_2_1);
         elt->type = HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR_2_1;
         elt->size = sizeof(*elt) + sizeof(heap_event_log_ptr_elt2_1_t);
-        printk(TBOOT_DETA"heap_ext_data_element TYPE = %d \n", elt->type);
-        printk(TBOOT_DETA"heap_ext_data_element SIZE = %d \n", elt->size);
+        printk(SLEXEC_DETA"heap_ext_data_element TYPE = %d \n", elt->type);
+        printk(SLEXEC_DETA"heap_ext_data_element SIZE = %d \n", elt->size);
     }  else if ( log_type == EVTLOG_TPM2_LEGACY ) {
         g_elog_2 = (heap_event_log_ptr_elt2_t *)elt->data;
         if ( tpm->extpol == TB_EXTPOL_AGILE )
@@ -372,7 +364,7 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
         elt->type = HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR_2;
         elt->size = sizeof(*elt) + sizeof(u32) +
             g_elog_2->count * sizeof(heap_event_log_descr_t);
-        printk(TBOOT_DETA"INTEL TXT LOG elt SIZE = %d \n", elt->size);
+        printk(SLEXEC_DETA"INTEL TXT LOG elt SIZE = %d \n", elt->size);
     }
 
     elt = (void *)elt + elt->size;
@@ -384,8 +376,8 @@ static void set_vtd_pmrs(os_sinit_data_t *os_sinit_data,
                          uint64_t min_lo_ram, uint64_t max_lo_ram,
                          uint64_t min_hi_ram, uint64_t max_hi_ram)
 {
-    printk(TBOOT_DETA"min_lo_ram: 0x%Lx, max_lo_ram: 0x%Lx\n", min_lo_ram, max_lo_ram);
-    printk(TBOOT_DETA"min_hi_ram: 0x%Lx, max_hi_ram: 0x%Lx\n", min_hi_ram, max_hi_ram);
+    printk(SLEXEC_DETA"min_lo_ram: 0x%Lx, max_lo_ram: 0x%Lx\n", min_lo_ram, max_lo_ram);
+    printk(SLEXEC_DETA"min_hi_ram: 0x%Lx, max_hi_ram: 0x%Lx\n", min_hi_ram, max_hi_ram);
 
     /*
      * base must be 2M-aligned and size must be multiple of 2M
@@ -440,21 +432,21 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     /* NOTE msb_key_hash is not currently used and the log is setup later */
     os_mle_data = get_os_mle_data_start(txt_heap);
     os_mle_data->zero_page_addr = (uint32_t)g_il_kernel_setup.boot_params;
-    printk(TBOOT_DETA"Zero page addr: 0x%x\n", os_mle_data->zero_page_addr);
+    printk(SLEXEC_DETA"Zero page addr: 0x%x\n", os_mle_data->zero_page_addr);
     os_mle_data->version = OS_MLE_STRUCT_VERSION;
     os_mle_data->saved_misc_enable_msr = rdmsr(MSR_IA32_MISC_ENABLE);
     /* might as well save the MTRR state here where OS-MLE is setup */
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
     /* provide AP wake code block area */
-    tb_memset((void*)TBOOT_AP_WAKE_BLOCK_ADDR, 0, TBOOT_AP_WAKE_BLOCK_SIZE);
-    os_mle_data->ap_wake_block = TBOOT_AP_WAKE_BLOCK_ADDR;
-    os_mle_data->ap_wake_block_size = TBOOT_AP_WAKE_BLOCK_SIZE;
-    printk(TBOOT_DETA"AP wake  addr: 0x%x size: 0x%x\n", (uint32_t)os_mle_data->ap_wake_block,
+    tb_memset((void*)SLEXEC_AP_WAKE_BLOCK_ADDR, 0, SLEXEC_AP_WAKE_BLOCK_SIZE);
+    os_mle_data->ap_wake_block = SLEXEC_AP_WAKE_BLOCK_ADDR;
+    os_mle_data->ap_wake_block_size = SLEXEC_AP_WAKE_BLOCK_SIZE;
+    printk(SLEXEC_DETA"AP wake  addr: 0x%x size: 0x%x\n", (uint32_t)os_mle_data->ap_wake_block,
            (uint32_t)os_mle_data->ap_wake_block_size);
     /* event log and size */
     os_mle_data->evtlog_addr = (uint32_t)&os_mle_data->event_log_buffer;
     os_mle_data->evtlog_size = MAX_EVENT_LOG_SIZE;
-    printk(TBOOT_DETA"Event log addr: 0x%x\n", (uint32_t)os_mle_data->evtlog_addr);
+    printk(SLEXEC_DETA"Event log addr: 0x%x\n", (uint32_t)os_mle_data->evtlog_addr);
 
     /*
      * OS/loader to SINIT data
@@ -462,7 +454,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     /* check sinit supported os_sinit_data version */
     version = get_supported_os_sinit_data_ver(sinit);
     if ( version < MIN_OS_SINIT_DATA_VER ) {
-        printk(TBOOT_ERR"unsupported OS to SINIT data version(%u) in sinit\n",
+        printk(SLEXEC_ERR"unsupported OS to SINIT data version(%u) in sinit\n",
                version);
         return NULL;
     }
@@ -515,11 +507,11 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     else if ( sinit_caps.rlp_wake_getsec )
         os_sinit_data->capabilities.rlp_wake_getsec = 1;
     else {     /* should have been detected in verify_acmod() */
-        printk(TBOOT_ERR"SINIT capabilities are incompatible (0x%x)\n", sinit_caps._raw);
+        printk(SLEXEC_ERR"SINIT capabilities are incompatible (0x%x)\n", sinit_caps._raw);
         return NULL;
     }
     if ( get_evtlog_type() == EVTLOG_TPM2_TCG ) {
-        printk(TBOOT_INFO"SINIT ACM supports TCG compliant TPM 2.0 event log format, tcg_event_log_format = %d \n",
+        printk(SLEXEC_INFO"SINIT ACM supports TCG compliant TPM 2.0 event log format, tcg_event_log_format = %d \n",
               sinit_caps.tcg_event_log_format);
         os_sinit_data->capabilities.tcg_event_log_format = 1;
     }
@@ -543,7 +535,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
             }
         } else {
             /* per discussions--if we don't have an ACPI pointer, die */
-            printk(TBOOT_ERR"Failed to find RSDP for EFI launch\n");
+            printk(SLEXEC_ERR"Failed to find RSDP for EFI launch\n");
             return NULL;
         }
     }
@@ -555,12 +547,12 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     else if ( !sinit_caps.pcr_map_no_legacy )
         os_sinit_data->capabilities.pcr_map_no_legacy = 0;
     else if ( sinit_caps.pcr_map_da ) {
-        printk(TBOOT_INFO
+        printk(SLEXEC_INFO
                "DA is the only supported PCR mapping by SINIT, use it\n");
         os_sinit_data->capabilities.pcr_map_da = 1;
     }
     else {
-        printk(TBOOT_ERR"SINIT capabilities are incompatible (0x%x)\n",
+        printk(SLEXEC_ERR"SINIT capabilities are incompatible (0x%x)\n",
                sinit_caps._raw);
         return NULL;
     }
@@ -614,9 +606,9 @@ int txt_launch_environment(loader_ctx *lctx)
     /* deactivate current locality */
     /* TODO why is it not done for 1.2 w/ release_locality() ? */
     if (g_tpm_family == TPM_IF_20_CRB ) {
-        printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
+        printk(SLEXEC_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
         if (!tpm_relinquish_locality_crb(0)){
-            printk(TBOOT_INFO"Relinquish CRB locality 0 failed...\n");
+            printk(SLEXEC_INFO"Relinquish CRB locality 0 failed...\n");
             error_action(SL_ERR_TPM_NOT_READY);
         }
     }
@@ -629,10 +621,10 @@ int txt_launch_environment(loader_ctx *lctx)
     reg_loc_ctrl._raw[0] = 0;
     reg_loc_ctrl.relinquish = 1;
     write_tpm_reg(0, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
-    printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
+    printk(SLEXEC_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
     read_tpm_reg(0, TPM_REG_LOC_STATE, &reg_loc_state);
-    printk(TBOOT_INFO"CRB reg_loc_state.active_locality is 0x%x \n", reg_loc_state.active_locality);
-    printk(TBOOT_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
+    printk(SLEXEC_INFO"CRB reg_loc_state.active_locality is 0x%x \n", reg_loc_state.active_locality);
+    printk(SLEXEC_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
     }*/
 
     /*
@@ -647,12 +639,12 @@ int txt_launch_environment(loader_ctx *lctx)
         *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
     }
 
-    printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
+    printk(SLEXEC_INFO"executing GETSEC[SENTER]...\n");
     /* (optionally) pause before executing GETSEC[SENTER] */
     if ( g_vga_delay > 0 )
         delay(g_vga_delay * 1000);
     __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
-    printk(TBOOT_INFO"ERROR--we should not get here!\n");
+    printk(SLEXEC_INFO"ERROR--we should not get here!\n");
     return SL_ERR_FATAL;
 }
 
@@ -669,24 +661,24 @@ bool txt_prepare_cpu(void)
 
     /* must be in protected mode */
     if ( !(cr0 & CR0_PE) ) {
-        printk(TBOOT_ERR"ERR: not in protected mode\n");
+        printk(SLEXEC_ERR"ERR: not in protected mode\n");
         return false;
     }
 
     /* cache must be enabled (CR0.CD = CR0.NW = 0) */
     if ( cr0 & CR0_CD ) {
-        printk(TBOOT_INFO"CR0.CD set\n");
+        printk(SLEXEC_INFO"CR0.CD set\n");
         cr0 &= ~CR0_CD;
     }
     if ( cr0 & CR0_NW ) {
-        printk(TBOOT_INFO"CR0.NW set\n");
+        printk(SLEXEC_INFO"CR0.NW set\n");
         cr0 &= ~CR0_NW;
     }
 
     /* native FPU error reporting must be enabled for proper */
     /* interaction behavior */
     if ( !(cr0 & CR0_NE) ) {
-        printk(TBOOT_INFO"CR0.NE not set\n");
+        printk(SLEXEC_INFO"CR0.NE not set\n");
         cr0 |= CR0_NE;
     }
 
@@ -695,11 +687,11 @@ bool txt_prepare_cpu(void)
     /* cannot be in virtual-8086 mode (EFLAGS.VM=1) */
     eflags = read_eflags();
     if ( eflags & X86_EFLAGS_VM ) {
-        printk(TBOOT_INFO"EFLAGS.VM set\n");
+        printk(SLEXEC_INFO"EFLAGS.VM set\n");
         write_eflags(eflags | ~X86_EFLAGS_VM);
     }
 
-    printk(TBOOT_INFO"CR0 and EFLAGS OK\n");
+    printk(SLEXEC_INFO"CR0 and EFLAGS OK\n");
 
 
     /*
@@ -710,13 +702,13 @@ bool txt_prepare_cpu(void)
     /* no machine check in progress (IA32_MCG_STATUS.MCIP=1) */
     mcg_stat = rdmsr(MSR_MCG_STATUS);
     if ( mcg_stat & 0x04 ) {
-        printk(TBOOT_ERR"machine check in progress\n");
+        printk(SLEXEC_ERR"machine check in progress\n");
         return false;
     }
 
     getsec_parameters_t params;
-    if ( !get_parameters(&params) ) {
-        printk(TBOOT_ERR"get_parameters() failed\n");
+    if ( !smx_get_parameters(&params) ) {
+        printk(SLEXEC_ERR"smx_get_parameters() failed\n");
         return false;
     }
 
@@ -725,22 +717,22 @@ bool txt_prepare_cpu(void)
     for ( unsigned int i = 0; i < (mcg_cap & 0xff); i++ ) {
         mcg_stat = rdmsr(MSR_MC0_STATUS + 4*i);
         if ( mcg_stat & (1ULL << 63) ) {
-            printk(TBOOT_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
+            printk(SLEXEC_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
             if ( !params.preserve_mce )
                 return false;
         }
     }
 
     if ( params.preserve_mce )
-        printk(TBOOT_INFO"supports preserving machine check errors\n");
+        printk(SLEXEC_INFO"supports preserving machine check errors\n");
     else
-        printk(TBOOT_INFO"no machine check errors\n");
+        printk(SLEXEC_INFO"no machine check errors\n");
 
     if ( params.proc_based_scrtm )
-        printk(TBOOT_INFO"CPU support processor-based S-CRTM\n");
+        printk(SLEXEC_INFO"CPU support processor-based S-CRTM\n");
 
     /* all is well with the processor state */
-    printk(TBOOT_INFO"CPU is ready for SENTER\n");
+    printk(SLEXEC_INFO"CPU is ready for SENTER\n");
 
     return true;
 }
@@ -764,7 +756,7 @@ bool txt_is_powercycle_required(void)
 #define DEF_ACM_MEM_TYPES               ACM_MEM_TYPE_UC
 #define DEF_SENTER_CTRLS                0x00
 
-bool get_parameters(getsec_parameters_t *params)
+bool smx_get_parameters(getsec_parameters_t *params)
 {
     unsigned long cr4;
     uint32_t index, eax, ebx, ecx;
@@ -773,7 +765,7 @@ bool get_parameters(getsec_parameters_t *params)
     /* sanity check because GETSEC[PARAMETERS] will fail if not set */
     cr4 = read_cr4();
     if ( !(cr4 & CR4_SMXE) ) {
-        printk(TBOOT_ERR"SMXE not enabled, can't read parameters\n");
+        printk(SLEXEC_ERR"SMXE not enabled, can't read parameters\n");
         return false;
     }
 
@@ -796,7 +788,7 @@ bool get_parameters(getsec_parameters_t *params)
         /* supported ACM versions */
         else if ( param_type == 1 ) {
             if ( params->n_versions == MAX_SUPPORTED_ACM_VERSIONS )
-                printk(TBOOT_WARN"number of supported ACM version exceeds "
+                printk(SLEXEC_WARN"number of supported ACM version exceeds "
                        "MAX_SUPPORTED_ACM_VERSIONS\n");
             else {
                 params->acm_versions[params->n_versions].mask = ebx;
@@ -819,7 +811,7 @@ bool get_parameters(getsec_parameters_t *params)
             params->preserve_mce = (eax & 0x00000040) ? true : false;
         }
         else {
-            printk(TBOOT_WARN"unknown GETSEC[PARAMETERS] type: %d\n",
+            printk(SLEXEC_WARN"unknown GETSEC[PARAMETERS] type: %d\n",
                    param_type);
             param_type = 0;    /* set so that we break out of the loop */
         }

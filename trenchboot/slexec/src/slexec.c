@@ -50,6 +50,8 @@
 #include <linux.h>
 #include <tpm.h>
 #include <cmdline.h>
+#include <txt/smx.h>
+#include <txt/txt.h>
 #include <skinit/skl.h>
 #include <skinit/skinit.h>
 
@@ -135,6 +137,7 @@ static bool prepare_cpu(void)
 {
     unsigned long eflags, cr0;
     uint64_t mcg_cap, mcg_stat;
+    bool preserve_mce = false;
 
     /* must be running at CPL 0 => this is implicit in even getting this far */
     /* since our bootstrap code loads a GDT, etc. */
@@ -187,13 +190,32 @@ static bool prepare_cpu(void)
         return false;
     }
 
+    if (g_architecture == SL_ARCH_TXT) {
+        getsec_parameters_t params;
+        if ( !smx_get_parameters(&params) ) {
+            printk(SLEXEC_ERR"smx_get_parameters() failed\n");
+            return false;
+        }
+
+        if ( params.preserve_mce )
+            printk(SLEXEC_INFO"TXT supports preserving machine check errors\n");
+        else
+            printk(SLEXEC_INFO"TXT no machine check errors\n");
+
+        if ( params.proc_based_scrtm )
+            printk(SLEXEC_INFO"TXT CPU support processor-based S-CRTM\n");
+
+        preserve_mce = !!(params.preserve_mce);
+    }
+
     /* check if all machine check regs are clear */
     mcg_cap = rdmsr(MSR_MCG_CAP);
     for ( unsigned int i = 0; i < (mcg_cap & 0xff); i++ ) {
         mcg_stat = rdmsr(MSR_MC0_STATUS + 4*i);
         if ( mcg_stat & (1ULL << 63) ) {
             printk(SLEXEC_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
-            return false;
+            if ( !preserve_mce )
+                return false;
         }
     }
 
@@ -296,6 +318,11 @@ void begin_launch(void *addr, uint32_t magic)
     /* has already been launched */
     err = supports_skinit();
     error_action(err);
+   /* TODO for TXT call txt_verify_platform(). This will call supports_txt()
+    * and supports_smx(). CPUID for features already moved out of read processor
+    * function. Also call verify_IA32_se_svn_status() and txt_display_errors()
+    * first.
+    */
 
     /* make TPM ready for measured launch */
     if ( !tpm_detect() )
