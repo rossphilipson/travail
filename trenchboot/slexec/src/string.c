@@ -262,7 +262,7 @@ int sl_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap)
     if ( fmt == NULL )
         return 0;
 
-    sk_memset(&mods, 0, sizeof(mods));
+    sl_memset(&mods, 0, sizeof(mods));
 
     while ( buf_pos < size ) {
         bool success;

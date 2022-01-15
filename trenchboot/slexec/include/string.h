@@ -50,7 +50,7 @@ int	 sl_snprintf(char *buf, size_t size, const char *fmt, ...);
 int	 sl_vscnprintf(char *buf, size_t size, const char *fmt, va_list ap);
 unsigned long sl_strtoul(const char *nptr, char **endptr, int base);
 
-static inline void *sk_memset(void *b, int c, size_t len)
+static inline void *sl_memset(void *b, int c, size_t len)
 {
     char *bb;
 
@@ -60,12 +60,12 @@ static inline void *sk_memset(void *b, int c, size_t len)
     return (b);
 }
 
-static inline void *sk_memmove(void *dest, const void *src, size_t n)
+static inline void *sl_memmove(void *dest, const void *src, size_t n)
 {
     return sl_memcpy(dest, src, n);
 }
 
-static __inline char *sk_strchr(const char *p, int ch)
+static __inline char *sl_strchr(const char *p, int ch)
 {
     return sl_index(p, ch);
 }

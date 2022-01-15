@@ -97,7 +97,7 @@ else \
 static void tpm_send_cmd_ready_status(uint32_t locality)
 {
     /* write 1 to TPM_STS_x.commandReady to let TPM enter ready state */
-    sk_memset((void *)&g_reg_sts, 0, sizeof(g_reg_sts));
+    sl_memset((void *)&g_reg_sts, 0, sizeof(g_reg_sts));
     g_reg_sts.command_ready = 1;
     write_tpm_sts_reg(locality);
 }
@@ -116,14 +116,14 @@ static bool tpm_send_cmd_ready_status_crb(uint32_t locality)
 #endif
 
     if ( reg_ctrl_sts.tpmidle == 1) {
-        sk_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+        sl_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
         reg_ctrl_request.cmdReady = 1;
         write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
         return true;
     }
 
-    sk_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+    sl_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
     reg_ctrl_request.goIdle = 1;
     write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
@@ -154,7 +154,7 @@ static bool tpm_send_cmd_ready_status_crb(uint32_t locality)
     printk(SLEXEC_INFO"2. reg_ctrl_sts.tpmsts: 0x%x\n", reg_ctrl_sts.tpmsts);
 #endif
 
-    sk_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
+    sl_memset(&reg_ctrl_request,0,sizeof(reg_ctrl_request));
     reg_ctrl_request.cmdReady = 1;
     write_tpm_reg(locality, TPM_CRB_CTRL_REQ, &reg_ctrl_request);
 
@@ -243,7 +243,7 @@ static bool tpm_check_da_status(uint32_t locality)
 
 static void tpm_execute_cmd(uint32_t locality)
 {
-    sk_memset((void *)&g_reg_sts, 0, sizeof(g_reg_sts));
+    sl_memset((void *)&g_reg_sts, 0, sizeof(g_reg_sts));
     g_reg_sts.tpm_go = 1;
     write_tpm_sts_reg(locality);
 }
@@ -706,7 +706,7 @@ bool tpm_relinquish_locality_crb(uint32_t locality)
     if ( reg_loc_state.loc_assigned == 0 )    return true;
 
     /* make inactive by writing a 1 */
-    sk_memset(&reg_loc_ctrl,0,sizeof(reg_loc_ctrl));
+    sl_memset(&reg_loc_ctrl,0,sizeof(reg_loc_ctrl));
     reg_loc_ctrl.relinquish = 1;
     write_tpm_reg(locality, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
 
@@ -757,7 +757,7 @@ bool tpm_request_locality_crb(uint32_t locality)
     tpm_reg_loc_state_t  reg_loc_state;
     tpm_reg_loc_ctrl_t    reg_loc_ctrl;
     /* request access to the TPM from locality N */
-    sk_memset(&reg_loc_ctrl,0,sizeof(reg_loc_ctrl));
+    sl_memset(&reg_loc_ctrl,0,sizeof(reg_loc_ctrl));
     reg_loc_ctrl.requestAccess = 1;
     write_tpm_reg(locality, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
 

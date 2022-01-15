@@ -273,7 +273,7 @@ static void *remove_module(loader_ctx *lctx, void *mod_start)
         }
 
         /* copy remaing mods down by one */
-        sk_memmove(m, m + 1, (mbi->mods_count - i - 1)*sizeof(module_t));
+        sl_memmove(m, m + 1, (mbi->mods_count - i - 1)*sizeof(module_t));
 
         mbi->mods_count--;
 

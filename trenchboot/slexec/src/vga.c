@@ -48,7 +48,7 @@ static unsigned int num_lines;
 
 static inline void reset_screen(void)
 {
-    sk_memset(screen, 0, SCREEN_BUFFER);
+    sl_memset(screen, 0, SCREEN_BUFFER);
     cursor_x = 0;
     cursor_y = 0;
     num_lines = 0;

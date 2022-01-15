@@ -454,10 +454,7 @@ struct tpm_if {
     u8 extpol;
     u16 cur_alg;
 
-    /* NV index to be used */
-    u32 lcp_own_index;
-    u32 sk_policy_index;
-    u32 sk_err_index;
+    /* SGX NV index to be used */
     u32 sgx_svn_index;
 };
 

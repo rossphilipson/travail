@@ -272,7 +272,7 @@ void begin_launch(void *addr, uint32_t magic)
     determine_loader_type(addr, magic);
 
     cmdline = get_cmdline(g_ldr_ctx);
-    sk_memset(g_cmdline, '\0', sizeof(g_cmdline));
+    sl_memset(g_cmdline, '\0', sizeof(g_cmdline));
     if ( cmdline )
         sl_strncpy(g_cmdline, cmdline, sizeof(g_cmdline)-1);
 

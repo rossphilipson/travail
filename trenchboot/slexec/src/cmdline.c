@@ -86,10 +86,10 @@ static char g_linux_param_values[ARRAY_SIZE(g_linux_cmdline_options)][MAX_VALUE_
 typedef struct {
     const char *log_name;
     uint8_t    log_val;
-} sk_loglvl_map_t;
+} sl_loglvl_map_t;
 
 /* map */
-static const sk_loglvl_map_t g_loglvl_map[] = {
+static const sl_loglvl_map_t g_loglvl_map[] = {
     { "none",  SLEXEC_LOG_LEVEL_NONE  },
     { "err",   SLEXEC_LOG_LEVEL_ERR   },
     { "warn",  SLEXEC_LOG_LEVEL_WARN  },
@@ -134,13 +134,13 @@ static void cmdline_parse(const char *cmdline, const cmdline_option_t *options,
 
         /* find end of current option */
         const char *opt_start = p;
-        const char *opt_end = sk_strchr(opt_start, ' ');
+        const char *opt_end = sl_strchr(opt_start, ' ');
         if ( opt_end == NULL )
             opt_end = opt_start + sl_strlen(opt_start);
         p = opt_end;
 
         /* find value part; if no value found, use default and continue */
-        const char *val_start = sk_strchr(opt_start, '=');
+        const char *val_start = sl_strchr(opt_start, '=');
         if ( val_start == NULL || val_start > opt_end )
             continue;
         val_start++;

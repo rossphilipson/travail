@@ -448,7 +448,7 @@ static bool tpm12_init(struct tpm_if *ti)
     }
 
     /* make sure tpm is not disabled/deactivated */
-    sk_memset(&pflags, 0, sizeof(pflags));
+    sl_memset(&pflags, 0, sizeof(pflags));
     ret = tpm12_get_flags(locality, TPM_CAP_FLAG_PERMANENT,
                         (uint8_t *)&pflags, sizeof(pflags));
     if ( ret != TPM_SUCCESS ) {
@@ -461,7 +461,7 @@ static bool tpm12_init(struct tpm_if *ti)
         return false;
     }
 
-    sk_memset(&vflags, 0, sizeof(vflags));
+    sl_memset(&vflags, 0, sizeof(vflags));
     ret = tpm12_get_flags(locality, TPM_CAP_FLAG_VOLATILE,
                         (uint8_t *)&vflags, sizeof(vflags));
     if ( ret != TPM_SUCCESS ) {
@@ -529,9 +529,6 @@ static bool tpm12_init(struct tpm_if *ti)
     ti->cur_alg = HASH_ALG_SHA1;
 
     /* init NV index */
-    ti->sk_policy_index = 0x20000001;
-    ti->lcp_own_index = 0x40000001;
-    ti->sk_err_index = 0x20000002;
     ti->sgx_svn_index = 0x50000004;
 
     return true;

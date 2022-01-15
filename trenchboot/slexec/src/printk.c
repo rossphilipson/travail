@@ -129,7 +129,7 @@ void printk(const char *fmt, ...)
     uint8_t log_level;
     static bool last_line_cr = true;
 
-    sk_memset(buf, '\0', sizeof(buf));
+    sl_memset(buf, '\0', sizeof(buf));
     va_start(ap, fmt);
     n = sl_vscnprintf(buf, sizeof(buf), fmt, ap);
 

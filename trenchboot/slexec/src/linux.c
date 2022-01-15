@@ -220,7 +220,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
             }
         }
 
-        sk_memmove((void *)initrd_base, initrd_image, initrd_size);
+        sl_memmove((void *)initrd_base, initrd_image, initrd_size);
         printk(SLEXEC_ERR"Initrd from 0x%lx to 0x%lx\n",
                (unsigned long)initrd_base,
                (unsigned long)(initrd_base + initrd_size));
@@ -307,17 +307,17 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* save linux header struct to temp memory to copy changes to zero page */
-    sk_memmove(&temp_hdr, hdr, sizeof(temp_hdr));
+    sl_memmove(&temp_hdr, hdr, sizeof(temp_hdr));
 
     /* load real-mode part */
-    sk_memmove((void *)real_mode_base, linux_image, real_mode_size);
+    sl_memmove((void *)real_mode_base, linux_image, real_mode_size);
     printk(SLEXEC_ERR"Kernel (real mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)linux_image,
            (unsigned long)real_mode_base,
            (unsigned long)real_mode_size);
 
     /* load protected-mode part */
-    sk_memmove((void *)protected_mode_base, linux_image + real_mode_size,
+    sl_memmove((void *)protected_mode_base, linux_image + real_mode_size,
             protected_mode_size);
     printk(SLEXEC_ERR"Kernel (protected mode) from 0x%lx to 0x%lx size: 0x%lx\n",
            (unsigned long)(linux_image + real_mode_size),
@@ -328,7 +328,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     hdr = (linux_kernel_header_t *)(real_mode_base + KERNEL_HEADER_OFFSET);
 
     /* copy back the updated kernel header */
-    sk_memmove(hdr, &temp_hdr, sizeof(temp_hdr));
+    sl_memmove(hdr, &temp_hdr, sizeof(temp_hdr));
 
     /* set cmd_line_ptr */
     hdr->cmd_line_ptr = real_mode_base + KERNEL_CMDLINE_OFFSET;
@@ -343,7 +343,7 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     size_t kernel_cmdline_strlen = sl_strlen(kernel_cmdline);
     if (kernel_cmdline_strlen > kernel_cmdline_size - 1)
         kernel_cmdline_strlen = kernel_cmdline_size - 1;
-    sk_memset((void *)hdr->cmd_line_ptr, 0, kernel_cmdline_size);
+    sl_memset((void *)hdr->cmd_line_ptr, 0, kernel_cmdline_size);
     sl_memcpy((void *)hdr->cmd_line_ptr, kernel_cmdline, kernel_cmdline_strlen);
 
     printk(SLEXEC_INFO"Linux cmdline from 0x%lx to 0x%lx:\n",
@@ -443,8 +443,8 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* Clear out some boot_params we don't want dangling around */
-    sk_memset((void *)boot_params->slexec_shared_addr, 0, 8);
-    sk_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
+    sl_memset((void *)boot_params->slexec_shared_addr, 0, 8);
+    sl_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
 
     /* Copy all the handoff information about the loaded IL kernel */
     g_sl_kernel_setup.real_mode_base = real_mode_base;
