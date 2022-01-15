@@ -286,13 +286,13 @@ static inline void write_priv_config_reg(uint32_t reg, uint64_t val)
 
 extern void txt_display_errors(void);
 extern bool txt_has_error(void);
-extern tb_error_t supports_txt(void);
-extern tb_error_t txt_verify_platform(void);
+extern int supports_txt(void);
+extern int txt_verify_platform(void);
 extern bool txt_prepare_cpu(void);
-extern tb_error_t txt_launch_environment(loader_ctx *lctx);
-extern tb_error_t txt_launch_racm(loader_ctx *lctx);
+extern int txt_launch_environment(loader_ctx *lctx);
+extern int txt_launch_racm(loader_ctx *lctx);
 extern void txt_post_launch(void);
-extern tb_error_t txt_post_launch_verify_platform(void);
+extern int txt_post_launch_verify_platform(void);
 extern void txt_shutdown(void);
 extern bool txt_is_powercycle_required(void);
 extern int get_evtlog_type(void);

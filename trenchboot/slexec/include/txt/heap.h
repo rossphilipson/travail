@@ -177,7 +177,7 @@ typedef struct __packed {
 /*
  * HEAP_EVENT_LOG_POINTER_ELEMENT2
  */
-#define HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR_2  7 
+#define HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR_2  7
 #define HEAP_EXTDATA_TYPE_TPM_EVENT_LOG_PTR_2_1  8
 
 #define DIGEST_ALG_ID_SHA_1       0x00000001
@@ -187,15 +187,15 @@ typedef struct __packed {
 #define DIGEST_ALG_ID_SM3         0x00000005
 static inline unsigned int get_evtlog_digest_id(uint16_t hash_alg)
 {
-    if ( hash_alg == TB_HALG_SHA1 )
+    if ( hash_alg == HASH_ALG_SHA1 )
         return DIGEST_ALG_ID_SHA_1;
-    else if ( hash_alg == TB_HALG_SHA256 )
+    else if ( hash_alg == HASH_ALG_SHA256 )
         return DIGEST_ALG_ID_SHA_256;
-    else if ( hash_alg == TB_HALG_SM3 )
+    else if ( hash_alg == HASH_ALG_SM3 )
         return DIGEST_ALG_ID_SM3;
-    else if ( hash_alg == TB_HALG_SHA384 )
+    else if ( hash_alg == HASH_ALG_SHA384 )
         return DIGEST_ALG_ID_SHA_384;
-    else if ( hash_alg == TB_HALG_SHA512 )
+    else if ( hash_alg == HASH_ALG_SHA512 )
         return DIGEST_ALG_ID_SHA_512;
     else
         return 0;

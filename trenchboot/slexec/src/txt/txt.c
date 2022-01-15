@@ -588,7 +588,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     return txt_heap;
 }
 
-tb_error_t txt_launch_environment(loader_ctx *lctx)
+int txt_launch_environment(loader_ctx *lctx)
 {
     void *mle_ptab_base;
     txt_heap_t *txt_heap;
@@ -600,16 +600,16 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     /* create MLE page table */
     mle_ptab_base = build_mle_pagetable();
     if ( mle_ptab_base == NULL )
-        return TB_ERR_FATAL;
+        return SL_ERR_FATAL;
 
     /* initialize TXT heap */
     txt_heap = init_txt_heap(mle_ptab_base, g_sinit, lctx);
     if ( txt_heap == NULL )
-        return TB_ERR_TXT_NOT_SUPPORTED;
+        return SL_ERR_TXT_NOT_SUPPORTED;
 
     /* set MTRRs properly for AC module (SINIT) */
     if ( !set_mtrrs_for_acmod(g_sinit) )
-        return TB_ERR_FATAL;
+        return SL_ERR_FATAL;
 
     /* deactivate current locality */
     /* TODO why is it not done for 1.2 w/ release_locality() ? */
@@ -617,7 +617,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
         printk(TBOOT_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
         if (!tpm_relinquish_locality_crb(0)){
             printk(TBOOT_INFO"Relinquish CRB locality 0 failed...\n");
-            error_action(TB_ERR_TPM_NOT_READY);
+            error_action(SL_ERR_TPM_NOT_READY);
         }
     }
 
@@ -653,7 +653,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
         delay(g_vga_delay * 1000);
     __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
     printk(TBOOT_INFO"ERROR--we should not get here!\n");
-    return TB_ERR_FATAL;
+    return SL_ERR_FATAL;
 }
 
 bool txt_prepare_cpu(void)

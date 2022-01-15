@@ -129,17 +129,17 @@ static bool supports_smx(void)
     return true;
 }
 
-tb_error_t supports_txt(void)
+int supports_txt(void)
 {
     capabilities_t cap;
 
     /* processor must support cpuid and must be Intel CPU */
     if ( !read_processor_info() )
-        return TB_ERR_SMX_NOT_SUPPORTED;
+        return SL_ERR_SMX_NOT_SUPPORTED;
 
     /* processor must support SMX */
     if ( !supports_smx() )
-        return TB_ERR_SMX_NOT_SUPPORTED;
+        return SL_ERR_SMX_NOT_SUPPORTED;
 
     /* testing for chipset support requires enabling SMX on the processor */
     write_cr4(read_cr4() | CR4_SMXE);
@@ -155,7 +155,7 @@ tb_error_t supports_txt(void)
         if ( cap.senter && cap.sexit && cap.parameters && cap.smctrl &&
              cap.wakeup ) {
             printk(TBOOT_INFO"TXT chipset and all needed capabilities present\n");
-            return TB_ERR_NONE;
+            return SL_ERR_NONE;
         }
         else
             printk(TBOOT_ERR"ERR: insufficient SMX capabilities (%x)\n", cap._raw);
@@ -166,21 +166,21 @@ tb_error_t supports_txt(void)
     /* since we are failing, we should clear the SMX flag */
     write_cr4(read_cr4() & ~CR4_SMXE);
 
-    return TB_ERR_TXT_NOT_SUPPORTED;
+    return SL_ERR_TXT_NOT_SUPPORTED;
 }
 
-tb_error_t txt_verify_platform(void)
+int txt_verify_platform(void)
 {
     txt_heap_t *txt_heap;
-    tb_error_t err;
+    int err;
 
     /* check TXT supported */
     err = supports_txt();
-    if ( err != TB_ERR_NONE )
+    if ( err != SL_ERR_NONE )
         return err;
 
     if ( !vtd_bios_enabled() ) {
-        return TB_ERR_VTD_NOT_SUPPORTED;
+        return SL_ERR_VTD_NOT_SUPPORTED;
     }
 
     /* check is TXT_RESET.STS is set, since if it is SENTER will fail */
@@ -188,15 +188,15 @@ tb_error_t txt_verify_platform(void)
     if ( ests.txt_reset_sts ) {
         printk(TBOOT_ERR"TXT_RESET.STS is set and SENTER is disabled (0x%02Lx)\n",
                ests._raw);
-        return TB_ERR_SMX_NOT_SUPPORTED;
+        return SL_ERR_SMX_NOT_SUPPORTED;
     }
 
     /* verify BIOS to OS data */
     txt_heap = get_txt_heap();
     if ( !verify_bios_data(txt_heap) )
-        return TB_ERR_TXT_NOT_SUPPORTED;
+        return SL_ERR_TXT_NOT_SUPPORTED;
 
-    return TB_ERR_NONE;
+    return SL_ERR_NONE;
 }
 
 /*

@@ -92,7 +92,7 @@ static void print_custom_elt(const heap_ext_data_element_t *elt)
 /* HEAP_EVENT_LOG_POINTER_ELEMENT */
 static inline void print_heap_hash(const sha1_hash_t hash)
 {
-    print_hash((const tb_hash_t *)hash, TB_HALG_SHA1);
+    print_hash((const tb_hash_t *)hash, HASH_ALG_SHA1);
 }
 
 static void print_event(const tpm12_pcr_event_t *evt)
@@ -233,31 +233,31 @@ uint32_t print_event_2_1(void *evt)
         hash_alg = evt_ptr->digest.digests[0].hash_alg;
         for ( uint32_t i = 0; i < evt_ptr->digest.count; i++ ) {
             switch (hash_alg) {
-                case TB_HALG_SHA1:
+                case HASH_ALG_SHA1:
                     printk(TBOOT_INFO"SHA1: \n");
                     print_hex(NULL, evt_data_ptr, SHA1_LENGTH);
                     evt_data_ptr += SHA1_LENGTH;
                     break;
 
-                case TB_HALG_SHA256:
+                case HASH_ALG_SHA256:
                     printk(TBOOT_INFO"SHA256: \n");
                     print_hex(NULL, evt_data_ptr, SHA256_LENGTH);
                     evt_data_ptr += SHA256_LENGTH;
                     break;
 
-                case TB_HALG_SM3:
+                case HASH_ALG_SM3:
                     printk(TBOOT_INFO"SM3_256: \n");
                     print_hex(NULL, evt_data_ptr, SM3_LENGTH);
                     evt_data_ptr += SM3_LENGTH;
                     break;
 
-                case TB_HALG_SHA384:
+                case HASH_ALG_SHA384:
                     printk(TBOOT_INFO"SHA384: \n");
                     print_hex(NULL, evt_data_ptr, SHA384_LENGTH);
                     evt_data_ptr += SHA384_LENGTH;
                     break;
 
-                case TB_HALG_SHA512:
+                case HASH_ALG_SHA512:
                     printk(TBOOT_INFO"SHA512:  \n");
                     print_hex(NULL, evt_data_ptr, SHA512_LENGTH);
                     evt_data_ptr += SHA512_LENGTH;
@@ -317,8 +317,8 @@ static void print_evt_log_ptr_elt_2(const heap_ext_data_element_t *elt)
         next = (void *)(unsigned long)log_descr->phys_addr +
                 log_descr->next_event_offset;
 
-        if (log_descr->alg != TB_HALG_SHA1){
-            print_event_2(curr, TB_HALG_SHA1);
+        if (log_descr->alg != HASH_ALG__SHA1){
+            print_event_2(curr, HASH_ALG__SHA1);
             curr += sizeof(tpm12_pcr_event_t) + sizeof(tpm20_log_descr_t);
         }
 
