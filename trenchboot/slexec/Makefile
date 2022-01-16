@@ -23,7 +23,8 @@ obj-y += src/sha1.o src/sha256.o
 obj-y += src/tpm.o src/tpm_12.o src/tpm_20.o
 obj-y += src/vga.o src/acpi.o
 obj-y += src/skinit/skinit.o src/skinit/skl.o
-obj-y += src/txt/heap.o src/txt/errors.o
+obj-y += src/txt/verify.o src/txt/heap.o
+obj-y += src/txt/errors.o
 
 OBJS := $(obj-y)
 

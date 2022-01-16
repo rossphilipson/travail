@@ -52,8 +52,6 @@
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 
-extern long s3_flag;
-
 /*
  * CPUID feature info
  */
@@ -63,23 +61,6 @@ static unsigned int g_cpuid_feat_info = 0;
  * IA32_FEATURE_CONTROL_MSR
  */
 static unsigned long g_feat_ctrl_msr;
-
-
-static bool read_processor_info(void)
-{
-    /* TODO CPUID supported and mfg checks moved to platform function */
-
-    g_cpuid_feat_info = cpuid_ecx(CPUID_X86_FEATURE_INFO_LEAF);
-
-    /* read feature control msr only if processor supports VMX or SMX instructions */
-    if ( (g_cpuid_feat_info & CPUID_X86_FEATURE_VMX) ||
-         (g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
-        g_feat_ctrl_msr = rdmsr(MSR_IA32_FEATURE_CONTROL);
-        printk(SLEXEC_DETA"IA32_FEATURE_CONTROL_MSR: %08lx\n", g_feat_ctrl_msr);
-    }
-
-    return true;
-}
 
 static bool supports_smx(void)
 {
@@ -128,9 +109,15 @@ int supports_txt(void)
 {
     capabilities_t cap;
 
-    /* processor must support cpuid and must be Intel CPU */
-    if ( !read_processor_info() )
-        return SL_ERR_SMX_NOT_SUPPORTED;
+    /* first get CPUID feature information */
+    g_cpuid_feat_info = cpuid_ecx(CPUID_X86_FEATURE_INFO_LEAF);
+
+    /* read feature control msr only if processor supports VMX or SMX instructions */
+    if ( (g_cpuid_feat_info & CPUID_X86_FEATURE_VMX) ||
+         (g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
+        g_feat_ctrl_msr = rdmsr(MSR_IA32_FEATURE_CONTROL);
+        printk(SLEXEC_DETA"IA32_FEATURE_CONTROL_MSR: %08lx\n", g_feat_ctrl_msr);
+    }
 
     /* processor must support SMX */
     if ( !supports_smx() )
