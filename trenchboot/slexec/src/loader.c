@@ -845,6 +845,33 @@ void print_loader_ctx(loader_ctx *lctx)
     }
 }
 
+uint8_t
+*get_loader_rsdp(loader_ctx *lctx, uint32_t *length)
+{
+    struct mb2_tag *start;
+    struct mb2_tag_new_acpi *new_acpi;
+
+    if (LOADER_CTX_BAD(lctx))
+        return NULL;
+    if (lctx->type != MB2_ONLY)
+        return NULL;
+    if (length == NULL)
+        return NULL;
+
+    start = (struct mb2_tag *) (lctx->addr + 8);
+    new_acpi = (struct mb2_tag_new_acpi *)
+        find_mb2_tag_type(start, MB2_TAG_TYPE_ACPI_NEW);
+    if (new_acpi == NULL){
+        /* we'll try the old type--the tag structs are the same */
+        new_acpi = (struct mb2_tag_new_acpi *)
+            find_mb2_tag_type(start, MB2_TAG_TYPE_ACPI_OLD);
+        if (new_acpi == NULL)
+            return NULL;
+    }
+    *length = new_acpi->size - 8;
+    return new_acpi->rsdp;
+}
+
 bool
 get_loader_efi_ptr(loader_ctx *lctx, uint32_t *address, uint64_t *long_address)
 {

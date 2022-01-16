@@ -84,6 +84,7 @@ extern unsigned long get_loader_ctx_end(loader_ctx *lctx);
 extern bool find_skl_module(loader_ctx *lctx);
 extern void replace_e820_map(loader_ctx *lctx);
 extern bool is_loader_launch_efi(loader_ctx *lctx);
+extern uint8_t *get_loader_rsdp(loader_ctx *lctx, uint32_t *length);
 extern bool get_loader_efi_ptr(loader_ctx *lctx, uint32_t *address,
                                uint64_t *long_address);
 extern void load_framebuffer_info(loader_ctx *lctx, void *vscr);
