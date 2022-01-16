@@ -100,6 +100,8 @@
     };                                         \
 }
 
+#define SL_MAX_CPUS 512
+
 typedef struct __packed {
     uint32_t    data1;
     uint16_t    data2;
@@ -129,6 +131,22 @@ typedef union {
     uint8_t    sha384[SHA384_LENGTH];
     uint8_t    sha512[SHA512_LENGTH];
 } sl_hash_t;
+
+static inline unsigned int get_hash_size(uint16_t hash_alg)
+{
+    if ( hash_alg == HASH_ALG_SHA1 || hash_alg == HASH_ALG_SHA1_LG )
+        return SHA1_LENGTH;
+    else if ( hash_alg == HASH_ALG_SHA256 )
+        return SHA256_LENGTH;
+    else if ( hash_alg == HASH_ALG_SM3 )
+        return SM3_LENGTH;
+    else if ( hash_alg == HASH_ALG_SHA384 )
+        return SHA384_LENGTH;
+    else if ( hash_alg == HASH_ALG_SHA512 )
+        return SHA512_LENGTH;
+    else
+        return 0;
+}
 
 extern int sha1_buffer(const unsigned char *buffer, size_t len,
                        unsigned char md[20]);

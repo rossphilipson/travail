@@ -100,7 +100,7 @@ typedef struct {
 } getsec_parameters_t;
 
 /* TODO extern bool smx_get_parameters(getsec_parameters_t *params); */
-static bool smx_get_parameters(getsec_parameters_t *params)
+static inline bool smx_get_parameters(getsec_parameters_t *params)
 {
     sl_memset(params, 0, sizeof(getsec_parameters_t));
     return true;

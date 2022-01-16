@@ -64,6 +64,9 @@ extern void printk_init(void);
 extern void printk(const char *fmt, ...)
                          __attribute__ ((format (printf, 1, 2)));
 
+extern void print_hash(const sl_hash_t *hash, uint16_t hash_alg);
+extern void print_uuid(const uuid_t *uuid);
+
 #endif
 
 /*

@@ -42,6 +42,7 @@
 #include <loader.h>
 #include <processor.h>
 #include <misc.h>
+#include <acpi.h>
 #include <e820.h>
 #include <tpm.h>
 #include <cmdline.h>

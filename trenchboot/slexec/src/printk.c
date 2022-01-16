@@ -149,6 +149,37 @@ exit:
     va_end(ap);
 }
 
+void print_hash(const sl_hash_t *hash, uint16_t hash_alg)
+{
+    if ( hash == NULL ) {
+        printk(SLEXEC_WARN"NULL");
+        return;
+    }
+
+    if ( hash_alg == HASH_ALG_SHA1 )
+        print_hex(NULL, (uint8_t *)hash->sha1, sizeof(hash->sha1));
+    else if ( hash_alg == HASH_ALG_SHA256 )
+        print_hex(NULL, (uint8_t *)hash->sha256, sizeof(hash->sha256));
+    else if ( hash_alg == HASH_ALG_SM3 )
+        print_hex(NULL, (uint8_t *)hash->sm3, sizeof(hash->sm3));
+    else if ( hash_alg == HASH_ALG_SHA384 )
+        print_hex(NULL, (uint8_t *)hash->sha384, sizeof(hash->sha384));
+    else {
+        printk(SLEXEC_WARN"unsupported hash alg (%u)\n", hash_alg);
+        return;
+    }
+}
+
+void print_uuid(const uuid_t *uuid)
+{
+    printk(SLEXEC_DETA"{0x%08x, 0x%04x, 0x%04x, 0x%04x,\n"
+           "\t\t{0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x}}",
+           uuid->data1, (uint32_t)uuid->data2, (uint32_t)uuid->data3,
+           (uint32_t)uuid->data4, (uint32_t)uuid->data5[0],
+           (uint32_t)uuid->data5[1], (uint32_t)uuid->data5[2],
+           (uint32_t)uuid->data5[3], (uint32_t)uuid->data5[4],
+           (uint32_t)uuid->data5[5]);
+}
 
 /*
  * Local variables:
