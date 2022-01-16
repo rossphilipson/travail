@@ -76,7 +76,7 @@ static void send_init_ipi_shorthand(void)
         /* mask off low order bits to get base address */
         apic_base &= APICBASE_BASE_MASK;
         /* access ICR through MMIO */
-        icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO);
+        icr_reg = (uint32_t *)(apic_base + LAPIC_ICR_LO_OFFSET);
 
         writel(icr_reg, (ICR_DELIVER_EXCL_SELF|ICR_MODE_INIT));
         printk(SLEXEC_INFO"SKINIT assert #INIT on APs - xAPIC ICR reg: %p\n", icr_reg);

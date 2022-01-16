@@ -35,10 +35,12 @@
 
 #ifndef __TXT_HEAP_H__
 #define __TXT_HEAP_H__
+
+typedef uint8_t sha1_hash_t[SHA1_LENGTH];
+
 /*
  * Extensible TXT heap data structure
  */
-
 typedef struct __packed {
     uint32_t   type;
     uint32_t   size;

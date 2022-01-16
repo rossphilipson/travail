@@ -183,7 +183,7 @@ static bool prepare_cpu(void)
      */
 
     /* no machine check in progress (IA32_MCG_STATUS.MCIP=1) */
-    mcg_stat = rdmsr(MSR_MCG_STATUS);
+    mcg_stat = rdmsr(MSR_IA32_MCG_STATUS);
     if ( mcg_stat & 0x04 ) {
         printk(SLEXEC_ERR"machine check in progress\n");
         return false;
@@ -208,9 +208,9 @@ static bool prepare_cpu(void)
     }
 
     /* check if all machine check regs are clear */
-    mcg_cap = rdmsr(MSR_MCG_CAP);
+    mcg_cap = rdmsr(MSR_IA32_MCG_CAP);
     for ( unsigned int i = 0; i < (mcg_cap & 0xff); i++ ) {
-        mcg_stat = rdmsr(MSR_MC0_STATUS + 4*i);
+        mcg_stat = rdmsr(MSR_IA32_MC0_STATUS + 4*i);
         if ( mcg_stat & (1ULL << 63) ) {
             printk(SLEXEC_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
             if ( !preserve_mce )
@@ -301,7 +301,7 @@ void begin_launch(void *addr, uint32_t magic)
         error_action(SL_ERR_FATAL);
 
     /* we should only be executing on the BSP */
-    apic_base = (uint32_t)rdmsr(MSR_APICBASE);
+    apic_base = (uint32_t)rdmsr(MSR_IA32_APICBASE);
     if ( !(apic_base & APICBASE_BSP) ) {
         printk(SLEXEC_INFO"entry processor is not BSP\n");
         error_action(SL_ERR_FATAL);

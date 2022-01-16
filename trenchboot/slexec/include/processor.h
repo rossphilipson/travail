@@ -321,18 +321,26 @@ static inline void cpu_mwait(int extensions, int hints)
     asm volatile ("mwait;" : :"a" (hints), "c" (extensions));
 }
 
-#define MSR_APICBASE         0x01b
-#define MSR_MCG_CAP          0x179
-#define MSR_MCG_STATUS       0x17a
-#define MSR_MC0_STATUS       0x401
+/* MSR */
+#define MSR_IA32_APICBASE         0x01b
+#define MSR_IA32_FEATURE_CONTROL  0x03a
+#define FEATURE_CONTROL_LOCK               (1<<0)
+#define FEATURE_CONTROL_ENABLE_VMX_IN_SMX  (1<<1)
+#define FEATURE_CONTROL_ENABLE_VMX_OUT_SMX (1<<2)
+#define FEATURE_CONTROL_SENTER_PARAM_CTL   (0x7f<<8) /* collection of params */
+#define FEATURE_CONTROL_ENABLE_SENTER      (1<<15)   /* last param */
+#define MSR_IA32_MCG_CAP          0x179
+#define MSR_IA32_MCG_STATUS       0x17a
+#define MSR_IA32_MC0_STATUS       0x401
+#define MSR_X2APIC_ICR            0x830
 
-#define APICBASE_BSP         (1<<8)
-#define XAPIC_ENABLE         (1<<11)
-#define X2APIC_ENABLE        (1<<10)
-#define APICBASE_BASE_MASK   (0xfffff<<12)
+/* APIC handling */
+#define APICBASE_BSP          (1<<8)
+#define XAPIC_ENABLE          (1<<11)
+#define X2APIC_ENABLE         (1<<10)
+#define APICBASE_BASE_MASK    (0xfffff<<12)
 
-#define LAPIC_ICR_LO          0x300
-#define MSR_X2APIC_ICR        0x830
+#define LAPIC_ICR_LO_OFFSET   (0x300)
 #define ICR_MODE_INIT         (5<<8)
 #define ICR_DELIVER_EXCL_SELF (3<<18)
 

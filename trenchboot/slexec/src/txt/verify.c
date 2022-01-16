@@ -33,27 +33,21 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
-#include <msr.h>
-#include <compiler.h>
+#include <slexec.h>
+#include <stdarg.h>
 #include <string.h>
-#include <misc.h>
-#include <processor.h>
-#include <page.h>
 #include <printk.h>
-#include <uuid.h>
 #include <loader.h>
-#include <tb_error.h>
+#include <processor.h>
+#include <misc.h>
 #include <e820.h>
-#include <slboot.h>
-#include <acpi.h>
-#include <mle.h>
-#include <hash.h>
+#include <tpm.h>
 #include <cmdline.h>
-#include <txt/txt.h>
 #include <txt/smx.h>
+#include <txt/mle.h>
+#include <txt/txt.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 
@@ -80,7 +74,7 @@ static bool read_processor_info(void)
     if ( (g_cpuid_feat_info & CPUID_X86_FEATURE_VMX) ||
          (g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
         g_feat_ctrl_msr = rdmsr(MSR_IA32_FEATURE_CONTROL);
-        printk(TBOOT_DETA"IA32_FEATURE_CONTROL_MSR: %08lx\n", g_feat_ctrl_msr);
+        printk(SLEXEC_DETA"IA32_FEATURE_CONTROL_MSR: %08lx\n", g_feat_ctrl_msr);
     }
 
     return true;
@@ -90,27 +84,27 @@ static bool supports_smx(void)
 {
     /* check that processor supports SMX instructions */
     if ( !(g_cpuid_feat_info & CPUID_X86_FEATURE_SMX) ) {
-        printk(TBOOT_ERR"ERR: CPU does not support SMX\n");
+        printk(SLEXEC_ERR"ERR: CPU does not support SMX\n");
         return false;
     }
-    printk(TBOOT_INFO"CPU is SMX-capable\n");
+    printk(SLEXEC_INFO"CPU is SMX-capable\n");
 
     /*
      * and that SMX is enabled in the feature control MSR
      */
 
     /* check that the MSR is locked -- BIOS should always lock it */
-    if ( !(g_feat_ctrl_msr & IA32_FEATURE_CONTROL_MSR_LOCK) ) {
-        printk(TBOOT_ERR"ERR: IA32_FEATURE_CONTROL_MSR_LOCK is not locked\n");
+    if ( !(g_feat_ctrl_msr & FEATURE_CONTROL_LOCK) ) {
+        printk(SLEXEC_ERR"ERR: FEATURE_CONTROL_LOCK is not locked\n");
         /* this should not happen, as BIOS is required to lock the MSR */
 #ifdef PERMISSIVE_BOOT
         /* we enable VMX outside of SMX as well so that if there was some */
         /* error in the TXT boot, VMX will continue to work */
-        g_feat_ctrl_msr |= IA32_FEATURE_CONTROL_MSR_ENABLE_VMX_IN_SMX |
-                           IA32_FEATURE_CONTROL_MSR_ENABLE_VMX_OUT_SMX |
-                           IA32_FEATURE_CONTROL_MSR_ENABLE_SENTER |
-                           IA32_FEATURE_CONTROL_MSR_SENTER_PARAM_CTL |
-                           IA32_FEATURE_CONTROL_MSR_LOCK;
+        g_feat_ctrl_msr |= FEATURE_CONTROL_ENABLE_VMX_IN_SMX |
+                           FEATURE_CONTROL_ENABLE_VMX_OUT_SMX |
+                           FEATURE_CONTROL_ENABLE_SENTER |
+                           FEATURE_CONTROL_SENTER_PARAM_CTL |
+                           FEATURE_CONTROL_LOCK;
         wrmsrl(MSR_IA32_FEATURE_CONTROL, g_feat_ctrl_msr);
         return true;
 #else
@@ -119,9 +113,9 @@ static bool supports_smx(void)
     }
 
     /* check that SENTER (w/ full params) is enabled */
-    if ( !(g_feat_ctrl_msr & (IA32_FEATURE_CONTROL_MSR_ENABLE_SENTER |
-                              IA32_FEATURE_CONTROL_MSR_SENTER_PARAM_CTL)) ) {
-        printk(TBOOT_ERR"ERR: SENTER disabled by feature control MSR (%lx)\n",
+    if ( !(g_feat_ctrl_msr & (FEATURE_CONTROL_ENABLE_SENTER |
+                              FEATURE_CONTROL_SENTER_PARAM_CTL)) ) {
+        printk(SLEXEC_ERR"ERR: SENTER disabled by feature control MSR (%lx)\n",
                g_feat_ctrl_msr);
         return false;
     }
@@ -143,7 +137,7 @@ int supports_txt(void)
 
     /* testing for chipset support requires enabling SMX on the processor */
     write_cr4(read_cr4() | CR4_SMXE);
-    printk(TBOOT_INFO"SMX is enabled\n");
+    printk(SLEXEC_INFO"SMX is enabled\n");
 
     /*
      * verify that an TXT-capable chipset is present and
@@ -154,14 +148,14 @@ int supports_txt(void)
     if ( cap.chipset_present ) {
         if ( cap.senter && cap.sexit && cap.parameters && cap.smctrl &&
              cap.wakeup ) {
-            printk(TBOOT_INFO"TXT chipset and all needed capabilities present\n");
+            printk(SLEXEC_INFO"TXT chipset and all needed capabilities present\n");
             return SL_ERR_NONE;
         }
         else
-            printk(TBOOT_ERR"ERR: insufficient SMX capabilities (%x)\n", cap._raw);
+            printk(SLEXEC_ERR"ERR: insufficient SMX capabilities (%x)\n", cap._raw);
     }
     else
-        printk(TBOOT_ERR"ERR: TXT-capable chipset not present\n");
+        printk(SLEXEC_ERR"ERR: TXT-capable chipset not present\n");
 
     /* since we are failing, we should clear the SMX flag */
     write_cr4(read_cr4() & ~CR4_SMXE);
@@ -186,7 +180,7 @@ int txt_verify_platform(void)
     /* check is TXT_RESET.STS is set, since if it is SENTER will fail */
     txt_ests_t ests = (txt_ests_t)read_pub_config_reg(TXTCR_ESTS);
     if ( ests.txt_reset_sts ) {
-        printk(TBOOT_ERR"TXT_RESET.STS is set and SENTER is disabled (0x%02Lx)\n",
+        printk(SLEXEC_ERR"TXT_RESET.STS is set and SENTER is disabled (0x%02Lx)\n",
                ests._raw);
         return SL_ERR_SMX_NOT_SUPPORTED;
     }
