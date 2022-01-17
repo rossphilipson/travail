@@ -461,6 +461,7 @@ struct tpm_if {
 struct tpm_if_fp {
     bool (*init)(struct tpm_if *ti);
     bool (*check)(void);
+    bool (*nv_write)(struct tpm_if *ti, u32 locality, u32 index, u32 offset, const u8 *data, u32 data_size);
 };
 
 extern struct tpm_if_data tpm_if_data;

@@ -25,6 +25,7 @@ obj-y += src/vga.o src/acpi.o
 obj-y += src/skinit/skinit.o src/skinit/skl.o
 obj-y += src/txt/verify.o src/txt/heap.o
 obj-y += src/txt/mtrrs.o src/txt/errors.o
+obj-y += src/txt/acmod.o
 
 OBJS := $(obj-y)
 
@@ -68,7 +69,7 @@ $(DISTDIR)/boot/$(TARGET).gz : $(TARGET).gz
 
 
 clean :
-	rm -f $(TARGET)* *~ include/*~ include/txt/*~ *.o src/*~ txt/*~ src/*.o txt/*.o
+	rm -f $(TARGET)* *~ include/*~ include/txt/*~ *.o src/*~ src/txt/*~ src/skinit/*~ src/*.o src/txt/*.o src/skinit/*.o
 	rm -f tags TAGS cscope.files cscope.in.out cscope.out cscope.po.out
 
 

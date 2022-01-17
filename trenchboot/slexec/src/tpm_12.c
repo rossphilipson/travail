@@ -427,6 +427,49 @@ static uint32_t tpm12_get_timeout(uint32_t locality,
     return ret;
 }
 
+#define TPM_NV_WRITE_VALUE_DATA_SIZE_MAX (TPM_CMD_SIZE_MAX - 22)
+static bool tpm12_nv_write_value(struct tpm_if *ti, uint32_t locality,
+                                 uint32_t index, uint32_t offset,
+                                 const uint8_t *data, uint32_t data_size)
+{
+    uint32_t ret, in_size = 0, out_size = 0;
+
+    if ( ti == NULL )
+        return false;
+
+    if ( data == NULL || data_size == 0
+         || data_size > TPM_NV_WRITE_VALUE_DATA_SIZE_MAX ) {
+        ti->error = TPM_BAD_PARAMETER;
+        return false;
+    }
+
+    /* copy index, offset and *data_size into buf in reversed byte order */
+    reverse_copy(WRAPPER_IN_BUF, &index, sizeof(index));
+    in_size += sizeof(index);
+    reverse_copy(WRAPPER_IN_BUF + in_size, &offset, sizeof(offset));
+    in_size += sizeof(offset);
+    reverse_copy(WRAPPER_IN_BUF + in_size, &data_size, sizeof(data_size));
+    in_size += sizeof(data_size);
+    sl_memcpy(WRAPPER_IN_BUF + in_size, data, data_size);
+    in_size += data_size;
+
+    ret = tpm12_submit_cmd(locality, TPM_ORD_NV_WRITE_VALUE,
+                         in_size, &out_size);
+
+#ifdef TPM_TRACE
+    printk(SLEXEC_DETA"TPM: write nv %08x, offset %08x, %08x bytes, return = %08X\n",
+           index, offset, data_size, ret);
+#endif
+    if ( ret != TPM_SUCCESS ) {
+        printk(SLEXEC_DETA"TPM: write nv %08x, offset %08x, %08x bytes, return = %08X\n",
+               index, offset, data_size, ret);
+        ti->error = ret;
+        return false;
+    }
+
+    return true;
+}
+
 /* ensure TPM is ready to accept commands */
 static bool tpm12_init(struct tpm_if *ti)
 {
@@ -546,6 +589,7 @@ static bool tpm12_check(void)
 const struct tpm_if_fp tpm_12_if_fp = {
     .init = tpm12_init,
     .check = tpm12_check,
+    .nv_write = tpm12_nv_write_value,
 };
 
 /*

@@ -409,6 +409,88 @@ static bool alg_is_supported(u16 alg)
     return false;
 }
 
+static uint32_t _tpm20_nv_write(uint32_t locality,
+                                tpm_nv_write_in *in,
+                                tpm_nv_write_out *out)
+{
+    u32 ret;
+    u32 cmd_size, rsp_size;
+    u16 rsp_tag;
+    void *other;
+
+    reverse_copy_header(TPM_CC_NV_Write, &in->sessions);
+
+    other = (void *)cmd_buf + CMD_HEAD_SIZE;
+    reverse_copy_in(other, in->handle);
+    reverse_copy_in(other, in->index);
+
+    reverse_copy_sessions_in(&other, &in->sessions);
+
+    other += reverse_copy_sized_buf_in((TPM2B *)other, (TPM2B *)&(in->data));
+
+    reverse_copy_in(other, in->offset);
+
+    /* Now set the command size field, now that we know the size of the whole command */
+    cmd_size = (u8 *)other - cmd_buf;
+    reverse_copy(cmd_buf + CMD_SIZE_OFFSET, &cmd_size, sizeof(cmd_size));
+
+    rsp_size = sizeof(*out);
+
+    if (g_tpm_family == TPM_IF_20_FIFO) {
+        if (!tpm_submit_cmd(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
+            return TPM_RC_FAILURE;
+        }
+    if (g_tpm_family == TPM_IF_20_CRB) {
+        if (!tpm_submit_cmd_crb(locality, cmd_buf, cmd_size, rsp_buf, &rsp_size))
+            return TPM_RC_FAILURE;
+        }
+
+    reverse_copy(&ret, rsp_buf + RSP_RST_OFFSET, sizeof(ret));
+    if ( ret != TPM_RC_SUCCESS )
+        return ret;
+
+    other = (void *)rsp_buf + RSP_HEAD_SIZE;
+    reverse_copy(&rsp_tag, rsp_buf, sizeof(rsp_tag));
+    if (rsp_tag == TPM_ST_SESSIONS)
+        other += sizeof(u32);
+
+    if ( !reverse_copy_sessions_out(&out->sessions, other, rsp_tag, &in->sessions) )
+        return TPM_RC_FAILURE;
+
+    return ret;
+}
+
+static bool tpm20_nv_write(struct tpm_if *ti, uint32_t locality,
+                           uint32_t index, uint32_t offset,
+                           const uint8_t *data, uint32_t data_size)
+{
+    tpm_nv_write_in write_in;
+    tpm_nv_write_out write_out;
+    u32 ret;
+
+    if ( ti == NULL || data == NULL || data_size == 0
+            || data_size > MAX_NV_INDEX_SIZE )
+        return false;
+
+    write_in.handle = index;
+    write_in.index = index;
+    write_in.sessions.num_sessions = 1;
+    write_in.sessions.sessions[0] = pw_session;
+    write_in.offset = offset;
+    write_in.data.t.size = data_size;
+    sl_memcpy(&write_in.data.t.buffer[0], data, data_size);
+
+    ret = _tpm20_nv_write(locality, &write_in, &write_out);
+    if ( ret != TPM_RC_SUCCESS ) {
+        printk(SLEXEC_WARN"TPM: write NV %08x, offset %08x, %08x bytes, return value = %08X\n",
+                index, offset, data_size, ret);
+        ti->error = ret;
+        return false;
+    }
+
+    return true;
+}
+
 static bool tpm20_init(struct tpm_if *ti)
 {
     u32 ret;
@@ -478,8 +560,15 @@ static bool tpm20_init(struct tpm_if *ti)
     return true;
 }
 
+static bool tpm20_check(void)
+{
+    return true; /* NOP */
+}
+
 const struct tpm_if_fp tpm_20_if_fp = {
-    .init = tpm20_init
+    .init = tpm20_init,
+    .check = tpm20_check,
+    .nv_write = tpm20_nv_write
 };
 
 /*

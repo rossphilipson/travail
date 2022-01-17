@@ -183,6 +183,9 @@ static always_inline uint32_t cpuid_edx(unsigned int op)
 #define CPUID_X86_FEATURE_VMX           (1<<5)
 #define CPUID_X86_FEATURE_SMX           (1<<6)
 
+#define CPUID_X86_EXT_FEATURE_LEAF      0x7 /* eax=7, ecx=0 */
+#define CPUID_X86_FEATURE_SGX           (1<<2)
+
 #define CPUID_X86_EXT_FEATURE_INFO_LEAF 0x80000001
 #define CPUID_X86_EXT_FEATURE_SKINIT    (1<<12)
 
@@ -322,6 +325,7 @@ static inline void cpu_mwait(int extensions, int hints)
 }
 
 /* MSR Registers */
+#define MSR_IA32_PLATFORM_ID      0x017
 #define MSR_IA32_APICBASE         0x01b
 #define MSR_IA32_FEATURE_CONTROL  0x03a
 #define FEATURE_CONTROL_LOCK               (1<<0)
@@ -332,6 +336,9 @@ static inline void cpu_mwait(int extensions, int hints)
 #define MSR_IA32_MCG_CAP          0x179
 #define MSR_IA32_MCG_STATUS       0x17a
 #define MSR_IA32_MC0_STATUS       0x401
+#define MSR_IA32_SGX_SVN_STATUS   0x500
+#define SGX_SVN_STATUS_LOCK       (1<<0)
+#define SGX_SVN_STATUS_SINIT      (0xff<<16)
 
 /* MTRR handling */
 #define MSR_MTRRcap               0x0fe

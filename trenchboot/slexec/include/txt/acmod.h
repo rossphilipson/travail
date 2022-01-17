@@ -178,7 +178,7 @@ extern bool verify_acmod(const acm_hdr_t *acm_hdr);
 extern uint32_t get_supported_os_sinit_data_ver(const acm_hdr_t* hdr);
 extern txt_caps_t get_sinit_capabilities(const acm_hdr_t* hdr);
 extern tpm_info_list_t *get_tpm_info_list(const acm_hdr_t* hdr);
-extern void verify_IA32_se_svn_status(const acm_hdr_t *acm_hdr);
+extern void verify_ia32_sgx_svn_status(const acm_hdr_t *acm_hdr);
 
 #endif /* __TXT_ACMOD_H__ */
 
