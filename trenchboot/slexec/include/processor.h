@@ -321,7 +321,7 @@ static inline void cpu_mwait(int extensions, int hints)
     asm volatile ("mwait;" : :"a" (hints), "c" (extensions));
 }
 
-/* MSR */
+/* MSR Registers */
 #define MSR_IA32_APICBASE         0x01b
 #define MSR_IA32_FEATURE_CONTROL  0x03a
 #define FEATURE_CONTROL_LOCK               (1<<0)
@@ -332,17 +332,24 @@ static inline void cpu_mwait(int extensions, int hints)
 #define MSR_IA32_MCG_CAP          0x179
 #define MSR_IA32_MCG_STATUS       0x17a
 #define MSR_IA32_MC0_STATUS       0x401
-#define MSR_X2APIC_ICR            0x830
+
+/* MTRR handling */
+#define MSR_MTRRcap               0x0fe
+#define MSR_MTRRdefType           0x2ff
+#define MTRR_TYPE_UNCACHABLE      0
+#define MTRR_TYPE_WRTHROUGH       4
+#define MTRR_TYPE_WRBACK          6
 
 /* APIC handling */
-#define APICBASE_BSP          (1<<8)
-#define XAPIC_ENABLE          (1<<11)
-#define X2APIC_ENABLE         (1<<10)
-#define APICBASE_BASE_MASK    (0xfffff<<12)
+#define MSR_X2APIC_ICR            0x830
+#define APICBASE_BSP              (1<<8)
+#define XAPIC_ENABLE              (1<<11)
+#define X2APIC_ENABLE             (1<<10)
+#define APICBASE_BASE_MASK        (0xfffff<<12)
 
-#define LAPIC_ICR_LO_OFFSET   (0x300)
-#define ICR_MODE_INIT         (5<<8)
-#define ICR_DELIVER_EXCL_SELF (3<<18)
+#define LAPIC_ICR_LO_OFFSET       (0x300)
+#define ICR_MODE_INIT             (5<<8)
+#define ICR_DELIVER_EXCL_SELF     (3<<18)
 
 static inline uint64_t rdmsr(uint32_t msr)
 {

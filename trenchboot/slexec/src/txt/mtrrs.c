@@ -33,41 +33,33 @@
  *
  */
 
-#include <config.h>
 #include <types.h>
 #include <stdbool.h>
-#include <compiler.h>
+#include <slexec.h>
+#include <stdarg.h>
 #include <string.h>
-#include <processor.h>
-#include <msr.h>
 #include <printk.h>
-#include <misc.h>
-#include <page.h>
-#include <slboot.h>
 #include <loader.h>
+#include <processor.h>
+#include <misc.h>
 #include <acpi.h>
-#include <mle.h>
+#include <tpm.h>
+#include <txt/mle.h>
 #include <txt/txt.h>
 #include <txt/mtrrs.h>
 #include <txt/acmod.h>
-#include <tpm.h>
 
-#define MTRR_TYPE_MIXED         -1
-#define MMIO_APIC_BASE          0xFEE00000
-#define NR_MMIO_APIC_PAGES      1
-#define NR_MMIO_IOAPIC_PAGES    1
-#define NR_MMIO_PCICFG_PAGES    1
-#define SINIT_MTRR_MASK         0xFFFFFF  /* SINIT requires 36b mask */
+#define SINIT_MTRR_MASK 0xFFFFFF  /* SINIT requires 36b mask */
 
 static void print_mtrrs(const mtrr_state_t *saved_state)
 {
-    printk(TBOOT_DETA"mtrr_def_type: e = %d, fe = %d, type = %x\n",
+    printk(SLEXEC_DETA"mtrr_def_type: e = %d, fe = %d, type = %x\n",
            saved_state->mtrr_def_type.e, saved_state->mtrr_def_type.fe,
            saved_state->mtrr_def_type.type );
-    printk(TBOOT_DETA"mtrrs:\n");
-    printk(TBOOT_DETA"\t\t    base          mask      type  v\n");
+    printk(SLEXEC_DETA"mtrrs:\n");
+    printk(SLEXEC_DETA"\t\t    base          mask      type  v\n");
     for ( unsigned int i = 0; i < saved_state->num_var_mtrrs; i++ ) {
-        printk(TBOOT_DETA"\t\t%13.13Lx %13.13Lx  %2.2x  %d\n",
+        printk(SLEXEC_DETA"\t\t%13.13Lx %13.13Lx  %2.2x  %d\n",
                (uint64_t)saved_state->mtrr_var_pair[i].mtrr_physbase.base,
                (uint64_t)saved_state->mtrr_var_pair[i].mtrr_physmask.mask,
                saved_state->mtrr_var_pair[i].mtrr_physbase.type,
@@ -118,7 +110,7 @@ static bool set_mem_type(const void *base, uint32_t size,
     num_pages = PAGE_UP(size) >> PAGE_SHIFT;
     ndx = 0;
 
-    printk(TBOOT_DETA"setting MTRRs for acmod: base=%p, size=%x, num_pages=%d\n",
+    printk(SLEXEC_DETA"setting MTRRs for acmod: base=%p, size=%x, num_pages=%d\n",
            base, size, num_pages);
     /*
      * Each VAR MTRR base must be a multiple if that MTRR's Size
@@ -133,7 +125,7 @@ static bool set_mem_type(const void *base, uint32_t size,
     for (int j = i - 12; j > 0; j--)
         mtrr_s = mtrr_s*2; //mtrr_s = mtrr_s << 1
 
-    printk(TBOOT_DETA"The maximum allowed MTRR range size=%d Pages \n", mtrr_s);
+    printk(SLEXEC_DETA"The maximum allowed MTRR range size=%d Pages \n", mtrr_s);
 
     while (num_pages >= mtrr_s) {
 	/* set the base of the current MTRR */
@@ -152,7 +144,7 @@ static bool set_mem_type(const void *base, uint32_t size,
         num_pages -= mtrr_s;
         ndx++;
         if ( ndx == mtrr_cap.vcnt ) {
-            printk(TBOOT_ERR"exceeded number of var MTRRs when mapping range\n");
+            printk(SLEXEC_ERR"exceeded number of var MTRRs when mapping range\n");
             return false;
         }
     }
@@ -189,7 +181,7 @@ static bool set_mem_type(const void *base, uint32_t size,
         num_pages -= pages_in_range;
         ndx++;
         if ( ndx == mtrr_cap.vcnt ) {
-            printk(TBOOT_ERR"exceeded number of var MTRRs when mapping range\n");
+            printk(SLEXEC_ERR"exceeded number of var MTRRs when mapping range\n");
             return false;
         }
     }
@@ -270,7 +262,7 @@ void save_mtrrs(mtrr_state_t *saved_state)
     if ( mtrr_cap.vcnt > MAX_VARIABLE_MTRRS ) {
         /* print warning but continue saving what we can */
         /* (set_mem_type() won't exceed the array, so we're safe doing this) */
-        printk(TBOOT_WARN"actual # var MTRRs (%d) > MAX_VARIABLE_MTRRS (%d)\n",
+        printk(SLEXEC_WARN"actual # var MTRRs (%d) > MAX_VARIABLE_MTRRS (%d)\n",
                mtrr_cap.vcnt, MAX_VARIABLE_MTRRS);
         saved_state->num_var_mtrrs = MAX_VARIABLE_MTRRS;
     }
