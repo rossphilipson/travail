@@ -10,7 +10,7 @@ SECTIONS
   . = 0x02C00000;
 
   .text : {
-	*(.skexec_multiboot_header)
+	*(.slexec_multiboot_header)
 	*(.text)
 	*(.fixup)
 	*(.gnu.warning)
