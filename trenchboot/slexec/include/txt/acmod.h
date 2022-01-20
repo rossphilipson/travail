@@ -77,7 +77,9 @@ typedef struct {
     uint32_t     scratch[143];//
     uint8_t      user_area[];
 } acm_hdr_t;
-extern acm_hdr_t *g_sinit;
+
+extern acm_hdr_t *g_sinit_module;
+extern uint32_t g_sinit_size;
 
 /* value of module_type field */
 #define ACM_TYPE_CHIPSET        0x02

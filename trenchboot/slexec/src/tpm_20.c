@@ -495,7 +495,6 @@ static bool tpm20_init(struct tpm_if *ti)
 {
     u32 ret;
     unsigned int i;
-    //tpm_info_list_t *info_list = get_tpm_info_list(g_sinit);
 
     if ( ti == NULL )
         return false;

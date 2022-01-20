@@ -292,6 +292,7 @@ static bool parse_pci_bdf(const char **bdf, uint32_t *bus, uint32_t *slot,
     return true;
 }
 
+/* TODO fix this. Using pragmas is just a workaround */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 bool g_psbdf_enabled = false;

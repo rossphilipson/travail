@@ -81,6 +81,7 @@ extern char *get_module_cmd(loader_ctx *lctx, module_t *mod);
 extern char *get_cmdline(loader_ctx *lctx);
 extern void determine_loader_type(void *addr, uint32_t magic);
 extern unsigned long get_loader_ctx_end(loader_ctx *lctx);
+extern bool find_sinit_module(loader_ctx *lctx);
 extern bool find_skl_module(loader_ctx *lctx);
 extern void replace_e820_map(loader_ctx *lctx);
 extern bool is_loader_launch_efi(loader_ctx *lctx);

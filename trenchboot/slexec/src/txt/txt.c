@@ -56,8 +56,6 @@
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 
-acm_hdr_t *g_sinit = 0;
-
 extern uint32_t g_min_ram;
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
@@ -272,8 +270,8 @@ int get_evtlog_type(void)
         return EVTLOG_TPM12;
     } else if (tpm->major == TPM20_VER_MAJOR) {
         /* TODO fix to only support TCG formait */
-        if (g_sinit) {
-            txt_caps_t sinit_caps = get_sinit_capabilities(g_sinit);
+        if (g_sinit_module) {
+            txt_caps_t sinit_caps = get_sinit_capabilities(g_sinit_module);
             return sinit_caps.tcg_event_log_format ? EVTLOG_TPM2_TCG : EVTLOG_TPM2_LEGACY;
         } else {
             printk(SLEXEC_ERR"SINIT not found\n");
@@ -552,12 +550,12 @@ int txt_launch_environment(loader_ctx *lctx)
         return SL_ERR_FATAL;
 
     /* initialize TXT heap */
-    txt_heap = init_txt_heap(mle_ptab_base, g_sinit, lctx);
+    txt_heap = init_txt_heap(mle_ptab_base, g_sinit_module, lctx);
     if ( txt_heap == NULL )
         return SL_ERR_TXT_NOT_SUPPORTED;
 
     /* set MTRRs properly for AC module (SINIT) */
-    if ( !set_mtrrs_for_acmod(g_sinit) )
+    if ( !set_mtrrs_for_acmod(g_sinit_module) )
         return SL_ERR_FATAL;
 
     /* deactivate current locality */
@@ -586,7 +584,7 @@ int txt_launch_environment(loader_ctx *lctx)
     /* (optionally) pause before executing GETSEC[SENTER] */
     if ( g_vga_delay > 0 )
         delay(g_vga_delay * 1000);
-    __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
+    __getsec_senter((uint32_t)g_sinit_module, (g_sinit_module->size)*4);
     printk(SLEXEC_INFO"ERROR--we should not get here!\n");
     return SL_ERR_FATAL;
 }

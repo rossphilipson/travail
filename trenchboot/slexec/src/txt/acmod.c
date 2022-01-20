@@ -51,6 +51,9 @@
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 
+acm_hdr_t *g_sinit_module;
+uint32_t g_sinit_size;
+
 static inline bool are_uuids_equal(const uuid_t *uuid1,
                                    const uuid_t *uuid2)
 {

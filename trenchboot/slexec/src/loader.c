@@ -43,12 +43,14 @@
 #include <misc.h>
 #include <multiboot.h>
 #include <processor.h>
+#include <cmdline.h>
 #include <loader.h>
 #include <e820.h>
 #include <elf.h>
 #include <linux.h>
+#include <txt/mle.h>
+#include <txt/acmod.h>
 #include <skinit/skl.h>
-#include <cmdline.h>
 
 /* TODO the MB2 handling has some issues, especially when things are moved or
  * made bigger in the MB2 data area. See cc66e042d1e3f8e675ea520202a20681e5f00553
@@ -709,6 +711,53 @@ get_loader_ctx_end(loader_ctx *lctx)
 }
 
 /*
+ * will go through all modules to find an SINIT that matches the platform
+ * (size can be NULL)
+ */
+bool
+find_sinit_module(loader_ctx *lctx)
+{
+    unsigned int i = get_module_count(lctx);
+    module_t *m;
+    void *base;
+    uint32_t size;
+
+    if ( i == 0 ) {
+        printk(SLEXEC_ERR"no module info\n");
+        return false;
+    }
+
+    printk(SLEXEC_ERR"module count: %d\n", (int)i);
+
+    /* run loop backwards */
+    for (  i -= 1; i > 0; i-- ) {
+        m = get_module(lctx, i);
+        if (lctx->type == 1)
+            printk(SLEXEC_DETA
+                   "checking if module %s is an SINIT for this platform...\n",
+                   (const char *)m->string);
+        if (lctx->type == 2)
+            printk(SLEXEC_DETA
+                   "checking if module %s is an SINIT for this platform...\n",
+                   (const char *)&(m->string));
+
+        base = (void *)m->mod_start;
+        size = m->mod_end - (unsigned long)(base);
+        if ( is_sinit_acmod(base, size, false) &&
+             does_acmod_match_platform((acm_hdr_t *)base) ) {
+            g_sinit_module = (acm_hdr_t *)base;
+            g_sinit_size = size;
+            printk(SLEXEC_DETA"SINIT matches platform\n");
+            return true;
+        }
+    }
+
+    /* no SINIT found for this platform */
+    printk(SLEXEC_ERR"no SINIT AC module found\n");
+    return false;
+}
+
+/*
  * will go through all modules to find a usable SKL module to do an SKINIT
  * launch.
  */
@@ -716,6 +765,9 @@ bool
 find_skl_module(loader_ctx *lctx)
 {
     unsigned int i = get_module_count(lctx);
+    module_t *m;
+    void *base;
+    uint32_t size;
 
     if ( i == 0 ) {
         printk(SLEXEC_ERR"no module info\n");
@@ -725,13 +777,13 @@ find_skl_module(loader_ctx *lctx)
     printk(SLEXEC_ERR"module count: %d\n", (int)i);
 
     for ( ; i > 0; i-- ) {
-        module_t *m = get_module(lctx, i - 1);
+        m = get_module(lctx, i - 1);
         printk(SLEXEC_INFO"Checking for SKL module type: %d, index: %d, string: %s\n",
                lctx->type, (int)(i - 1), (const char *)m->string);
         print_hex("MOD: ", (void *)m->mod_start, 32);
 
-        void *base = (void *)m->mod_start;
-        uint32_t size = m->mod_end - (unsigned long)(base);
+        base = (void *)m->mod_start;
+        size = m->mod_end - (unsigned long)(base);
         if ( is_skl_module(base, size) ){
             g_skl_module = (sl_header_t *)base;
             g_skl_size = size;

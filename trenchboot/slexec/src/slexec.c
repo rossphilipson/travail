@@ -46,12 +46,14 @@
 #include <loader.h>
 #include <processor.h>
 #include <misc.h>
+#include <cmdline.h>
 #include <e820.h>
 #include <linux.h>
 #include <tpm.h>
-#include <cmdline.h>
+#include <txt/mle.h>
 #include <txt/smx.h>
 #include <txt/txt.h>
+#include <txt/acmod.h>
 #include <skinit/skl.h>
 #include <skinit/skinit.h>
 
@@ -242,7 +244,7 @@ static bool platform_architecture(void)
                   "pop %0\n\t"
                   "popf\n\t"
                   : "=&r" (f1), "=&r" (f2)
-        :          "ir" (X86_EFLAGS_ID));
+                  : "ir" (X86_EFLAGS_ID));
     if ( ((f1^f2) & X86_EFLAGS_ID) == 0 ) {
         printk(SLEXEC_ERR"CPUID instruction is not supported.\n");
         return false;
@@ -317,8 +319,6 @@ void begin_launch(void *addr, uint32_t magic)
        error_action(SL_ERR_TPM_NOT_READY);
 
     if (g_architecture == SL_ARCH_TXT) {
-        /* TODO NOTE CPUID for features already moved out of read processorfunction.*/ 
-
         /* we need to make sure this is a (TXT-) capable platform before using */
         /* any of the features, incl. those required to check if the environment */
         /* has already been launched */
@@ -327,17 +327,28 @@ void begin_launch(void *addr, uint32_t magic)
         /* (this includes TPM support). despite the name this function also */
         /* enables SMX mode in CR4. it needs to be done before attempting to */
         /* verify the ACMOD */
+        err = supports_txt();
+        error_action(err);
 
-        /* TODO call supports_txt(). find a new name for it too */
+        find_sinit_module(g_ldr_ctx);
+        /* check if it is newer than BIOS provided version, then copy it to BIOS reserved region */
+        g_sinit_module = copy_sinit(g_sinit_module);
+        if (g_sinit_module == NULL)
+            error_action(SL_ERR_SINIT_NOT_PRESENT);
+        if (!verify_acmod(g_sinit_module))
+            error_action(SL_ERR_ACMOD_VERIFY_FAILED);
 
-        /* TODO call verify_IA32_se_svn_status */
+        /* verify SE enablement status */
+        verify_ia32_sgx_svn_status(g_sinit_module);
 
         /* print any errors on last boot, which must be from TXT launch */
         txt_display_errors();
         if (txt_has_error() && !get_ignore_prev_err())
             error_action(SL_ERR_PREV_TXT_ERROR);
 
-        /* TODO call verify_platform */
+        /* need to verify that platform can perform measured launch */
+        err = txt_verify_platform();
+        error_action(err);
     }
     else {
         /* we need to make sure this is a (SKINIT) capable platform before using */
@@ -345,6 +356,13 @@ void begin_launch(void *addr, uint32_t magic)
         /* has already been launched */
         err = supports_skinit();
         error_action(err);
+
+        /* locate and load SKL module */
+        if ( !find_skl_module(g_ldr_ctx) )
+            error_action(SL_ERR_NO_SKL);
+
+        relocate_skl_module();
+        print_skl_module();
     }
 
     /* ensure there are modules */
@@ -358,28 +376,24 @@ void begin_launch(void *addr, uint32_t magic)
     if ( !prepare_tpm() )
         error_action(SL_ERR_TPM_NOT_READY);
 
-    /* else ------------ */
-    /* locate and load SKL module */
-    if ( !find_skl_module(g_ldr_ctx) )
-        error_action(SL_ERR_NO_SKL);
-    /* TODO need to refactor the copy_sinit stuff here. It should
-       be ok to do it here out of order with original code. */
-
-    relocate_skl_module();
-    print_skl_module();
-    /* else ------------ */
-
     /* locate and prepare the secure launch kernel */
     if ( !prepare_intermediate_loader() )
         error_action(SL_ERR_FATAL);
 
-    /* prepare the bootloader data area in the SKL */
-    if ( !prepare_skl_bootloader_data() )
-        error_action(SL_ERR_FATAL);
+    if (g_architecture == SL_ARCH_TXT) {
+        /* launch the measured environment */
+        err = txt_launch_environment(g_ldr_ctx);
+        error_action(err);
+    }
+    else {
+        /* prepare the bootloader data area in the SKL */
+        if ( !prepare_skl_bootloader_data() )
+            error_action(SL_ERR_FATAL);
 
-    /* launch the secure environment */
-    skinit_launch_environment();
-    /* No return */
+        /* launch the secure environment */
+        skinit_launch_environment();
+        /* No return */
+    }
 }
 
 void handle_exception(void)

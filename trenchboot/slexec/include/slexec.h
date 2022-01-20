@@ -221,6 +221,8 @@ extern char _end[];              /* end of slexec */
 #define SL_ERR_SKINIT_NOT_SUPPORTED 6
 #define SL_ERR_NO_SKL               7
 #define SL_ERR_PREV_TXT_ERROR       9
+#define SL_ERR_SINIT_NOT_PRESENT    10 /* SINIT ACM not provided */
+#define SL_ERR_ACMOD_VERIFY_FAILED  11
 
 extern void error_action(int error);
 
