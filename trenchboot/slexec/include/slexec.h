@@ -227,6 +227,7 @@ extern char _end[];              /* end of slexec */
 extern void error_action(int error);
 
 extern unsigned long get_slexec_mem_end(void);
+extern uint32_t get_architecture(void);
 extern uint32_t get_apic_base(void);
 
 extern void debug_put_chars(void);

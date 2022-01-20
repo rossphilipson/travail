@@ -81,6 +81,9 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     uint32_t initrd_base;
     int vid_mode = 0;
 
+    printk(SLEXEC_ERR"Expand - Linux kernel image: %p initrd image: %p\n",
+           linux_image, initrd_image);
+
     /* Check param */
     if ( linux_image == NULL ) {
         printk(SLEXEC_ERR"Error: Linux kernel image is zero.\n");
@@ -130,13 +133,14 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     if ( hdr->header != HDRS_MAGIC ) {
         /* old kernel */
         printk(SLEXEC_ERR
-               "Error: Old kernel (< 2.6.20) is not supported by slexec.\n");
+               "Error: Old kernel (< 2.6.20) invalid header magic: 0x%x\n",
+               hdr->header);
         return false;
     }
 
     if ( hdr->version < 0x0205 ) {
         printk(SLEXEC_ERR
-               "Error: Old kernel (<2.6.20) is not supported by slboot.\n");
+               "Error: Old kernel (< 2.6.20) is not supported by slexec.\n");
         return false;
     }
 

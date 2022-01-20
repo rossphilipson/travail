@@ -78,9 +78,6 @@ typedef struct {
     uint8_t      user_area[];
 } acm_hdr_t;
 
-extern acm_hdr_t *g_sinit_module;
-extern uint32_t g_sinit_size;
-
 /* value of module_type field */
 #define ACM_TYPE_CHIPSET        0x02
 
@@ -171,6 +168,9 @@ typedef struct __packed {
     uint32_t             count;
     acm_processor_id_t   processor_ids[];
 } acm_processor_id_list_t;
+
+extern acm_hdr_t *g_sinit_module;
+extern uint32_t g_sinit_size;
 
 extern void print_txt_caps(const char *prefix, txt_caps_t caps);
 extern bool is_sinit_acmod(const void *acmod_base, uint32_t acmod_size, bool quiet);

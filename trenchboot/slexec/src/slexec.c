@@ -58,7 +58,7 @@
 #include <skinit/skinit.h>
 
 uint32_t g_architecture = SL_ARCH_NONE;
-uint32_t apic_base;
+uint32_t g_apic_base;
 
 /* loader context struct saved so that post_launch() can use it */
 loader_ctx g_loader_ctx = { NULL, 0 };
@@ -72,9 +72,14 @@ unsigned long get_slexec_mem_end(void)
     return PAGE_UP((unsigned long)&_end);
 }
 
+uint32_t get_architecture(void)
+{
+    return g_architecture;
+}
+
 uint32_t get_apic_base(void)
 {
-    return apic_base;
+    return g_apic_base;
 }
 
 static void shutdown_system(uint32_t shutdown_type)
@@ -303,12 +308,12 @@ void begin_launch(void *addr, uint32_t magic)
         error_action(SL_ERR_FATAL);
 
     /* we should only be executing on the BSP */
-    apic_base = (uint32_t)rdmsr(MSR_IA32_APICBASE);
-    if ( !(apic_base & APICBASE_BSP) ) {
+    g_apic_base = (uint32_t)rdmsr(MSR_IA32_APICBASE);
+    if ( !(g_apic_base & APICBASE_BSP) ) {
         printk(SLEXEC_INFO"entry processor is not BSP\n");
         error_action(SL_ERR_FATAL);
     }
-    printk(SLEXEC_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), apic_base);
+    printk(SLEXEC_INFO"BSP is cpu %u APIC base MSR: 0x%x\n", get_apicid(), g_apic_base);
 
     /* make copy of e820 map that we will use and adjust */
     if ( !copy_e820_map(g_ldr_ctx) )

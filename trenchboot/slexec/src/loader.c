@@ -464,6 +464,37 @@ static void *remove_first_module(loader_ctx *lctx)
     return(remove_module(lctx, NULL));
 }
 
+/*
+ * remove (all) SINIT and LCP policy data modules (if present)
+ */
+bool remove_txt_modules(loader_ctx *lctx)
+{
+    module_t *m;
+    void *base;
+
+    if ( 0 == get_module_count(lctx)) {
+        printk(SLEXEC_ERR"Error: no module.\n");
+        return false;
+    }
+
+    /* start at end of list so that we can remove w/in the loop */
+    for ( unsigned int i = get_module_count(lctx) - 1; i > 0; i-- ) {
+        m = get_module(lctx, i);
+        base = (void *)m->mod_start;
+
+        if ( is_sinit_acmod(base, m->mod_end - (unsigned long)base, true) ) {
+            printk(SLEXEC_INFO"got sinit match on module #%d\n", i);
+            if ( remove_module(lctx, base) == NULL ) {
+                printk(SLEXEC_ERR
+                       "failed to remove SINIT module from module list\n");
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool prepare_intermediate_loader(void)
 {
     module_t *m;
@@ -491,8 +522,11 @@ bool prepare_intermediate_loader(void)
     if ( !verify_loader_context(g_ldr_ctx) )
         return false;
 
-    /* found SKL module earlier, remove it from MBI */
-    remove_module(g_ldr_ctx, g_skl_module);
+    /* found SINITs/LCPs or SKL module earlier, remove them it from MBI */
+    if ( get_architecture() == SL_ARCH_TXT )
+        remove_txt_modules(g_ldr_ctx);
+    else if ( get_architecture() == SL_ARCH_SKINIT )
+        remove_module(g_ldr_ctx, g_skl_module);
 
     printk(SLEXEC_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 
