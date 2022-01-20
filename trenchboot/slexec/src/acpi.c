@@ -181,8 +181,8 @@ static struct acpi_table_header *find_table(const char *table_name)
         printk(SLEXEC_ERR"XSDT above 4GB\n");
 
     if ( rsdp->rsdp1.revision >= 2 && xsdt != NULL ) { /*  ACPI 2.0+ */
-        uint64_t first_table = xsdt->table_offsets[0];
-        for ( uint64_t *curr_table = (uint64_t *)(uintptr_t)first_table;
+        uint64_t first_table = (uint32_t)xsdt + sizeof(struct acpi_table_header);
+        for ( uint64_t *curr_table = (uint64_t *)(uint32_t)first_table;
               curr_table < (uint64_t *)((void *)xsdt + xsdt->hdr.length);
               curr_table++ ) {
             table = (struct acpi_table_header *)(uintptr_t)*curr_table;
@@ -193,14 +193,14 @@ static struct acpi_table_header *find_table(const char *table_name)
     }
     else { /* ACPI 1.0 */
         rsdt = (struct acpi_rsdt *)rsdp->rsdp1.rsdt;
-        uint32_t first_table = rsdt->table_offsets[0];
+        uint32_t first_table = (uint32_t)rsdt + sizeof(struct acpi_table_header);
 
         if ( rsdt == NULL ) {
             printk(SLEXEC_ERR"rsdt is invalid.\n");
             return NULL;
         }
 
-        for ( uint32_t *curr_table = (uint32_t *)(uintptr_t)first_table;
+        for ( uint32_t *curr_table = (uint32_t *)first_table;
               curr_table < (uint32_t *)((void *)rsdt + rsdt->hdr.length);
               curr_table++ ) {
             table = (struct acpi_table_header *)(uintptr_t)*curr_table;
