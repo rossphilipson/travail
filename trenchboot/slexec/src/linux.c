@@ -50,7 +50,7 @@ extern loader_ctx *g_ldr_ctx;
 
 static boot_params_t *boot_params;
 
-il_kernel_setup_t g_sl_kernel_setup = {0};
+sl_kernel_setup_t g_sl_kernel_setup = {0};
 
 static void
 printk_long(const char *what)

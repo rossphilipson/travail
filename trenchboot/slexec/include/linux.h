@@ -269,9 +269,9 @@ typedef struct {
     uint32_t protected_mode_base;
     unsigned long protected_mode_size;
     boot_params_t *boot_params;
-} il_kernel_setup_t;
+} sl_kernel_setup_t;
 
-extern il_kernel_setup_t g_sl_kernel_setup;
+extern sl_kernel_setup_t g_sl_kernel_setup;
 
 extern bool expand_linux_image(const void *linux_image, size_t linux_size,
                                const void *initrd_image, size_t initrd_size);

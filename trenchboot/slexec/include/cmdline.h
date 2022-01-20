@@ -46,6 +46,8 @@ extern void get_slexec_log_targets(void);
 extern bool get_slexec_serial(void);
 extern void get_slexec_baud(void);
 extern void get_slexec_vga_delay(void);
+extern bool get_slexec_prefer_da(void);
+extern uint32_t get_slexec_min_ram(void);
 extern bool get_ignore_prev_err(void);
 extern uint32_t get_error_shutdown(void);
 

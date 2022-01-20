@@ -25,7 +25,7 @@ obj-y += src/vga.o src/acpi.o
 obj-y += src/skinit/skinit.o src/skinit/skl.o
 obj-y += src/txt/verify.o src/txt/heap.o
 obj-y += src/txt/mtrrs.o src/txt/errors.o
-obj-y += src/txt/acmod.o
+obj-y += src/txt/acmod.o src/txt/txt.o
 
 OBJS := $(obj-y)
 

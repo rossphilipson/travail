@@ -99,13 +99,6 @@ typedef struct {
     bool preserve_mce;
 } getsec_parameters_t;
 
-/* TODO extern bool smx_get_parameters(getsec_parameters_t *params); */
-static inline bool smx_get_parameters(getsec_parameters_t *params)
-{
-    sl_memset(params, 0, sizeof(getsec_parameters_t));
-    return true;
-}
-
 static inline void __getsec_senter(uint32_t sinit_base, uint32_t sinit_size)
 {
     __asm__ __volatile__ (IA32_GETSEC_OPCODE "\n"
@@ -161,6 +154,7 @@ static inline void __getsec_enteraccs(uint32_t acm_base, uint32_t acm_size,
 			    "S"(fn));
 }
 
+extern bool smx_get_parameters(getsec_parameters_t *params);
 
 #endif /* __TXT_SMX_H__ */
 

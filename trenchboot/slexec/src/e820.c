@@ -329,6 +329,195 @@ void print_e820_map(void)
     print_map(g_copy_e820_map, g_nr_map);
 }
 
+/*
+ * e820_reserve_ram
+ *
+ * Given the range, any ram range in e820 is in it, change type to reserved.
+ *
+ * return:  false = error
+ */
+static bool e820_reserve_ram(uint64_t base, uint64_t length)
+{
+    memory_map_t* e820_entry;
+    uint64_t e820_base, e820_length, e820_end;
+    uint64_t end;
+
+    if ( length == 0 )
+        return true;
+
+    end = base + length;
+
+    /* find where our region should cover the ram in e820 */
+    for ( unsigned int i = 0; i < g_nr_map; i++ ) {
+        e820_entry = &g_copy_e820_map[i];
+        e820_base = e820_base_64(e820_entry);
+        e820_length = e820_length_64(e820_entry);
+        e820_end = e820_base + e820_length;
+
+        /* if not ram, no need to deal with */
+        if ( e820_entry->type != E820_RAM )
+            continue;
+
+        /* if the range is before the current ram range, skip the ram range */
+        if ( end <= e820_base )
+            continue;
+        /* if the range is after the current ram range, skip the ram range */
+        if ( base >= e820_end )
+            continue;
+
+        /* case 1: the current ram range is within the range:
+           base, e820_base, e820_end, end */
+        if ( (base <= e820_base) && (e820_end <= end) )
+            e820_entry->type = E820_RESERVED;
+        /* case 2: overlapping:
+           base, e820_base, end, e820_end */
+        else if ( (e820_base >= base) && (end > e820_base) &&
+                  (e820_end > end) ) {
+            /* split the current ram map */
+            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i-1,
+                                      e820_base, (end - e820_base),
+                                      E820_RESERVED) )
+                return false;
+            /* fixup the current ram map */
+            i++;
+            split64b(end, &(g_copy_e820_map[i].base_addr_low),
+                     &(g_copy_e820_map[i].base_addr_high));
+            split64b(e820_end - end, &(g_copy_e820_map[i].length_low),
+                     &(g_copy_e820_map[i].length_high));
+            /* no need to check more */
+            break;
+        }
+        /* case 3: overlapping:
+           e820_base, base, e820_end, end */
+        else if ( (base > e820_base) && (e820_end > base) &&
+                  (end >= e820_end) ) {
+            /* fixup the current ram map */
+            split64b((base - e820_base), &(g_copy_e820_map[i].length_low),
+                     &(g_copy_e820_map[i].length_high));
+            /* split the current ram map */
+            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, base,
+                                      (e820_end - base), E820_RESERVED) )
+                return false;
+            i++;
+        }
+        /* case 4: the range is within the current ram range:
+           e820_base, base, end, e820_end */
+        else if ( (base > e820_base) && (e820_end > end) ) {
+            /* fixup the current ram map */
+            split64b((base - e820_base), &(g_copy_e820_map[i].length_low),
+                     &(g_copy_e820_map[i].length_high));
+            /* split the current ram map */
+            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, base,
+                                      length, E820_RESERVED) )
+                return false;
+            i++;
+            /* fixup the rest of the current ram map */
+            if ( !insert_after_region(g_copy_e820_map, &g_nr_map, i, end,
+                                      (e820_end - end), e820_entry->type) )
+                return false;
+            i++;
+            /* no need to check more */
+            break;
+        }
+        else {
+            printk(SLEXEC_ERR"we should never get here\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool get_ram_ranges(uint64_t *min_lo_ram, uint64_t *max_lo_ram,
+                    uint64_t *min_hi_ram, uint64_t *max_hi_ram)
+{
+    uint32_t min_ram = get_slexec_min_ram();
+    bool found_reserved_region = false;
+    uint64_t last_min_ram_base = 0, last_min_ram_size = 0;
+
+    if ( min_lo_ram == NULL || max_lo_ram == NULL ||
+         min_hi_ram == NULL || max_hi_ram == NULL )
+        return false;
+
+    *min_lo_ram = *min_hi_ram = ~0ULL;
+    *max_lo_ram = *max_hi_ram = 0;
+
+    /* TODO yes this nightmare was brought back from the dead. The real
+     * way to do this is by reading the RMRR structures in the DMAR.
+     */
+    /*
+     * if min_ram > 0, we will never mark a region > min_ram in size
+     * as reserved even if it is after a reserved region (effectively
+     * we ignore reserved regions below the last type 1 region
+     * > min_ram in size)
+     * so in order to reserve RAM regions above this last region, we need
+     * to find it first so that we can tell when we have passed it
+     */
+    if ( min_ram > 0 ) {
+        get_highest_sized_ram(min_ram, 0x100000000ULL, &last_min_ram_base,
+                              &last_min_ram_size);
+        printk(SLEXEC_DETA"highest min_ram (0x%x) region found: base=0x%Lx, size=0x%Lx\n",
+               min_ram, last_min_ram_base, last_min_ram_size);
+    }
+
+    for ( unsigned int i = 0; i < g_nr_map; i++ ) {
+        memory_map_t *entry = &g_copy_e820_map[i];
+        uint64_t base = e820_base_64(entry);
+        uint64_t limit = base + e820_length_64(entry);
+
+        if ( entry->type == E820_RAM ) {
+            /* if range straddles 4GB boundary, that is an error */
+            if ( base < 0x100000000ULL && limit > 0x100000000ULL ) {
+                printk(SLEXEC_ERR"e820 memory range straddles 4GB boundary\n");
+                return false;
+            }
+
+            /*
+             * some BIOSes put legacy USB buffers in reserved regions <4GB,
+             * which if DMA protected cause SMM to hang, so make sure that
+             * we don't overlap any of these even if that wastes RAM
+             * ...unless min_ram was specified
+             */
+            if ( !found_reserved_region || base <= last_min_ram_base ) {
+                if ( base < 0x100000000ULL && base < *min_lo_ram )
+                    *min_lo_ram = base;
+                if ( limit <= 0x100000000ULL && limit > *max_lo_ram )
+                    *max_lo_ram = limit;
+            }
+            else {     /* need to reserve low RAM above reserved regions */
+                if ( base < 0x100000000ULL ) {
+                    printk(SLEXEC_DETA"discarding RAM above reserved regions: 0x%Lx - 0x%Lx\n", base, limit);
+                    if ( !e820_reserve_ram(base, limit - base) )
+                        return false;
+                }
+            }
+
+            if ( base >= 0x100000000ULL && base < *min_hi_ram )
+                *min_hi_ram = base;
+            if ( limit > 0x100000000ULL && limit > *max_hi_ram )
+                *max_hi_ram = limit;
+        }
+        else {
+            /* parts of low memory may be reserved for cseg, ISA hole,
+               etc. but these seem OK to DMA protect, so ignore reserved
+               regions <0x100000 */
+            if ( *min_lo_ram != ~0ULL && limit > 0x100000ULL )
+                found_reserved_region = true;
+        }
+    }
+
+    /* no low RAM found */
+    if ( *min_lo_ram >= *max_lo_ram ) {
+        printk(SLEXEC_ERR"no low ram in e820 map\n");
+        return false;
+    }
+    /* no high RAM found */
+    if ( *min_hi_ram >= *max_hi_ram )
+        *min_hi_ram = *max_hi_ram = 0;
+
+    return true;
+}
+
 /* find highest (< <limit>) RAM region of at least <size> bytes */
 void get_highest_sized_ram(uint64_t size, uint64_t limit,
                            uint64_t *ram_base, uint64_t *ram_size)

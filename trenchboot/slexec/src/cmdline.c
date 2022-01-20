@@ -71,6 +71,8 @@ static const cmdline_option_t g_slexec_cmdline_options[] = {
     { "serial",     "115200,8n1,0x3f8" },
     /* serial=<baud>[/<clock_hz>][,<DPS>[,<io-base>[,<irq>[,<serial-bdf>[,<bridge-bdf>]]]]] */
     { "vga_delay",  "0" },           /* # secs */
+    { "pcr_map", "legacy" },         /* legacy|da */
+    { "min_ram", "0" },              /* size in bytes | 0 for no min */
     { "ignore_prev_err", "true"},    /* true|false */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { NULL, NULL }
@@ -432,6 +434,26 @@ void get_slexec_vga_delay(void)
         return;
 
     g_vga_delay = sl_strtoul(vga_delay, NULL, 0);
+}
+
+bool get_slexec_prefer_da(void)
+{
+    const char *value = get_option_val(g_slexec_cmdline_options,
+                                       g_slexec_param_values, "pcr_map");
+    if ( value != NULL && sl_strcmp(value, "da") == 0 )
+        return true;
+
+    return false;
+}
+
+uint32_t get_slexec_min_ram(void)
+{
+    const char *min_ram = get_option_val(g_slexec_cmdline_options,
+                                         g_slexec_param_values, "min_ram");
+    if ( min_ram == NULL )
+        return 0; /* default */
+
+    return sl_strtoul(min_ram, NULL, 0);
 }
 
 bool get_ignore_prev_err(void)

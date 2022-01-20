@@ -335,6 +335,7 @@ static inline void cpu_mwait(int extensions, int hints)
 #define FEATURE_CONTROL_ENABLE_SENTER      (1<<15)   /* last param */
 #define MSR_IA32_MCG_CAP          0x179
 #define MSR_IA32_MCG_STATUS       0x17a
+#define MSR_IA32_MISC_ENABLE      0x1a0
 #define MSR_IA32_MC0_STATUS       0x401
 #define MSR_IA32_SGX_SVN_STATUS   0x500
 #define SGX_SVN_STATUS_LOCK       (1<<0)

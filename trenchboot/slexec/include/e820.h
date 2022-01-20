@@ -82,6 +82,8 @@ extern unsigned int get_nr_map(void);
 extern bool copy_e820_map(loader_ctx *lctx);
 extern bool e820_protect_region(uint64_t addr, uint64_t size, uint32_t type);
 extern void print_e820_map(void);
+extern bool get_ram_ranges(uint64_t *min_lo_ram, uint64_t *max_lo_ram,
+                           uint64_t *min_hi_ram, uint64_t *max_hi_ram);
 extern void get_highest_sized_ram(uint64_t size, uint64_t limit,
                                   uint64_t *ram_base, uint64_t *ram_size);
 

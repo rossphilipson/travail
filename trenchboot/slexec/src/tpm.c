@@ -779,6 +779,11 @@ bool tpm_request_locality_crb(uint32_t locality)
     return true;
 }
 
+bool tpm_relinquish_locality_crb(uint32_t locality)
+{
+    return release_locality_crb(locality);
+}
+
 bool tpm_detect(void)
 {
     struct tpm_if *tpm = get_tpm(); /* Don't leave tpm as NULL */

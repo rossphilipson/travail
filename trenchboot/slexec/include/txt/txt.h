@@ -288,7 +288,6 @@ extern void txt_display_errors(void);
 extern bool txt_has_error(void);
 extern int supports_txt(void);
 extern int txt_verify_platform(void);
-extern bool txt_prepare_cpu(void);
 extern int txt_launch_environment(loader_ctx *lctx);
 extern int txt_launch_racm(loader_ctx *lctx);
 extern void txt_post_launch(void);

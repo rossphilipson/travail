@@ -54,25 +54,41 @@
 /* kernel at startup */
 
 /* address/size for memory-resident serial log (when enabled) */
-#define SLEXEC_SERIAL_LOG_ADDR        0x60000
-#define SLEXEC_SERIAL_LOG_SIZE        0x08000
+/* TODO back this up say to 0x40000 so it doesn't crash into the EBDA region? */
+#define SLEXEC_SERIAL_LOG_ADDR         0x60000
+#define SLEXEC_SERIAL_LOG_SIZE         0x08000
+
+/* address/size for AP wakeup code block */
+#define SLEXEC_AP_WAKE_BLOCK_ADDR      (SLEXEC_SERIAL_LOG_ADDR + \
+				        SLEXEC_SERIAL_LOG_SIZE)
+#define SLEXEC_AP_WAKE_BLOCK_SIZE      0x04000
 
 /* address/size for TPM event log */
-#define SLEXEC_EVENT_LOG_ADDR        (SLEXEC_SERIAL_LOG_ADDR + \
-                                      SLEXEC_SERIAL_LOG_SIZE)
-#define SLEXEC_EVENT_LOG_SIZE        0x08000
+#define SLEXEC_EVENT_LOG_ADDR          (SLEXEC_AP_WAKE_BLOCK_ADDR + \
+                                        SLEXEC_AP_WAKE_BLOCK_SIZE)
+#define SLEXEC_EVENT_LOG_SIZE          0x08000
 
 /* address/size for modified e820 table */
-#define SLEXEC_E820_COPY_ADDR         (SLEXEC_EVENT_LOG_ADDR + \
-				       SLEXEC_EVENT_LOG_SIZE)
-#define SLEXEC_E820_COPY_SIZE         0x02000
+#define SLEXEC_E820_COPY_ADDR          (SLEXEC_EVENT_LOG_ADDR + \
+				        SLEXEC_EVENT_LOG_SIZE)
+#define SLEXEC_E820_COPY_SIZE          0x02000
+
+/* Location for MLE page tables < 1M */
+/* 1 PDP + 1 PD + 18 PTs = 36M total */
+#define SLEXEC_MLEPT_ADDR              (SLEXEC_E820_COPY_ADDR + \
+                                        SLEXEC_E820_COPY_SIZE)
+#define SLEXEC_MLEPT_PAGES             20
+#define SLEXEC_MLEPT_SIZE              (PAGE_SIZE*SLEXEC_MLEPT_PAGES)
+#define SLEXEC_MLEPT_PAGE_TABLES       (SLEXEC_MLEPT_PAGES - 2)
+#define SLEXEC_MLEPT_PAGES_COVERED     (SLEXEC_MLEPT_PAGE_TABLES*512)
+#define SLEXEC_MLEPT_BYTES_COVERED     (SLEXEC_MLEPT_PAGES_COVERED*PAGE_SIZE)
 
 /* Used as a basic cmdline buffer size for copying cmdlines */
-#define SLEXEC_KERNEL_CMDLINE_SIZE    0x0400
+#define SLEXEC_KERNEL_CMDLINE_SIZE     0x0400
 
 /* TODO Fixed allocation values */
-#define SLEXEC_FIXED_INITRD_BASE      0x20000000
-#define SLEXEC_FIXED_SKL_BASE         0x40000000
+#define SLEXEC_FIXED_INITRD_BASE       0x20000000
+#define SLEXEC_FIXED_SKL_BASE          0x40000000
 
 #define ENTRY(name)                             \
   .globl name;                                  \

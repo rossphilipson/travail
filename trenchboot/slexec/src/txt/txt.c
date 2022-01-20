@@ -44,6 +44,7 @@
 #include <processor.h>
 #include <misc.h>
 #include <e820.h>
+#include <acpi.h>
 #include <linux.h>
 #include <tpm.h>
 #include <cmdline.h>
@@ -57,14 +58,12 @@
 
 acm_hdr_t *g_sinit = 0;
 
-extern il_kernel_setup_t g_il_kernel_setup;
 extern uint32_t g_min_ram;
 extern char _start[];             /* start of module */
 extern char _end[];               /* end of module */
 
 static uint32_t g_slaunch_header;
 static event_log_container_t *g_elog = NULL;
-static heap_event_log_ptr_elt2_t *g_elog_2 = NULL;
 static heap_event_log_ptr_elt2_1_t *g_elog_2_1 = NULL;
 static uint32_t g_using_da = 0;
 
@@ -118,9 +117,9 @@ static void *calculate_ptab_base_size(uint32_t *ptab_size)
      */
 
     /* Round up pages from int divide and add PD and PDPT */
-    pages = g_il_kernel_setup.protected_mode_size/(512*PAGE_SIZE) + 3;
+    pages = g_sl_kernel_setup.protected_mode_size/(512*PAGE_SIZE) + 3;
     *ptab_size = pages*PAGE_SIZE;
-    ptab_base = (void*)(PAGE_DOWN(g_il_kernel_setup.protected_mode_base) - *ptab_size);
+    ptab_base = (void*)(PAGE_DOWN(g_sl_kernel_setup.protected_mode_base) - *ptab_size);
 
     printk(SLEXEC_DETA"Page table start=0x%x, size=0x%x, count=0x%x\n",
            (uint32_t)ptab_base, *ptab_size, pages);
@@ -133,7 +132,7 @@ static void *calculate_ptab_base_size(uint32_t *ptab_size)
  * MLE that can be covered is 1G. This is due to having 512 PDEs pointing
  * to 512 page tables with 512 PTEs each.
  */
-#define SLBOOT_MAX_MLE_SIZE (512*512*4096)
+#define SLEXEC_MAX_MLE_SIZE (512*512*4096)
 
 /* Page dir/table entry is phys addr + P + R/W + PWT */
 #define MAKE_PDTE(addr)  (((uint64_t)(unsigned long)(addr) & PAGE_MASK) | 0x01)
@@ -149,13 +148,13 @@ static void *build_mle_pagetable(void)
     uint32_t ptab_size, mle_off, pd_off;
     void *pg_dir_ptr_tab, *pg_dir, *pg_tab;
     uint64_t *pte, *pde;
-    uint32_t mle_start = g_il_kernel_setup.protected_mode_base;
-    uint32_t mle_size = g_il_kernel_setup.protected_mode_size;
+    uint32_t mle_start = g_sl_kernel_setup.protected_mode_base;
+    uint32_t mle_size = g_sl_kernel_setup.protected_mode_size;
 
     printk(SLEXEC_DETA"MLE start=0x%x, end=0x%x, size=0x%x\n",
            mle_start, mle_start+mle_size, mle_size);
 
-    if ( mle_size > SLBOOT_MAX_MLE_SIZE ) {
+    if ( mle_size > SLEXEC_MAX_MLE_SIZE ) {
         printk(SLEXEC_ERR"MLE size exceeds maximum size allowable (1Gb)\n");
         return NULL;
     }
@@ -171,7 +170,7 @@ static void *build_mle_pagetable(void)
      * we have to use the low memory block since the kernel gets loaded
      * at 1M. This does not work on server systems though.
      */
-    if ( g_il_kernel_setup.boot_params->hdr.relocatable_kernel ) {
+    if ( g_sl_kernel_setup.boot_params->hdr.relocatable_kernel ) {
         ptab_base = calculate_ptab_base_size(&ptab_size);
         if ( !ptab_base ) {
             printk(SLEXEC_ERR"MLE size exceeds space available for page tables\n");
@@ -179,15 +178,15 @@ static void *build_mle_pagetable(void)
         }
     }
     else {
-        if ( mle_size > SLBOOT_MLEPT_BYTES_COVERED ) {
+        if ( mle_size > SLEXEC_MLEPT_BYTES_COVERED ) {
             printk(SLEXEC_ERR"MLE size exceeds size allowable in low mem\n");
             return NULL;
         }
-        ptab_size = SLBOOT_MLEPT_SIZE;
-        ptab_base = (void*)SLBOOT_MLEPT_ADDR;
+        ptab_size = SLEXEC_MLEPT_SIZE;
+        ptab_base = (void*)SLEXEC_MLEPT_ADDR;
     }
 
-    tb_memset(ptab_base, 0, ptab_size);
+    sl_memset(ptab_base, 0, ptab_size);
     printk(SLEXEC_DETA"ptab_size=%x, ptab_base=%p\n", ptab_size, ptab_base);
 
     pg_dir_ptr_tab = ptab_base;
@@ -235,7 +234,7 @@ static void *init_event_log(void)
     os_mle_data_t *os_mle_data = get_os_mle_data_start(get_txt_heap());
     g_elog = (event_log_container_t *)&os_mle_data->event_log_buffer;
 
-    tb_memcpy((void *)g_elog->signature, EVTLOG_SIGNATURE,
+    sl_memcpy((void *)g_elog->signature, EVTLOG_SIGNATURE,
            sizeof(g_elog->signature));
     g_elog->container_ver_major = EVTLOG_CNTNR_MAJOR_VER;
     g_elog->container_ver_minor = EVTLOG_CNTNR_MINOR_VER;
@@ -265,46 +264,6 @@ static void init_evtlog_desc_1(heap_event_log_ptr_elt2_1_t *evt_log)
     printk(SLEXEC_DETA"\t next_record_offset = 0x%x \n", evt_log->next_record_offset);
 }
 
-static void init_evtlog_desc(heap_event_log_ptr_elt2_t *evt_log)
-{
-    unsigned int i;
-    os_mle_data_t *os_mle_data = get_os_mle_data_start(get_txt_heap());
-    struct tpm_if *tpm = get_tpm();
-
-    switch (tpm->extpol) {
-    case TB_EXTPOL_AGILE:
-        for (i=0; i<evt_log->count; i++) {
-            evt_log->event_log_descr[i].alg = tpm->algs_banks[i];
-            evt_log->event_log_descr[i].phys_addr =
-                    (uint64_t)(unsigned long)(os_mle_data->event_log_buffer + i*4096);
-            evt_log->event_log_descr[i].size = 4096;
-            evt_log->event_log_descr[i].pcr_events_offset = 0;
-            evt_log->event_log_descr[i].next_event_offset = 0;
-        }
-        break;
-    case TB_EXTPOL_EMBEDDED:
-        for (i=0; i<evt_log->count; i++) {
-            evt_log->event_log_descr[i].alg = tpm->algs[i];
-            evt_log->event_log_descr[i].phys_addr =
-                    (uint64_t)(unsigned long)(os_mle_data->event_log_buffer + i*4096);
-            evt_log->event_log_descr[i].size = 4096;
-            evt_log->event_log_descr[i].pcr_events_offset = 0;
-            evt_log->event_log_descr[i].next_event_offset = 0;
-        }
-        break;
-    case TB_EXTPOL_FIXED:
-        evt_log->event_log_descr[0].alg = tpm->cur_alg;
-        evt_log->event_log_descr[0].phys_addr =
-                    (uint64_t)(unsigned long)os_mle_data->event_log_buffer;
-        evt_log->event_log_descr[0].size = 4096;
-        evt_log->event_log_descr[0].pcr_events_offset = 0;
-        evt_log->event_log_descr[0].next_event_offset = 0;
-        break;
-    default:
-        return;
-    }
-}
-
 int get_evtlog_type(void)
 {
     struct tpm_if *tpm = get_tpm();
@@ -312,13 +271,7 @@ int get_evtlog_type(void)
     if (tpm->major == TPM12_VER_MAJOR) {
         return EVTLOG_TPM12;
     } else if (tpm->major == TPM20_VER_MAJOR) {
-        /*
-         * Force use of legacy TPM2 log format to deal with a bug in some SINIT
-         * ACMs that where they don't log the MLE hash to the event log.
-         */
-        if (get_tboot_force_tpm2_legacy_log()) {
-            return EVTLOG_TPM2_LEGACY;
-        }
+        /* TODO fix to only support TCG formait */
         if (g_sinit) {
             txt_caps_t sinit_caps = get_sinit_capabilities(g_sinit);
             return sinit_caps.tcg_event_log_format ? EVTLOG_TPM2_TCG : EVTLOG_TPM2_LEGACY;
@@ -336,7 +289,6 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
 {
     heap_ext_data_element_t* elt = elts;
     heap_event_log_ptr_elt_t* evt_log;
-    struct tpm_if *tpm = get_tpm();
     int log_type = get_evtlog_type();
 
     if ( log_type == EVTLOG_TPM12 ) {
@@ -351,6 +303,8 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
         elt->size = sizeof(*elt) + sizeof(heap_event_log_ptr_elt2_1_t);
         printk(SLEXEC_DETA"heap_ext_data_element TYPE = %d \n", elt->type);
         printk(SLEXEC_DETA"heap_ext_data_element SIZE = %d \n", elt->size);
+    }
+#if 0 /* TODO we only support TCG event log right? I don't think we care about the extpol stuff */
     }  else if ( log_type == EVTLOG_TPM2_LEGACY ) {
         g_elog_2 = (heap_event_log_ptr_elt2_t *)elt->data;
         if ( tpm->extpol == TB_EXTPOL_AGILE )
@@ -366,6 +320,7 @@ static void init_os_sinit_ext_data(heap_ext_data_element_t* elts)
             g_elog_2->count * sizeof(heap_event_log_descr_t);
         printk(SLEXEC_DETA"INTEL TXT LOG elt SIZE = %d \n", elt->size);
     }
+#endif
 
     elt = (void *)elt + elt->size;
     elt->type = HEAP_EXTDATA_TYPE_END;
@@ -427,18 +382,18 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     os_mle_data = get_os_mle_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_mle_data - sizeof(uint64_t));
     *size = sizeof(*os_mle_data) + sizeof(uint64_t);
-    tb_memset(os_mle_data, 0, sizeof(*os_mle_data));
+    sl_memset(os_mle_data, 0, sizeof(*os_mle_data));
     /* set the zero page addr here */
     /* NOTE msb_key_hash is not currently used and the log is setup later */
     os_mle_data = get_os_mle_data_start(txt_heap);
-    os_mle_data->zero_page_addr = (uint32_t)g_il_kernel_setup.boot_params;
+    os_mle_data->zero_page_addr = (uint32_t)g_sl_kernel_setup.boot_params;
     printk(SLEXEC_DETA"Zero page addr: 0x%x\n", os_mle_data->zero_page_addr);
     os_mle_data->version = OS_MLE_STRUCT_VERSION;
     os_mle_data->saved_misc_enable_msr = rdmsr(MSR_IA32_MISC_ENABLE);
     /* might as well save the MTRR state here where OS-MLE is setup */
     save_mtrrs(&(os_mle_data->saved_mtrr_state));
     /* provide AP wake code block area */
-    tb_memset((void*)SLEXEC_AP_WAKE_BLOCK_ADDR, 0, SLEXEC_AP_WAKE_BLOCK_SIZE);
+    sl_memset((void*)SLEXEC_AP_WAKE_BLOCK_ADDR, 0, SLEXEC_AP_WAKE_BLOCK_SIZE);
     os_mle_data->ap_wake_block = SLEXEC_AP_WAKE_BLOCK_ADDR;
     os_mle_data->ap_wake_block_size = SLEXEC_AP_WAKE_BLOCK_SIZE;
     printk(SLEXEC_DETA"AP wake  addr: 0x%x size: 0x%x\n", (uint32_t)os_mle_data->ap_wake_block,
@@ -461,27 +416,27 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     if ( version > MAX_OS_SINIT_DATA_VER )
         version = MAX_OS_SINIT_DATA_VER;
 
-    ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
-            g_il_kernel_setup.boot_params->hdr.slaunch_header);
+    ki = (struct kernel_info*)(g_sl_kernel_setup.protected_mode_base +
+            g_sl_kernel_setup.boot_params->hdr.slaunch_header);
     g_slaunch_header = ki->mle_header_offset;
 
     os_sinit_data_t *os_sinit_data = get_os_sinit_data_start(txt_heap);
     size = (uint64_t *)((uint32_t)os_sinit_data - sizeof(uint64_t));
     *size = calc_os_sinit_data_size(version);
-    tb_memset(os_sinit_data, 0, *size);
+    sl_memset(os_sinit_data, 0, *size);
     os_sinit_data->version = version;
 
-    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
+    mle_size = (uint32_t*)(g_sl_kernel_setup.protected_mode_base + g_slaunch_header);
     /* this is phys addr */
     os_sinit_data->mle_ptab = (uint64_t)(unsigned long)ptab_base;
     if (*(mle_size + 9) != 0) {
         printk("Protected Mode Size: 0x%x MLE Reported Size: 0x%x\n",
-              (uint32_t)g_il_kernel_setup.protected_mode_size, *(mle_size + 9));
+              (uint32_t)g_sl_kernel_setup.protected_mode_size, *(mle_size + 9));
         os_sinit_data->mle_size = *(mle_size + 9);
         printk("MLE size set to MLE header reported size: 0x%x\n",
                (uint32_t)os_sinit_data->mle_size);
     } else
-        os_sinit_data->mle_size = g_il_kernel_setup.protected_mode_size;
+        os_sinit_data->mle_size = g_sl_kernel_setup.protected_mode_size;
 
     /* this is linear addr (offset from MLE base) of mle header */
     os_sinit_data->mle_hdr_base = g_slaunch_header;
@@ -542,7 +497,7 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
 
     /* capabilities : choose DA/LG */
     os_sinit_data->capabilities.pcr_map_no_legacy = 1;
-    if ( sinit_caps.pcr_map_da && get_tboot_prefer_da() )
+    if ( sinit_caps.pcr_map_da && get_slexec_prefer_da() )
         os_sinit_data->capabilities.pcr_map_da = 1;
     else if ( !sinit_caps.pcr_map_no_legacy )
         os_sinit_data->capabilities.pcr_map_no_legacy = 0;
@@ -561,7 +516,9 @@ static txt_heap_t *init_txt_heap(void *ptab_base, acm_hdr_t *sinit, loader_ctx *
     /* PCR mapping selection MUST be zero in TPM2.0 mode
      * since D/A mapping is the only supported by TPM2.0 */
     if ( tpm->major >= TPM20_VER_MAJOR ) {
-        os_sinit_data->flags = (tpm->extpol == TB_EXTPOL_AGILE) ? 0 : 1;
+        /* don't support ExtPol options and only TCG TPM 2.0 log format */
+        /* os_sinit_data->flags = (tpm->extpol == SL_EXTPOL_AGILE) ? 0 : 1; */
+        os_sinit_data->flags = 1; /* Maximum Performance Policy */
         os_sinit_data->capabilities.pcr_map_no_legacy = 0;
         os_sinit_data->capabilities.pcr_map_da = 0;
         g_using_da = 1;
@@ -613,30 +570,16 @@ int txt_launch_environment(loader_ctx *lctx)
         }
     }
 
-    /* TODO why are not doing this now?
-    {
-    tpm_reg_loc_ctrl_t    reg_loc_ctrl;
-    tpm_reg_loc_state_t  reg_loc_state;
-
-    reg_loc_ctrl._raw[0] = 0;
-    reg_loc_ctrl.relinquish = 1;
-    write_tpm_reg(0, TPM_REG_LOC_CTRL, &reg_loc_ctrl);
-    printk(SLEXEC_INFO"Relinquish CRB localility 0 before executing GETSEC[SENTER]...\n");
-    read_tpm_reg(0, TPM_REG_LOC_STATE, &reg_loc_state);
-    printk(SLEXEC_INFO"CRB reg_loc_state.active_locality is 0x%x \n", reg_loc_state.active_locality);
-    printk(SLEXEC_INFO"CRB reg_loc_state.loc_assigned is 0x%x \n", reg_loc_state.loc_assigned);
-    }*/
-
     /*
      * Need to update the MLE header with the size of the MLE. The field is
      * the 9th dword in.
      */
-    mle_size = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
+    mle_size = (uint32_t*)(g_sl_kernel_setup.protected_mode_base + g_slaunch_header);
     if (*(mle_size + 9) == 0) {
         printk("Protected Mode Size: 0x%x MLE Reported Size: 0x%x\n",
-              (uint32_t)g_il_kernel_setup.protected_mode_size, *(mle_size + 9));
+              (uint32_t)g_sl_kernel_setup.protected_mode_size, *(mle_size + 9));
         printk("Setting MLE size\n");
-        *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
+        *(mle_size + 9) = g_sl_kernel_setup.protected_mode_size;
     }
 
     printk(SLEXEC_INFO"executing GETSEC[SENTER]...\n");
@@ -646,95 +589,6 @@ int txt_launch_environment(loader_ctx *lctx)
     __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
     printk(SLEXEC_INFO"ERROR--we should not get here!\n");
     return SL_ERR_FATAL;
-}
-
-bool txt_prepare_cpu(void)
-{
-    unsigned long eflags, cr0;
-    uint64_t mcg_cap, mcg_stat;
-
-    /* TODO part of this can probably be shared with SKINIT code */
-
-    /* must be running at CPL 0 => this is implicit in even getting this far */
-    /* since our bootstrap code loads a GDT, etc. */
-    cr0 = read_cr0();
-
-    /* must be in protected mode */
-    if ( !(cr0 & CR0_PE) ) {
-        printk(SLEXEC_ERR"ERR: not in protected mode\n");
-        return false;
-    }
-
-    /* cache must be enabled (CR0.CD = CR0.NW = 0) */
-    if ( cr0 & CR0_CD ) {
-        printk(SLEXEC_INFO"CR0.CD set\n");
-        cr0 &= ~CR0_CD;
-    }
-    if ( cr0 & CR0_NW ) {
-        printk(SLEXEC_INFO"CR0.NW set\n");
-        cr0 &= ~CR0_NW;
-    }
-
-    /* native FPU error reporting must be enabled for proper */
-    /* interaction behavior */
-    if ( !(cr0 & CR0_NE) ) {
-        printk(SLEXEC_INFO"CR0.NE not set\n");
-        cr0 |= CR0_NE;
-    }
-
-    write_cr0(cr0);
-
-    /* cannot be in virtual-8086 mode (EFLAGS.VM=1) */
-    eflags = read_eflags();
-    if ( eflags & X86_EFLAGS_VM ) {
-        printk(SLEXEC_INFO"EFLAGS.VM set\n");
-        write_eflags(eflags | ~X86_EFLAGS_VM);
-    }
-
-    printk(SLEXEC_INFO"CR0 and EFLAGS OK\n");
-
-
-    /*
-     * verify all machine check status registers are clear (unless
-     * support preserving them)
-     */
-
-    /* no machine check in progress (IA32_MCG_STATUS.MCIP=1) */
-    mcg_stat = rdmsr(MSR_MCG_STATUS);
-    if ( mcg_stat & 0x04 ) {
-        printk(SLEXEC_ERR"machine check in progress\n");
-        return false;
-    }
-
-    getsec_parameters_t params;
-    if ( !smx_get_parameters(&params) ) {
-        printk(SLEXEC_ERR"smx_get_parameters() failed\n");
-        return false;
-    }
-
-    /* check if all machine check regs are clear */
-    mcg_cap = rdmsr(MSR_MCG_CAP);
-    for ( unsigned int i = 0; i < (mcg_cap & 0xff); i++ ) {
-        mcg_stat = rdmsr(MSR_MC0_STATUS + 4*i);
-        if ( mcg_stat & (1ULL << 63) ) {
-            printk(SLEXEC_ERR"MCG[%u] = %Lx ERROR\n", i, mcg_stat);
-            if ( !params.preserve_mce )
-                return false;
-        }
-    }
-
-    if ( params.preserve_mce )
-        printk(SLEXEC_INFO"supports preserving machine check errors\n");
-    else
-        printk(SLEXEC_INFO"no machine check errors\n");
-
-    if ( params.proc_based_scrtm )
-        printk(SLEXEC_INFO"CPU support processor-based S-CRTM\n");
-
-    /* all is well with the processor state */
-    printk(SLEXEC_INFO"CPU is ready for SENTER\n");
-
-    return true;
 }
 
 bool txt_is_powercycle_required(void)
@@ -769,7 +623,7 @@ bool smx_get_parameters(getsec_parameters_t *params)
         return false;
     }
 
-    tb_memset(params, 0, sizeof(*params));
+    sl_memset(params, 0, sizeof(*params));
     params->acm_max_size = DEF_ACM_MAX_SIZE;
     params->acm_mem_types = DEF_ACM_MEM_TYPES;
     params->senter_controls = DEF_SENTER_CTRLS;
