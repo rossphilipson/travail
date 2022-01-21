@@ -47,9 +47,9 @@
 #include <txt/mle.h>
 #include <txt/smx.h>
 #include <txt/txt.h>
+#include <txt/acmod.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
-#include <txt/acmod.h>
 
 static inline bool are_uuids_equal(const uuid_t *uuid1,
                                    const uuid_t *uuid2)

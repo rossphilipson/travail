@@ -22,8 +22,6 @@
 #ifndef __ACPI_H__
 #define __ACPI_H__
 
-//#define ACPI_DEBUG
-
 #define RSDP_SCOPE1_LOW    (void *)0x000000
 #define RSDP_SCOPE1_HIGH   (void *)0x000400
 #define RSDP_SCOPE2_LOW    (void *)0x0E0000
@@ -386,6 +384,7 @@ struct acpi_mcfg {
     /* struct acpi_mcfg_mmcfg table_offsets[1]; */
     uint32_t base_address;
 } __packed;
+
 typedef struct acpi_mcfg acpi_table_mcfg_t;
 
 extern struct acpi_rsdp *get_rsdp(loader_ctx *lctx);

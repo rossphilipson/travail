@@ -84,7 +84,6 @@ static always_inline bool isalpha(int c)
     return (_ctype[(unsigned char)(c)] & (_LO | _UP));
 }
 
-
 #endif /* __CTYPE_H__ */
 
 /*

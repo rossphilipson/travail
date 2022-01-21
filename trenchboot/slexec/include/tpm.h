@@ -167,9 +167,6 @@ typedef struct {
     hash_entry_t entries[MAX_ALG_NUM];
 } hash_list_t;
 
-
-// move from tpm.c
-
 /*
  * TPM registers and data structures
  *
@@ -182,56 +179,56 @@ typedef struct {
 #define TPM_REG_STS              0x18
 
 typedef union {
-    u8 _raw[1];                      /* 1-byte reg */
+    uint8_t _raw[1];                      /* 1-byte reg */
     struct __packed {
-        u8 tpm_establishment   : 1;  /* RO, 0=T/OS has been established
+        uint8_t tpm_establishment   : 1;  /* RO, 0=T/OS has been established
                                         before */
-        u8 request_use         : 1;  /* RW, 1=locality is requesting TPM use */
-        u8 pending_request     : 1;  /* RO, 1=other locality is requesting
+        uint8_t request_use         : 1;  /* RW, 1=locality is requesting TPM use */
+        uint8_t pending_request     : 1;  /* RO, 1=other locality is requesting
                                         TPM usage */
-        u8 seize               : 1;  /* WO, 1=seize locality */
-        u8 been_seized         : 1;  /* RW, 1=locality seized while active */
-        u8 active_locality     : 1;  /* RW, 1=locality is active */
-        u8 reserved            : 1;
-        u8 tpm_reg_valid_sts   : 1;  /* RO, 1=other bits are valid */
+        uint8_t seize               : 1;  /* WO, 1=seize locality */
+        uint8_t been_seized         : 1;  /* RW, 1=locality seized while active */
+        uint8_t active_locality     : 1;  /* RW, 1=locality is active */
+        uint8_t reserved            : 1;
+        uint8_t tpm_reg_valid_sts   : 1;  /* RO, 1=other bits are valid */
     };
 } tpm_reg_access_t;
 
 /* TPM_STS_x */
 
 typedef union {
-    u8 _raw[3];                  /* 3-byte reg */
+    uint8_t _raw[3];                  /* 3-byte reg */
     struct __packed {
-        u8 reserved1       : 1;
-        u8 response_retry  : 1;  /* WO, 1=re-send response */
-        u8 self_test_done  : 1;  /* RO, only for version 2 */
-        u8 expect          : 1;  /* RO, 1=more data for command expected */
-        u8 data_avail      : 1;  /* RO, 0=no more data for response */
-        u8 tpm_go          : 1;  /* WO, 1=execute sent command */
-        u8 command_ready   : 1;  /* RW, 1=TPM ready to receive new cmd */
-        u8 sts_valid       : 1;  /* RO, 1=data_avail and expect bits are  valid */
-        u16 burst_count    : 16; /* RO, # read/writes bytes before wait */
+        uint8_t reserved1       : 1;
+        uint8_t response_retry  : 1;  /* WO, 1=re-send response */
+        uint8_t self_test_done  : 1;  /* RO, only for version 2 */
+        uint8_t expect          : 1;  /* RO, 1=more data for command expected */
+        uint8_t data_avail      : 1;  /* RO, 0=no more data for response */
+        uint8_t tpm_go          : 1;  /* WO, 1=execute sent command */
+        uint8_t command_ready   : 1;  /* RW, 1=TPM ready to receive new cmd */
+        uint8_t sts_valid       : 1;  /* RO, 1=data_avail and expect bits are  valid */
+        uint16_t burst_count    : 16; /* RO, # read/writes bytes before wait */
     };
 } tpm12_reg_sts_t;
 
 typedef union {
-    u8 _raw[4];                  /* 4-byte reg */
+    uint8_t _raw[4];                  /* 4-byte reg */
     struct __packed {
-        u8 reserved1       : 1;
-        u8 response_retry  : 1;  /* WO, 1=re-send response */
-        u8 self_test_done  : 1;  /* RO, only for version 2 */
-        u8 expect          : 1;  /* RO, 1=more data for command expected */
-        u8 data_avail      : 1;  /* RO, 0=no more data for response */
-        u8 tpm_go          : 1;  /* WO, 1=execute sent command */
-        u8 command_ready   : 1;  /* RW, 1=TPM ready to receive new cmd */
-        u8 sts_valid       : 1;  /* RO, 1=data_avail and expect bits are
+        uint8_t reserved1       : 1;
+        uint8_t response_retry  : 1;  /* WO, 1=re-send response */
+        uint8_t self_test_done  : 1;  /* RO, only for version 2 */
+        uint8_t expect          : 1;  /* RO, 1=more data for command expected */
+        uint8_t data_avail      : 1;  /* RO, 0=no more data for response */
+        uint8_t tpm_go          : 1;  /* WO, 1=execute sent command */
+        uint8_t command_ready   : 1;  /* RW, 1=TPM ready to receive new cmd */
+        uint8_t sts_valid       : 1;  /* RO, 1=data_avail and expect bits are
                                     valid */
-        u16 burst_count    : 16; /* RO, # read/writes bytes before wait */
+        uint16_t burst_count    : 16; /* RO, # read/writes bytes before wait */
         /* version >= 2 */
-        u8 command_cancel       : 1;
-        u8 reset_establishment  : 1;
-        u8 tpm_family           : 2;
-        u8 reserved2            : 4;
+        uint8_t command_cancel       : 1;
+        uint8_t reset_establishment  : 1;
+        uint8_t tpm_family           : 2;
+        uint8_t reserved2            : 4;
     };
 } tpm20_reg_sts_t;
 
@@ -256,41 +253,41 @@ typedef union {
 #define TPMCRBBUF_LEN            0xF80     //3968 Bytes
 
 typedef union {
-    u8 _raw[4];                      /* 4-byte reg */
+    uint8_t _raw[4];                      /* 4-byte reg */
     struct __packed {
-        u8 tpm_establishment   : 1;
-        u8 loc_assigned        : 1;
-        u8 active_locality     : 3;
-        u8 reserved            : 2;
-        u8 tpm_reg_valid_sts   : 1;  /* RO, 1=other bits are valid */
-	u8 reserved1           : 8;
-        u16 reserved2          : 16;
+        uint8_t tpm_establishment   : 1;
+        uint8_t loc_assigned        : 1;
+        uint8_t active_locality     : 3;
+        uint8_t reserved            : 2;
+        uint8_t tpm_reg_valid_sts   : 1;  /* RO, 1=other bits are valid */
+        uint8_t reserved1           : 8;
+        uint16_t reserved2          : 16;
     };
 } tpm_reg_loc_state_t;
 
 typedef union {
-   uint8_t _raw[4];
-   struct __packed {
-   uint32_t  requestAccess:1;
-   uint32_t  relinquish:1;
-   uint32_t  seize:1;
-   uint32_t  resetEstablishment:1;
-   uint32_t  reserved1:28;
-   };
+    uint8_t _raw[4];
+        struct __packed {
+        uint32_t  requestAccess:1;
+        uint32_t  relinquish:1;
+        uint32_t  seize:1;
+        uint32_t  resetEstablishment:1;
+        uint32_t  reserved1:28;
+    };
 } tpm_reg_loc_ctrl_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct __packed{
-		uint32_t  Granted:1;
-		uint32_t  BeenSeized:1;
-		uint32_t  R:30;
-	};
+    uint8_t _raw[4];
+    struct __packed{
+        uint32_t  Granted:1;
+        uint32_t  BeenSeized:1;
+        uint32_t  R:30;
+    };
 } tpm_reg_loc_sts_t;
 
 typedef union {
-   uint8_t _raw[8];        // 8-byte reg
-   struct __packed {
+    uint8_t _raw[8];        // 8-byte reg
+    struct __packed {
         uint64_t  interface_type:4;
         uint64_t  interface_version:4;
         uint64_t  cap_locality:1;
@@ -309,98 +306,98 @@ typedef union {
 } tpm_crb_interface_id_t;
 
 typedef union {
-   uint8_t _raw[4];
-   struct __packed{
-   	   uint32_t  cmdReady:1;
-	   uint32_t  goIdle:1;
-	   uint32_t  Reserved:30;
-   };
+    uint8_t _raw[4];
+    struct __packed{
+        uint32_t  cmdReady:1;
+        uint32_t  goIdle:1;
+        uint32_t  Reserved:30;
+    };
  } tpm_reg_ctrl_request_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct  __packed{
-		uint32_t  tpmsts:1;
-		uint32_t  tpmidle:1;
-		uint32_t  reserved:30;
-	};
+    uint8_t _raw[4];
+    struct  __packed{
+        uint32_t  tpmsts:1;
+        uint32_t  tpmidle:1;
+        uint32_t  reserved:30;
+    };
 } tpm_reg_ctrl_sts_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct  __packed{
-		uint32_t  start;
-	};
+    uint8_t _raw[4];
+    struct  __packed{
+        uint32_t  start;
+    };
 } tpm_reg_ctrl_start_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct  __packed{
-		uint32_t  cancel;
-	};
+    uint8_t _raw[4];
+    struct  __packed{
+        uint32_t  cancel;
+    };
 } tpm_reg_ctrl_cancel_t;
 
 typedef union {
-	uint8_t _raw[8];
-	struct  __packed{
-		uint32_t  cmdladdr;
-		uint32_t  cmdhaddr;
-	};
+    uint8_t _raw[8];
+    struct  __packed{
+        uint32_t  cmdladdr;
+        uint32_t  cmdhaddr;
+    };
 } tpm_reg_ctrl_cmdaddr_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct  __packed{
-		uint32_t  cmdsize;
-	};
+    uint8_t _raw[4];
+    struct  __packed{
+        uint32_t  cmdsize;
+    };
 } tpm_reg_ctrl_cmdsize_t;
 
 typedef union {
-	uint8_t _raw[8];
-	struct  __packed{
-		uint64_t  rspaddr;
-	};
+    uint8_t _raw[8];
+    struct  __packed{
+        uint64_t  rspaddr;
+    };
 } tpm_reg_ctrl_rspaddr_t;
 
 typedef union {
-	uint8_t _raw[4];
-	struct  __packed{
-		uint32_t  rspsize;
-	};
+    uint8_t _raw[4];
+    struct  __packed{
+        uint32_t  rspsize;
+    };
 } tpm_reg_ctrl_rspsize_t;
 
 typedef union {
-	uint8_t _raw[48];
-	struct __packed {
-		tpm_reg_ctrl_request_t  Request;
-		tpm_reg_ctrl_sts_t    Status;
-		tpm_reg_ctrl_cancel_t    Cancel;
-		tpm_reg_ctrl_start_t  Start;
-		uint64_t  R;
-		tpm_reg_ctrl_cmdsize_t  CmdSize;
-		tpm_reg_ctrl_cmdaddr_t  CmdAddr;
-		tpm_reg_ctrl_rspsize_t  RspSize;
-		tpm_reg_ctrl_rspaddr_t  RspAddr;
-	};
+    uint8_t _raw[48];
+    struct __packed {
+        tpm_reg_ctrl_request_t  Request;
+        tpm_reg_ctrl_sts_t      Status;
+        tpm_reg_ctrl_cancel_t   Cancel;
+        tpm_reg_ctrl_start_t    Start;
+        uint64_t  R;
+        tpm_reg_ctrl_cmdsize_t  CmdSize;
+        tpm_reg_ctrl_cmdaddr_t  CmdAddr;
+        tpm_reg_ctrl_rspsize_t  RspSize;
+        tpm_reg_ctrl_rspaddr_t  RspAddr;
+    };
 } tpm_ctrl_area_t;
 
-// END OF CRB I/F
+/* END OF CRB I/F */
 
 /*
  * assumes that all reg types follow above format:
  *   - packed
  *   - member named '_raw' which is array whose size is that of data to read
  */
-#define read_tpm_reg(locality, reg, pdata)   _read_tpm_reg(locality, reg, (pdata)->_raw, sizeof(*(pdata)))
+#define read_tpm_reg(locality, reg, pdata)  __read_tpm_reg(locality, reg, (pdata)->_raw, sizeof(*(pdata)))
 
-#define write_tpm_reg(locality, reg, pdata)   _write_tpm_reg(locality, reg, (pdata)->_raw, sizeof(*(pdata)))
+#define write_tpm_reg(locality, reg, pdata) __write_tpm_reg(locality, reg, (pdata)->_raw, sizeof(*(pdata)))
 
-static inline void _read_tpm_reg(int locality, u32 reg, u8 *_raw, size_t size)
+static inline void __read_tpm_reg(int locality, uint32_t reg, uint8_t *_raw, size_t size)
 {
     for ( size_t i = 0; i < size; i++ )   _raw[i] = readb((TPM_LOCALITY_BASE_N(locality) | reg) + i);
 }
 
-static inline void _write_tpm_reg(int locality, u32 reg, u8 *_raw, size_t size)
+static inline void __write_tpm_reg(int locality, uint32_t reg, uint8_t *_raw, size_t size)
 {
     for ( size_t i = 0; i < size; i++ )  writeb((TPM_LOCALITY_BASE_N(locality) | reg) + i, _raw[i]);
 }
@@ -418,7 +415,7 @@ static inline void _reverse_copy(uint8_t *out, uint8_t *in, uint32_t count)
 }
 
 /* alg id list supported by slexec */
-extern u16 slexec_alg_list[];
+extern uint16_t slexec_alg_list[];
 
 typedef sl_hash_t tpm_digest_t;
 typedef tpm_digest_t tpm_pcr_value_t;
@@ -431,19 +428,19 @@ struct tpm_if {
 #define TPM12_VER_MINOR   2
 #define TPM20_VER_MAJOR   2
 #define TPM20_VER_MINOR   0
-    u8 major;
-    u8 minor;
-    u16 family;
+    uint8_t major;
+    uint8_t minor;
+    uint16_t family;
 
     tpm_timeout_t timeout;
 
-    u32 error; /* last reported error */
-    u32 cur_loc;
+    uint32_t error; /* last reported error */
+    uint32_t cur_loc;
 
-    u16 banks;
-    u16 algs_banks[TPM_ALG_MAX_NUM];
-    u16 alg_count;
-    u16 algs[TPM_ALG_MAX_NUM];
+    uint16_t banks;
+    uint16_t algs_banks[TPM_ALG_MAX_NUM];
+    uint16_t alg_count;
+    uint16_t algs[TPM_ALG_MAX_NUM];
 
     /*
      * Only for version>=2. PCR extend policy.
@@ -451,17 +448,19 @@ struct tpm_if {
 #define SL_EXTPOL_AGILE         0
 #define SL_EXTPOL_EMBEDDED      1
 #define SL_EXTPOL_FIXED         2
-    u8 extpol;
-    u16 cur_alg;
+    uint8_t extpol;
+    uint16_t cur_alg;
 
     /* SGX NV index to be used */
-    u32 sgx_svn_index;
+    uint32_t sgx_svn_index;
 };
 
 struct tpm_if_fp {
     bool (*init)(struct tpm_if *ti);
     bool (*check)(void);
-    bool (*nv_write)(struct tpm_if *ti, u32 locality, u32 index, u32 offset, const u8 *data, u32 data_size);
+    bool (*nv_write)(struct tpm_if *ti, uint32_t locality,
+                     uint32_t index, uint32_t offset,
+                     const uint8_t *data, uint32_t data_size);
 };
 
 extern struct tpm_if_data tpm_if_data;
@@ -476,21 +475,15 @@ extern bool release_locality(uint32_t locality);
 extern bool prepare_tpm(void);
 extern bool tpm_detect(void);
 extern void tpm_print(struct tpm_if *ti);
-extern bool tpm_submit_cmd(u32 locality, u8 *in, u32 in_size, u8 *out, u32 *out_size);
-extern bool tpm_submit_cmd_crb(u32 locality, u8 *in, u32 in_size, u8 *out, u32 *out_size);
+extern bool tpm_submit_cmd(uint32_t locality, uint8_t *in, uint32_t in_size, uint8_t *out, uint32_t *out_size);
+extern bool tpm_submit_cmd_crb(uint32_t locality, uint8_t *in, uint32_t in_size, uint8_t *out, uint32_t *out_size);
 extern bool tpm_wait_cmd_ready(uint32_t locality);
 extern bool tpm_request_locality_crb(uint32_t locality);
 extern bool tpm_relinquish_locality_crb(uint32_t locality);
 extern struct tpm_if *get_tpm(void);
 extern const struct tpm_if_fp *get_tpm_fp(void);
 
-#ifdef TPM_UNIT_TEST
-void tpm_unit_test(void);
-#else
-#define tpm_unit_test()
-#endif   /* TPM_UNIT_TEST */
-
-#endif   /* __TPM_H__ */
+#endif /* __TPM_H__ */
 
 /*
  * Local variables:

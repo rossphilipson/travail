@@ -296,7 +296,7 @@ extern void txt_shutdown(void);
 extern bool txt_is_powercycle_required(void);
 extern int get_evtlog_type(void);
 
-#endif      /* __TXT_TXT_H__ */
+#endif /* __TXT_TXT_H__ */
 
 /*
  * Local variables:

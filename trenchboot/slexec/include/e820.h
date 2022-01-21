@@ -121,8 +121,7 @@ extern void get_highest_sized_ram(uint64_t size, uint64_t limit,
 
 #define EFI_PAGE_SHIFT		12
 
-#endif    /* __E820_H__ */
-
+#endif /* __E820_H__ */
 
 /*
  * Local variables:

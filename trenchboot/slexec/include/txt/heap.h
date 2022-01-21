@@ -117,7 +117,7 @@ typedef struct __packed {
     uint32_t pcr_index; //pcr_index event extended to
     uint32_t event_type;  //Type of event (see EFI specs)
     uint8_t digest[20];//Value extended into pcr_index
-    uint32_t event_data_size; //Size of the event data 
+    uint32_t event_data_size; //Size of the event data
     uint8_t event_data[]; //The event data Structure to be added to the Event Log
 } tcg_pcr_event;
 
@@ -155,7 +155,7 @@ typedef struct __packed {
     uint32_t number_of_algorithms;
     tcg_efi_spec_id_event_algorithm_size  digestSizes[5];
     uint8_t vendor_info_size;
-    uint8_t vendor_info[];    
+    uint8_t vendor_info[];
 } tcg_efi_specid_event_strcut;
 
 #define EVTLOG_SIGNATURE "TXT Event Container\0"
@@ -172,7 +172,7 @@ typedef struct __packed {
     uint8_t pcr_event_ver_minor;
     uint32_t size;
     uint32_t pcr_events_offset;
-    uint32_t next_event_offset; 
+    uint32_t next_event_offset;
     tpm12_pcr_event_t pcr_events[];
 } event_log_container_t;
 

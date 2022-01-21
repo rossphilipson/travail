@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef __MLE_H__
-#define __MLE_H__
+#ifndef __TXT_MLE_H__
+#define __TXT_MLE_H__
 
 /*
  * SINIT/MLE capabilities
@@ -54,7 +54,6 @@ typedef union {
         uint32_t  reserved1           : 22;
     };
 } txt_caps_t;
-
 
 /*
  * MLE header structure
@@ -83,7 +82,7 @@ typedef struct {
 #define MLE_HDR_CAPS      0x00000227     /* rlp_wake_{getsec, monitor} = 1,
                                             ecx_pgtbl = 1, nolg = 0, da = 1 tcg_event_log_format =1 */
 
-#endif      /* __MLE_H__ */
+#endif /* __TXT_MLE_H__ */
 
 /*
  * Local variables:

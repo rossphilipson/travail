@@ -36,8 +36,6 @@
 #ifndef __TXT_MTRRS_H__
 #define __TXT_MTRRS_H__
 
-#include <txt/acmod.h>
-
 enum fix_mtrr_t {
     MTRR_FIX64K_00000 = 0x250,
     MTRR_FIX16K_80000 = 0x258,

@@ -50,7 +50,7 @@ typedef signed short        s16;
 
 typedef unsigned char       u_char;
 
-typedef unsigned int		u_int;
+typedef unsigned int        u_int;
 
 typedef unsigned char       u_int8_t;
 typedef unsigned short      u_int16_t;
@@ -77,7 +77,7 @@ typedef unsigned long long  u_int64_t;
 #define offsetof(type, member) ((size_t) &((type *)0)->member)
 #endif
 
-#endif    /* __TYPES_H__ */
+#endif /* __TYPES_H__ */
 
 /*
  * Local variables:

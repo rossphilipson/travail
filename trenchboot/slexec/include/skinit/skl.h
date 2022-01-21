@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef _SKL_H
-#define _SKL_H
+#ifndef __SKINIT_SKL_H__
+#define __SKINIT__SKL_H__
 
 #define SKL_VERSION 0
 
@@ -113,7 +113,7 @@ extern void print_skl_module(void);
 extern void relocate_skl_module(void);
 extern bool prepare_skl_bootloader_data(void);
 
-#endif /* _SKL_H */
+#endif /* __SKINIT_SKL_H__ */
 
 /*
  * Local variables:

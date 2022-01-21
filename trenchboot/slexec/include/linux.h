@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef __LINUX_DEFNS_H__
-#define __LINUX_DEFNS_H__
+#ifndef __LINUX_H__
+#define __LINUX_H__
 
 #define SECTOR_SIZE (1 << 9)      /* 0x200 = 512B */
 
@@ -140,8 +140,7 @@ typedef struct __attribute__ ((packed)) {
 typedef struct __attribute__ ((packed)) {
     uint8_t               screen_info[0x040-0x000];                 /* 0x000 */
     uint8_t               apm_bios_info[0x054-0x040];               /* 0x040 */
-    uint8_t               _pad2[4];                                 /* 0x054 */
-    uint8_t               slexec_shared_addr[8];                     /* 0x058 */
+    uint8_t               _pad2[12];                                /* 0x054 */
     uint8_t               ist_info[0x070-0x060];                    /* 0x060 */
     uint8_t               acpi_rsdp_addr[8];                        /* 0x070 */
     uint8_t               _pad3[8];                                 /* 0x078 */
@@ -278,7 +277,7 @@ extern bool expand_linux_image(const void *linux_image, size_t linux_size,
 
 extern void linux_skl_setup_indirect(setup_data_t *data, uint32_t adj_size);
 
-#endif /* __LINUX_DEFNS_H__ */
+#endif /* __LINUX_H__ */
 
 /*
  * Local variables:

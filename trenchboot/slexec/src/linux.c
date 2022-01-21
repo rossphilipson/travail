@@ -443,7 +443,6 @@ bool expand_linux_image(const void *linux_image, size_t linux_size,
     }
 
     /* Clear out some boot_params we don't want dangling around */
-    sl_memset((void *)boot_params->slexec_shared_addr, 0, 8);
     sl_memset((void *)boot_params->acpi_rsdp_addr, 0, 8);
 
     /* Copy all the handoff information about the loaded IL kernel */

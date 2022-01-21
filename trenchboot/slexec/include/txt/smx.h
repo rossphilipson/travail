@@ -154,6 +154,18 @@ static inline void __getsec_enteraccs(uint32_t acm_base, uint32_t acm_size,
 			    "S"(fn));
 }
 
+#define ACM_MEM_TYPE_UC                 0x0100
+#define ACM_MEM_TYPE_WC                 0x0200
+#define ACM_MEM_TYPE_WT                 0x1000
+#define ACM_MEM_TYPE_WP                 0x2000
+#define ACM_MEM_TYPE_WB                 0x4000
+
+#define DEF_ACM_MAX_SIZE                0x8000
+#define DEF_ACM_VER_MASK                0xffffffff
+#define DEF_ACM_VER_SUPPORTED           0x00
+#define DEF_ACM_MEM_TYPES               ACM_MEM_TYPE_UC
+#define DEF_SENTER_CTRLS                0x00
+
 extern bool smx_get_parameters(getsec_parameters_t *params);
 
 #endif /* __TXT_SMX_H__ */

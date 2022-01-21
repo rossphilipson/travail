@@ -299,7 +299,6 @@ extern void comc_puts(const char*, unsigned int);
 
 #endif /* __COM_H__ */
 
-
 /*
  * Local variables:
  * mode: C

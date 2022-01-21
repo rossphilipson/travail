@@ -39,7 +39,6 @@
 #define CMDLINE_SIZE   512
 extern char g_cmdline[CMDLINE_SIZE];
 
-
 extern void slexec_parse_cmdline(void);
 extern void get_slexec_loglvl(void);
 extern void get_slexec_log_targets(void);
@@ -58,8 +57,7 @@ extern bool get_linux_mem(uint64_t *initrd_max_mem);
 
 extern uint8_t get_loglvl_prefix(char **pbuf, int *len);
 
-#endif    /* __CMDLINE_H__ */
-
+#endif /* __CMDLINE_H__ */
 
 /*
  * Local variables:

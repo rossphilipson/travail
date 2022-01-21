@@ -30,13 +30,13 @@
  *
  */
 
-#ifndef _SKINIT_H
-#define _SKINIT_H
+#ifndef __SKINIT_SKINIT_H__
+#define __SKINIT_SKINIT_H__
 
 int supports_skinit(void);
 void skinit_launch_environment(void);
 
-#endif /* _SKINIT_H */
+#endif /* __SKINIT_SKINIT_H__ */
 
 /*
  * Local variables:

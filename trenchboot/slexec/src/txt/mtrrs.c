@@ -46,8 +46,8 @@
 #include <tpm.h>
 #include <txt/mle.h>
 #include <txt/txt.h>
-#include <txt/mtrrs.h>
 #include <txt/acmod.h>
+#include <txt/mtrrs.h>
 
 #define SINIT_MTRR_MASK 0xFFFFFF  /* SINIT requires 36b mask */
 

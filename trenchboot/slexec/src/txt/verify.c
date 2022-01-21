@@ -49,6 +49,7 @@
 #include <txt/smx.h>
 #include <txt/mle.h>
 #include <txt/txt.h>
+#include <txt/acmod.h>
 #include <txt/mtrrs.h>
 #include <txt/heap.h>
 

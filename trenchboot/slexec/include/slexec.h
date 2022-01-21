@@ -177,14 +177,10 @@ extern void sha256_buffer(const unsigned char *buffer, size_t len,
 /*
  * used to log slexec printk output
  */
-#define ZIP_COUNT_MAX 10
 typedef struct {
     uuid_t     uuid;
     uint16_t   max_size;
     uint16_t   curr_pos;
-    uint16_t   zip_pos[ZIP_COUNT_MAX];
-    uint16_t   zip_size[ZIP_COUNT_MAX];
-    uint8_t    zip_count;
     char       buf[];
 } slexec_log_t;
 
@@ -235,7 +231,7 @@ extern void debug_put_chars(void);
 
 #endif /* !__ASSEMBLY__ */
 
-#endif    /* __SLEXEC_H__ */
+#endif /* __SLEXEC_H__ */
 
 /*
  * Local variables:

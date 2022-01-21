@@ -67,7 +67,7 @@ extern void printk(const char *fmt, ...)
 extern void print_hash(const sl_hash_t *hash, uint16_t hash_alg);
 extern void print_uuid(const uuid_t *uuid);
 
-#endif
+#endif /* __PRINTK_H__ */
 
 /*
  * Local variables:
