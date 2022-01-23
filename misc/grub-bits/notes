@@ -1,0 +1,33 @@
+Legacy disk and GRUB
+----------------------
+
+Disk layout:
+
+  +---+---------+----------------------------------------->
+  |   |         |             |
+  | M | DOS     |             |
+  | B | COMPAT  |  BOOT       |   ROOT
+  | R |         |             |
+  | 1 |  1.5    |     2       |
+  +---+---------+----------------------------------------->
+  |   |         |
+  | ^ |         |
+    | |         |
+    +-- 512b    |
+      |         |
+           ^
+           |
+           +--- 32Kb
+
+ - MBR: Master Boot Record, legacy first sector. This is the stage 1
+        boot loader that jumps to stage 1.5
+ - DOS Compate: Contains the GRUB 1.5 boot loader file system specific
+        bits that can loader file system drivers for the boot partition.
+        The GRUB core is loaded from the boot partition and executate from
+        1.5 stage. Note the fist partition after the MBR sector is aligned
+        on a cylinder bounday which is (63 sectors - MBR sectore) = 32Kb.
+ - Boot contains stage 2 boot loader which is the GRUB core.
+
+
+http://www.pixelbeat.org/docs/disk/
+
