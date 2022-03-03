@@ -292,16 +292,16 @@ static bool parse_pci_bdf(const char **bdf, uint32_t *bus, uint32_t *slot,
     return true;
 }
 
-/* TODO fix this. Using pragmas is just a workaround */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 bool g_psbdf_enabled = false;
 static bool parse_com_psbdf(const char **bdf)
 {
-    g_psbdf_enabled = parse_pci_bdf(bdf,
-                  &g_com_port.comc_psbdf.bus,
-                  &g_com_port.comc_psbdf.slot,
-                  &g_com_port.comc_psbdf.func);
+    uint32_t b = 0, d = 0, f = 0;
+
+    g_psbdf_enabled = parse_pci_bdf(bdf, &b, &d, &f);
+
+    g_com_port.comc_psbdf.bus = b;
+    g_com_port.comc_psbdf.slot = d;
+    g_com_port.comc_psbdf.func = f;
 
     return g_psbdf_enabled;
 }
@@ -309,14 +309,17 @@ static bool parse_com_psbdf(const char **bdf)
 bool g_pbbdf_enabled = false;
 static bool parse_com_pbbdf(const char **bdf)
 {
-    g_pbbdf_enabled = parse_pci_bdf(bdf,
-                  &g_com_port.comc_pbbdf.bus,
-                  &g_com_port.comc_pbbdf.slot,
-                  &g_com_port.comc_pbbdf.func);
+    uint32_t b = 0, d = 0, f = 0;
+
+    g_pbbdf_enabled = parse_pci_bdf(bdf, &b, &d, &f);
+
+
+    g_com_port.comc_pbbdf.bus = b;
+    g_com_port.comc_pbbdf.slot = d;
+    g_com_port.comc_pbbdf.func = f;
 
     return g_pbbdf_enabled;
 }
-#pragma GCC diagnostic pop
 
 static bool parse_com_fmt(const char **fmt)
 {
