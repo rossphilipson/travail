@@ -23,7 +23,8 @@
 #include <asm/bootparam_utils.h>
 #include <linux/slaunch.h>
 
-#define MTRR_DEF_DISABLE_ALL (1<<11)
+#define MTRR_DEF_ENABLE_FIXED	(1<<10)
+#define MTRR_DEF_ENABLE_ALL	(1<<11)
 
 static common_prepare_cpu(void)
 {
@@ -36,22 +37,35 @@ static void txt_setup_mtrrs(struct efi_drtm_info *drtm_info)
 
 	/* Disable interrupts and caching */
 	native_irq_disable();
+
 	cr0 = __read_cr0();
 	__write_cr0((cr0 & ~X86_CR0_NW) | X86_CR0_CD); /* CRO.NW=0 CRO.CD=1 */
 
 	/* Now flush all caches and disable global pages */
 	wbinvd();
+
 	cr4 = __read_cr4();
 	__write_cr4(cr4 & ~X86_CR4_PGE);
 
 	/* Disable all MTRRs */
 	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
-	wrmsr(MSR_MTRRdefType, (msrlo & ~MTRR_DEF_DISABLE_ALL), msrhi);
+	wrmsr(MSR_MTRRdefType, (msrlo & ~MTRR_DEF_ENABLE_ALL), msrhi);
 
-	/* TODO setup ACM MTRRs here */
+	/* Setup ACM MTRRs as WB, rest of the world is UC, fixed MTRRs off */
+	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
+	msrlo &= ~MTRR_DEF_ENABLE_FIXED;
+	msrlo |= (MTRR_TYPE_UNCACHABLE & 0xff);
+	wrmsr(MSR_MTRRdefType, msrlo, msrhi);
+
+	/* TODO the rest */
+
+	/* Flush all caches again and enable all MTRRs */
+	wbinvd();
+
+	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
+	wrmsr(MSR_MTRRdefType, (msrlo | MTRR_DEF_ENABLE_ALL), msrhi);
 
 	/* Flush all caches again and restore control registers */
-	wbinvd();
 	__write_cr0(cr0);
 	__write_cr4(cr4);
 

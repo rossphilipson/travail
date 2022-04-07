@@ -21,6 +21,7 @@
 #define SL_INTEL_TXT	1
 #define SL_AMD_SKINIT	2
 
+/* TODO TLV format */
 struct efi_drtm_info {
 	u32 architecture;
 	u64 txt_acm_base;
