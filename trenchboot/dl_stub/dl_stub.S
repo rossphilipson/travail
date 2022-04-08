@@ -15,9 +15,47 @@
 #include <asm/page_types.h>
 #include <linux/slaunch.h>
 
-	.code32
+	.code64
 SYM_FUNC_START(dl_stub_entry)
-	/* TODO */
+	/* On entry, %ebx has the architecture type for the DLE */
+
+	/* Return to protected mode, paging off */
+	leal	1f(%rip), %ecx
+	pushq	$__SL32_CS
+	pushq	%rcx
+	lretq
+
+	.code32
+1:	/* Now in IA-32e compatibility mode, next stop is protected mode */
+	cld
+	cli
+
+	/* Load known data segment descritor */
+	movl	$__SL32_DS, %eax
+	movl	%eax, %ds
+	movl	%eax, %es
+	movl	%eax, %fs
+	movl	%eax, %gs
+	movl	%eax, %ss
+
+	/* Turn paging off - we are identity mapped so we will survive */
+	movl	%cr0, %eax
+	andl	$~(CR0_PG | CR0_NE | CR0_TS | CR0_MP), %eax
+	movl	%eax, %cr0
+
+	/* Disable IA-32e mode */
+	movl	$IA32_EFER, %ecx
+	rdmsr
+	andb	$~(EFER_LME >> 8), %ah
+	wrmsr
+
+	/* Now in protected mode, make things look like TXT post launch */
+	movl	%cr4, %eax
+	andl	$~CR4_PAE, %eax
+	movl	%eax, %cr4
+	/* TODO more CPU setup */
+
+	/* TODO DL Event */
 SYM_FUNC_END(sl_stub_entry)
 
 	.data
