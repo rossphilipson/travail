@@ -11,27 +11,25 @@
 /* Put this in efi.h if it becomes a standard */
 #define DRTM_TABLE_GUID				EFI_GUID(0x877a9b2a, 0x0385, 0x45d1, 0xa0, 0x34, 0x9d, 0xac, 0x9c, 0x9e, 0x56, 0x5f)
 
-/* DRTM Tags */
-#define DRTM_TAG_CLASS_MASK		0xF0
+/* General entrys */
+#define DRTM_TABLE_HEADER		0x0000	/* Always first */
+#define DRTM_ENTRY_END			0xffff
 
-/* General tags, no class */
-#define DRTM_TAG_NO_CLASS		0x00
-#define DRTM_TAG_END			0x00
-#define DRTM_TAG_ARCHITECTURE		0x01
-#define DRTM_TAG_TAGS_SIZE		0x0f	/* Always first */
+/* DRTM general entry */
+#define DRTM_ENTRY_ARCHITECTURE		0x0001
 
-/* DCE tags */
-#define DRTM_TAG_DCE_CLASS		0x10
-#define DRTM_TAG_DCE_INFO		0x01
+/* DCE entrys */
+#define DRTM_ENTRY_DCE_CLASS		0x10
+#define DRTM_ENTRY_DCE_INFO		0x01
 
-struct drtm_tag_hdr {
-	u8 type;
-	u8 len;
+struct drtm_entry_hdr {
+	u16 type;
+	u16 len;
 } __packed;
 
-struct drtm_tag_tags_size {
-	struct drtm_tag_hdr hdr;
-	u16 size;
+struct drtm_table_header {
+	struct drtm_entry_hdr hdr;
+	u32 size;
 } __packed;
 
 /*
@@ -40,36 +38,36 @@ struct drtm_tag_tags_size {
 #define DRTM_INTEL_TXT		1
 #define DRTM_AMD_SKINIT		2
 
-struct drtm_tag_architecture {
-	struct drtm_tag_hdr hdr;
+struct drtm_entry_architecture {
+	struct drtm_entry_hdr hdr;
 	u16 architecture;
 } __packed;
 
-struct drtm_tag_dce_info {
-	struct drtm_tag_hdr hdr;
+struct drtm_entry_dce_info {
+	struct drtm_entry_hdr hdr;
 	u64 dce_base;
 	u32 dce_size;
-}
+} __packed;
 
-static inline void *drtm_end_of_tags(void)
+static inline void *drtm_end_of_entrys(void)
 {
 	/* TODO not sure what this is yet */
 	/*return (((void *) &bootloader_data) + bootloader_data.size);*/
 	return 256;
 }
 
-static inline void *drtm_next_tag(struct drtm_tag_hdr *tag)
+static inline void *drtm_next_entry(struct drtm_entry_hdr *entry)
 {
-	void *next = tag + tag->len;
-	return next < drtm_end_of_tags() ? x : NULL;
+	void *next = entry + entry->len;
+	return next < drtm_end_of_entrys() ? x : NULL;
 }
 
-static inline void *drtm_next_of_type(struct drtm_tag_hdr *tag, u8 type)
+static inline void *drtm_next_of_type(struct drtm_entry_hdr *entry, u8 type)
 {
-	while (tag->type != DRTM_TAG_END) {
-		tag = drtm_next_tag(tag);
-		if (tag->type == type)
-			return (void*)tag < drtm_end_of_tags() ? tag : NULL;
+	while (entry->type != DRTM_ENTRY_END) {
+		entry = drtm_next_entry(entry);
+		if (entry->type == type)
+			return (void*)entry < drtm_end_of_entrys() ? entry : NULL;
 	}
 
 	return NULL;
