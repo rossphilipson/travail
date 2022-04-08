@@ -40,10 +40,23 @@ struct drtm_entry_architecture {
 	u16 architecture;
 } __packed;
 
+#define DRTM_DCE_AMD_SLB	1
+#define DRTM_DCE_TXT_ACM	2
+
 struct drtm_entry_dce_info {
 	struct drtm_entry_hdr hdr;
+	u16 type;
 	u64 dce_base;
 	u32 dce_size;
+} __packed;
+
+#define DRTM_DLME_ENTRY_POINT	1
+#define DRTM_DLE_ENTRY_POINT	2
+
+struct drtm_entry_entry_point {
+	struct drtm_entry_hdr hdr;
+	u16 type;
+	u64 phys_base;
 } __packed;
 
 static inline void *drtm_end_of_entrys(struct drtm_entry_hdr *head)
@@ -57,10 +70,10 @@ static inline void *drtm_next_entry(struct drtm_entry_hdr *head,
 				    struct drtm_entry_hdr *curr)
 {
 	void *next = curr + curr->len;
-	return next < drtm_end_of_entrys(head) ? x : NULL;
+	next < drtm_end_of_entrys(head) ? next : NULL;
 }
 
-static inline void *drtm_next_of_type(struct drtm_entry_hdr *entry, u8 type)
+static inline void *drtm_next_of_type(struct drtm_entry_hdr *entry, u16 type)
 {
 	while (entry->type != DRTM_ENTRY_END) {
 		entry = drtm_next_entry(entry);
