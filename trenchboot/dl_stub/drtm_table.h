@@ -5,8 +5,8 @@
  * Copyright (c) 2022, Oracle and/or its affiliates.
  */
 
-#ifndef _LINUX_EFI_DRTM_H
-#define _LINUX_EFI_DRTM_H
+#ifndef _LINUX_DRTM_TABLE_H
+#define _LINUX_DRTM_TABLE_H
 
 /* Put this in efi.h if it becomes a standard */
 #define DRTM_TABLE_GUID				EFI_GUID(0x877a9b2a, 0x0385, 0x45d1, 0xa0, 0x34, 0x9d, 0xac, 0x9c, 0x9e, 0x56, 0x5f)
@@ -20,13 +20,9 @@
 #define DRTM_TAG_ARCHITECTURE		0x01
 #define DRTM_TAG_TAGS_SIZE		0x0f	/* Always first */
 
-/* Intel TXT tags */
-#define DRTM_TAG_TXT_CLASS		0x10
-#define DRTM_TAG_TXT_ACM_INFO		0x01
-
-/* AMD SKINIT tags */
-#define DRTM_TAG_SKINIT_CLASS		0x20
-#define DRTM_TAG_SKINIT_SKL_INFO	0x01
+/* DCE tags */
+#define DRTM_TAG_DCE_CLASS		0x10
+#define DRTM_TAG_DCE_INFO		0x01
 
 struct drtm_tag_hdr {
 	u8 type;
@@ -49,16 +45,10 @@ struct drtm_tag_architecture {
 	u16 architecture;
 } __packed;
 
-struct drtm_tag_acm_info {
+struct drtm_tag_dce_info {
 	struct drtm_tag_hdr hdr;
-	u64 txt_acm_base;
-	u32 txt_acm_size;
-}
-
-struct drtm_tag_skl_info {
-	struct drtm_tag_hdr hdr;
-	u64 skinit_skl_base;
-	u32 skinit_skl_size;
+	u64 dce_base;
+	u32 dce_size;
 }
 
 static inline void *drtm_end_of_tags(void)
@@ -85,4 +75,4 @@ static inline void *drtm_next_of_type(struct drtm_tag_hdr *tag, u8 type)
 	return NULL;
 }
 
-#endif /* _LINUX_EFI_DRTM_H */
+#endif /* _LINUX_DRTM_TABLE_H */
