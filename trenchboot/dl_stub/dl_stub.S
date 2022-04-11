@@ -13,11 +13,17 @@
 #include <asm/processor-flags.h>
 #include <asm/asm-offsets.h>
 #include <asm/page_types.h>
+#include <linux/drtm_table.h>
 #include <linux/slaunch.h>
 
 	.code64
 SYM_FUNC_START(dl_stub_entry)
-	/* On entry, %ebx has the architecture type for the DLE */
+	/*
+	 * On entry:
+	 * - %rdi has the architecture type for the DLE
+	 * - %rsi has the DCE physical address
+	 * - %rdx has the DCE size
+	 */
 
 	/* Return to protected mode, paging off */
 	leal	1f(%rip), %ecx
@@ -53,9 +59,31 @@ SYM_FUNC_START(dl_stub_entry)
 	movl	%cr4, %eax
 	andl	$~CR4_PAE, %eax
 	movl	%eax, %cr4
-	/* TODO more CPU setup */
+	/* TODO more CPU setup? */
 
-	/* TODO DL Event */
+	/* The DL Event */
+	testl	$(DRTM_INTEL_TXT), %edi
+	jz	.Ldo_skinit /* maybe AMD/SKINIT? */
+
+	/* Intel/TXT GETSEC[SENTER] */
+	movl	$(SMX_X86_GETSEC_SENTER), %eax
+	movl	%edi, %ebx
+	movl	%edx, %ecx
+	xorl	%edx, %edx
+	.byte 	0x0f, 0x37	/* GETSEC opcode */
+
+.Ldo_skinit:
+	testl	$(DRTM_AMD_SKINIT), %edi
+	jz	.Ldie
+
+	/* AMD SKINIT */
+	/* TODO send_init_ipi_shorthand */
+	movl	%edi, %eax
+	skinit
+
+
+.Ldie:
+	ud2
 SYM_FUNC_END(sl_stub_entry)
 
 	.data

@@ -21,12 +21,15 @@
 #define SL_INTEL_TXT	1
 #define SL_AMD_SKINIT	2
 
-/* TODO TLV format */
-struct efi_drtm_info {
-	u32 architecture;
-	u64 txt_acm_base;
-	u32 txt_acm_size;
-}
+/* TODO add this: */
+
+/*
+ * SMX GETSEC Leaf Functions
+ */
+#define SMX_X86_GETSEC_SENTER	4
+#define SMX_X86_GETSEC_SEXIT	5
+#define SMX_X86_GETSEC_SMCTRL	7
+#define SMX_X86_GETSEC_WAKEUP	8
 
 #endif /* !IS_ENABLED(CONFIG_SECURE_LAUNCH) */
 
