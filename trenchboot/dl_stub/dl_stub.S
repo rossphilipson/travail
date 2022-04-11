@@ -13,8 +13,13 @@
 #include <asm/processor-flags.h>
 #include <asm/asm-offsets.h>
 #include <asm/page_types.h>
+#include <asm/apicdef.h>
 #include <linux/drtm_table.h>
 #include <linux/slaunch.h>
+
+/* Can't include apiddef.h in asm */
+#define XAPIC_ENABLE	(1 << 11)
+#define X2APIC_ENABLE	(1 << 10)
 
 	.code64
 SYM_FUNC_START(dl_stub_entry)
@@ -77,10 +82,28 @@ SYM_FUNC_START(dl_stub_entry)
 	jz	.Ldie
 
 	/* AMD SKINIT */
-	/* TODO send_init_ipi_shorthand */
+	/* First have to assert #INIT on all non-BSP APs */
+	movl	$(MSR_IA32_APICBASE), %ecx
+	rdmsr
+	testl	$X2APIC_ENABLE, %eax
+	jz	.Lxapic
+
+	/* In x2APIC mode*/
+	movl	$(APIC_ICR), %ecx
+	rdmsr
+	orl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), %eax
+	wrmsr
+
+	jmp	.Lskinit
+.Lxapic:
+	/* In xAPIC mode*/
+	andl	~$(APIC_VECTOR_MASK), %eax
+	addl	$(APIC_ICR), %eax
+	movl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), (%eax)
+
+.Lskinit:
 	movl	%edi, %eax
 	skinit
-
 
 .Ldie:
 	ud2
@@ -99,3 +122,5 @@ SYM_DATA_START_LOCAL(dl_gdt)
 	.quad	0x00cf9a000000ffff	/* __SL32_CS */
 	.quad	0x00cf92000000ffff	/* __SL32_DS */
 SYM_DATA_END_LABEL(dl_gdt, SYM_L_LOCAL, dl_gdt_end)
+
+SYM_DATA(dl_apic_base, .long 0x00000000)
