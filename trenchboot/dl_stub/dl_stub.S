@@ -21,6 +21,8 @@
 #define XAPIC_ENABLE	(1 << 11)
 #define X2APIC_ENABLE	(1 << 10)
 
+#define rva(X) ((X) - dl_stub_entry)
+
 	.code64
 SYM_FUNC_START(dl_stub_entry)
 	/*
@@ -29,6 +31,17 @@ SYM_FUNC_START(dl_stub_entry)
 	 * - %rsi has the DCE physical address
 	 * - %rdx has the DCE size
 	 */
+
+	/* While still in long mode, have a stack to find ourselves with */
+	call	1f
+1:	popq	%rbx
+	subq	$rva(1b), %rbx
+
+
+	/* Load GDT for protected mode, still using existing long mode GDT */
+	leal	rva(dl_gdt_desc)(%ebx), %eax
+	addl	%eax, 2(%eax)
+	lgdt	(%eax)
 
 	/* Return to protected mode, paging off */
 	leal	1f(%rip), %ecx
@@ -60,11 +73,24 @@ SYM_FUNC_START(dl_stub_entry)
 	andb	$~(EFER_LME >> 8), %ah
 	wrmsr
 
-	/* Now in protected mode, make things look like TXT post launch */
-	movl	%cr4, %eax
-	andl	$~CR4_PAE, %eax
-	movl	%eax, %cr4
-	/* TODO more CPU setup? */
+	/* Now in protected mode, prepare pre-launch CPU */
+	movl	%cr0, %eax
+	/* Disable cache */
+	andl	$~CR0_CD, %eax
+	andl	$~CR0_NW, %eax
+	/* Native FPU error reporting must be enabled */
+	orl	CR0_NE, %eax
+	movl	%eax, %cr0
+
+	/* Disable virtual-8086 mode just in case */
+	leal	rva(dl_stack_end)(%ebx), %esp
+	pushfl
+	popl	%eax
+	andl	~$(X86_EFLAGS_VM), %eax
+	pushl	%eax
+	popfl
+
+	/* MCE setup was done in the bootloader preamble code */
 
 	/* The DL Event */
 	testl	$(DRTM_INTEL_TXT), %edi
@@ -124,3 +150,9 @@ SYM_DATA_START_LOCAL(dl_gdt)
 SYM_DATA_END_LABEL(dl_gdt, SYM_L_LOCAL, dl_gdt_end)
 
 SYM_DATA(dl_apic_base, .long 0x00000000)
+
+	.balign 4
+SYM_DATA_START_LOCAL(dl_scratch_stack)
+	.fill 4, 1, 0
+SYM_DATA_END_LABEL(dl_scratch_stack, SYM_L_LOCAL, dl_stack_end)
+
