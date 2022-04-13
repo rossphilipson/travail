@@ -26,10 +26,9 @@
 #define MTRR_DEF_ENABLE_FIXED	(1<<10)
 #define MTRR_DEF_ENABLE_ALL	(1<<11)
 
-static common_prepare_cpu(void)
-{
-	/* TODO prepare_cpu steps here */
-}
+extern void __noreturn dl_stub_entry(u64 architecture,
+				     u64 dce_phys_addr,
+				     u64 dce_size);
 
 static void txt_setup_mtrrs(struct efi_drtm_info *drtm_info)
 {
@@ -75,9 +74,6 @@ static void txt_setup_mtrrs(struct efi_drtm_info *drtm_info)
 
 void dynamic_launch_event(struct efi_drtm_info *drtm_info)
 {
-	/* Common steps to put the BSP in the right state for DL event */
-	common_prepare_cpu();
-
 	if (drtm_info->architecture == SL_INTEL_TXT) {
 		/*
 		 * Set ACM memory to WB and all other to UC. Note all
@@ -85,5 +81,8 @@ void dynamic_launch_event(struct efi_drtm_info *drtm_info)
 		 * after SENTER
 		 */
 		txt_setup_mtrrs(drtm_info);
+	} else if (drtm_info->architecture == SL_INTEL_SKINIT) {
+	} else {
+		/* TODO die horribly */
 	}
 }

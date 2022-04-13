@@ -114,7 +114,7 @@ SYM_FUNC_START(dl_stub_entry)
 	testl	$X2APIC_ENABLE, %eax
 	jz	.Lxapic
 
-	/* In x2APIC mode*/
+	/* In x2APIC mode */
 	movl	$(APIC_ICR), %ecx
 	rdmsr
 	orl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), %eax
@@ -122,7 +122,7 @@ SYM_FUNC_START(dl_stub_entry)
 
 	jmp	.Lskinit
 .Lxapic:
-	/* In xAPIC mode*/
+	/* In xAPIC mode */
 	andl	~$(APIC_VECTOR_MASK), %eax
 	addl	$(APIC_ICR), %eax
 	movl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), (%eax)
@@ -149,10 +149,10 @@ SYM_DATA_START_LOCAL(dl_gdt)
 	.quad	0x00cf92000000ffff	/* __SL32_DS */
 SYM_DATA_END_LABEL(dl_gdt, SYM_L_LOCAL, dl_gdt_end)
 
-SYM_DATA(dl_apic_base, .long 0x00000000)
-
 	.balign 4
-SYM_DATA_START_LOCAL(dl_scratch_stack)
+SYM_DATA_START_LOCAL(dl_stack)
 	.fill 4, 1, 0
 SYM_DATA_END_LABEL(dl_scratch_stack, SYM_L_LOCAL, dl_stack_end)
+
+SYM_DATA(dl_apic_base, .long 0x00000000)
 
