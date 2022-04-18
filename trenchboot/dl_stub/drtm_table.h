@@ -47,12 +47,11 @@ struct drtm_entry_architecture {
 /*
  * DRTM Dynamic Configuration Environment
  */
-#define DRTM_DCE_AMD_SLB	1
-#define DRTM_DCE_TXT_ACM	2
+#define DRTM_DCE_TXT_ACM	1
+#define DRTM_DCE_AMD_SLB	2
 
 struct drtm_entry_dce_info {
 	struct drtm_entry_hdr hdr;
-	u16 type;
 	u64 dce_base;
 	u32 dce_size;
 } __packed;
@@ -65,7 +64,6 @@ struct drtm_entry_dce_info {
 
 struct drtm_entry_entrypoint {
 	struct drtm_entry_hdr hdr;
-	u16 type;
 	u64 phys_base;
 } __packed;
 
@@ -89,12 +87,13 @@ static inline void *drtm_end_of_entrys(struct drtm_entry_hdr *head)
 	return (((void *)head) + hdr->size);
 }
 
-static inline void *drtm_next_entry(struct drtm_entry_hdr *head,
-				    struct drtm_entry_hdr *curr)
+static inline struct drtm_entry_hdr *
+drtm_next_entry(struct drtm_entry_hdr *head,
+		struct drtm_entry_hdr *curr)
 {
 	void *next = curr + curr->len;
 
-	if ((void *)next >= drtm_end_of_entrys(head))
+	if (next >= drtm_end_of_entrys(head))
 		return NULL;
 	if (next->type == DRTM_ENTRY_END)
 		return NULL;

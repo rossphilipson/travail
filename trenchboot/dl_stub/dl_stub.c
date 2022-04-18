@@ -29,10 +29,20 @@
 extern void __noreturn dl_stub_entry(u64 architecture,
 				     u64 dce_phys_addr,
 				     u64 dce_size);
-
-static void txt_setup_mtrrs(struct efi_drtm_info *drtm_info)
+static void dl_txt_setup_mtrrs(void *drtm_table)
 {
 	unsigned long cr0, cr4, mrslo, msrhi;
+	struct drtm_entry_dce_info *dce_info;
+
+	dce_info = (struct drtm_entry_dce_info *)
+			drtm_next_of_type_subtype(drtm_table, NULL,
+						  DRTM_ENTRY_DCE_INFO,
+						  DRTM_DCE_TXT_ACM);
+	if (!dce_info)
+		sl_txt_reset(DL_ERROR_NO_DRTM_TABLE);
+
+	if (!dce_info->dce_base || dce_info->size)
+		sl_txt_reset(DL_ERROR_DCE_VALUES);
 
 	/* Disable interrupts and caching */
 	native_irq_disable();
@@ -72,7 +82,7 @@ static void txt_setup_mtrrs(struct efi_drtm_info *drtm_info)
 	native_irq_enable();
 }
 
-void dynamic_launch_event(struct efi_drtm_info *drtm_info)
+void dynamic_launch_event(void *drtm_table)
 {
 	if (drtm_info->architecture == SL_INTEL_TXT) {
 		/*
@@ -80,8 +90,12 @@ void dynamic_launch_event(struct efi_drtm_info *drtm_info)
 		 * MTRRs have been saved in the TXT heap for restoration
 		 * after SENTER
 		 */
-		txt_setup_mtrrs(drtm_info);
-	} else if (drtm_info->architecture == SL_INTEL_SKINIT) {
+		dl_txt_setup_mtrrs(drtm_table);
+
+		/* TODO can we do exit_boot() after messing with MTRRs so we
+		 * can use efi_err() etc? */
+	} else if (drtm_info->architecture == SL_AMD_SKINIT) {
+		/* TODO rewrite this if block if there is nothing to do for SKINIT */
 	} else {
 		/* TODO die horribly */
 	}
