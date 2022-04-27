@@ -29,10 +29,11 @@
 extern void __noreturn dl_stub_entry(u64 architecture,
 				     u64 dce_phys_addr,
 				     u64 dce_size);
+
 static void dl_txt_setup_mtrrs(void *drtm_table)
 {
-	unsigned long cr0, cr4, mrslo, msrhi;
 	struct drtm_entry_dce_info *dce_info;
+	unsigned long cr0, cr4, msr;
 
 	dce_info = (struct drtm_entry_dce_info *)
 			drtm_next_of_type_subtype(drtm_table, NULL,
@@ -57,22 +58,22 @@ static void dl_txt_setup_mtrrs(void *drtm_table)
 	__write_cr4(cr4 & ~X86_CR4_PGE);
 
 	/* Disable all MTRRs */
-	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
-	wrmsr(MSR_MTRRdefType, (msrlo & ~MTRR_DEF_ENABLE_ALL), msrhi);
+	msr = sl_rdmsr(MSR_MTRRdefType);
+	sl_wrmsr(MSR_MTRRdefType, msr & ~MTRR_DEF_ENABLE_ALL);
 
 	/* Setup ACM MTRRs as WB, rest of the world is UC, fixed MTRRs off */
-	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
-	msrlo &= ~MTRR_DEF_ENABLE_FIXED;
-	msrlo |= (MTRR_TYPE_UNCACHABLE & 0xff);
-	wrmsr(MSR_MTRRdefType, msrlo, msrhi);
+	msr = sl_rdmsr(MSR_MTRRdefType);
+	msr &= ~MTRR_DEF_ENABLE_FIXED;
+	msr |= (MTRR_TYPE_UNCACHABLE & 0xff);
+	sl_wrmsr(MSR_MTRRdefType, msr);
 
 	/* TODO the rest */
 
 	/* Flush all caches again and enable all MTRRs */
 	wbinvd();
 
-	rdmsr(MSR_MTRRdefType, msrlo, msrhi);
-	wrmsr(MSR_MTRRdefType, (msrlo | MTRR_DEF_ENABLE_ALL), msrhi);
+	mrs = sl_rdmsr(MSR_MTRRdefType);
+	sl_wrmsr(MSR_MTRRdefType, msr | MTRR_DEF_ENABLE_ALL);
 
 	/* Flush all caches again and restore control registers */
 	__write_cr0(cr0);

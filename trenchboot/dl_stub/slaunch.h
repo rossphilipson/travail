@@ -34,6 +34,20 @@
 #define DL_ERROR_NO_DRTM_TABLE		0xc0008101
 #define DL_ERROR_INVALID_DCE_VALUES	0xc0008102
 
+static inline u64 sl_rdmsr(u32 reg)
+{
+	u64 lo, hi;
+
+	asm volatile ("rdmsr" : "=a" (lo), "=d" (hi) : "c" (reg));
+
+	return (hi << 32) | lo;
+}
+
+static inline void sl_wrmsr(u32 reg, u32 lo, u32 hi)
+{
+	asm volatile("wrmsr" : : "c" (reg), "a" (lo), "d" (hi) : "memory");
+}
+
 static inline u64 sl_txt_read(u32 reg)
 {
 	return readq((void *)(u64)(TXT_PRIV_CONFIG_REGS_BASE + reg));
