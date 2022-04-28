@@ -98,7 +98,7 @@ SYM_FUNC_START(dl_stub_entry)
 
 	/* Intel/TXT GETSEC[SENTER] */
 	movl	$(SMX_X86_GETSEC_SENTER), %eax
-	movl	%edi, %ebx
+	movl	%esi, %ebx
 	movl	%edx, %ecx
 	xorl	%edx, %edx
 	.byte 	0x0f, 0x37	/* GETSEC opcode */
@@ -128,7 +128,7 @@ SYM_FUNC_START(dl_stub_entry)
 	movl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), (%ecx)
 
 .Lskinit:
-	movl	%edi, %eax
+	movl	%esi, %eax
 	skinit
 
 .Ldie:
