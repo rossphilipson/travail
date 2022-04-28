@@ -123,9 +123,9 @@ SYM_FUNC_START(dl_stub_entry)
 	jmp	.Lskinit
 .Lxapic:
 	/* In xAPIC mode */
-	andl	~$(APIC_VECTOR_MASK), %eax
-	addl	$(APIC_ICR), %eax
-	movl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), (%eax)
+	andl	~$(APIC_VECTOR_MASK), %ecx
+	addl	$(APIC_ICR), %ecx
+	movl	$(APIC_DM_INIT | APIC_DEST_ALLBUT), (%ecx)
 
 .Lskinit:
 	movl	%edi, %eax
