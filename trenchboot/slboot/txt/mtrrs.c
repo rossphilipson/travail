@@ -206,7 +206,7 @@ bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type)
     num_pages = PAGE_UP(size) >> PAGE_SHIFT;
     ndx = 0;
 
-    printk(TBOOT_DETA"setting MTRRs for acmod: base=%p, size=%x, num_pages=%d\n",
+    printk(TBOOT_INFO"(MTRR) Setting MTRRs for acmod: base = %p, size = %x, num_pages = %d\n",
            base, size, num_pages);
     /*
      * Each VAR MTRR base must be a multiple if that MTRR's Size
@@ -217,12 +217,21 @@ bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type)
     // mtrr size in pages
     int mtrr_s = 1;
     while ((base_v & 0x01) == 0) {
+          printk(TBOOT_INFO"(MTRR) base_v = 0x%lx i = %d\n", base_v, i);
           i++;
           base_v = base_v >>1 ;
 
     }
-    for (int j=i-12; j>0; j--) mtrr_s =mtrr_s*2; //mtrr_s = mtrr_s << 1
-        printk(TBOOT_DETA"The maximum allowed MTRR range size=%d Pages \n", mtrr_s);
+
+    printk(TBOOT_INFO"(MTRR) final i = %d\n", i);
+    printk(TBOOT_INFO"(MTRR) init mtrr_s = 1\n");
+
+    for (int j=i-12; j>0; j--) {
+        mtrr_s =mtrr_s*2; //mtrr_s = mtrr_s << 1
+        printk(TBOOT_INFO"(MTRR) mtrr_s = %d j = %d\n", mtrr_s, j);
+    }
+
+    printk(TBOOT_INFO"(MTRR) The maximum allowed MTRR range size=%d pages\n", mtrr_s);
 
     while (num_pages >= mtrr_s){
 
@@ -237,6 +246,9 @@ bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type)
         mtrr_physmask.mask = ~(mtrr_s - 1) & SINIT_MTRR_MASK;
         mtrr_physmask.v = 1;
         wrmsr(MTRR_PHYS_MASK0_MSR + ndx*2, mtrr_physmask.raw);
+
+        printk(TBOOT_INFO"(MTRR) Loop1 - base = 0x%lx mask = 0x%lx num_pages = %d\n",
+               (unsigned long)mtrr_physbase.base, (unsigned long)mtrr_physmask.mask, num_pages);
 
         base += (mtrr_s * PAGE_SIZE);
         num_pages -= mtrr_s;
@@ -268,6 +280,9 @@ bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type)
         mtrr_physmask.v = 1;
         wrmsr(MTRR_PHYS_MASK0_MSR + ndx*2, mtrr_physmask.raw);
 
+        printk(TBOOT_INFO"(MTRR) Loop2 - base = 0x%lx mask = 0x%lx num_pages = %d pages_in_range = %d\n",
+               (unsigned long)mtrr_physbase.base, (unsigned long)mtrr_physmask.mask, num_pages, (int)pages_in_range);
+
         /*prepare for the next loop depending on number of pages
          * We figure out from the above how many pages could be used in this
          * mtrr. Then we decrement the count, increment the base,
@@ -278,10 +293,11 @@ bool set_mem_type(const void *base, uint32_t size, uint32_t mem_type)
         num_pages -= pages_in_range;
         ndx++;
         if ( ndx == mtrr_cap.vcnt ) {
-            printk(TBOOT_ERR"exceeded number of var MTRRs when mapping range\n");
+            printk(TBOOT_ERR"(MTRR) exceeded number of var MTRRs when mapping range\n");
             return false;
         }
     }
+    printk(TBOOT_INFO"(MTRR) setup done.\n");
     return true;
 }
 
