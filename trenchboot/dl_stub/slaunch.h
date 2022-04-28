@@ -33,6 +33,8 @@
 
 #define DL_ERROR_NO_DRTM_TABLE		0xc0008101
 #define DL_ERROR_INVALID_DCE_VALUES	0xc0008102
+#define DL_ERROR_NUM_MTRRS_EXCEEDED	0xc0008103
+#define DL_ERROR_INVALID_MTRR_MASK	0xc0008104
 
 static inline u64 sl_rdmsr(u32 reg)
 {
@@ -43,8 +45,11 @@ static inline u64 sl_rdmsr(u32 reg)
 	return (hi << 32) | lo;
 }
 
-static inline void sl_wrmsr(u32 reg, u32 lo, u32 hi)
+static inline void sl_wrmsr(u32 reg, u64 val)
 {
+	u32 lo = val & 0xffffffff;
+	u32 hi = (val >> 32) & 0xffffffff;
+
 	asm volatile("wrmsr" : : "c" (reg), "a" (lo), "d" (hi) : "memory");
 }
 

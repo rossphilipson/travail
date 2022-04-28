@@ -19,16 +19,122 @@
 #include <asm/special_insns.h>
 #include <asm/asm-offsets.h>
 #include <asm/bootparam.h>
+#include <asm/mtrr.h>
+#include <asm/bitops.h>
 #include <asm/efi.h>
 #include <asm/bootparam_utils.h>
 #include <linux/slaunch.h>
 
+#define SL_ACM_MTRR_MASK	0xffffff  /* ACM requires 36b mask */
+
 #define MTRR_DEF_ENABLE_FIXED	(1<<10)
 #define MTRR_DEF_ENABLE_ALL	(1<<11)
+
+#define MTRR_CAP_VCNT_MASK	0xff
+
+#define MTRR_PHYS_MASK_VALID	(1<<11)
+
+#define MTRR_MEMTYPE_MASK	0xff
+#define MTRR_PHYSBASE_SHIFT	12
+#define MTRRphysBaseVal(b)	(((b >> PAGE_SHIFT) & SL_ACM_MTRR_MASK) \
+				<< MTRR_PHYSBASE_SHIFT)
+#define MTRR_VALID_BIT		(1<<11)
+#define MTRR_PHYSMASK_SHIFT	12
+#define MTRRphysMaskVal(r)	((~(r - 1) & SL_ACM_MTRR_MASK) \
+				<< MTRR_PHYSMASK_SHIFT)
 
 extern void __noreturn dl_stub_entry(u64 architecture,
 				     u64 dce_phys_addr,
 				     u64 dce_size);
+
+static void dl_txt_setup_acm_mtrrs(u64 base, u32 size)
+{
+	/* Types might be different in Linux */
+	u64 msr, mtrr_max_range, mtrr_next_range;
+	u32 base_bsf, vcnt, npages, i, j;
+
+	msr = sl_rdmsr(MSR_MTRRcap);
+	vcnt = (msr & MTRR_CAP_VCNT_MASK);
+	for (i = 0; i < vcnt; i++) {
+		msr = rdmsr(MTRRphysMask_MSR(i));
+		msr &= ~(MTRR_PHYS_MASK_VALID);
+		sl_wrmsr(MTRRphysMask_MSR(i), msr);
+	}
+
+	/*
+	 * There are very specific rules about calculating the MTRR mask.
+	 * If the size of the range is a power of 2 and the base of the range
+	 * is on a size of range boundary, a single MTRR can be used. In all
+	 * other cases multiple MTRRs must be used. Depending on the base and
+	 * size, this could end up being successively smaller MTRR range sizes
+	 * but they all have to be multiples of one another.
+	 */
+
+	/* Bit shift forward the base to determine the max MTRR range to use */
+	base_bsf = (u32)base;
+	mtrr_max_range = 1;
+	i = 0;
+
+	while ((base_bsf & 0x01) == 0) {
+		i++;
+		base_bsf = base_bsf >> 1;
+	}
+
+	for (j = i - 12; j > 0; j--)
+		mtrr_max_range = mtrr_max_range << 1;
+
+	npages = ((size + PAGE_SIZE - 1) & PAGE_MASK) >> PAGE_SHIFT;
+
+	/* First loop, set up MTRR ranges using the max range */
+ 	while (npages >= mtrr_max_range) {
+		msr = sl_rdmsr(MTRRphysBase_MSR(i));
+		msr |= MTRRphysBaseVal(base);
+		msr |= (MTRR_TYPE_WRBACK & MTRR_MEMTYPE_MASK);
+		sl_wrmsr(MTRRphysBase_MSR(i), msr);
+
+		msr = sl_rdmsr(MTRRphysMask_MSR(i));
+		msr |= MTRRphysMaskVal(mtrr_max_range);
+		msr |= MTRR_VALID_BIT;
+		sl_wrmsr(MTRRphysMask_MSR(i), msr);
+
+		i++;
+		npages -= mtrr_max_range;
+		base += (mtrr_max_range * PAGE_SIZE);
+
+		if (i == vcnt)
+			sl_txt_reset(DL_ERROR_NUM_MTRRS_EXCEEDED);
+	}
+
+	/* Second loop, setup successively smaller ranges to cover the rest */
+	while (npages > 0) {
+		/*
+		 * Calculate next range using find first set bit. This will start
+		 * yielding smaller ranges, all multibles of 2, until the rest of
+		 * the ACM range is all covered.
+		 */
+		if (!mtrr_next_range)
+			sl_txt_reset(DL_ERROR_INVALID_MTRR_MASK);
+
+		mtrr_next_range = 1 << (__fls(npages) - 1);
+
+		msr = sl_rdmsr(MTRRphysBase_MSR(i));
+		msr |= MTRRphysBaseVal(base);
+		msr |= (MTRR_TYPE_WRBACK & MTRR_MEMTYPE_MASK);
+		sl_wrmsr(MTRRphysBase_MSR(i), msr);
+
+		msr = sl_rdmsr(MTRRphysMask_MSR(i));
+		msr |= MTRRphysMaskVal(mtrr_next_range);
+		msr |= MTRR_VALID_BIT;
+		sl_wrmsr(MTRRphysMask_MSR(i), msr);
+
+		i++;
+		npages -= mtrr_next_range;
+		base += (mtrr_next_range * PAGE_SIZE);
+
+		if (i == vcnt)
+			sl_txt_reset(DL_ERROR_NUM_MTRRS_EXCEEDED);
+	}
+}
 
 static void dl_txt_setup_mtrrs(void *drtm_table)
 {
@@ -67,7 +173,8 @@ static void dl_txt_setup_mtrrs(void *drtm_table)
 	msr |= (MTRR_TYPE_UNCACHABLE & 0xff);
 	sl_wrmsr(MSR_MTRRdefType, msr);
 
-	/* TODO the rest */
+	/* Map the ACM */
+	dl_txt_setup_acm_mtrrs(dce_info->dce_base, dce_info->dce_size);
 
 	/* Flush all caches again and enable all MTRRs */
 	wbinvd();
