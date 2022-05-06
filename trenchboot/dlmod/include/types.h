@@ -22,25 +22,6 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#if __STDC_HOSTED__
-/*
- * If we are hosted (i.e. compiling the unit tests), use stdint.h to be
- * compatible with the rest of the environment.
- */
-#include <stdint.h>
-
-typedef  uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef   int8_t  s8;
-typedef  int16_t s16;
-typedef  int32_t s32;
-typedef  int64_t s64;
-
-#include <string.h>	/* memcpy, memset */
-
-#else
 /*
  * If we are freestanding (i.e. building skl.bin itself), there is no
  * environment for us to rely on.
@@ -81,5 +62,4 @@ void *memcpy(void *dst, const void *src, size_t n);
 size_t strlen(const char *s);
 #define strlen(s)       __builtin_strlen(s)
 
-#endif /* __STDC_HOSTED__ */
 #endif /* __TYPES_H__ */

@@ -2,22 +2,8 @@
 CFLAGS  :=
 LDFLAGS :=
 
-#ifeq ($(DEBUG),y)
-CFLAGS  += -DDEBUG
-#endif
-
-ifeq ($(LTO),y)
-CFLAGS  += -flto
-LDFLAGS += -flto
-endif
-
-#ifeq ($(32),y)
-#CFLAGS  += -m32 -mregparm=3 -fno-plt -freg-struct-return
-#LDFLAGS += -m32
-#else
 CFLAGS  += -m64
 LDFLAGS += -m64
-#endif
 
 # There is a 64k total limit, so optimise for size.  The binary may be loaded
 # at an arbitray location, so build it as position independent, but link as
@@ -41,7 +27,7 @@ SRC := $(filter-out test-%,$(ALL_SRC))
 OBJ := $(ASM:.S=.o) $(SRC:.c=.o)
 
 .PHONY: all
-all: skl.bin
+all: dlmod.bin
 
 -include Makefile.local
 
@@ -50,10 +36,10 @@ all: skl.bin
 # As a sanity check, look for the SKL UUID at its expected offset in the binary
 # image.  One reason this might fail is if the linker decides to put an
 # unreferenced section ahead of .text, in which case link.lds needs adjusting.
-skl.bin: skl Makefile
+dlmod.bin: dlmod Makefile
 	objcopy -O binary -S $< $@
 
-skl: link.lds $(OBJ) Makefile
+dlmod: link.lds $(OBJ) Makefile
 	$(CC) -Wl,-T,link.lds $(LDFLAGS) $(OBJ) -o $@
 
 %.o: %.c Makefile
@@ -88,7 +74,7 @@ cscope:
 
 .PHONY: clean
 clean:
-	rm -f skl.bin skl $(TESTS) *.d *.o *.gcov *.gcda *.gcno cscope.*
+	rm -f dlmod.bin dlmod $(TESTS) *.d *.o *.gcov *.gcda *.gcno cscope.*
 
 # Compiler-generated header dependencies.  Should be last.
 -include $(OBJ:.o=.d) $(TESTS:=.d)
