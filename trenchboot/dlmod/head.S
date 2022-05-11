@@ -34,27 +34,22 @@ GLOBAL(sl_header)
 	.word	dlmod_info
 ENDDATA(sl_header)
 
-GLOBAL(skl_stack_canary)
+GLOBAL(dlmod_stack_canary)
 	.long STACK_CANARY
-ENDDATA(skl_stack_canary)
-skl_stack:
+ENDDATA(dlmod_stack_canary)
+dlmod_stack:
 	.fill 0x280, 1, 0xcc   /* Enough space for now */
 	.align 0x10, 0         /* Ensure proper alignment for 64bit */
 .L_stack_base:
-ENDDATA(skl_stack)
+ENDDATA(dlmod_stack)
 
 	.text
 	.code32
 
 GLOBAL(_entry)
 	/*
-	 * Per the spec:
-	 * %eax	   - Beginning of SKL containing the SL header
-	 * %edx	   - Family/Model/Stepping
-	 * %esp	   - %eax + 64k (End of SLB)
-	 * %cs	   - 32bit Flat, selector 0x08
-	 * %ss	   - 32bit Flat, selector 0x10
-	 * %ds/etc - 16bit Real Mode segments.	Unusable.
+	 * %eax	- Beginning of DLMOD containing the SL header
+	 * %edi - DL stub entry point to jump to
 	 *
 	 * Restore the world, get back into long mode.
 	 *
@@ -84,7 +79,6 @@ GLOBAL(_entry)
 
 	/* Relocate GDT.base, 64bit ljmp offset, and pagetables. */
 	add	%ebp, 2 + gdtr(%ebp)
-#ifdef __x86_64__
 	add	%ebp, 1 + .Ljump64(%ebp)
 	add	%ebp,        l4_identmap(%ebp) /* L4[0] => L3        */
 	add	%ebp,        l3_identmap(%ebp) /* L3[0] => First  L2 */
@@ -92,7 +86,6 @@ GLOBAL(_entry)
 	add	%ebp, 0x10 + l3_identmap(%ebp) /* L3[2] => Third  L2 */
 	add	%ebp, 0x18 + l3_identmap(%ebp) /* L3[3] => Fourth L2 */
 	add	%ebp,        l2_identmap(%ebp) /* L2[0] => L1        */
-#endif
 
 	/* Load GDT */
 	lgdt	gdtr(%ebp)
@@ -102,7 +95,6 @@ GLOBAL(_entry)
 	mov	%eax, %ds
 	mov	%eax, %es
 
-#ifdef __x86_64__
 	/* Restore CR4, PAE must be enabled before IA-32e mode */
 	mov	%cr4, %ecx
 	or	$CR4_PAE, %ecx
@@ -129,66 +121,12 @@ GLOBAL(_entry)
 	.code64
 
 1:
-#endif	/* 64bit setup. */
-
+	/* DL entry point already in %rdi */
 	call	dlmod_main
 
-	/*
-	 * skl_main() is magic.  It returns two pointers by register:
-	 *
-	 * %eax - protected mode kernel entry
-	 * %edx - ZP base
-	 *
-	 * We stash the entry point in %ebx and the Zero Page pointer in %esi.
-	 * This both protects them from clobbering during teardown, and
-	 * matches the ABI for entering Linux.
-	 */
-	mov	%eax, %ebx
-	mov	%edx, %esi
+	/* Jump to the DL entry point */
+	jmp	*%rdi
 
-#ifdef __x86_64__
-
-	/* Setup target to ret to compat mode */
-	lea	1f(%rip), %ecx
-	push	$CS_SEL32
-	push	%rcx
-	lretq
-
-	.code32
-1:	/* Now in IA-32e compatibility mode, next stop is protected mode */
-
-	/* Turn paging off - we are identity mapped so we will survive */
-	mov	%cr0, %eax
-	and	$~(CR0_PG | CR0_NE | CR0_TS | CR0_MP), %eax
-	mov	%eax, %cr0
-
-	/* Disable IA-32e mode */
-	mov	$IA32_EFER, %ecx
-	rdmsr
-	and	$~(EFER_LME >> 8), %ah
-	wrmsr
-
-	/* Now in protected mode, make things look like TXT post launch */
-	mov	%cr4, %eax
-	and	$~CR4_PAE, %eax
-	mov	%eax, %cr4
-#endif /* 64bit teardown. */
-
-	push	$0
-	popf
-
-	//cmpl	$MULTIBOOT2, boot_protocol(%ebp)
-	//je	multiboot2_kernel
-
-	/* Jump to entry target - EBX: startup_32, ESI: ZP base, EDX: SKL base */
-	mov	%ebp, %edx
-	jmp	*%ebx
-
-multiboot2_kernel:
-	/* Jump to entry target - EBX: MBI pointer, EAX: Multiboot2 magic number */
-	xchg	%esi, %ebx
-	//mov	$MULTIBOOT2_BOOTLOADER_MAGIC, %eax
-	jmp *%esi
 ENDFUNC(_entry)
 
 	.data
