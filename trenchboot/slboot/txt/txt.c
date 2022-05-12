@@ -601,8 +601,10 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
         return TB_ERR_TXT_NOT_SUPPORTED;
 
     /* set MTRRs properly for AC module (SINIT) */
-    if ( !set_mtrrs_for_acmod(g_sinit) )
-        return TB_ERR_FATAL;
+    if ( !get_dl_launch() ) {
+        if ( !set_mtrrs_for_acmod(g_sinit) )
+            return TB_ERR_FATAL;
+    }
 
     /* deactivate current locality */
     /* TODO why is it not done for 1.2 w/ release_locality() ? */

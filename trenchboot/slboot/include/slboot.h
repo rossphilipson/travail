@@ -108,16 +108,6 @@ typedef struct {
     char       buf[];
 } tboot_log_t;
 
-#define DLMOD_MAGIC 0xffaa7711
-
-typedef struct {
-    uint16_t entry;
-    uint16_t bootloader_data;
-    uint16_t dlmod_info;
-    uint32_t magic;
-} dlmod_hdr_t;
-extern dlmod_hdr_t *g_dlmod;
-
 /* {C0192526-6B30-4db4-844C-A3E953B88174} */
 #define TBOOT_LOG_UUID   {0xc0192526, 0x6b30, 0x4db4, 0x844c, \
                              {0xa3, 0xe9, 0x53, 0xb8, 0x81, 0x74 }}
@@ -130,6 +120,9 @@ extern dlmod_hdr_t *g_dlmod;
 #define SL_FLAG_ARCH_TXT       0x00000004
 
 extern bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size);
+extern void dl_build_table(void);
+extern void dl_launch(void);
+
 extern void error_action(tb_error_t error);
 extern void shutdown_system(uint32_t shutdown_type);
 

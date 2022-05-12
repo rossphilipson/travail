@@ -39,8 +39,28 @@
 #include <stdbool.h>
 #include <printk.h>
 #include <string.h>
+#include <cmdline.h>
+#include <multiboot.h>
+#include <loader.h>
+#include <e820.h>
+#include <linux_defns.h>
 #include <slboot.h>
 #endif    /* IS_INCLUDED */
+
+#define DLMOD_MAGIC 0xffaa7711
+
+typedef struct {
+    uint16_t entry;
+    uint16_t bootloader_data;
+    uint16_t dlmod_info;
+    uint32_t magic;
+} dlmod_hdr_t;
+
+extern il_kernel_setup_t g_il_kernel_setup;
+
+static uint32_t g_slaunch_header;
+
+static dlmod_hdr_t *g_dlmod = NULL;
 
 bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
 {
@@ -52,6 +72,34 @@ bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
     if (dlmod_hdr->magic != DLMOD_MAGIC)
         return false;
 
+    g_dlmod = dlmod_hdr;
+
     return true;
 }
 
+void dl_build_table(void)
+{
+}
+
+void dl_launch(void)
+{
+    struct kernel_info *ki;
+    uint32_t *dl_ptr;
+    uint32_t dl_entry;
+
+    ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
+            g_il_kernel_setup.boot_params->hdr.slaunch_header);
+    g_slaunch_header = ki->mle_header_offset;
+
+    dl_ptr = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
+    if (*(dl_ptr + 13) != 0) {
+        printk("DL Entry Point: 0x%x\n", *(dl_ptr + 13));
+        dl_entry = *(dl_ptr + 9);
+    }
+    else {
+        printk("No DL Entry Point, die!!\n");
+        shutdown_system(get_error_shutdown());
+    }
+
+    dl_entry = dl_entry;
+}
