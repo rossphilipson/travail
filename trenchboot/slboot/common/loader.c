@@ -582,6 +582,32 @@ remove_txt_modules(loader_ctx *lctx)
     return true;
 }
 
+bool
+remove_dlmod_modules(loader_ctx *lctx)
+{
+    if ( 0 == get_module_count(lctx)) {
+        printk(TBOOT_ERR"Error: no module.\n");
+        return false;
+    }
+
+    /* start at end of list so that we can remove w/in the loop */
+    for ( unsigned int i = get_module_count(lctx) - 1; i > 0; i-- ) {
+        module_t *m = get_module(lctx, i);
+        void *base = (void *)m->mod_start;
+
+        if ( is_dlmod(base, m->mod_end - (unsigned long)base) ) {
+            printk(TBOOT_INFO"got dlmod match on module #%d\n", i);
+            if ( remove_module(lctx, base) == NULL ) {
+                printk(TBOOT_ERR
+                       "failed to remove DLMOD module from module list\n");
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 static unsigned long max(unsigned long a, unsigned long b)
 {
     return (a > b) ? a : b;
@@ -686,6 +712,9 @@ bool prepare_intermediate_loader(void)
 
     /* remove all SINIT and LCP modules since kernel may not handle */
     remove_txt_modules(g_ldr_ctx);
+
+    /* remove all DLMOD modules since kernel may not handle */
+    remove_dlmod_modules(g_ldr_ctx);
 
     printk(TBOOT_INFO"Assuming Intermediate Loader kernel is Linux format\n");
 

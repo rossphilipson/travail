@@ -22,7 +22,7 @@ obj-y += common/strcmp.o common/strlen.o common/strncmp.o common/strncpy.o
 obj-y += common/strtoul.o common/tb_error.o common/slboot.o common/tpm.o
 obj-y += common/vga.o common/vsprintf.o
 obj-y += txt/acmod.o txt/errors.o txt/heap.o txt/mtrrs.o txt/txt.o txt/verify.o
-obj-y += common/tpm_12.o common/tpm_20.o common/sha256.o
+obj-y += common/tpm_12.o common/tpm_20.o common/sha256.o common/dlmod.o
 
 OBJS := $(obj-y)
 

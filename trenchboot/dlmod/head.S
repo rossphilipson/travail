@@ -32,6 +32,7 @@ GLOBAL(sl_header)
 	.word	_entry           /* SL header SKL offset to code start */
 	.word	bootloader_data  /* SL header SKL measured length */
 	.word	dlmod_info
+	.long	0xffaa7711
 ENDDATA(sl_header)
 
 GLOBAL(dlmod_stack_canary)

@@ -86,6 +86,7 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "force_tpm2_legacy_log", "false"}, /* true|false */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
     { "kernel_info", "false"},     /*  */
+    { "dl_launch", "false"},     /*  */
     { NULL, NULL }
 };
 static char g_tboot_param_values[ARRAY_SIZE(g_tboot_cmdline_options)][MAX_VALUE_LEN];
@@ -544,6 +545,17 @@ bool get_kernel_info(void)
 			   g_tboot_param_values,
 			   "kernel_info");
     if ( kernel_info != NULL && tb_strcmp(kernel_info, "true") == 0 )
+	    return true;
+    return false;
+}
+
+bool get_dl_launch(void)
+{
+    const char *dl_launch =
+	    get_option_val(g_tboot_cmdline_options,
+			   g_tboot_param_values,
+			   "dl_launch");
+    if ( dl_launch != NULL && tb_strcmp(dl_launch, "true") == 0 )
 	    return true;
     return false;
 }

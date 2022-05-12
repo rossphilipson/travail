@@ -1,7 +1,7 @@
 /*
- * cmdline.h: support functions for command line parsing
+ * dlmod.c: test stuff for DL entry
  *
- * Copyright (c) 2006-2010, Intel Corporation
+ * Copyright (c) 2003-2011, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,47 +33,25 @@
  *
  */
 
-#ifndef __CMDLINE_H__
-#define __CMDLINE_H__
+#ifndef IS_INCLUDED     /*  defined in utils/acminfo.c  */
+#include <config.h>
+#include <types.h>
+#include <stdbool.h>
+#include <printk.h>
+#include <string.h>
+#include <slboot.h>
+#endif    /* IS_INCLUDED */
 
-#define CMDLINE_SIZE   512
-extern char g_cmdline[CMDLINE_SIZE];
+bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
+{
+    dlmod_hdr_t *dlmod_hdr = (dlmod_hdr_t *)dlmod_base;
 
+    if (dlmod_size <= sizeof(dlmod_hdr_t))
+        return false;
 
-extern void tboot_parse_cmdline(void);
-extern void get_tboot_loglvl(void);
-extern void get_tboot_log_targets(void);
-extern bool get_tboot_serial(void);
-extern void get_tboot_baud(void);
-extern void get_tboot_fmt(void);
-extern void get_tboot_vga_delay(void);
-extern bool get_tboot_prefer_da(void);
-extern void get_tboot_min_ram(void);
-extern bool get_tboot_call_racm(void);
-extern bool get_tboot_call_racm_check(void);
-extern bool get_tboot_ignore_prev_err(void);
-extern void get_tboot_extpol(void);
-extern bool get_tboot_force_tpm2_legacy_log(void);
-extern uint32_t get_error_shutdown(void);
-extern bool get_kernel_info(void);
-extern bool get_dl_launch(void);
+    if (dlmod_hdr->magic != DLMOD_MAGIC)
+        return false;
 
-/* for parse cmdline of linux kernel, say vga and mem */
-extern void linux_parse_cmdline(const char *cmdline);
-extern bool get_linux_vga(int *vid_mode);
-extern bool get_linux_mem(uint64_t *initrd_max_mem);
+    return true;
+}
 
-extern uint8_t get_loglvl_prefix(char **pbuf, int *len);
-
-#endif    /* __CMDLINE_H__ */
-
-
-/*
- * Local variables:
- * mode: C
- * c-set-style: "BSD"
- * c-basic-offset: 4
- * tab-width: 4
- * indent-tabs-mode: nil
- * End:
- */
