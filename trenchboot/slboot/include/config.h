@@ -73,6 +73,9 @@
 #define SLBOOT_MLEPT_PAGES_COVERED   (SLBOOT_MLEPT_PAGE_TABLES*512)
 #define SLBOOT_MLEPT_BYTES_COVERED   (SLBOOT_MLEPT_PAGES_COVERED*PAGE_SIZE)
 
+#define DLMOD_TABLE_ADDR             (SLBOOT_MLEPT_ADDR + SLBOOT_MLEPT_SIZE)
+#define DLMOD_TABLE_SIZE             0x01000
+
 /* Used as a basic cmdline buffer size for copying cmdlines */
 #define TBOOT_KERNEL_CMDLINE_SIZE    0x0400
 

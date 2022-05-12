@@ -33,19 +33,60 @@
  *
  */
 
-#ifndef IS_INCLUDED     /*  defined in utils/acminfo.c  */
 #include <config.h>
 #include <types.h>
 #include <stdbool.h>
+#include <page.h>
 #include <printk.h>
 #include <string.h>
+#include <tb_error.h>
 #include <cmdline.h>
+#include <uuid.h>
+#include <hash.h>
+#include <mle.h>
 #include <multiboot.h>
 #include <loader.h>
 #include <e820.h>
 #include <linux_defns.h>
+#include <txt/txt.h>
+#include <txt/config_regs.h>
+#include <txt/mtrrs.h>
+#include <txt/heap.h>
+#include <txt/acmod.h>
+#include <txt/smx.h>
 #include <slboot.h>
-#endif    /* IS_INCLUDED */
+
+#define DRTM_TABLE_HEADER       0x0001	/* Always first */
+#define DRTM_ENTRY_END          0xffff
+#define DRTM_NO_SUBTYPE         0x0000
+#define DRTM_ENTRY_ARCHITECTURE 0x0008
+#define DRTM_ENTRY_DCE_INFO     0x0009
+#define DRTM_DCE_TXT_ACM 1
+#define DRTM_DCE_AMD_SLB 2
+#define DRTM_INTEL_TXT   1
+#define DRTM_AMD_SKINIT  2
+
+struct drtm_entry_hdr {
+    uint16_t type;
+    uint16_t subtype;
+    uint16_t size;
+} __packed;
+
+struct drtm_table_header {
+    struct drtm_entry_hdr hdr;
+    uint16_t size;
+} __packed;
+
+struct drtm_entry_architecture {
+    struct drtm_entry_hdr hdr;
+    uint16_t architecture;
+} __packed;
+
+struct drtm_entry_dce_info {
+    struct drtm_entry_hdr hdr;
+    uint64_t dce_base;
+    uint32_t dce_size;
+} __packed;
 
 #define DLMOD_MAGIC 0xffaa7711
 
@@ -61,6 +102,8 @@ extern il_kernel_setup_t g_il_kernel_setup;
 static uint32_t g_slaunch_header;
 
 static dlmod_hdr_t *g_dlmod = NULL;
+
+static struct drtm_table_header *g_table = NULL;
 
 bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
 {
@@ -79,6 +122,34 @@ bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
 
 void dl_build_table(void)
 {
+    struct drtm_entry_architecture *arch;
+    struct drtm_entry_dce_info *dce_info;
+    struct drtm_entry_hdr *end;
+
+    g_table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
+    tb_memset(g_table, 0, SLBOOT_MLEPT_SIZE);
+    g_table->hdr.type = DRTM_TABLE_HEADER;
+    g_table->hdr.subtype = DRTM_NO_SUBTYPE;
+    g_table->hdr.size = sizeof(struct drtm_table_header);
+    g_table->size = (uint16_t)SLBOOT_MLEPT_SIZE;
+
+    arch = (struct drtm_entry_architecture *)(++g_table);
+    arch->hdr.type = DRTM_ENTRY_ARCHITECTURE;
+    arch->hdr.subtype = DRTM_NO_SUBTYPE;
+    arch->hdr.size = sizeof(struct drtm_entry_architecture);
+    arch->architecture = DRTM_INTEL_TXT;
+
+    dce_info = (struct drtm_entry_dce_info *)(++arch);
+    dce_info->hdr.type = DRTM_ENTRY_DCE_INFO;
+    dce_info->hdr.subtype = DRTM_DCE_TXT_ACM;
+    dce_info->hdr.size = sizeof(struct drtm_entry_dce_info);
+    dce_info->dce_base = (uint64_t)(uint32_t)g_sinit;
+    dce_info->dce_size = g_sinit->size*4;
+
+    end = (struct drtm_entry_hdr *)(++dce_info);
+    end->type = DRTM_ENTRY_END;
+    end->subtype = DRTM_NO_SUBTYPE;
+    end->size = sizeof(struct drtm_entry_hdr);
 }
 
 void dl_launch(void)
