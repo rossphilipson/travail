@@ -68,9 +68,11 @@ static void print_u64(u64 p) {
 	print(tmp);
 }
 
-void dlmod_main(u64 dl_entry)
+void dlmod_main(u64 drtm_table, u64 dl_entry)
 {
 	print("DL Module running...\n");
+	print("DRTM table pointer: %lx\n");
+	print_u64(drtm_table);
 	print("Jump to DL stub entry point: %lx\n");
 	print_u64(dl_entry);
 	print("\n");

@@ -50,7 +50,8 @@ ENDDATA(dlmod_stack)
 GLOBAL(_entry)
 	/*
 	 * %eax	- Beginning of DLMOD containing the SL header
-	 * %edi - DL stub entry point to jump to
+	 * %edi - DRTM/SL table pointer
+	 * %esi - DL stub entry point to jump to
 	 *
 	 * Restore the world, get back into long mode.
 	 *
@@ -122,11 +123,15 @@ GLOBAL(_entry)
 	.code64
 
 1:
-	/* DL entry point already in %rdi */
+	/* DRTM table/DL entry point already in %rdi/%rsi */
+	pushq	%rdi
+	pushq	%rsi
 	call	dlmod_main
+	popq	%rsi
+	popq	%rdi
 
 	/* Jump to the DL entry point */
-	jmp	*%rdi
+	jmp	*%rsi
 
 ENDFUNC(_entry)
 
