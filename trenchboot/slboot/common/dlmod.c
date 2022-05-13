@@ -156,7 +156,7 @@ void dl_launch(void)
 {
     struct kernel_info *ki;
     uint32_t *dl_ptr;
-    uint32_t dl_entry;
+    uint32_t dl_entry = 0, table, base, target;
 
     ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
             g_il_kernel_setup.boot_params->hdr.slaunch_header);
@@ -172,5 +172,11 @@ void dl_launch(void)
         shutdown_system(get_error_shutdown());
     }
 
-    dl_entry = dl_entry;
+    table = (uint32_t)g_table;
+    base = (uint32_t)g_dlmod;
+    target = base + g_dlmod->entry;
+
+    asm volatile("jmpl *%%ecx"
+                 :
+                 : "a" (base), "D" (table), "S" (dl_entry), "c" (target));
 }

@@ -646,7 +646,12 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     /* (optionally) pause before executing GETSEC[SENTER] */
     if ( g_vga_delay > 0 )
         delay(g_vga_delay * 1000);
-    __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
+
+    if ( !get_dl_launch() )
+        __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
+    else
+        dl_launch();
+
     printk(TBOOT_INFO"ERROR--we should not get here!\n");
     return TB_ERR_FATAL;
 }
