@@ -170,7 +170,7 @@ void dl_launch(void)
     uint32_t *dl_ptr;
     uint32_t dl_entry = 0, table, base, target;
 
-    /* Build the SLR table */
+    /* Build the DRTM table */
     dl_build_table();
 
     ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
