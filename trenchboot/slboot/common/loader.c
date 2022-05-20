@@ -1043,10 +1043,11 @@ find_dlmod_module(loader_ctx *lctx, void **base, uint32_t *size)
 
         void *base2 = (void *)m->mod_start;
         uint32_t size2 = m->mod_end - (unsigned long)(base2);
+        print_hex("MOD ", base2, 16);
         if ( is_dlmod(base2, size2) ) {
             *base = base2;
             *size = size2;
-            printk(TBOOT_DETA"DLMOD found\n");
+            printk(TBOOT_DETA"DLMOD found base: %p size: 0x%x\n", base2, size2);
             return true;
         }
     }

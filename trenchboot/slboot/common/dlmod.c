@@ -90,7 +90,7 @@ struct drtm_entry_dce_info {
 
 #define DLMOD_MAGIC 0xffaa7711
 
-typedef struct {
+typedef struct __packed {
     uint16_t entry;
     uint16_t bootloader_data;
     uint16_t dlmod_info;
@@ -113,8 +113,10 @@ bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
     if (dlmod_size <= sizeof(dlmod_hdr_t))
         return false;
 
-    if (dlmod_hdr->magic != DLMOD_MAGIC)
+    if (dlmod_hdr->magic != DLMOD_MAGIC) {
+        printk(TBOOT_INFO"DLMOD magic: 0x%x\n", dlmod_hdr->magic);
         return false;
+    }
 
     return true;
 }
