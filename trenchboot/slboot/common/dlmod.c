@@ -127,20 +127,21 @@ void set_dlmod(void *dlmod_base, uint32_t dlmod_size)
     g_dlsize = dlmod_size;
 }
 
-void dl_build_table(void)
+static void dl_build_table(void)
 {
+    struct drtm_table_header *table;
     struct drtm_entry_architecture *arch;
     struct drtm_entry_dce_info *dce_info;
     struct drtm_entry_hdr *end;
 
-    g_table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
-    tb_memset(g_table, 0, SLBOOT_MLEPT_SIZE);
-    g_table->hdr.type = DRTM_TABLE_HEADER;
-    g_table->hdr.subtype = DRTM_NO_SUBTYPE;
-    g_table->hdr.size = sizeof(struct drtm_table_header);
-    g_table->size = (uint16_t)SLBOOT_MLEPT_SIZE;
+    table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
+    tb_memset(table, 0, DLMOD_TABLE_SIZE);
+    table->hdr.type = DRTM_TABLE_HEADER;
+    table->hdr.subtype = DRTM_NO_SUBTYPE;
+    table->hdr.size = sizeof(struct drtm_table_header);
+    table->size = (uint16_t)DLMOD_TABLE_SIZE;
 
-    arch = (struct drtm_entry_architecture *)(++g_table);
+    arch = (struct drtm_entry_architecture *)(++table);
     arch->hdr.type = DRTM_ENTRY_ARCHITECTURE;
     arch->hdr.subtype = DRTM_NO_SUBTYPE;
     arch->hdr.size = sizeof(struct drtm_entry_architecture);
@@ -158,7 +159,9 @@ void dl_build_table(void)
     end->subtype = DRTM_NO_SUBTYPE;
     end->size = sizeof(struct drtm_entry_hdr);
 
-    printk(TBOOT_INFO"Built SLRT table @ %p\n", g_table);
+    g_table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
+
+    printk(TBOOT_INFO"Built DRTM table @ %p\n", g_table);
 }
 
 void dl_launch(void)
@@ -166,6 +169,9 @@ void dl_launch(void)
     struct kernel_info *ki;
     uint32_t *dl_ptr;
     uint32_t dl_entry = 0, table, base, target;
+
+    /* Build the SLR table */
+    dl_build_table();
 
     ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
             g_il_kernel_setup.boot_params->hdr.slaunch_header);

@@ -73,12 +73,6 @@ GLOBAL(_entry)
 	lidt	(%esp)
 	add	$8, %esp
 
-	/* Clear DIS_A20M. R_INIT is cleared by the kernel. */
-	mov	$IA32_VM_CR, %ecx
-	rdmsr
-	and	$~(VM_CR_DIS_A20M), %eax
-	wrmsr
-
 	/* Relocate GDT.base, 64bit ljmp offset, and pagetables. */
 	add	%ebp, 2 + gdtr(%ebp)
 	add	%ebp, 1 + .Ljump64(%ebp)
@@ -160,7 +154,6 @@ ENDDATA(gdtr)
 	.byte	0x93   /* P=1 DPL=0 S=1 Type=0010 C=0 W=1 A=1 */
 	.byte	0xcf   /* G=1 D=1 L=0 AVL=0 Limit 2 */
 	.byte	0x00   /* Base 3 */
-#ifdef __x86_64__
 	/* 64b Code Segment */
 	.word	0x0000 /* Limit 1 */
 	.word	0x0000 /* Base 1 */
@@ -168,13 +161,11 @@ ENDDATA(gdtr)
 	.byte	0x9b   /* P=1 DPL=0 S=1 Type=1010 C=0 R=1 A=1 */
 	.byte	0x20   /* G=0 D=0 L=1 AVL=0 Limit 2 */
 	.byte	0x00   /* Base 3 */
-#endif
 .Lgdt_end:
 ENDDATA(gdt)
 
 .section .page_data, "a", @progbits
 .align PAGE_SIZE
-#ifdef __x86_64__
 	/* 64bit Pagetables, identity map of the first 4G of RAM. */
 
 l1_identmap: /* 1x L1 page, mapping 2M of RAM.  No relocations. */
@@ -207,7 +198,6 @@ l4_identmap: /* 1x L4 page, mapping the L3 page. 1 relocation. */
 	.quad l3_identmap + _PAGE_AD + _PAGE_RW + _PAGE_PRESENT
 	.align PAGE_SIZE
 ENDDATA(l4_identmap)
-#endif
 
 	.section .bootloader_data, "a", @progbits
 GLOBAL(bootloader_data)

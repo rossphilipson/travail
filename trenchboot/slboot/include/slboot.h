@@ -121,7 +121,6 @@ typedef struct {
 
 extern bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size);
 extern void set_dlmod(void *dlmod_base, uint32_t dlmod_size);
-extern void dl_build_table(void);
 extern void dl_launch(void);
 
 extern void error_action(tb_error_t error);
