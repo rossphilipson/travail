@@ -246,6 +246,17 @@ void begin_launch(void *addr, uint32_t magic)
     if (!verify_acmod(g_sinit))
         error_action(TB_ERR_ACMOD_VERIFY_FAILED);
 
+    if ( get_dl_launch() ) {
+        void *base;
+        uint32_t size;
+
+        if (find_dlmod_module(g_ldr_ctx, &base, &size)) {
+            printk(TBOOT_INFO"Setting DLMOD base and size\n");
+            set_dlmod(base, size);
+        }
+        else
+            error_action(TB_ERR_DLMOD_NOT_PRESENT);
+    }
     /* make TPM ready for measured launch */
     if (!tpm_detect())
        error_action(TB_ERR_TPM_NOT_READY);

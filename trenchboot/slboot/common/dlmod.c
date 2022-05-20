@@ -102,6 +102,7 @@ extern il_kernel_setup_t g_il_kernel_setup;
 static uint32_t g_slaunch_header;
 
 static dlmod_hdr_t *g_dlmod = NULL;
+static uint32_t g_dlsize = 0;
 
 static struct drtm_table_header *g_table = NULL;
 
@@ -115,9 +116,13 @@ bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
     if (dlmod_hdr->magic != DLMOD_MAGIC)
         return false;
 
-    g_dlmod = dlmod_hdr;
-
     return true;
+}
+
+void set_dlmod(void *dlmod_base, uint32_t dlmod_size)
+{
+    g_dlmod = dlmod_base;
+    g_dlsize = dlmod_size;
 }
 
 void dl_build_table(void)
@@ -150,6 +155,8 @@ void dl_build_table(void)
     end->type = DRTM_ENTRY_END;
     end->subtype = DRTM_NO_SUBTYPE;
     end->size = sizeof(struct drtm_entry_hdr);
+
+    printk(TBOOT_INFO"Built SLRT table @ %p\n", g_table);
 }
 
 void dl_launch(void)

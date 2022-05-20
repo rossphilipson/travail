@@ -642,15 +642,18 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
         *(mle_size + 9) = g_il_kernel_setup.protected_mode_size;
     }
 
-    printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
-    /* (optionally) pause before executing GETSEC[SENTER] */
-    if ( g_vga_delay > 0 )
-        delay(g_vga_delay * 1000);
+    if ( !get_dl_launch() ) {
+        printk(TBOOT_INFO"executing GETSEC[SENTER]...\n");
+        /* (optionally) pause before executing GETSEC[SENTER] */
+        if ( g_vga_delay > 0 )
+            delay(g_vga_delay * 1000);
 
-    if ( !get_dl_launch() )
         __getsec_senter((uint32_t)g_sinit, (g_sinit->size)*4);
-    else
+    }
+    else {
+        printk(TBOOT_INFO"executing DL Launch...\n");
         dl_launch();
+    }
 
     printk(TBOOT_INFO"ERROR--we should not get here!\n");
     return TB_ERR_FATAL;

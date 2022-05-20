@@ -102,6 +102,9 @@ void print_tb_error_msg(tb_error_t error)
         case TB_ERR_SINIT_NOT_PRESENT:
             printk(TBOOT_WARN"SINIT ACM not provided.\n");
             break;
+        case TB_ERR_DLMOD_NOT_PRESENT:
+            printk(TBOOT_WARN"DLMOD not provided.\n");
+            break;
         case TB_ERR_ACMOD_VERIFY_FAILED:
             printk(TBOOT_WARN"verifying AC module failed.\n");
             break;

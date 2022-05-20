@@ -120,6 +120,7 @@ typedef struct {
 #define SL_FLAG_ARCH_TXT       0x00000004
 
 extern bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size);
+extern void set_dlmod(void *dlmod_base, uint32_t dlmod_size);
 extern void dl_build_table(void);
 extern void dl_launch(void);
 

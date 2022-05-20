@@ -68,6 +68,7 @@ extern bool find_module_by_pattern(loader_ctx *lctx, void **base, size_t *size,
 extern bool find_platform_racm(loader_ctx *lctx, void **base, uint32_t *size);
 extern bool find_platform_sinit_module(loader_ctx *lctx, void **base, 
                                        uint32_t *size);
+extern bool find_dlmod_module(loader_ctx *lctx, void **base, uint32_t *size);
 
 extern uint32_t find_efi_memmap(loader_ctx *lctx, uint32_t *descr_size,
                                 uint32_t *descr_vers, uint32_t *mmap_size);

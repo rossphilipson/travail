@@ -52,6 +52,7 @@ typedef enum {
     TB_ERR_POLICY_INVALID,                  /* policy is invalid */
     TB_ERR_POLICY_NOT_PRESENT,              /* no policy in TPM NV */
     TB_ERR_SINIT_NOT_PRESENT,               /* SINIT ACM not provided */
+    TB_ERR_DLMOD_NOT_PRESENT,               /* DLMOD not provided */
     TB_ERR_ACMOD_VERIFY_FAILED,             /* verifying AC module failed */
     TB_ERR_POST_LAUNCH_VERIFICATION,        /* verification of post-launch
                                                failed */

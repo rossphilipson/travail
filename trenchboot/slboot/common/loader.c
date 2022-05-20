@@ -602,6 +602,7 @@ remove_dlmod_modules(loader_ctx *lctx)
                        "failed to remove DLMOD module from module list\n");
                 return false;
             }
+            printk(TBOOT_INFO"removed dlmod module\n");
         }
     }
 
@@ -1009,6 +1010,47 @@ find_platform_sinit_module(loader_ctx *lctx, void **base, uint32_t *size)
     }
     /* no SINIT found for this platform */
     printk(TBOOT_ERR"no SINIT AC module found\n");
+    return false;
+}
+
+bool
+find_dlmod_module(loader_ctx *lctx, void **base, uint32_t *size)
+{
+    if ( base != NULL )
+        *base = NULL;
+    else
+        return false;
+    if ( size != NULL )
+        *size = 0;
+    else
+        return false;
+
+    if ( 0 == get_module_count(lctx)) {
+        printk(TBOOT_ERR"no module info\n");
+        return false;
+    }
+
+    for ( unsigned int i = get_module_count(lctx) - 1; i > 0; i-- ) {
+        module_t *m = get_module(lctx, i);
+        if (lctx->type == 1)
+            printk(TBOOT_DETA
+                   "checking if module %s is a DLMOD module...\n",
+                   (const char *)m->string);
+        if (lctx->type == 2)
+            printk(TBOOT_DETA
+                   "checking if module %s is a DLMOD module...\n",
+                   (const char *)&(m->string));
+
+        void *base2 = (void *)m->mod_start;
+        uint32_t size2 = m->mod_end - (unsigned long)(base2);
+        if ( is_dlmod(base2, size2) ) {
+            *base = base2;
+            *size = size2;
+            printk(TBOOT_DETA"DLMOD found\n");
+            return true;
+        }
+    }
+    printk(TBOOT_ERR"no DLMOD found\n");
     return false;
 }
 
