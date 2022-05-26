@@ -180,7 +180,8 @@ void dl_launch(void)
     dl_ptr = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
     if (*(dl_ptr + 13) != 0) {
         printk("DL Entry Point: 0x%x\n", *(dl_ptr + 13));
-        dl_entry = *(dl_ptr + 9);
+        dl_entry = *(dl_ptr + 13);
+	dl_entry += g_il_kernel_setup.protected_mode_base;
     }
     else {
         printk("No DL Entry Point, die!!\n");
