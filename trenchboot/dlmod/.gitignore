@@ -1,0 +1,7 @@
+*.o
+*.d
+*.dsm
+*.hex
+*.gz
+dlmod
+dlmod.bin
