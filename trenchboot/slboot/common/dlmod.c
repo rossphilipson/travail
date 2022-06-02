@@ -134,6 +134,9 @@ static void dl_build_table(u32 dl_entry, u32 dlme_entry)
     struct slr_table *table;
     struct slr_entry_hdr *end;
     struct slr_entry_dl_info dl_info;
+    struct slr_entry_log_info log_info;
+    txt_heap_t *txt_heap;
+    os_mle_data_t *os_mle_data;
 
     table = (struct slr_table *)DLMOD_TABLE_ADDR;
     tb_memset(table, 0, DLMOD_TABLE_SIZE);
@@ -157,6 +160,20 @@ static void dl_build_table(u32 dl_entry, u32 dlme_entry)
 
     if (slr_add_entry(table, (struct slr_entry_hdr *)&dl_info)) {
         printk(TBOOT_ERR"Failed to add DL info to SLR\n");
+        shutdown_system(get_error_shutdown());
+    }
+
+    txt_heap = get_txt_heap();
+    os_mle_data = get_os_mle_data_start(txt_heap);
+    log_info.hdr.tag = SLR_ENTRY_LOG_INFO;
+    log_info.hdr.size = sizeof(log_info);
+    log_info.format = SLR_DRTM_TPM20_LOG;
+    log_info.reserved = 0;
+    log_info.addr = (uint32_t)&os_mle_data->event_log_buffer;
+    log_info.size = MAX_EVENT_LOG_SIZE;
+
+    if (slr_add_entry(table, (struct slr_entry_hdr *)&log_info)) {
+        printk(TBOOT_ERR"Failed to add LOG info to SLR\n");
         shutdown_system(get_error_shutdown());
     }
 
