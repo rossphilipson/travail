@@ -56,37 +56,8 @@
 #include <txt/smx.h>
 #include <slboot.h>
 
-#define DRTM_TABLE_HEADER       0x0001	/* Always first */
-#define DRTM_ENTRY_END          0xffff
-#define DRTM_NO_SUBTYPE         0x0000
-#define DRTM_ENTRY_ARCHITECTURE 0x0008
-#define DRTM_ENTRY_DCE_INFO     0x0009
-#define DRTM_DCE_TXT_ACM 1
-#define DRTM_DCE_AMD_SLB 2
-#define DRTM_INTEL_TXT   1
-#define DRTM_AMD_SKINIT  2
-
-struct drtm_entry_hdr {
-    uint16_t type;
-    uint16_t subtype;
-    uint16_t size;
-} __packed;
-
-struct drtm_table_header {
-    struct drtm_entry_hdr hdr;
-    uint16_t size;
-} __packed;
-
-struct drtm_entry_architecture {
-    struct drtm_entry_hdr hdr;
-    uint16_t architecture;
-} __packed;
-
-struct drtm_entry_dce_info {
-    struct drtm_entry_hdr hdr;
-    uint64_t dce_base;
-    uint32_t dce_size;
-} __packed;
+#define memcpy tb_memcpy
+#include <slr_table.h>
 
 #define DLMOD_MAGIC 0xffaa7711
 
@@ -99,12 +70,10 @@ typedef struct __packed {
 
 extern il_kernel_setup_t g_il_kernel_setup;
 
-static uint32_t g_slaunch_header;
-
 static dlmod_hdr_t *g_dlmod = NULL;
 static uint32_t g_dlsize = 0;
 
-static struct drtm_table_header *g_table = NULL;
+static struct slr_table *g_table = NULL;
 
 bool is_dlmod(const void *dlmod_base, uint32_t dlmod_size)
 {
@@ -127,66 +96,84 @@ void set_dlmod(void *dlmod_base, uint32_t dlmod_size)
     g_dlsize = dlmod_size;
 }
 
-static void dl_build_table(void)
+static void dl_get_entry_points(u32 *dl_entry, u32 *dlme_entry)
 {
-    struct drtm_table_header *table;
-    struct drtm_entry_architecture *arch;
-    struct drtm_entry_dce_info *dce_info;
-    struct drtm_entry_hdr *end;
-
-    table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
-    tb_memset(table, 0, DLMOD_TABLE_SIZE);
-    table->hdr.type = DRTM_TABLE_HEADER;
-    table->hdr.subtype = DRTM_NO_SUBTYPE;
-    table->hdr.size = sizeof(struct drtm_table_header);
-    table->size = (uint16_t)DLMOD_TABLE_SIZE;
-
-    arch = (struct drtm_entry_architecture *)(++table);
-    arch->hdr.type = DRTM_ENTRY_ARCHITECTURE;
-    arch->hdr.subtype = DRTM_NO_SUBTYPE;
-    arch->hdr.size = sizeof(struct drtm_entry_architecture);
-    arch->architecture = DRTM_INTEL_TXT;
-
-    dce_info = (struct drtm_entry_dce_info *)(++arch);
-    dce_info->hdr.type = DRTM_ENTRY_DCE_INFO;
-    dce_info->hdr.subtype = DRTM_DCE_TXT_ACM;
-    dce_info->hdr.size = sizeof(struct drtm_entry_dce_info);
-    dce_info->dce_base = (uint64_t)(uint32_t)g_sinit;
-    dce_info->dce_size = g_sinit->size*4;
-
-    end = (struct drtm_entry_hdr *)(++dce_info);
-    end->type = DRTM_ENTRY_END;
-    end->subtype = DRTM_NO_SUBTYPE;
-    end->size = sizeof(struct drtm_entry_hdr);
-
-    g_table = (struct drtm_table_header *)DLMOD_TABLE_ADDR;
-
-    printk(TBOOT_INFO"Built DRTM table @ %p\n", g_table);
-}
-
-void dl_launch(void)
-{
+    uint32_t slaunch_header;
     struct kernel_info *ki;
-    uint32_t *dl_ptr;
-    uint32_t dl_entry = 0, table, base, target;
-
-    /* Build the DRTM table */
-    dl_build_table();
+    uint32_t *dl_ptr, *dlme_ptr;
 
     ki = (struct kernel_info*)(g_il_kernel_setup.protected_mode_base +
             g_il_kernel_setup.boot_params->hdr.slaunch_header);
-    g_slaunch_header = ki->mle_header_offset;
+    slaunch_header = ki->mle_header_offset;
 
-    dl_ptr = (uint32_t*)(g_il_kernel_setup.protected_mode_base + g_slaunch_header);
+    dl_ptr = (uint32_t*)(g_il_kernel_setup.protected_mode_base + slaunch_header);
     if (*(dl_ptr + 13) != 0) {
         printk("DL Entry Point: 0x%x\n", *(dl_ptr + 13));
-        dl_entry = *(dl_ptr + 13);
-	dl_entry += g_il_kernel_setup.protected_mode_base;
+        *dl_entry = *(dl_ptr + 13);
+	*dl_entry += g_il_kernel_setup.protected_mode_base;
     }
     else {
         printk("No DL Entry Point, die!!\n");
         shutdown_system(get_error_shutdown());
     }
+
+    dlme_ptr = (uint32_t*)(g_il_kernel_setup.protected_mode_base + slaunch_header);
+    if (*(dlme_ptr + 6) != 0) {
+        printk("DLME Entry Point: 0x%x\n", *(dlme_ptr + 6));
+        *dlme_entry = *(dlme_ptr + 6);
+	*dlme_entry += g_il_kernel_setup.protected_mode_base;
+    }
+    else {
+        printk("No DLME Entry Point, die!!\n");
+        shutdown_system(get_error_shutdown());
+    }
+}
+
+static void dl_build_table(u32 dl_entry, u32 dlme_entry)
+{
+    struct slr_table *table;
+    struct slr_entry_hdr *end;
+    struct slr_entry_dl_info dl_info;
+
+    table = (struct slr_table *)DLMOD_TABLE_ADDR;
+    tb_memset(table, 0, DLMOD_TABLE_SIZE);
+    table->magic = SLR_TABLE_MAGIC;
+    table->revision = SLR_TABLE_REVISION;
+    table->architecture = SLR_INTEL_TXT;
+    table->size = sizeof(*table);
+    table->max_size = DLMOD_TABLE_SIZE;
+
+    end = (struct slr_entry_hdr *)((u8 *)table + table->size);
+    end->tag = SLR_ENTRY_END;
+    end->size = sizeof(*end);
+    table->size += sizeof(*end);
+
+    dl_info.hdr.tag = SLR_ENTRY_DL_INFO;
+    dl_info.hdr.size = sizeof(dl_info);
+    dl_info.dl_handler = dl_entry;
+    dl_info.dce_base = (uint64_t)(uint32_t)g_sinit;
+    dl_info.dce_size = g_sinit->size*4;
+    dl_info.dlme_entry = dlme_entry;
+
+    if (slr_add_entry(table, (struct slr_entry_hdr *)&dl_info)) {
+        printk(TBOOT_ERR"Failed to add DL info to SLR\n");
+        shutdown_system(get_error_shutdown());
+    }
+
+    g_table = (struct slr_table *)DLMOD_TABLE_ADDR;
+
+    printk(TBOOT_INFO"Built SLR table @ %p\n", g_table);
+}
+
+void dl_launch(void)
+{
+    uint32_t dl_entry = 0, dlme_entry = 0, table, base, target;
+
+    /* Get the entry points */
+    dl_get_entry_points(&dl_entry, &dlme_entry);
+
+    /* Build the DRTM table */
+    dl_build_table(dl_entry, dlme_entry);
 
     table = (uint32_t)g_table;
     base = (uint32_t)g_dlmod;
