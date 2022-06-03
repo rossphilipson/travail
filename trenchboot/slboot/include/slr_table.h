@@ -97,12 +97,12 @@ slr_next_entry_by_tag(struct slr_table *table,
 		entry = (struct slr_entry_hdr *)(((u8 *)table) + sizeof(*table));
 
 	for ( ; ; ) {
+		if (entry->tag == tag)
+			return entry;
+
 		entry = slr_next_entry(table, entry);
 		if (!entry)
 			return NULL;
-
-		if (entry->tag == tag)
-			return entry;
 	}
 
 	return NULL;
