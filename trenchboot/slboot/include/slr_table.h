@@ -122,8 +122,8 @@ slr_add_entry(struct slr_table *table,
 	if (end->tag != SLR_ENTRY_END)
 		return -1; /* malformed table */
 
-	memcpy(end, (u8 *)table + table->size + entry->size, sizeof(*end));
-	memcpy(entry, (u8 *)table + table->size, entry->size);
+	memcpy((u8 *)end + entry->size, end, sizeof(*end));
+	memcpy((u8 *)end, entry, entry->size);
 	table->size += entry->size;
 
 	return 0;
