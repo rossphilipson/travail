@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <printk.h>
+#include <cmdline.h>
 #include <processor.h>
 #include <loader.h>
 #include <e820.h>
@@ -63,6 +64,40 @@ void print_skl_module(void)
     printk(SKBOOT_INFO"    skl_info:         0x%x\n", g_skl_module->skl_info_offset);
 }
 
+#define E22C_ENTRIES 8
+static skl_ivhd_entry_t entries[E22C_ENTRIES] = {
+    {0x6002, 0xc9200000},
+    {0x4002, 0xf4100000},
+    {0x2002, 0xc8100000},
+    {0x0002, 0xf5100000},
+    {0xe002, 0xbf100000},
+    {0xc002, 0xbe100000},
+    {0xa002, 0xb5100000},
+    {0x8002, 0xb4200000}
+};
+
+static uint32_t add_iommu_info_tag(skl_tag_hdr_t *ntag)
+{
+    skl_tag_iommu_info_t *itag = (skl_tag_iommu_info_t *)ntag;
+    void *eptr;
+
+    if (!get_amd_server())
+        return 0;
+
+    itag->hdr.type = SKL_TAG_IOMMU_INFO;
+    itag->hdr.len = sizeof(skl_tag_iommu_info_t) +
+           E22C_ENTRIES*sizeof(skl_ivhd_entry_t);
+    itag->count = E22C_ENTRIES;
+
+    eptr = (void *)((u8 *)itag + itag->hdr.len);
+
+    /* Add in e22c server IOMMMU information for testing */
+    sk_memcpy(eptr, &entries[0], E22C_ENTRIES*sizeof(skl_ivhd_entry_t));
+
+    return sizeof(skl_tag_iommu_info_t) +
+           E22C_ENTRIES*sizeof(skl_ivhd_entry_t);
+}
+
 bool prepare_skl_bootloader_data(void)
 {
     skl_tag_tags_size_t *stag;
@@ -72,6 +107,7 @@ bool prepare_skl_bootloader_data(void)
     skl_tag_setup_indirect_t *itag;
     skl_tag_hdr_t *etag;
     sk_hash_t hash;
+    uint32_t iommu_size;
 
     /* Size tag is always first */
     stag = (skl_tag_tags_size_t *)((u8 *)g_skl_module + g_skl_module->bootloader_data_offset);
@@ -130,8 +166,10 @@ bool prepare_skl_bootloader_data(void)
     stag->size += itag->hdr.len;
     printk(SKBOOT_INFO"SKL added setup indirect tag\n");
 
+    iommu_size = add_iommu_info_tag((skl_tag_hdr_t *)((u8 *)itag + itag->hdr.len));
+
     /* End tag comes last */
-    etag = (skl_tag_hdr_t *)((u8 *)itag + itag->hdr.len);
+    etag = (skl_tag_hdr_t *)((u8 *)itag + itag->hdr.len + iommu_size);
     etag->type = SKL_TAG_END;
     etag->len = sizeof(skl_tag_hdr_t);
     stag->size += etag->len;

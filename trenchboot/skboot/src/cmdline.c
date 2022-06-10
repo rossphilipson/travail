@@ -73,6 +73,7 @@ static const cmdline_option_t g_skboot_cmdline_options[] = {
     /* serial=<baud>[/<clock_hz>][,<DPS>[,<io-base>[,<irq>[,<serial-bdf>[,<bridge-bdf>]]]]] */
     { "vga_delay",  "0" },           /* # secs */
     { "error_shutdown", "halt"},     /* shutdown|reboot|halt */
+    { "amd_server", "false"},     /*  */
     { NULL, NULL }
 };
 static char g_skboot_param_values[ARRAY_SIZE(g_skboot_cmdline_options)][MAX_VALUE_LEN];
@@ -451,6 +452,17 @@ uint32_t get_error_shutdown(void)
 
     /* TODO change to shutdown when implemented */
     return SK_SHUTDOWN_HALT;
+}
+
+bool get_amd_server(void)
+{
+    const char *amd_server =
+	    get_option_val(g_skboot_cmdline_options,
+			   g_skboot_param_values,
+			   "amd_server");
+    if ( amd_server != NULL && sk_strcmp(amd_server, "true") == 0 )
+	    return true;
+    return false;
 }
 
 /*

@@ -47,6 +47,7 @@ extern bool get_skboot_serial(void);
 extern void get_skboot_baud(void);
 extern void get_skboot_vga_delay(void);
 extern uint32_t get_error_shutdown(void);
+extern bool get_amd_server(void);
 
 /* for parse cmdline of linux kernel, say vga and mem */
 extern void linux_parse_cmdline(const char *cmdline);

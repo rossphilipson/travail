@@ -23,6 +23,7 @@ typedef struct __packed {
 #define SKL_TAG_NO_CLASs	0x00
 #define SKL_TAG_END		0x00
 #define SKL_TAG_SETUP_INDIRECT	0x01
+#define SKL_TAG_IOMMU_INFO      0x02
 #define SKL_TAG_TAGS_SIZE	0x0F	/* Always first */
 
 /* Tags specifying kernel type */
@@ -69,6 +70,17 @@ typedef struct __packed {
     /* type = SETUP_INDIRECT | SETUP_SECURE_LAUNCH */
     setup_indirect_t indirect;
 } skl_tag_setup_indirect_t;
+
+typedef struct __packed {
+    skl_tag_hdr_t hdr;
+    uint32_t count;
+   /* ivhd_entry[] */
+} skl_tag_iommu_info_t;
+
+typedef struct __packed {
+    uint32_t device_id;
+    uint64_t base_address;
+} skl_ivhd_entry_t;
 
 extern sl_header_t *g_skl_module;
 extern uint32_t g_skl_size;
