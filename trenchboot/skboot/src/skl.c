@@ -87,6 +87,8 @@ static uint32_t add_iommu_info_tag(skl_tag_hdr_t *ntag)
     itag->hdr.type = SKL_TAG_IOMMU_INFO;
     itag->hdr.len = sizeof(skl_tag_iommu_info_t) +
            E22C_ENTRIES*sizeof(skl_ivhd_entry_t);
+    itag->device_table_addr = SKBOOT_FIXED_DEVICE_TABLE_BASE;
+    itag->device_table_size = SKBOOT_FIXED_DEVICE_TABLE_SIZE;
     itag->count = E22C_ENTRIES;
 
     eptr = (void *)((u8 *)itag + itag->hdr.len);

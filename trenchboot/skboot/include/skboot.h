@@ -66,8 +66,10 @@
 #define SKBOOT_KERNEL_CMDLINE_SIZE    0x0400
 
 /* Fixed allocation values */
-#define SKBOOT_FIXED_INITRD_BASE      0x20000000
-#define SKBOOT_FIXED_SKL_BASE         0x40000000
+#define SKBOOT_FIXED_INITRD_BASE       0x20000000
+#define SKBOOT_FIXED_SKL_BASE          0x40000000
+#define SKBOOT_FIXED_DEVICE_TABLE_BASE 0x40080000
+#define SKBOOT_FIXED_DEVICE_TABLE_SIZE 0x4000
 
 #define ENTRY(name)                             \
   .globl name;                                  \
