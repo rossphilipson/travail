@@ -73,8 +73,8 @@ typedef struct __packed {
 
 typedef struct __packed {
     skl_tag_hdr_t hdr;
-    uint64_t device_table_addr;
-    uint32_t device_table_size;
+    uint64_t dma_area_addr;
+    uint32_t dma_area_size;
     uint32_t dev_disabled;
     uint32_t count;
    /* ivhd_entry[] */
