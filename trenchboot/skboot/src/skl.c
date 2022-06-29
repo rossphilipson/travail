@@ -64,8 +64,8 @@ void print_skl_module(void)
     printk(SKBOOT_INFO"    skl_info:         0x%x\n", g_skl_module->skl_info_offset);
 }
 
-#define E22C_ENTRIES 8
-static skl_ivhd_entry_t entries[E22C_ENTRIES] = {
+/*#define E22C_ENTRIES 8
+static skl_ivhd_entry_t e22c_entries[E22C_ENTRIES] = {
     {0x6002, 0xc9200000},
     {0x4002, 0xf4100000},
     {0x2002, 0xc8100000},
@@ -74,6 +74,18 @@ static skl_ivhd_entry_t entries[E22C_ENTRIES] = {
     {0xc002, 0xbe100000},
     {0xa002, 0xb5100000},
     {0x8002, 0xb4200000}
+};*/
+
+#define E42C_ENTRIES 8
+static skl_ivhd_entry_t e42c_entries[E42C_ENTRIES] = {
+    {0x6002, 0xb9e00000},
+    {0x4002, 0xf8a00000},
+    {0x2002, 0xf3300000},
+    {0x0002, 0xf9a00000},
+    {0xe002, 0xf2300000},
+    {0xc002, 0xb8d00000},
+    {0xa002, 0xb3500000},
+    {0x8002, 0xb2600000}
 };
 
 static uint32_t add_iommu_info_tag(skl_tag_hdr_t *ntag)
@@ -86,18 +98,18 @@ static uint32_t add_iommu_info_tag(skl_tag_hdr_t *ntag)
 
     itag->hdr.type = SKL_TAG_IOMMU_INFO;
     itag->hdr.len = sizeof(skl_tag_iommu_info_t) +
-           E22C_ENTRIES*sizeof(skl_ivhd_entry_t);
+           E42C_ENTRIES*sizeof(skl_ivhd_entry_t);
     itag->dma_area_addr = SKBOOT_FIXED_DMA_AREA_BASE;
     itag->dma_area_size = SKBOOT_FIXED_DMA_AREA_SIZE;
-    itag->count = E22C_ENTRIES;
+    itag->count = E42C_ENTRIES;
 
     eptr = (void *)((u8 *)itag + itag->hdr.len);
 
-    /* Add in e22c server IOMMMU information for testing */
-    sk_memcpy(eptr, &entries[0], E22C_ENTRIES*sizeof(skl_ivhd_entry_t));
+    /* Add in e22c or e42c server IOMMMU information for testing */
+    sk_memcpy(eptr, &e42c_entries[0], E42C_ENTRIES*sizeof(skl_ivhd_entry_t));
 
     return sizeof(skl_tag_iommu_info_t) +
-           E22C_ENTRIES*sizeof(skl_ivhd_entry_t);
+           E42C_ENTRIES*sizeof(skl_ivhd_entry_t);
 }
 
 bool prepare_skl_bootloader_data(void)
