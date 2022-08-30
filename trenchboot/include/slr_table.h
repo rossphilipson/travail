@@ -223,7 +223,6 @@ slr_add_entry(struct slr_table *table,
 	table->size += entry->size;
 
 	return 0;
-
 }
 
 #endif /* !__ASSEMBLY */
