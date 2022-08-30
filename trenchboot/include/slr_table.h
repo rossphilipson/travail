@@ -23,15 +23,30 @@
 #define SLR_DRTM_TPM12_LOG	1
 #define SLR_DRTM_TPM20_LOG	2
 
-/* Tags */
-#define SLR_ENTRY_END		0xffff
-/* Types 0x0000 - 0x0007 are reserved */
+/* DRTM Policy Entry Flags */
+#define SLR_POLICY_FLAG_MEASURED	0x1
 
-#define SLR_ENTRY_DL_INFO	0x0008
-#define SLR_ENTRY_LOG_INFO	0x0009
+/* Array Lengths */
+#define TPM_EVENT_INFO_LENGTH		32
+#define TXT_VARIABLE_MTRRS_LENGTH	32
+
+/* Tags */
+#define SLR_ENTRY_INVALID	0x0000
+#define SLR_ENTRY_DL_INFO	0x0001
+#define SLR_ENTRY_LOG_INFO	0x0002
+#define SLR_ENTRY_ENTRY_POLICY	0x0003
+#define SLR_ENTRY_INTEL_INFO	0x0004
+#define SLR_ENTRY_AMD_INFO	0x0005
+#define SLR_ENTRY_ARM_INFO	0x0006
+#define SLR_ENTRY_EFI_INFO	0x0007
+#define SLR_ENTRY_EFI_CONFIG	0x0008
+#define SLR_ENTRY_END		0xffff
 
 #ifndef __ASSEMBLY__
 
+/*
+ * Primary SLR Table Header
+ */
 struct slr_table {
 	u32 magic;
 	u16 revision;
@@ -41,6 +56,9 @@ struct slr_table {
 	/* entries[] */
 } __packed;
 
+/*
+ * Common SLRT Table Header
+ */
 struct slr_entry_hdr {
 	u16 tag;
 	u16 size;
@@ -58,7 +76,7 @@ struct slr_entry_dl_info {
 } __packed;
 
 /*
- * Log information
+ * TPM Log Information
  */
 struct slr_entry_log_info {
 	struct slr_entry_hdr hdr;
@@ -66,6 +84,84 @@ struct slr_entry_log_info {
 	u16 reserved;
 	u64 addr;
 	u32 size;
+} __packed;
+
+/*
+ * DRTM Measurement Policy
+ */
+struct slr_entry_policy {
+	struct slr_entry_hdr hdr;
+	u16 revision;
+	u16 reserved;
+	u16 algorithms
+	u16 nr_entries;
+	/* policy_entries[] */
+} __packed;
+
+/*
+ * DRTM Measurement Entry
+ */
+struct slr_policy_entry {
+	u16 pcr;
+	u16 entity_type;
+	u64 entity; /* entity addr if it cannot be infered from the type */
+	u16 size;
+	u16 flags;
+	char evt_info[TPM_EVENT_INFO_LENGTH];
+} __packed;
+
+/*
+ * Secure Launch defined MTRR saving structures
+ */
+struct txt_mtrr_pair {
+	u64 mtrr_physbase;
+	u64 mtrr_physmask;
+} __packed;
+
+struct txt_mtrr_state {
+	u64 default_mem_type;
+	u64 mtrr_vcnt;
+	struct txt_mtrr_pair mtrr_pair[TXT_VARIABLE_MTRRS_LENGTH];
+} __packed;
+
+/*
+ * Intel TXT Info table
+ */
+struct slr_entry_intel_info {
+	struct slr_entry_hdr hdr;
+	u32 boot_params_addr;
+	u64 saved_misc_enable_msr;
+	struct txt_mtrr_state saved_bsp_mtrrs;
+	u32 ap_wake_block;
+	u32 ap_wake_block_size;
+} __packed;
+
+/*
+ * AMD SKINIT Info table
+ */
+struct slr_entry_amd_info {
+	struct slr_entry_hdr hdr;
+} __packed;
+
+/*
+ * ARM DRTM Info table
+ */
+struct slr_entry_arm_info {
+	struct slr_entry_hdr hdr;
+} __packed;
+
+struct slr_entry_efi_config {
+	struct slr_entry_hdr hdr;
+	u32 identifier;
+	u16 reserved;
+	u16 nr_entries;
+	/* efi_cfg_entries[] */
+} __packed;
+
+struct efi_cfg_entry {
+	u64 cfg; /* address or value */
+	u32 size;
+	char evt_info[TPM_EVENT_INFO_LENGTH];
 } __packed;
 
 static inline void *slr_end_of_entrys(struct slr_table *table)
