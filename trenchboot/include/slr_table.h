@@ -42,6 +42,14 @@
 #define SLR_ENTRY_EFI_CONFIG	0x0008
 #define SLR_ENTRY_END		0xffff
 
+/* Entity Types */
+#define SLR_ET_UNSPECIFIED	0x0000
+#define SLR_ET_BOOT_PARAMS	0x0001
+#define SLR_ET_SETUP_DATA	0x0002
+#define SLR_ET_CMDLINE		0x0003
+#define SLR_ET_MEMMAP		0x0004
+#define SLR_ET_TXT_OS2MLE	0x0010
+
 #ifndef __ASSEMBLY__
 
 /*

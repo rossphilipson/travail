@@ -55,6 +55,14 @@
 #define GRUB_SLR_ENTRY_EFI_CONFIG	0x0008
 #define GRUB_SLR_ENTRY_END		0xffff
 
+/* Entity Types */
+#define GRUB_SLR_ET_UNSPECIFIED		0x0000
+#define GRUB_SLR_ET_BOOT_PARAMS		0x0001
+#define GRUB_SLR_ET_SETUP_DATA		0x0002
+#define GRUB_SLR_ET_CMDLINE		0x0003
+#define GRUB_SLR_ET_MEMMAP		0x0004
+#define GRUB_SLR_ET_TXT_OS2MLE		0x0010
+
 /*
  * Primary SLR Table Header
  */
