@@ -100,8 +100,6 @@ struct slr_entry_log_info {
 struct slr_entry_policy {
 	struct slr_entry_hdr hdr;
 	u16 revision;
-	u16 reserved;
-	u16 algorithms
 	u16 nr_entries;
 	/* policy_entries[] */
 } __packed;
@@ -112,7 +110,7 @@ struct slr_entry_policy {
 struct slr_policy_entry {
 	u16 pcr;
 	u16 entity_type;
-	u64 entity; /* entity addr if it cannot be infered from the type */
+	u64 entity;
 	u16 size;
 	u16 flags;
 	char evt_info[TPM_EVENT_INFO_LENGTH];

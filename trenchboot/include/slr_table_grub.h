@@ -116,8 +116,6 @@ struct grub_slr_entry_policy
 {
   struct grub_slr_entry_hdr hdr;
   grub_uint16_t revision;
-  grub_uint16_t reserved;
-  grub_uint16_t algorithms
   grub_uint16_t nr_entries;
   /* policy_entries[] */
 } GRUB_PACKED;
@@ -129,7 +127,7 @@ struct grub_slr_policy_entry
 {
   grub_uint16_t pcr;
   grub_uint16_t entity_type;
-  grub_uint64_t entity; /* entity addr if it cannot be infered from the type */
+  grub_uint64_t entity;
   grub_uint16_t size;
   grub_uint16_t flags;
   char evt_info[GRUB_TPM_EVENT_INFO_LENGTH];
