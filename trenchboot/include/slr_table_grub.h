@@ -257,4 +257,15 @@ grub_slr_add_entry (struct grub_slr_table *table,
   return 0;
 }
 
+static inline void
+grub_slr_init_table(struct slr_table *slrt, grub_uint16_t architecture,
+                    grub_uint32_t max_size)
+{
+  slrt->magic = GRUB_SLR_TABLE_MAGIC;
+  slrt->revision = GRUB_SLR_TABLE_REVISION;
+  slrt->architecture = architecture;
+  slrt->size = sizeof(*slrt);
+  slrt->max_size = max_size;
+}
+
 #endif /* GRUB_SLR_TABLE_H */

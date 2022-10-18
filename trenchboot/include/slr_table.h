@@ -231,6 +231,16 @@ slr_add_entry(struct slr_table *table,
 	return 0;
 }
 
+static inline void
+slr_init_table(struct slr_table *slrt, u16 architecture, u32 max_size)
+{
+	slrt->magic = SLR_TABLE_MAGIC;
+	slrt->revision = SLR_TABLE_REVISION;
+	slrt->architecture = architecture;
+	slrt->size = sizeof(*slrt);
+	slrt->max_size = max_size;
+}
+
 #endif /* !__ASSEMBLY */
 
 #endif /* _LINUX_SLR_TABLE_H */
