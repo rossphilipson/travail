@@ -25,6 +25,7 @@
 
 /* DRTM Policy Entry Flags */
 #define SLR_POLICY_FLAG_MEASURED	0x1
+#define SLR_POLICY_IMPLICIT_SIZE	0x2
 
 /* Array Lengths */
 #define TPM_EVENT_INFO_LENGTH		32

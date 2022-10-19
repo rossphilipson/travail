@@ -38,6 +38,7 @@
 
 /* DRTM Policy Entry Flags */
 #define GRUB_SLR_POLICY_FLAG_MEASURED	0x1
+#define GRUB_SLR_POLICY_IMPLICIT_SIZE	0x2
 
 /* Array Lengths */
 #define GRUB_TPM_EVENT_INFO_LENGTH	32
