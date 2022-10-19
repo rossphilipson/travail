@@ -50,6 +50,7 @@
 #define SLR_ET_CMDLINE		0x0003
 #define SLR_ET_MEMMAP		0x0004
 #define SLR_ET_TXT_OS2MLE	0x0010
+#define SLR_ET_UNUSED		0xffff
 
 #ifndef __ASSEMBLY__
 

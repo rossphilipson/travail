@@ -63,6 +63,7 @@
 #define GRUB_SLR_ET_CMDLINE		0x0003
 #define GRUB_SLR_ET_MEMMAP		0x0004
 #define GRUB_SLR_ET_TXT_OS2MLE		0x0010
+#define GRUB_SLR_ET_UNUSED		0xffff
 
 /*
  * Primary SLR Table Header
