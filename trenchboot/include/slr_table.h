@@ -138,11 +138,8 @@ struct txt_mtrr_state {
  */
 struct slr_entry_intel_info {
 	struct slr_entry_hdr hdr;
-	u32 boot_params_addr;
 	u64 saved_misc_enable_msr;
 	struct txt_mtrr_state saved_bsp_mtrrs;
-	u32 ap_wake_block;
-	u32 ap_wake_block_size;
 } __packed;
 
 /*
@@ -150,6 +147,7 @@ struct slr_entry_intel_info {
  */
 struct slr_entry_amd_info {
 	struct slr_entry_hdr hdr;
+	u64 slb_addr;
 } __packed;
 
 /*

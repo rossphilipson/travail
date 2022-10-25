@@ -158,11 +158,8 @@ struct grub_txt_mtrr_state
 struct grub_slr_entry_intel_info
 {
   struct grub_slr_entry_hdr hdr;
-  grub_uint32_t boot_params_addr;
   grub_uint64_t saved_misc_enable_msr;
   struct grub_txt_mtrr_state saved_bsp_mtrrs;
-  grub_uint32_t ap_wake_block;
-  grub_uint32_t ap_wake_block_size;
 } GRUB_PACKED;
 
 /*
@@ -171,6 +168,7 @@ struct grub_slr_entry_intel_info
 struct grub_slr_entry_amd_info
 {
   struct grub_slr_entry_hdr hdr;
+  grub_uint64_t slb_addr;
 } GRUB_PACKED;
 
 /*
