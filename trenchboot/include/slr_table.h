@@ -147,7 +147,6 @@ struct slr_entry_intel_info {
  */
 struct slr_entry_amd_info {
 	struct slr_entry_hdr hdr;
-	u64 slb_addr;
 } __packed;
 
 /*

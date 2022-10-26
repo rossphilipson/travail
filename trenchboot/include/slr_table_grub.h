@@ -168,7 +168,6 @@ struct grub_slr_entry_intel_info
 struct grub_slr_entry_amd_info
 {
   struct grub_slr_entry_hdr hdr;
-  grub_uint64_t slb_addr;
 } GRUB_PACKED;
 
 /*
