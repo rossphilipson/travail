@@ -131,9 +131,10 @@ struct grub_slr_policy_entry
 {
   grub_uint16_t pcr;
   grub_uint16_t entity_type;
-  grub_uint64_t entity;
-  grub_uint16_t size;
   grub_uint16_t flags;
+  grub_uint16_t reserved;
+  grub_uint64_t entity;
+  grub_uint64_t size;
   char evt_info[GRUB_TPM_EVENT_INFO_LENGTH];
 } GRUB_PACKED;
 

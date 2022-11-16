@@ -114,9 +114,10 @@ struct slr_entry_policy {
 struct slr_policy_entry {
 	u16 pcr;
 	u16 entity_type;
-	u64 entity;
-	u16 size;
 	u16 flags;
+	u16 reserved;
+	u64 entity;
+	u64 size;
 	char evt_info[TPM_EVENT_INFO_LENGTH];
 } __packed;
 
