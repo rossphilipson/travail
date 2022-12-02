@@ -247,13 +247,7 @@ grub_slr_add_entry (struct grub_slr_table *table,
   if ((table->size + entry->size) > table->max_size)
     return -1;
 
-  end = (struct grub_slr_entry_hdr *)((u8 *)table + table->size
-                                      - sizeof(*end));
-  if (end->tag != GRUB_SLR_ENTRY_END)
-    return -1; /* malformed table */
-
-  memcpy((u8 *)end + entry->size, end, sizeof(*end));
-  memcpy((u8 *)end, entry, entry->size);
+  grub_memcpy((u8 *)table + table->size, entry, entry->size);
   table->size += entry->size;
 
   return 0;

@@ -216,18 +216,10 @@ static inline int
 slr_add_entry(struct slr_table *table,
 	      struct slr_entry_hdr *entry)
 {
-	struct slr_entry_hdr *end;
-
 	if ((table->size + entry->size) > table->max_size)
 		return -1;
 
-	end = (struct slr_entry_hdr *)((u8 *)table + table->size
-		- sizeof(*end));
-	if (end->tag != SLR_ENTRY_END)
-		return -1; /* malformed table */
-
-	memcpy((u8 *)end + entry->size, end, sizeof(*end));
-	memcpy((u8 *)end, entry, entry->size);
+	memcpy((u8 *)table + table->size, entry, entry->size);
 	table->size += entry->size;
 
 	return 0;
