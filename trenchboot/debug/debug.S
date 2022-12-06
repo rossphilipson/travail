@@ -18,7 +18,7 @@
 	popl	%edx
 .endm
 
-ENTRY(debug_put_chars)
+SYM_FUNC_START(debug_put_chars)
 	pushl	%ecx
 	pushl	%edx
 	pushl	%eax
@@ -42,16 +42,18 @@ ENTRY(debug_put_chars)
 	popl	%eax
 	popl	%edx
 	popl	%ecx
-	jmp	debug_back
-ENDPROC(debug_put_chars)
+	/*jmp	debug_back*/
+	ret
+SYM_FUNC_END(debug_put_chars)
 
 ...
 	jmp	debug_put_chars
 debug_back:
+	/* or call */
 ...
 
 	.code64
-ENTRY(debug_put_chars64)
+SYM_FUNC_START(debug_put_chars64)
 	pushq	%rcx
 	pushq	%rdx
 	pushq	%rax
@@ -75,10 +77,6 @@ ENTRY(debug_put_chars64)
 	popq	%rax
 	popq	%rdx
 	popq	%rcx
-	jmp	debug_back64
-ENDPROC(debug_put_chars64)
-
-...
-	jmp	debug_put_chars64
-debug_back64:
-...
+	/*jmp	debug_back64*/
+	ret
+SYM_FUNC_END(debug_put_chars64)

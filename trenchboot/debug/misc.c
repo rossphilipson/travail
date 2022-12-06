@@ -51,6 +51,7 @@ void sl_main(u8 *bootparams)
 
 	/* Move here from extract_kernel() */
 	console_init();
+	init_default_io_ops();
 	error_putstr("***RJP*** test string and hex:\n");
 	error_puthex(0xffaa2211);
 	error_putstr("\n");
