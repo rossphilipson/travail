@@ -58,7 +58,7 @@
 
 /* Entity Types */
 #define GRUB_SLR_ET_UNSPECIFIED		0x0000
-#define GRUB_SLR_ET_SLTR		0x0001
+#define GRUB_SLR_ET_SLRT		0x0001
 #define GRUB_SLR_ET_BOOT_PARAMS		0x0002
 #define GRUB_SLR_ET_SETUP_DATA		0x0003
 #define GRUB_SLR_ET_CMDLINE		0x0004
@@ -199,7 +199,7 @@ struct grub_efi_cfg_entry
 static inline void *
 grub_slr_end_of_entrys (struct grub_slr_table *table)
 {
-  return (((void *)table) + table->size);
+  return (void *)(((grub_uint8_t *)table) + table->size);
 }
 
 static inline struct grub_slr_entry_hdr *
@@ -207,7 +207,7 @@ grub_slr_next_entry (struct grub_slr_table *table,
                      struct grub_slr_entry_hdr *curr)
 {
   struct grub_slr_entry_hdr *next = (struct grub_slr_entry_hdr *)
-                                    ((u8 *)curr + curr->size);
+                                    ((grub_uint8_t *)curr + curr->size);
 
   if ((void *)next >= grub_slr_end_of_entrys(table))
     return NULL;
@@ -223,7 +223,7 @@ grub_slr_next_entry_by_tag (struct grub_slr_table *table,
                             grub_uint16_t tag)
 {
   if (!entry) /* Start from the beginning */
-    entry = (struct grub_slr_entry_hdr *)(((u8 *)table) + sizeof(*table));
+    entry = (struct grub_slr_entry_hdr *)(((grub_uint8_t *)table) + sizeof(*table));
 
   for ( ; ; )
     {
@@ -242,19 +242,17 @@ static inline int
 grub_slr_add_entry (struct grub_slr_table *table,
                     struct grub_slr_entry_hdr *entry)
 {
-  struct grub_slr_entry_hdr *end;
-
   if ((table->size + entry->size) > table->max_size)
     return -1;
 
-  grub_memcpy((u8 *)table + table->size, entry, entry->size);
+  grub_memcpy((grub_uint8_t *)table + table->size, entry, entry->size);
   table->size += entry->size;
 
   return 0;
 }
 
 static inline void
-grub_slr_init_table(struct slr_table *slrt, grub_uint16_t architecture,
+grub_slr_init_table(struct grub_slr_table *slrt, grub_uint16_t architecture,
                     grub_uint32_t max_size)
 {
   slrt->magic = GRUB_SLR_TABLE_MAGIC;
