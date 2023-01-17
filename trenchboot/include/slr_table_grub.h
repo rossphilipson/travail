@@ -32,6 +32,10 @@
 #define GRUB_SLR_INTEL_TXT		1
 #define GRUB_SLR_AMD_SKINIT		2
 
+/* SLR defined bootloaders */
+#define GRUB_SLR_BOOTLOADER_INVALID	0
+#define GRUB_SLR_BOOTLOADER_GRUB	1
+
 /* Log formats */
 #define GRUB_SLR_DRTM_TPM12_LOG		1
 #define GRUB_SLR_DRTM_TPM20_LOG		2
@@ -90,12 +94,23 @@ struct grub_slr_entry_hdr
 } GRUB_PACKED;
 
 /*
+ * Boot loader context
+ */
+struct grub_slr_bl_context
+{
+  grub_uint16_t bootloader;
+  grub_uint16_t reserved;
+  grub_uint64_t context;
+} GRUB_PACKED;
+
+/*
  * DRTM Dynamic Launch Configuration
  */
 struct grub_slr_entry_dl_info
 {
   struct grub_slr_entry_hdr hdr;
   grub_uint64_t dl_handler;
+  struct grub_slr_bl_context bl_context;
   grub_uint64_t dce_base;
   grub_uint32_t dce_size;
   grub_uint64_t dlme_entry;
