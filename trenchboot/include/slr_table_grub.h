@@ -206,6 +206,8 @@ struct grub_slr_entry_efi_config
 
 struct grub_efi_cfg_entry
 {
+  grub_uint16_t pcr;
+  grub_uint16_t reserved;
   grub_uint64_t cfg; /* address or value */
   grub_uint32_t size;
   char evt_info[GRUB_TPM_EVENT_INFO_LENGTH];

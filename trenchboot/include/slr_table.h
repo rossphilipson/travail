@@ -182,6 +182,8 @@ struct slr_entry_efi_config {
 } __packed;
 
 struct efi_cfg_entry {
+	u16 pcr;
+	u16 reserved;
 	u64 cfg; /* address or value */
 	u32 size;
 	char evt_info[TPM_EVENT_INFO_LENGTH];
