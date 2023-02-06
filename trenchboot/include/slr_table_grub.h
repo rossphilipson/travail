@@ -1,6 +1,6 @@
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2022  Oracle and/or its affiliates.
+ *  Copyright (C) 2023  Oracle and/or its affiliates.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,8 +109,8 @@ struct grub_slr_bl_context
 struct grub_slr_entry_dl_info
 {
   struct grub_slr_entry_hdr hdr;
-  grub_uint64_t dl_handler;
   struct grub_slr_bl_context bl_context;
+  grub_uint64_t dl_handler;
   grub_uint64_t dce_base;
   grub_uint32_t dce_size;
   grub_uint64_t dlme_entry;
