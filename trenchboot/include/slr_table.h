@@ -15,6 +15,10 @@
 #define SLR_TABLE_MAGIC		0x4452544d
 #define SLR_TABLE_REVISION	1
 
+/* Current revisions for the policy and EFI config */
+#define SLR_POLICY_REVISION	1
+#define SLR_EFI_CONFIG_REVISION	1
+
 /* SLR defined architectures */
 #define SLR_INTEL_TXT		1
 #define SLR_AMD_SKINIT		2
@@ -83,8 +87,7 @@ struct slr_entry_hdr {
 /*
  * Boot loader context
  */
-struct slr_bl_context
-{
+struct slr_bl_context {
 	u16 bootloader;
 	u16 reserved;
 	u64 context;
@@ -175,13 +178,12 @@ struct slr_entry_arm_info {
 
 struct slr_entry_efi_config {
 	struct slr_entry_hdr hdr;
-	u32 identifier;
-	u16 reserved;
+	u16 revision;
 	u16 nr_entries;
 	/* efi_cfg_entries[] */
 } __packed;
 
-struct efi_cfg_entry {
+struct slr_efi_cfg_entry {
 	u16 pcr;
 	u16 reserved;
 	u64 cfg; /* address or value */

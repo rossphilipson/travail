@@ -28,6 +28,10 @@
 #define GRUB_SLR_TABLE_MAGIC		0x4452544d
 #define GRUB_SLR_TABLE_REVISION		1
 
+/* Current revisions for the policy and EFI config */
+#define GRUB_SLR_POLICY_REVISION	1
+#define GRUB_SLR_EFI_CONFIG_REVISION	1
+
 /* SLR defined architectures */
 #define GRUB_SLR_INTEL_TXT		1
 #define GRUB_SLR_AMD_SKINIT		2
@@ -198,13 +202,12 @@ struct grub_slr_entry_arm_info
 struct grub_slr_entry_efi_config
 {
   struct grub_slr_entry_hdr hdr;
-  grub_uint32_t identifier;
-  grub_uint16_t reserved;
+  grub_uint16_t revision;
   grub_uint16_t nr_entries;
   /* efi_cfg_entries[] */
 } GRUB_PACKED;
 
-struct grub_efi_cfg_entry
+struct grub_slr_efi_cfg_entry
 {
   grub_uint16_t pcr;
   grub_uint16_t reserved;
