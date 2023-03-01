@@ -160,17 +160,17 @@ struct grub_slr_policy_entry
 /*
  * Secure Launch defined MTRR saving structures
  */
-struct grub_txt_mtrr_pair
+struct grub_slr_txt_mtrr_pair
 {
   grub_uint64_t mtrr_physbase;
   grub_uint64_t mtrr_physmask;
 } GRUB_PACKED;
 
-struct grub_txt_mtrr_state
+struct grub_slr_txt_mtrr_state
 {
   grub_uint64_t default_mem_type;
   grub_uint64_t mtrr_vcnt;
-  struct grub_txt_mtrr_pair mtrr_pair[GRUB_TXT_VARIABLE_MTRRS_LENGTH];
+  struct grub_slr_txt_mtrr_pair mtrr_pair[GRUB_TXT_VARIABLE_MTRRS_LENGTH];
 } GRUB_PACKED;
 
 /*
@@ -180,7 +180,7 @@ struct grub_slr_entry_intel_info
 {
   struct grub_slr_entry_hdr hdr;
   grub_uint64_t saved_misc_enable_msr;
-  struct grub_txt_mtrr_state saved_bsp_mtrrs;
+  struct grub_slr_txt_mtrr_state saved_bsp_mtrrs;
 } GRUB_PACKED;
 
 /*

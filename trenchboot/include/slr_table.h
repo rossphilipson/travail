@@ -142,15 +142,15 @@ struct slr_policy_entry {
 /*
  * Secure Launch defined MTRR saving structures
  */
-struct txt_mtrr_pair {
+struct slr_txt_mtrr_pair {
 	u64 mtrr_physbase;
 	u64 mtrr_physmask;
 } __packed;
 
-struct txt_mtrr_state {
+struct slr_txt_mtrr_state {
 	u64 default_mem_type;
 	u64 mtrr_vcnt;
-	struct txt_mtrr_pair mtrr_pair[TXT_VARIABLE_MTRRS_LENGTH];
+	struct slr_txt_mtrr_pair mtrr_pair[TXT_VARIABLE_MTRRS_LENGTH];
 } __packed;
 
 /*
@@ -159,7 +159,7 @@ struct txt_mtrr_state {
 struct slr_entry_intel_info {
 	struct slr_entry_hdr hdr;
 	u64 saved_misc_enable_msr;
-	struct txt_mtrr_state saved_bsp_mtrrs;
+	struct slr_txt_mtrr_state saved_bsp_mtrrs;
 } __packed;
 
 /*
