@@ -54,6 +54,17 @@ void print_debug_chars_inl(int c, int d)
 			: : "D" (c), "S" (d) : "rdi", "rsi");
 }
 
+void print_debug_str(const char *s)
+{
+	/* Use some for of sprintf to format string */
+	while (*s) {
+		if (*s == '\n')
+			print_debug_chars_inl ('\r', 1);
+		print_debug_chars_inl (*s, 1);
+		*s++;
+	}
+}
+
 /* rax = 64b
  * eax = 32b
  * ax = 16b
