@@ -65,6 +65,23 @@ void print_debug_str(const char *s)
 	}
 }
 
+void print_debug_hex(unsigned long value)
+{
+	char alpha[2] = "0";
+	int bits;
+
+	for (bits = sizeof(value) * 8 - 4; bits >= 0; bits -= 4) {
+		unsigned long digit = (value >> bits) & 0xf;
+
+		if (digit < 0xA)
+			alpha[0] = '0' + digit;
+		else
+			alpha[0] = 'a' + (digit - 0xA);
+
+		print_debug_str(alpha);
+	}
+}
+
 /* rax = 64b
  * eax = 32b
  * ax = 16b
