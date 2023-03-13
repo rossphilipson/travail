@@ -51,7 +51,7 @@ void print_debug_chars_inl(int c, int d)
 			"popq	%%rax\n\t"
 			"popq	%%rdx\n\t"
 			"popq	%%rcx\n\t"
-			: : "D" (c), "S" (d) : "rdi", "rsi");
+			: : "D" (c), "S" (d) : );
 }
 
 void print_debug_str(const char *s)
