@@ -262,11 +262,17 @@ static inline int
 grub_slr_add_entry (struct grub_slr_table *table,
                     struct grub_slr_entry_hdr *entry)
 {
+  struct grub_slr_entry_hdr *end;
+
   if ((table->size + entry->size) > table->max_size)
     return -1;
 
-  grub_memcpy((grub_uint8_t *)table + table->size, entry, entry->size);
+  grub_memcpy((grub_uint8_t *)table + table->size - sizeof(*end), entry, entry->size);
   table->size += entry->size;
+
+  end  = (struct grub_slr_entry_hdr *)((grub_uint8_t *)table + table->size - sizeof(*end));
+  end->tag = GRUB_SLR_ENTRY_END;
+  end->size = sizeof(*end);
 
   return 0;
 }
@@ -275,11 +281,16 @@ static inline void
 grub_slr_init_table(struct grub_slr_table *slrt, grub_uint16_t architecture,
                     grub_uint32_t max_size)
 {
+  struct grub_slr_entry_hdr *end;
+
   slrt->magic = GRUB_SLR_TABLE_MAGIC;
   slrt->revision = GRUB_SLR_TABLE_REVISION;
   slrt->architecture = architecture;
   slrt->size = sizeof(*slrt);
   slrt->max_size = max_size;
+  end = (struct grub_slr_entry_hdr *)((grub_uint8_t *)slrt + sizeof(*slrt));
+  end->tag = GRUB_SLR_ENTRY_END;
+  end->size = sizeof(*end);
 }
 
 #endif /* GRUB_SLR_TABLE_H */
