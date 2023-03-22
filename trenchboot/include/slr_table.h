@@ -235,11 +235,17 @@ static inline int
 slr_add_entry(struct slr_table *table,
 	      struct slr_entry_hdr *entry)
 {
+	struct slr_entry_hdr *end;
+
 	if ((table->size + entry->size) > table->max_size)
 		return -1;
 
-	memcpy((u8 *)table + table->size, entry, entry->size);
+	memcpy((u8 *)table + table->size - sizeof(*end), entry, entry->size);
 	table->size += entry->size;
+
+	end  = (struct slr_entry_hdr *)((u8 *)table + table->size - sizeof(*end));
+	end->tag = SLR_ENTRY_END;
+	end->size = sizeof(*end);
 
 	return 0;
 }
@@ -247,11 +253,16 @@ slr_add_entry(struct slr_table *table,
 static inline void
 slr_init_table(struct slr_table *slrt, u16 architecture, u32 max_size)
 {
+	struct slr_entry_hdr *end;
+
 	slrt->magic = SLR_TABLE_MAGIC;
 	slrt->revision = SLR_TABLE_REVISION;
 	slrt->architecture = architecture;
-	slrt->size = sizeof(*slrt);
+	slrt->size = sizeof(*slrt) + sizeof(*end);
 	slrt->max_size = max_size;
+	end = (struct slr_entry_hdr *)((u8 *)slrt + sizeof(*slrt));
+	end->tag = SLR_ENTRY_END;
+	end->size = sizeof(*end);
 }
 
 #endif /* !__ASSEMBLY */
