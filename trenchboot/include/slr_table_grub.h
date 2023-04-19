@@ -21,16 +21,16 @@
 #ifndef GRUB_SLR_TABLE_H
 #define GRUB_SLR_TABLE_H 1
 
-#define GRUB_EFI_SLR_TABLE_GUID \
+#define GRUB_UEFI_SLR_TABLE_GUID \
   { 0x877a9b2a, 0x0385, 0x45d1, { 0xa0, 0x34, 0x9d, 0xac, 0x9c, 0x9e, 0x56, 0x5f }}
 
 /* SLR table header values */
 #define GRUB_SLR_TABLE_MAGIC		0x4452544d
 #define GRUB_SLR_TABLE_REVISION		1
 
-/* Current revisions for the policy and EFI config */
+/* Current revisions for the policy and UEFI config */
 #define GRUB_SLR_POLICY_REVISION	1
-#define GRUB_SLR_EFI_CONFIG_REVISION	1
+#define GRUB_SLR_UEFI_CONFIG_REVISION	1
 
 /* SLR defined architectures */
 #define GRUB_SLR_INTEL_TXT		1
@@ -60,8 +60,8 @@
 #define GRUB_SLR_ENTRY_INTEL_INFO	0x0004
 #define GRUB_SLR_ENTRY_AMD_INFO		0x0005
 #define GRUB_SLR_ENTRY_ARM_INFO		0x0006
-#define GRUB_SLR_ENTRY_EFI_INFO		0x0007
-#define GRUB_SLR_ENTRY_EFI_CONFIG	0x0008
+#define GRUB_SLR_ENTRY_UEFI_INFO	0x0007
+#define GRUB_SLR_ENTRY_UEFI_CONFIG	0x0008
 #define GRUB_SLR_ENTRY_END		0xffff
 
 /* Entity Types */
@@ -70,7 +70,7 @@
 #define GRUB_SLR_ET_BOOT_PARAMS		0x0002
 #define GRUB_SLR_ET_SETUP_DATA		0x0003
 #define GRUB_SLR_ET_CMDLINE		0x0004
-#define GRUB_SLR_ET_EFI_MEMMAP		0x0005
+#define GRUB_SLR_ET_UEFI_MEMMAP		0x0005
 #define GRUB_SLR_ET_RAMDISK		0x0006
 #define GRUB_SLR_ET_TXT_OS2MLE		0x0010
 #define GRUB_SLR_ET_UNUSED		0xffff
@@ -199,15 +199,15 @@ struct grub_slr_entry_arm_info
   struct grub_slr_entry_hdr hdr;
 } GRUB_PACKED;
 
-struct grub_slr_entry_efi_config
+struct grub_slr_entry_uefi_config
 {
   struct grub_slr_entry_hdr hdr;
   grub_uint16_t revision;
   grub_uint16_t nr_entries;
-  /* efi_cfg_entries[] */
+  /* uefi_cfg_entries[] */
 } GRUB_PACKED;
 
-struct grub_slr_efi_cfg_entry
+struct grub_slr_uefi_cfg_entry
 {
   grub_uint16_t pcr;
   grub_uint16_t reserved;
