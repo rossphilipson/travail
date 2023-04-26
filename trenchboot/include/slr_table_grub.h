@@ -286,7 +286,7 @@ grub_slr_init_table(struct grub_slr_table *slrt, grub_uint16_t architecture,
   slrt->magic = GRUB_SLR_TABLE_MAGIC;
   slrt->revision = GRUB_SLR_TABLE_REVISION;
   slrt->architecture = architecture;
-  slrt->size = sizeof(*slrt);
+  slrt->size = sizeof(*slrt) + sizeof(*end);
   slrt->max_size = max_size;
   end = (struct grub_slr_entry_hdr *)((grub_uint8_t *)slrt + sizeof(*slrt));
   end->tag = GRUB_SLR_ENTRY_END;
