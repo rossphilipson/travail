@@ -109,3 +109,41 @@ void __init setup_dbregs(int cpuid, u64 l0, u64 l1)
 	printk("***RJP*** setup 2 DB regs on CPU# %d\n", cpuid);
 }
 
+void dump_localities(struct tpm_chip *chip)
+{
+	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+	int i, rc;
+	u8 access;
+	u16 localities = 0;
+
+	for ( i=0; i<=4; i++ ) {
+		rc = tpm_tis_read8(priv, TPM_ACCESS(i), &access);
+		pr_notice("***RJP*** tpm register value: %2.2x\n", access);
+
+		if (rc < 0) {
+			pr_err("***RJP*** error reading locality %i tpm register\n", i);
+			continue;
+		}
+
+		if ( ! (access & TPM_ACCESS_VALID) ) {
+			pr_err("***RJP*** locality %i tpm register not in valid state\n", i);
+			continue;
+		}
+
+		if ( access & TPM_ACCESS_REQUEST_PENDING ) {
+			if ( access & TPM_ACCESS_REQUEST_USE ) {
+				pr_notice("***RJP*** tpm register pending request: %i\n", i);
+				localities |= 1 << (i + 8);
+			}
+		}
+
+		if ( access & TPM_ACCESS_ACTIVE_LOCALITY ) {
+			pr_notice("***RJP*** tpm register active locality: %i\n", i);
+			localities |= 1 << i;
+		}
+	}
+
+	pr_notice("***RJP*** locality state: %x\n", localities);
+}
+
+
