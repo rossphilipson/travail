@@ -146,4 +146,5 @@ void dump_localities(struct tpm_chip *chip)
 	pr_notice("***RJP*** locality state: %x\n", localities);
 }
 
+print_hex_dump(KERN_WARNING, "EVTLOG: ", DUMP_PREFIX_ADDRESS, 16, 1, (void *)event_header, 0x1000, true);
 
