@@ -61,7 +61,7 @@ void print_debug_str(const char *s)
 		if (*s == '\n')
 			print_debug_chars_inl ('\r', 1);
 		print_debug_chars_inl (*s, 1);
-		*s++;
+		s++;
 	}
 }
 
