@@ -26,7 +26,7 @@ void print_debug_chars_inl(void)
 			: : : );
 }
 
-void print_debug_chars_inl(int c, int d)
+static void print_debug_chars_inl(int c, int d)
 {
 	asm volatile (  "pushq	%%rcx\n\t"
 			"pushq	%%rdx\n\t"
@@ -54,7 +54,7 @@ void print_debug_chars_inl(int c, int d)
 			: : "D" (c), "S" (d) : );
 }
 
-void print_debug_str(const char *s)
+static void print_debug_str(const char *s)
 {
 	/* Use some for of sprintf to format string */
 	while (*s) {
@@ -65,7 +65,7 @@ void print_debug_str(const char *s)
 	}
 }
 
-void print_debug_hex(unsigned long value)
+static void print_debug_hex(unsigned long value)
 {
 	char alpha[2] = "0";
 	int bits;
