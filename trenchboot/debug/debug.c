@@ -82,6 +82,26 @@ static void print_debug_hex(unsigned long value)
 	}
 }
 
+static void print_debug_byte(u8 p)
+{
+	char tmp[4];
+
+	if ( (p & 0xf) >= 10 )
+		tmp[1] = (p & 0xf) + 'a' - 10;
+	else
+		tmp[1] = (p & 0xf) + '0';
+	p >>= 4;
+
+	if ( (p & 0xf) >= 10 )
+		tmp[0] = (p & 0xf) + 'a' - 10;
+	else
+		tmp[0] = (p & 0xf) + '0';
+
+	tmp[2] = ' ';
+	tmp[3] = '\0';
+	print_debug_str(tmp);
+}
+
 /* rax = 64b
  * eax = 32b
  * ax = 16b
