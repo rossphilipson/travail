@@ -80,4 +80,55 @@ static void printd_byte(unsigned char p)
 	printd_str(tmp);
 }
 #endif
+
+#ifndef NODB_DUMP
+static void dump_hex(const void *memory, unsigned int length)
+{
+	unsigned int i;
+	unsigned char *line;
+	int all_zero = 0;
+	int all_one = 0;
+	unsigned int num_bytes;
+
+	for ( i = 0; i < length; i += 16 ) {
+		unsigned int j;
+		num_bytes = 16;
+		line = ((unsigned char *)memory) + i;
+
+		all_zero++;
+		all_one++;
+
+		for ( j = 0; j < num_bytes; j++ ) {
+			if ( line[j] != 0 ) {
+				all_zero = 0;
+				break;
+			}
+		}
+
+		for ( j = 0; j < num_bytes; j++ )
+		{
+			if ( line[j] != 0xff ) {
+				all_one = 0;
+				break;
+			}
+		}
+
+		if ( (all_zero < 2) && (all_one < 2) ) {
+			printd_hex((unsigned long)memory + i);
+			printd_str(": ");
+			for ( j = 0; j < num_bytes; j++ )
+				printd_byte(line[j]);
+			for ( ; j < 16; j++ )
+				printd_str("   ");
+			printd_str("  ");
+			for ( j = 0; j < num_bytes; j++ )
+				(line[j] >= ' ' && line[j] <= '~') ? printd_chars(line[j], 1) : printd_chars('.', 1);
+			printd_str("\n");
+		}
+		else if ( (all_zero == 2) || (all_one == 2) )
+			printd_str("...\n");
+	}
+}
+#endif
+
 #endif
