@@ -60,7 +60,7 @@ static void printd_hex(unsigned long value)
 #endif
 
 #ifndef NODB_BYTES
-static void printd_byte(u8 p)
+static void printd_byte(unsigned char p)
 {
 	char tmp[4];
 
@@ -77,7 +77,7 @@ static void printd_byte(u8 p)
 
 	tmp[2] = ' ';
 	tmp[3] = '\0';
-	printdstr(tmp);
+	printd_str(tmp);
 }
 #endif
 #endif
