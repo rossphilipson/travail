@@ -2,6 +2,7 @@
 .macro DEBUG_PUT_CHAR char
 	pushl	%edx
 	pushl	%eax
+	pushl	%ecx
 	xorl	%ecx, %ecx
 
 	movw	$0x3f8, %dx
@@ -14,6 +15,7 @@
 	movb	\char, %al
 	outb	%al, %dx
 
+	popl	%ecx
 	popl	%eax
 	popl	%edx
 .endm
