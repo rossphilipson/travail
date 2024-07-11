@@ -14,21 +14,21 @@
 	pushl	%eax
 #endif
 	xorl	%ecx, %ecx
-1:
+.Ldbg_loop_\@:
 	cmpb	$5, %cl
-	jz	2f
+	jz	.Ldbg_done_\@
 	movw	$0x3f8, %dx
 	addw	$5, %dx
-3:
+.Ldbg_wait_\@:
 	inb	%dx, %al
 	testb	$0x20, %al
-	jz	3b
+	jz	.Ldbg_wait_\@
 	movw	$0x3f8, %dx
 	movb	\char, %al
 	outb	%al, %dx
 	incb	%cl
-	jmp	1b
-2:
+	jmp	.Ldbg_loop_\@
+.Ldbg_done_\@:
 #ifdef DEBUG_USE_MEMLOC
 	movl	(DEBUG_MEMLOC + 8), %eax
 	movl	(DEBUG_MEMLOC + 4), %edx
@@ -51,21 +51,21 @@
 	pushq	%rax
 #endif
 	xorq	%rcx, %rcx
-1:
+.Ldbg_loop_\@:
 	cmpb	$5, %cl
-	jz	2f
+	jz	.Ldbg_done_\@
 	movw	$0x3f8, %dx
 	addw	$5, %dx
-3:
+.Ldbg_wait_\@:
 	inb	%dx, %al
 	testb	$0x20, %al
-	jz	3b
+	jz	.Ldbg_wait_\@
 	movw	$0x3f8, %dx
 	movb	\char, %al
 	outb	%al, %dx
 	incb	%cl
-	jmp	1b
-2:
+	jmp	.Ldbg_loop_\@
+.Ldbg_done_\@:
 #ifdef DEBUG_USE_MEMLOC
 	movq	(DEBUG_MEMLOC + 16), %rax
 	movq	(DEBUG_MEMLOC + 8), %rdx
