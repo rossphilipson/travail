@@ -1,5 +1,5 @@
-#ifndef _DEBUG_STUFF_H_
-#define _DEBUG_STUFF_H_
+#ifndef _DEBUG_PRINT_H_
+#define _DEBUG_PRINT_H_
 
 static void printd_chars(int c, int d)
 {
