@@ -168,7 +168,7 @@ void mdelay(u32 ms)
 		return;
 
 	ctsc = __rdtsc();
-	ftsc = ms * ticks_per_ms;
+	ftsc = ms * ticks_per_ms + ctsc;
 
 	while (ctsc < ftsc) {
 		__cpu_relax();
