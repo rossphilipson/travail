@@ -4,27 +4,26 @@ Date: Wed, 10 Dec 2025 12:30:50 -0800
 Subject: [PATCH v15 00/39] x86: Secure Launch support for Intel TXT
 
 Secure Launch is a vendor-neutral approach to implementing TGC Dynamic
-Root of Trust (DRTM) support in the kernel.  This is complementary to
+Root of Trust (DRTM) support in the kernel. This is complementary to
 better known Static Root of Trust (SRTM) schemes such as UEFI SecureBoot.
 
 This series provides the common infrastructure along with Intel TXT
-support, without needing the tboot exokernel.  Support for AMD SKINIT is
+support, without needing the tboot exokernel. Support for AMD SKINIT is
 pending the common infrastructure getting nailed down, and ARM are
 looking to build on it too.
 
 Originally, tboot were approached to see if they'd take support for
-other vendors, but they elected not to.  Hence this approach instead.
+other vendors, but they elected not to. Hence this approach instead.
 
 Work is being coordinated by the Trenchboot project, https://trenchboot.org/,
 organising Secure Launch support for upstream open source projects including
-Grub, iPXE and Xen.  The goal of the Trenchboot project is to make DTRM easy
+Grub, iPXE and Xen. The goal of the Trenchboot project is to make DTRM easy
 to use.  e.g. for Grub, it's simply adding "slaunch" as a command in the boot
 stanza.  See https://trenchboot.org/user-docs/QUICKSTART/#linux-quick-start-guide
 for more details
 
 Patch set based on commit:
-
-XXX
+torvalds/master/fd57572253bc356330dbe5b233c2e1d8426c66fd
 
 Finally we would like to thank everyone for their input and
 assistance. It has all been very helpful in improving the quality of
@@ -33,9 +32,36 @@ our solution and in reviewing/strengthening our security posture.
 Thanks
 Ross Philipson and Daniel P. Smith
 
-Changes in v15
+N.B.: this is a brief sections to describe the state of the TPM patches
+being sent along. There are 3 distinct sets:
 
-*** BLURB HERE ***
+1. Patches 01-10: Patch set v6 of a separate TPM patch set that is in
+the process of being merged by the TPM maintainers (and SL depends on).
+This set will hopefully go in soon on its own.
+
+2. Patches 11-17: Refactore of the TPM public header files to allow
+inclusion in other operating environments. It would be desirable to
+get these patches submitted separately.
+
+3. Patches 18-21: Locality manipulating patches specifically introduced
+to the set to support the Secure Launch feature.
+
+Changes in v15:
+
+ - Rewriting and reformatting of the cover letter, commit message and
+   code comments per requests from maintainers.
+ - Introduction of a early TPM driver in the x86 setup kernel to allow
+   TPM extend command very early in the boot.
+ - Remove previous TPM extending architecture that attempted to update
+   the TPM PCRs later in the boot process.
+ - Include set of split up TPM header files to allow TPM driver reuse
+   in other environments (e.g. early kernel, x86).
+ - Split slaunch.h into 2 files, with a new txt.h. The former contains
+   platform agnostic definitions for the SL feature. The new txt.h file
+   contains Intel TXT definitions from the public specs.
+ - Split TPM headers up following the specifications where the
+   technologies are defined.
+ - Fix code formatting and type-os.
 
 Alec Brown (1):
   tpm: Remove main tpm header from tpm_eventlog header
