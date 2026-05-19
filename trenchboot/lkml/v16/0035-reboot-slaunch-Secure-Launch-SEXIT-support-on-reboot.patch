@@ -1,0 +1,78 @@
+From fefdf61617974367586971180bc380d3d52f3678 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 26 Aug 2020 14:01:06 -0400
+Subject: [PATCH v16 35/38] reboot/slaunch: Secure Launch SEXIT support on
+ reboot paths
+
+If the MLE kernel is being powered off, rebooted or halted,
+then SEXIT must be called. Note that the GETSEC[SEXIT] leaf
+can only be called after a machine_shutdown() has been done on
+these paths. The machine_shutdown() is not called on a few paths
+like when poweroff action does not have a poweroff callback (into
+ACPI code) or when an emergency reset is done. In these cases,
+just the TXT registers are finalized but SEXIT is skipped.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+---
+ arch/x86/kernel/reboot.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index 6032fa9ec753..87835706bb4f 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -14,6 +14,7 @@
+ #include <linux/pgtable.h>
+ #include <linux/kexec.h>
+ #include <linux/kvm_types.h>
++#include <linux/slaunch.h>
+ #include <acpi/reboot.h>
+ #include <asm/io.h>
+ #include <asm/apic.h>
+@@ -779,6 +780,12 @@ static void native_machine_restart(char *__unused)
+ 
+ 	if (!reboot_force)
+ 		machine_shutdown();
++	/*
++	 * The comments for slaunch_finalize() provides the explanation for the
++	 * conditions required to do the SEXIT op reflected in the conditional
++	 * parameter do_sexit.
++	 */
++	slaunch_finalize(!reboot_force);
+ 	__machine_emergency_restart(0);
+ }
+ 
+@@ -789,6 +796,8 @@ static void native_machine_halt(void)
+ 
+ 	tboot_shutdown(TB_SHUTDOWN_HALT);
+ 
++	slaunch_finalize(1);
++
+ 	stop_this_cpu(NULL);
+ }
+ 
+@@ -797,8 +806,12 @@ static void native_machine_power_off(void)
+ 	if (kernel_can_power_off()) {
+ 		if (!reboot_force)
+ 			machine_shutdown();
++		slaunch_finalize(!reboot_force);
+ 		do_kernel_power_off();
++	} else {
++		slaunch_finalize(0);
+ 	}
++
+ 	/* A fallback in case there is no PM info available */
+ 	tboot_shutdown(TB_SHUTDOWN_HALT);
+ }
+@@ -826,6 +839,7 @@ void machine_shutdown(void)
+ 
+ void machine_emergency_restart(void)
+ {
++	slaunch_finalize(0);
+ 	__machine_emergency_restart(1);
+ }
+ 
+-- 
+2.47.3
+

@@ -1,0 +1,56 @@
+From deaca3e6b0cfcd1e9b90941d76acab3011b71a92 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Sat, 31 Jan 2026 13:19:38 -0800
+Subject: [PATCH v16 21/38] lib/crypto: Add SHA1 support for pre-boot
+ environments
+
+Allow the SHA1 library code in lib/crypto/sha1.c to be used in
+pre-boot environments. Use the __DISABLE_EXPORTS macro to disable
+function exports and define the proper values for that environment
+as was done earlier for SHA256.
+
+Acked-by: Eric Biggers <ebiggers@kernel.org>
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ lib/crypto/sha1.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/lib/crypto/sha1.c b/lib/crypto/sha1.c
+index daf18c862fdf..f30b5ff3b31e 100644
+--- a/lib/crypto/sha1.c
++++ b/lib/crypto/sha1.c
+@@ -125,7 +125,7 @@ static void __maybe_unused sha1_blocks_generic(struct sha1_block_state *state,
+ 	memzero_explicit(workspace, sizeof(workspace));
+ }
+ 
+-#ifdef CONFIG_CRYPTO_LIB_SHA1_ARCH
++#if defined(CONFIG_CRYPTO_LIB_SHA1_ARCH) && !defined(__DISABLE_EXPORTS)
+ #include "sha1.h" /* $(SRCARCH)/sha1.h */
+ #else
+ #define sha1_blocks sha1_blocks_generic
+@@ -207,6 +207,12 @@ void sha1(const u8 *data, size_t len, u8 out[SHA1_DIGEST_SIZE])
+ }
+ EXPORT_SYMBOL_GPL(sha1);
+ 
++/*
++ * Pre-boot environments (as indicated by __DISABLE_EXPORTS being defined)
++ * don't need the SHA1 HMAC support code.
++ */
++#ifndef __DISABLE_EXPORTS
++
+ static void __hmac_sha1_preparekey(struct sha1_block_state *istate,
+ 				   struct sha1_block_state *ostate,
+ 				   const u8 *raw_key, size_t raw_key_len)
+@@ -302,6 +308,8 @@ void hmac_sha1_usingrawkey(const u8 *raw_key, size_t raw_key_len,
+ }
+ EXPORT_SYMBOL_GPL(hmac_sha1_usingrawkey);
+ 
++#endif /* !__DISABLE_EXPORTS */
++
+ #if defined(sha1_mod_init_arch) || defined(CONFIG_CRYPTO_FIPS)
+ static int __init sha1_mod_init(void)
+ {
+-- 
+2.47.3
+

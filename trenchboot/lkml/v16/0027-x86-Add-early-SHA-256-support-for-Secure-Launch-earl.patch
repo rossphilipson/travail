@@ -1,0 +1,46 @@
+From 6e327415ed4b5fce3c4dbe60e58f109001d1bee2 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Mon, 4 Mar 2024 12:20:43 -0800
+Subject: [PATCH v16 27/38] x86: Add early SHA-256 support for Secure Launch
+ early measurements
+
+The SHA-256 algorithm is necessary to measure configuration information into
+the TPM as early as possible before using the values. This implementation
+uses the established approach of #including the SHA-256 library directly in
+the early boot code.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/startup/Makefile     | 1 +
+ arch/x86/boot/startup/lib-sha256.c | 6 ++++++
+ 2 files changed, 7 insertions(+)
+ create mode 100644 arch/x86/boot/startup/lib-sha256.c
+
+diff --git a/arch/x86/boot/startup/Makefile b/arch/x86/boot/startup/Makefile
+index e283ee4c1f45..071a90f23ae0 100644
+--- a/arch/x86/boot/startup/Makefile
++++ b/arch/x86/boot/startup/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_X86_64)		+= gdt_idt.o map_kernel.o
+ obj-$(CONFIG_AMD_MEM_ENCRYPT)	+= sme.o sev-startup.o
+ 
+ slaunch-objs			+= lib-sha1.o
++slaunch-objs			+= lib-sha256.o
+ obj-$(CONFIG_SECURE_LAUNCH)	+= $(slaunch-objs)
+ 
+ pi-objs				:= $(patsubst %.o,$(obj)/%.o,$(obj-y))
+diff --git a/arch/x86/boot/startup/lib-sha256.c b/arch/x86/boot/startup/lib-sha256.c
+new file mode 100644
+index 000000000000..f60df97f9244
+--- /dev/null
++++ b/arch/x86/boot/startup/lib-sha256.c
+@@ -0,0 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2026 Apertus Solutions, LLC
++ */
++
++#include "../../../../lib/crypto/sha256.c"
+-- 
+2.47.3
+

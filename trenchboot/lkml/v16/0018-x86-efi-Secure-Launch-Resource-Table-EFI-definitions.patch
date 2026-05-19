@@ -1,0 +1,69 @@
+From 087a44742b46ce406b05280427cf322bff7681d3 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@gmail.com>
+Date: Thu, 30 Apr 2026 11:13:02 -0700
+Subject: [PATCH v16 18/38] x86/efi: Secure Launch Resource Table EFI
+ definitions header file
+
+The Secure Launch EFI definitions are contained in the Secure Launch
+Specification. The definitions are split out into a separate header
+file for compilation purposes for EFI vs non-EFI environments in the
+kernel.
+
+The specification can be found here:
+https://github.com/TrenchBoot/documentation/blob/master/specifications/secure-launch-specification.rst
+
+Signed-off-by: Ross Philipson <ross.philipson@gmail.com>
+---
+ include/linux/slr_efi.h | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+ create mode 100644 include/linux/slr_efi.h
+
+diff --git a/include/linux/slr_efi.h b/include/linux/slr_efi.h
+new file mode 100644
+index 000000000000..5de87a9b38aa
+--- /dev/null
++++ b/include/linux/slr_efi.h
+@@ -0,0 +1,40 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * EFI Definitions for Secure Launch Resource Table
++ *
++ * See TrenchBoot Secure Launch kernel documentation for details.
++ *
++ * Copyright (c) 2026 Apertus Solutions, LLC
++ * Copyright (c) 2026, Oracle and/or its affiliates.
++ */
++
++#ifndef _LINUX_SLR_EFI_H
++#define _LINUX_SLR_EFI_H
++
++#include <linux/slr_table.h>
++
++#ifndef __ASSEMBLER__
++
++/* EFI Support */
++
++/* SLR table GUID for registering as an EFI Configuration Table (put this in efi.h if it becomes a standard) */
++#define SLR_TABLE_GUID			EFI_GUID(0x877a9b2a, 0x0385, 0x45d1, 0xa0, 0x34, 0x9d, 0xac, 0x9c, 0x9e, 0x56, 0x5f)
++
++/* Secure Launch EFI runtime protocol */
++#define EFI_SLAUNCH_PROTOCOL_GUID	EFI_GUID(0x534189e0, 0x6fde, 0x413d,  0xbe, 0x91, 0xcd, 0x4e, 0x8d, 0x67, 0x2f, 0xea)
++
++struct efi_slaunch_protocol {
++	efi_status_t
++	(__efiapi *setup_dlme)(struct efi_slaunch_protocol *this,
++			       u64 dlme_base,
++			       u64 dlme_header_offset,
++			       u64 dlme_table);
++
++	efi_status_t
++	(__efiapi *launch)(struct efi_slaunch_protocol *this);
++};
++typedef struct efi_slaunch_protocol efi_slaunch_protocol_t;
++
++#endif /* !__ASSEMBLER__ */
++
++#endif /* _LINUX_SLR_EFI_H */
+-- 
+2.47.3
+

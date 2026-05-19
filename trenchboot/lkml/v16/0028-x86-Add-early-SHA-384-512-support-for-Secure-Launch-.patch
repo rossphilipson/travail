@@ -1,0 +1,48 @@
+From b1e989985cbaa7caec4a78221003e9e279233a6c Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 18 Mar 2026 12:03:20 -0700
+Subject: [PATCH v16 28/38] x86: Add early SHA-384/512 support for Secure
+ Launch early measurements
+
+On newer TPM 2 implementations, SHA 384 and 512 banks may be available
+for use. If these banks are enabled in firmware, they will be used for
+the Dynamic Launch. The DLME will also use these algorithms to measure
+configuration information into the TPM as early as possible before using
+the values. This implementation uses the established approach of #including
+the SHA-512 library directly in the early boot code.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/startup/Makefile     | 1 +
+ arch/x86/boot/startup/lib-sha512.c | 6 ++++++
+ 2 files changed, 7 insertions(+)
+ create mode 100644 arch/x86/boot/startup/lib-sha512.c
+
+diff --git a/arch/x86/boot/startup/Makefile b/arch/x86/boot/startup/Makefile
+index 071a90f23ae0..527cba7e4560 100644
+--- a/arch/x86/boot/startup/Makefile
++++ b/arch/x86/boot/startup/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_AMD_MEM_ENCRYPT)	+= sme.o sev-startup.o
+ 
+ slaunch-objs			+= lib-sha1.o
+ slaunch-objs			+= lib-sha256.o
++slaunch-objs			+= lib-sha512.o
+ obj-$(CONFIG_SECURE_LAUNCH)	+= $(slaunch-objs)
+ 
+ pi-objs				:= $(patsubst %.o,$(obj)/%.o,$(obj-y))
+diff --git a/arch/x86/boot/startup/lib-sha512.c b/arch/x86/boot/startup/lib-sha512.c
+new file mode 100644
+index 000000000000..2afd5c5935cd
+--- /dev/null
++++ b/arch/x86/boot/startup/lib-sha512.c
+@@ -0,0 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2026 Apertus Solutions, LLC
++ */
++
++#include "../../../../lib/crypto/sha512.c"
+-- 
+2.47.3
+

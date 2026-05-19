@@ -1,0 +1,52 @@
+From 5d33e4a04366606c63ee389fa4478607b649734b Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Tue, 5 Nov 2024 12:23:32 -0800
+Subject: [PATCH v16 12/38] tpm/tpm_tis: Address positive localities in
+ tpm_tis_request_locality()
+
+Validate that the input locality is within the correct range, as specified
+by TCG standards, and increase the locality count also for the positive
+localities.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+---
+ drivers/char/tpm/tpm_tis_core.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index 1fbb74a565f4..70aba05f4ee1 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -179,7 +179,8 @@ static int tpm_tis_relinquish_locality(struct tpm_chip *chip, int l)
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+ 
+ 	mutex_lock(&priv->locality_count_mutex);
+-	priv->locality_count--;
++	if (priv->locality_count > 0)
++		priv->locality_count--;
+ 	if (priv->locality_count == 0)
+ 		__tpm_tis_relinquish_locality(priv, l);
+ 	mutex_unlock(&priv->locality_count_mutex);
+@@ -233,10 +234,16 @@ static int tpm_tis_request_locality(struct tpm_chip *chip, int l)
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+ 	int ret = 0;
+ 
++	if (l < 0 || l > TPM_MAX_LOCALITY) {
++		dev_warn(&chip->dev, "%s: failed to request unknown locality: %d\n",
++			 __func__, l);
++		return -EINVAL;
++	}
++
+ 	mutex_lock(&priv->locality_count_mutex);
+ 	if (priv->locality_count == 0)
+ 		ret = __tpm_tis_request_locality(chip, l);
+-	if (!ret)
++	if (ret >= 0)
+ 		priv->locality_count++;
+ 	mutex_unlock(&priv->locality_count_mutex);
+ 	return ret;
+-- 
+2.47.3
+

@@ -1,0 +1,47 @@
+From e877f2946644b1ea0cd6363915c142e40aa8ccb5 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Sat, 31 Jan 2026 12:34:31 -0800
+Subject: [PATCH v16 23/38] x86: Allow WARN_trap() macro to be included in
+ pre-boot environments
+
+For pre-boot environments, do not use the static call definition of the
+WARN_trap() macro.
+
+Suggested-by: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/include/asm/bug.h | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/include/asm/bug.h b/arch/x86/include/asm/bug.h
+index 80c1696d8d59..7899768ae644 100644
+--- a/arch/x86/include/asm/bug.h
++++ b/arch/x86/include/asm/bug.h
+@@ -138,8 +138,14 @@ do {									\
+ #ifdef HAVE_ARCH_BUG_FORMAT_ARGS
+ 
+ #ifndef __ASSEMBLER__
++
++#ifndef __DISABLE_EXPORTS
+ #include <linux/static_call_types.h>
+ DECLARE_STATIC_CALL(WARN_trap, __WARN_trap);
++#define WARN_trap(...)	static_call_mod(WARN_trap)(__VA_ARGS__)
++#else /* __DISABLE_EXPORTS */
++#define WARN_trap(...)	__WARN_trap(__VA_ARGS__)
++#endif /* __DISABLE_EXPORTS */
+ 
+ struct pt_regs;
+ struct sysv_va_list { /* from AMD64 System V ABI */
+@@ -172,7 +178,7 @@ extern void *__warn_args(struct arch_va_list *args, struct pt_regs *regs);
+ #define __WARN_print_arg(flags, format, arg...)				\
+ do {									\
+ 	int __flags = (flags) | BUGFLAG_WARNING | BUGFLAG_ARGS ;	\
+-	static_call_mod(WARN_trap)(__WARN_bug_entry(__flags, format), ## arg); \
++	WARN_trap(__WARN_bug_entry(__flags, format), ## arg);		\
+ 	asm (""); /* inhibit tail-call optimization */			\
+ } while (0)
+ 
+-- 
+2.47.3
+

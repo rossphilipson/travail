@@ -1,0 +1,55 @@
+From dd7b818a4a30e4e087cf7ad53a9eeeee32381fab Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 18 Mar 2026 12:14:49 -0700
+Subject: [PATCH v16 22/38] lib/crypto: Add SHA512 support for pre-boot
+ environments
+
+Allow the SHA512 library code in lib/crypto/sha512.c to be used in
+pre-boot environments. Use the __DISABLE_EXPORTS macro to disable
+function exports and define the proper values for that environment
+as was done earlier for SHA256.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ lib/crypto/sha512.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/lib/crypto/sha512.c b/lib/crypto/sha512.c
+index 605eab51aabd..160e81d86da6 100644
+--- a/lib/crypto/sha512.c
++++ b/lib/crypto/sha512.c
+@@ -133,7 +133,7 @@ sha512_blocks_generic(struct sha512_block_state *state,
+ 	} while (--nblocks);
+ }
+ 
+-#ifdef CONFIG_CRYPTO_LIB_SHA512_ARCH
++#if defined(CONFIG_CRYPTO_LIB_SHA512_ARCH) && !defined(__DISABLE_EXPORTS)
+ #include "sha512.h" /* $(SRCARCH)/sha512.h */
+ #else
+ #define sha512_blocks sha512_blocks_generic
+@@ -250,6 +250,12 @@ void sha512(const u8 *data, size_t len, u8 out[SHA512_DIGEST_SIZE])
+ }
+ EXPORT_SYMBOL_GPL(sha512);
+ 
++/*
++ * Pre-boot environments (as indicated by __DISABLE_EXPORTS being defined)
++ * don't need the SHA2 HMAC support code.
++ */
++#ifndef __DISABLE_EXPORTS
++
+ static void __hmac_sha512_preparekey(struct sha512_block_state *istate,
+ 				     struct sha512_block_state *ostate,
+ 				     const u8 *raw_key, size_t raw_key_len,
+@@ -406,6 +412,8 @@ void hmac_sha512_usingrawkey(const u8 *raw_key, size_t raw_key_len,
+ }
+ EXPORT_SYMBOL_GPL(hmac_sha512_usingrawkey);
+ 
++#endif /* !__DISABLE_EXPORTS */
++
+ #if defined(sha512_mod_init_arch) || defined(CONFIG_CRYPTO_FIPS)
+ static int __init sha512_mod_init(void)
+ {
+-- 
+2.47.3
+

@@ -1,0 +1,148 @@
+From 861d32a84c97a032c64ef8d8ee6696278dd3ccf3 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@gmail.com>
+Date: Tue, 5 May 2026 16:45:02 -0700
+Subject: [PATCH v16 00/38] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Alec Brown (1):
+  tpm: Remove main TPM header from TPM event log header
+
+Daniel P. Smith (6):
+  tpm/tpm_tis: Close all localities
+  tpm/tpm_tis: Address positive localities in tpm_tis_request_locality()
+  Documentation/security: Secure Launch kernel documentation
+  x86: Add early SHA-1 support for Secure Launch early measurements
+  x86: Add early SHA-256 support for Secure Launch early measurements
+  x86/slaunch: Secure Launch late initcall platform module
+
+Jarkko Sakkinen (3):
+  tpm-buf: Merge TPM_BUF_BOUNDARY_ERROR and TPM_BUF_OVERFLOW
+  tpm-buf: Remove chip parameter from tpm_buf_append_handle
+  tpm-buf: Implement managed allocations
+
+Ross Philipson (28):
+  tpm: Initial step to reorganize TPM public headers
+  tpm: Move TPM1 specific definitions to the command header
+  tpm: Move TPM2 specific definitions to the command header
+  tpm: Move TPM common base definitions to the command header
+  tpm: Move platform specific definitions to the new PTP header
+  tpm-buf: Add TPM buffer support header for standalone reuse
+  tpm/tpm_tis: Allow locality to be set to a different value
+  tpm/sysfs: Show locality used by kernel
+  x86: Secure Launch Kconfig
+  x86: Secure Launch Resource Table header file
+  x86/efi: Secure Launch Resource Table EFI definitions header file
+  x86: Secure Launch main header file
+  x86/txt: Intel Trusted eXecution Technology (TXT) definitions
+  lib/crypto: Add SHA1 support for pre-boot environments
+  lib/crypto: Add SHA512 support for pre-boot environments
+  x86: Allow WARN_trap() macro to be included in pre-boot environments
+  x86/msr: Add variable MTRR base/mask and x2apic ID registers
+  x86/boot: Slight refactor of the 5 level paging logic
+  x86: Add early SHA-384/512 support for Secure Launch early
+    measurements
+  x86/tpm: Early startup TPM PCR extending driver
+  x86/slaunch: Add MLE header and Secure Launch entrypoint to the core
+    kernel
+  x86/slaunch: Secure Launch kernel early boot initialization
+  x86/slaunch: Secure Launch kernel late boot initialization
+  x86/slaunch: Secure Launch SMP bringup support
+  kexec/slaunch: Secure Launch kexec SEXIT support
+  reboot/slaunch: Secure Launch SEXIT support on reboot paths
+  x86/efistub: EFI stub DRTM support for Secure Launch
+  x86/boot: Legacy boot DRTM support for Secure Launch
+
+ Documentation/arch/x86/boot.rst               |  21 +
+ Documentation/arch/x86/zero-page.rst          |   1 +
+ Documentation/security/index.rst              |   1 +
+ .../security/launch-integrity/index.rst       |  11 +
+ .../security/launch-integrity/principles.rst  | 308 +++++++
+ .../secure_launch_details.rst                 | 587 ++++++++++++
+ .../secure_launch_overview.rst                | 240 +++++
+ arch/x86/Kconfig                              |  15 +
+ arch/x86/boot/compressed/Makefile             |   2 +-
+ arch/x86/boot/compressed/misc.c               |  55 +-
+ arch/x86/boot/compressed/pgtable_64.c         |  18 +-
+ arch/x86/boot/startup/Makefile                |   8 +
+ arch/x86/boot/startup/exports.h               |   7 +
+ arch/x86/boot/startup/lib-sha1.c              |   6 +
+ arch/x86/boot/startup/lib-sha256.c            |   6 +
+ arch/x86/boot/startup/lib-sha512.c            |   6 +
+ arch/x86/boot/startup/sl_main.c               | 628 +++++++++++++
+ arch/x86/boot/startup/tpm.h                   |  47 +
+ arch/x86/boot/startup/tpm_drv.c               | 567 ++++++++++++
+ arch/x86/include/asm/boot.h                   |   4 +
+ arch/x86/include/asm/bug.h                    |   8 +-
+ arch/x86/include/asm/msr-index.h              |   5 +
+ arch/x86/include/asm/realmode.h               |   3 +
+ arch/x86/include/asm/txt.h                    | 280 ++++++
+ arch/x86/include/uapi/asm/bootparam.h         |   3 +-
+ arch/x86/kernel/Makefile                      |   3 +
+ arch/x86/kernel/asm-offsets.c                 |  22 +
+ arch/x86/kernel/reboot.c                      |  14 +
+ arch/x86/kernel/setup.c                       |   3 +
+ arch/x86/kernel/sl_stub.S                     | 847 ++++++++++++++++++
+ arch/x86/kernel/slaunch.c                     | 613 +++++++++++++
+ arch/x86/kernel/slmodule.c                    | 349 ++++++++
+ arch/x86/kernel/smpboot.c                     |  47 +-
+ arch/x86/kernel/vmlinux.lds.S                 |   5 +
+ arch/x86/realmode/init.c                      |   8 +
+ arch/x86/realmode/rm/header.S                 |   3 +
+ arch/x86/realmode/rm/trampoline_64.S          |  32 +
+ arch/x86/tools/relocs.c                       |   1 +
+ drivers/char/tpm/tpm-buf.c                    | 148 +--
+ drivers/char/tpm/tpm-chip.c                   |  34 +-
+ drivers/char/tpm/tpm-sysfs.c                  |  31 +-
+ drivers/char/tpm/tpm.h                        | 180 ----
+ drivers/char/tpm/tpm1-cmd.c                   | 193 ++--
+ drivers/char/tpm/tpm2-cmd.c                   | 338 +++----
+ drivers/char/tpm/tpm2-sessions.c              | 144 ++-
+ drivers/char/tpm/tpm2-space.c                 |  57 +-
+ drivers/char/tpm/tpm_tis_core.c               |  24 +-
+ drivers/char/tpm/tpm_tis_core.h               |  64 +-
+ drivers/char/tpm/tpm_vtpm_proxy.c             |  30 +-
+ drivers/firmware/efi/libstub/Makefile         |   1 +
+ drivers/firmware/efi/libstub/efistub.h        |  24 +
+ drivers/firmware/efi/libstub/x86-slaunch.c    |  38 +
+ drivers/firmware/efi/libstub/x86-stub.c       |  27 +-
+ drivers/iommu/intel/dmar.c                    |   4 +
+ include/keys/trusted_tpm.h                    |   1 -
+ include/linux/slaunch.h                       | 263 ++++++
+ include/linux/slr_efi.h                       |  40 +
+ include/linux/slr_table.h                     | 339 +++++++
+ include/linux/tpm.h                           | 234 +----
+ include/linux/tpm_buf.h                       |  54 ++
+ include/linux/tpm_command.h                   | 516 ++++++++++-
+ include/linux/tpm_eventlog.h                  |   4 +-
+ include/linux/tpm_ptp.h                       | 147 +++
+ kernel/kexec_core.c                           |   8 +
+ lib/crypto/sha1.c                             |  10 +-
+ lib/crypto/sha512.c                           |  10 +-
+ security/keys/trusted-keys/trusted_tpm1.c     |  37 +-
+ security/keys/trusted-keys/trusted_tpm2.c     | 171 ++--
+ 68 files changed, 6826 insertions(+), 1129 deletions(-)
+ create mode 100644 Documentation/security/launch-integrity/index.rst
+ create mode 100644 Documentation/security/launch-integrity/principles.rst
+ create mode 100644 Documentation/security/launch-integrity/secure_launch_details.rst
+ create mode 100644 Documentation/security/launch-integrity/secure_launch_overview.rst
+ create mode 100644 arch/x86/boot/startup/lib-sha1.c
+ create mode 100644 arch/x86/boot/startup/lib-sha256.c
+ create mode 100644 arch/x86/boot/startup/lib-sha512.c
+ create mode 100644 arch/x86/boot/startup/sl_main.c
+ create mode 100644 arch/x86/boot/startup/tpm.h
+ create mode 100644 arch/x86/boot/startup/tpm_drv.c
+ create mode 100644 arch/x86/include/asm/txt.h
+ create mode 100644 arch/x86/kernel/sl_stub.S
+ create mode 100644 arch/x86/kernel/slaunch.c
+ create mode 100644 arch/x86/kernel/slmodule.c
+ create mode 100644 drivers/firmware/efi/libstub/x86-slaunch.c
+ create mode 100644 include/linux/slaunch.h
+ create mode 100644 include/linux/slr_efi.h
+ create mode 100644 include/linux/slr_table.h
+ create mode 100644 include/linux/tpm_buf.h
+ create mode 100644 include/linux/tpm_ptp.h
+
+-- 
+2.47.3
+
