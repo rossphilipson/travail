@@ -1,0 +1,39 @@
+From c3d8b0380065210eec4e83246821203f3d5dae68 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 21 Sep 2018 10:22:12 -0400
+Subject: [PATCH v6 03/14] x86: Secure Launch Kconfig
+
+Initial bits to bring in Secure Launch functionality. Add Kconfig
+options for compiling in/out the Secure Launch code.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/Kconfig | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 53bab12..85ecf3f 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -2041,6 +2041,18 @@ config EFI_RUNTIME_MAP
+ 
+ 	  See also Documentation/ABI/testing/sysfs-firmware-efi-runtime-map.
+ 
++config SECURE_LAUNCH
++	bool "Secure Launch support"
++	default n
++	depends on X86_64 && X86_X2APIC
++	help
++	   The Secure Launch feature allows a kernel to be loaded
++	   directly through an Intel TXT measured launch. Intel TXT
++	   establishes a Dynamic Root of Trust for Measurement (DRTM)
++	   where the CPU measures the kernel image. This feature then
++	   continues the measurement chain over kernel configuration
++	   information and init images.
++
+ source "kernel/Kconfig.hz"
+ 
+ config KEXEC
+-- 
+1.8.3.1
+

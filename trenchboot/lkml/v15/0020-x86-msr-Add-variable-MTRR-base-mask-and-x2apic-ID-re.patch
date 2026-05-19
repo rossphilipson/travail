@@ -1,0 +1,42 @@
+From 1f53c6927cb752c4ca360b769d075ebef87cf2d9 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 12 Jul 2024 10:40:54 -0700
+Subject: [PATCH v15 20/28] x86/msr: Add variable MTRR base/mask and x2apic ID
+ registers
+
+Add the MSR values required by Secure Launch to locate particular CPU cores
+during application processor (AP) startup, and restore the MTRR state after
+an Intel TXT launch.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/include/asm/msr-index.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/x86/include/asm/msr-index.h b/arch/x86/include/asm/msr-index.h
+index 9e1720d73244..ae620e609101 100644
+--- a/arch/x86/include/asm/msr-index.h
++++ b/arch/x86/include/asm/msr-index.h
+@@ -379,6 +379,9 @@
+ #define MSR_IA32_RTIT_OUTPUT_BASE	0x00000560
+ #define MSR_IA32_RTIT_OUTPUT_MASK	0x00000561
+ 
++#define MSR_MTRRphysBase0		0x00000200
++#define MSR_MTRRphysMask0		0x00000201
++
+ #define MSR_MTRRfix64K_00000		0x00000250
+ #define MSR_MTRRfix16K_80000		0x00000258
+ #define MSR_MTRRfix16K_A0000		0x00000259
+@@ -928,6 +931,8 @@
+ #define MSR_IA32_APICBASE_ENABLE	(1<<11)
+ #define MSR_IA32_APICBASE_BASE		(0xfffff<<12)
+ 
++#define MSR_IA32_X2APIC_APICID		0x00000802
++
+ #define MSR_IA32_UCODE_WRITE		0x00000079
+ #define MSR_IA32_UCODE_REV		0x0000008b
+ 
+-- 
+2.43.7
+

@@ -1,0 +1,39 @@
+From fd1eaa6970ce98048ee4b50baf4fd5c0b993c755 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Tue, 5 Nov 2024 12:23:32 -0800
+Subject: [PATCH v12 15/19] tpm, tpm_tis: Address positive localities in
+ tpm_tis_request_locality()
+
+Validate that the input locality is within the correct range, as specified
+by TCG standards, and increase the locality count also for the positive
+localities.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+---
+ drivers/char/tpm/tpm_tis_core.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index c58f360fb4a4..c86100ad743a 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -234,10 +234,13 @@ static int tpm_tis_request_locality(struct tpm_chip *chip, int l)
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+ 	int ret = 0;
+ 
++	if (l < 0 || l > TPM_MAX_LOCALITY)
++		return -EINVAL;
++
+ 	mutex_lock(&priv->locality_count_mutex);
+ 	if (priv->locality_count == 0)
+ 		ret = __tpm_tis_request_locality(chip, l);
+-	if (!ret)
++	if (ret >= 0)
+ 		priv->locality_count++;
+ 	mutex_unlock(&priv->locality_count_mutex);
+ 	return ret;
+-- 
+2.39.3
+

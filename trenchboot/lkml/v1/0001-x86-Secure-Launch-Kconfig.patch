@@ -1,0 +1,63 @@
+From 125239a7b1fb7da8c58f0472474262d686b9a564 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Fri, 21 Sep 2018 10:22:12 -0400
+Subject: [PATCH 01/13] x86: Secure Launch Kconfig
+
+Initial bits to bring in Secure Launch functionality. Add Kconfig
+options for compiling in/out the Secure Launch code.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/Kconfig | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 7101ac6..8957981 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -1968,6 +1968,42 @@ config EFI_MIXED
+ 
+ 	   If unsure, say N.
+ 
++config SECURE_LAUNCH
++	bool "Secure Launch support"
++	default n
++	depends on X86_64
++	help
++	   The Secure Launch feature allows a kernel to be loaded
++	   directly through an Intel TXT measured launch. Intel TXT
++	   establishes a Dynamic Root of Trust for Measurement (DRTM)
++	   where the CPU measures the kernel image. This feature then
++	   continues the measurement chain over kernel configuration
++	   information and init images.
++
++choice
++	prompt "Select Secure Launch Algorithm for TPM2"
++	depends on SECURE_LAUNCH
++
++config SECURE_LAUNCH_SHA1
++	bool "Secure Launch TPM1 SHA1"
++	help
++	   When using Secure Launch and TPM1 is present, use SHA1 hash
++	   algorithm for measurements.
++
++config SECURE_LAUNCH_SHA256
++	bool "Secure Launch TPM2 SHA256"
++	help
++	   When using Secure Launch and TPM2 is present, use SHA256 hash
++	   algorithm for measurements.
++
++config SECURE_LAUNCH_SHA512
++	bool "Secure Launch TPM2 SHA512"
++	help
++	   When using Secure Launch and TPM2 is present, use SHA512 hash
++	   algorithm for measurements.
++
++endchoice
++
+ config SECCOMP
+ 	def_bool y
+ 	prompt "Enable seccomp to safely compute untrusted bytecode"
+-- 
+1.8.3.1
+

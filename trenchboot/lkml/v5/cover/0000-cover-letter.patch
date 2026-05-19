@@ -1,0 +1,84 @@
+From 88b08358d6a93feb66aff55d2ad08f77b64bcc2a Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Thu, 20 Jan 2022 09:12:01 -0500
+Subject: [PATCH v5 00/14] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Arvind Sankar (1):
+  x86/boot: Place kernel_info at a fixed offset
+
+Daniel P. Smith (2):
+  x86: Add early SHA support for Secure Launch early measurements
+  x86: Secure Launch late initcall platform module
+
+Ross Philipson (11):
+  x86/boot: Fix memremap of setup_indirect structures
+  x86/boot: Add setup_indirect support in early_memremap_is_setup_data
+  Documentation/x86: Secure Launch kernel documentation
+  x86: Secure Launch Kconfig
+  x86: Secure Launch main header file
+  x86: Secure Launch kernel early boot stub
+  x86: Secure Launch kernel late boot stub
+  x86: Secure Launch SMP bringup support
+  kexec: Secure Launch kexec SEXIT support
+  reboot: Secure Launch SEXIT support on reboot paths
+  tpm: Allow locality 2 to be set when initializing the TPM for Secure
+    Launch
+
+ Documentation/security/index.rst                   |   1 +
+ Documentation/security/launch-integrity/index.rst  |  10 +
+ .../security/launch-integrity/principles.rst       | 313 ++++++++++
+ .../launch-integrity/secure_launch_details.rst     | 539 ++++++++++++++++
+ .../launch-integrity/secure_launch_overview.rst    | 211 +++++++
+ Documentation/x86/boot.rst                         |  21 +
+ arch/x86/Kconfig                                   |  34 +
+ arch/x86/boot/compressed/Makefile                  |   3 +
+ arch/x86/boot/compressed/early_sha1.c              | 103 ++++
+ arch/x86/boot/compressed/early_sha1.h              |  17 +
+ arch/x86/boot/compressed/early_sha256.c            |   7 +
+ arch/x86/boot/compressed/head_64.S                 |  37 ++
+ arch/x86/boot/compressed/kernel_info.S             |  53 +-
+ arch/x86/boot/compressed/kernel_info.h             |  12 +
+ arch/x86/boot/compressed/sl_main.c                 | 556 +++++++++++++++++
+ arch/x86/boot/compressed/sl_stub.S                 | 685 +++++++++++++++++++++
+ arch/x86/boot/compressed/vmlinux.lds.S             |   6 +
+ arch/x86/include/asm/realmode.h                    |   3 +
+ arch/x86/include/uapi/asm/bootparam.h              |   1 +
+ arch/x86/kernel/Makefile                           |   2 +
+ arch/x86/kernel/asm-offsets.c                      |  19 +
+ arch/x86/kernel/e820.c                             |  31 +-
+ arch/x86/kernel/kdebugfs.c                         |  32 +-
+ arch/x86/kernel/ksysfs.c                           |  56 +-
+ arch/x86/kernel/reboot.c                           |  10 +
+ arch/x86/kernel/setup.c                            |  26 +-
+ arch/x86/kernel/slaunch.c                          | 538 ++++++++++++++++
+ arch/x86/kernel/slmodule.c                         | 494 +++++++++++++++
+ arch/x86/kernel/smpboot.c                          |  86 +++
+ arch/x86/mm/ioremap.c                              |  34 +-
+ arch/x86/realmode/rm/header.S                      |   3 +
+ arch/x86/realmode/rm/trampoline_64.S               |  37 ++
+ drivers/char/tpm/tpm-chip.c                        |   9 +-
+ drivers/iommu/intel/dmar.c                         |   4 +
+ include/linux/slaunch.h                            | 532 ++++++++++++++++
+ kernel/kexec_core.c                                |   4 +
+ lib/crypto/sha256.c                                |   8 +
+ lib/sha1.c                                         |   4 +
+ 38 files changed, 4492 insertions(+), 49 deletions(-)
+ create mode 100644 Documentation/security/launch-integrity/index.rst
+ create mode 100644 Documentation/security/launch-integrity/principles.rst
+ create mode 100644 Documentation/security/launch-integrity/secure_launch_details.rst
+ create mode 100644 Documentation/security/launch-integrity/secure_launch_overview.rst
+ create mode 100644 arch/x86/boot/compressed/early_sha1.c
+ create mode 100644 arch/x86/boot/compressed/early_sha1.h
+ create mode 100644 arch/x86/boot/compressed/early_sha256.c
+ create mode 100644 arch/x86/boot/compressed/kernel_info.h
+ create mode 100644 arch/x86/boot/compressed/sl_main.c
+ create mode 100644 arch/x86/boot/compressed/sl_stub.S
+ create mode 100644 arch/x86/kernel/slaunch.c
+ create mode 100644 arch/x86/kernel/slmodule.c
+ create mode 100644 include/linux/slaunch.h
+
+-- 
+1.8.3.1
+

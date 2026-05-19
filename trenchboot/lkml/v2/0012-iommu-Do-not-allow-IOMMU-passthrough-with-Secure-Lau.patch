@@ -1,0 +1,65 @@
+From af56252b0714893b6d28b01c0927c99ee49f550f Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 23 Feb 2021 12:39:34 -0500
+Subject: [PATCH v2 12/12] iommu: Do not allow IOMMU passthrough with Secure
+ Launch
+
+The IOMMU should always be set to default translated type after
+the PMRs are disabled to protect the MLE from DMA.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/iommu/intel/iommu.c | 5 +++++
+ drivers/iommu/iommu.c       | 6 +++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/iommu/intel/iommu.c b/drivers/iommu/intel/iommu.c
+index be35284..4f0256d 100644
+--- a/drivers/iommu/intel/iommu.c
++++ b/drivers/iommu/intel/iommu.c
+@@ -41,6 +41,7 @@
+ #include <linux/dma-direct.h>
+ #include <linux/crash_dump.h>
+ #include <linux/numa.h>
++#include <linux/slaunch.h>
+ #include <asm/irq_remapping.h>
+ #include <asm/cacheflush.h>
+ #include <asm/iommu.h>
+@@ -2877,6 +2878,10 @@ static bool device_is_rmrr_locked(struct device *dev)
+  */
+ static int device_def_domain_type(struct device *dev)
+ {
++	/* Do not allow identity domain when Secure Launch is configured */
++	if (slaunch_get_flags() & SL_FLAG_ACTIVE)
++		return IOMMU_DOMAIN_DMA;
++
+ 	if (dev_is_pci(dev)) {
+ 		struct pci_dev *pdev = to_pci_dev(dev);
+ 
+diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
+index 808ab70d..d49b7dd 100644
+--- a/drivers/iommu/iommu.c
++++ b/drivers/iommu/iommu.c
+@@ -23,6 +23,7 @@
+ #include <linux/property.h>
+ #include <linux/fsl/mc.h>
+ #include <linux/module.h>
++#include <linux/slaunch.h>
+ #include <trace/events/iommu.h>
+ 
+ static struct kset *iommu_group_kset;
+@@ -2761,7 +2762,10 @@ void iommu_set_default_passthrough(bool cmd_line)
+ {
+ 	if (cmd_line)
+ 		iommu_cmd_line |= IOMMU_CMD_LINE_DMA_API;
+-	iommu_def_domain_type = IOMMU_DOMAIN_IDENTITY;
++
++	/* Do not allow identity domain when Secure Launch is configured */
++	if (!(slaunch_get_flags() & SL_FLAG_ACTIVE))
++		iommu_def_domain_type = IOMMU_DOMAIN_IDENTITY;
+ }
+ 
+ void iommu_set_default_translated(bool cmd_line)
+-- 
+1.8.3.1
+

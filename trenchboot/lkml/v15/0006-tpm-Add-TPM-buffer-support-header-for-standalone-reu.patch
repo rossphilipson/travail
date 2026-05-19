@@ -1,0 +1,200 @@
+From 057b25e0683a3e5eb8e659e8da92218a298ae7fd Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Mon, 3 Nov 2025 13:41:47 -0800
+Subject: [PATCH v15 06/28] tpm: Add TPM buffer support header for standalone
+ reuse
+
+Extact all the functions and definitions for the TPM buffer handling
+and separate them into their own header. TPM buf functionality was
+decoupled throughout the TPM code base in an earlier commit.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/char/tpm/tpm-buf.c |  7 ++++-
+ include/linux/tpm.h        | 44 +----------------------------
+ include/linux/tpm_buf.h    | 57 ++++++++++++++++++++++++++++++++++++++
+ include/linux/tpm_common.h | 10 +++++++
+ 4 files changed, 74 insertions(+), 44 deletions(-)
+ create mode 100644 include/linux/tpm_buf.h
+
+diff --git a/drivers/char/tpm/tpm-buf.c b/drivers/char/tpm/tpm-buf.c
+index dae23e6de269..f0b6a7453edd 100644
+--- a/drivers/char/tpm/tpm-buf.c
++++ b/drivers/char/tpm/tpm-buf.c
+@@ -3,8 +3,13 @@
+  * Handling of TPM command and other buffers.
+  */
+ 
++#include <linux/types.h>
+ #include <linux/module.h>
+-#include <linux/tpm.h>
++#include <crypto/sha2.h>
++#include <linux/tpm_common.h>
++#include <linux/tpm1.h>
++#include <linux/tpm2.h>
++#include <linux/tpm_buf.h>
+ 
+ static void __tpm_buf_size_invariant(struct tpm_buf *buf, u16 buf_size)
+ {
+diff --git a/include/linux/tpm.h b/include/linux/tpm.h
+index 8a778bcc2dd5..4c02076a8c39 100644
+--- a/include/linux/tpm.h
++++ b/include/linux/tpm.h
+@@ -28,6 +28,7 @@
+ #include "tpm_common.h"
+ #include "tpm1.h"
+ #include "tpm2.h"
++#include "tpm_buf.h"
+ 
+ struct tpm_chip;
+ struct trusted_key_payload;
+@@ -35,12 +36,6 @@ struct trusted_key_options;
+ /* opaque structure, holds auth session parameters like the session key */
+ struct tpm2_auth;
+ 
+-struct tpm_bank_info {
+-	u16 alg_id;
+-	u16 digest_size;
+-	u16 crypto_id;
+-};
+-
+ enum TPM_OPS_FLAGS {
+ 	TPM_OPS_AUTO_STARTUP = BIT(0),
+ };
+@@ -208,48 +203,11 @@ enum tpm_chip_flags {
+ 
+ #define to_tpm_chip(d) container_of(d, struct tpm_chip, dev)
+ 
+-enum tpm_buf_flags {
+-	/* TPM2B format: */
+-	TPM_BUF_TPM2B		= BIT(0),
+-	/* The buffer is in invalid and unusable state: */
+-	TPM_BUF_INVALID		= BIT(1),
+-};
+-
+-/*
+- * A buffer for constructing and parsing TPM commands, responses and sized
+- * (TPM2B) buffers.
+- */
+-struct tpm_buf {
+-	u8 flags;
+-	u8 handles;
+-	u16 length;
+-	u16 capacity;
+-	u8 data[];
+-};
+-
+ struct tpm2_hash {
+ 	unsigned int crypto_id;
+ 	unsigned int tpm_id;
+ };
+ 
+-void tpm_buf_init(struct tpm_buf *buf, u16 buf_size);
+-void tpm_buf_init_sized(struct tpm_buf *buf, u16 buf_size);
+-void tpm_buf_reset(struct tpm_buf *buf, u16 tag, u32 ordinal);
+-void tpm_buf_reset_sized(struct tpm_buf *buf);
+-u32 tpm_buf_length(struct tpm_buf *buf);
+-void tpm_buf_append(struct tpm_buf *buf, const u8 *new_data, u16 new_length);
+-void tpm_buf_append_u8(struct tpm_buf *buf, const u8 value);
+-void tpm_buf_append_u16(struct tpm_buf *buf, const u16 value);
+-void tpm_buf_append_u32(struct tpm_buf *buf, const u32 value);
+-u8 tpm_buf_read_u8(struct tpm_buf *buf, off_t *offset);
+-u16 tpm_buf_read_u16(struct tpm_buf *buf, off_t *offset);
+-u32 tpm_buf_read_u32(struct tpm_buf *buf, off_t *offset);
+-void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle);
+-void tpm1_buf_append_extend(struct tpm_buf *buf, u32 pcr_idx, const u8 *hash);
+-void tpm2_buf_append_pcr_extend(struct tpm_buf *buf, struct tpm_digest *digests,
+-				struct tpm_bank_info *banks,
+-				unsigned int nr_banks);
+-
+ /*
+  * Check if TPM device is in the firmware upgrade mode.
+  */
+diff --git a/include/linux/tpm_buf.h b/include/linux/tpm_buf.h
+new file mode 100644
+index 000000000000..648fec72e490
+--- /dev/null
++++ b/include/linux/tpm_buf.h
+@@ -0,0 +1,57 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (C) 2004,2007,2008 IBM Corporation
++ *
++ * Authors:
++ * Leendert van Doorn <leendert@watson.ibm.com>
++ * Dave Safford <safford@watson.ibm.com>
++ * Reiner Sailer <sailer@watson.ibm.com>
++ * Kylene Hall <kjhall@us.ibm.com>
++ * Debora Velarde <dvelarde@us.ibm.com>
++ *
++ * Maintained by: <tpmdd_devel@lists.sourceforge.net>
++ *
++ * Device driver for TCG/TCPA TPM (trusted platform module).
++ * Specifications at www.trustedcomputinggroup.org
++ */
++#ifndef __LINUX_TPM_BUF_H__
++#define __LINUX_TPM_BUF_H__
++
++enum tpm_buf_flags {
++	/* TPM2B format: */
++	TPM_BUF_TPM2B		= BIT(0),
++	/* The buffer is in invalid and unusable state: */
++	TPM_BUF_INVALID		= BIT(1),
++};
++
++/*
++ * A buffer for constructing and parsing TPM commands, responses and sized
++ * (TPM2B) buffers.
++ */
++struct tpm_buf {
++	u8 flags;
++	u8 handles;
++	u16 length;
++	u16 capacity;
++	u8 data[];
++};
++
++void tpm_buf_init(struct tpm_buf *buf, u16 buf_size);
++void tpm_buf_init_sized(struct tpm_buf *buf, u16 buf_size);
++void tpm_buf_reset(struct tpm_buf *buf, u16 tag, u32 ordinal);
++void tpm_buf_reset_sized(struct tpm_buf *buf);
++u32 tpm_buf_length(struct tpm_buf *buf);
++void tpm_buf_append(struct tpm_buf *buf, const u8 *new_data, u16 new_length);
++void tpm_buf_append_u8(struct tpm_buf *buf, const u8 value);
++void tpm_buf_append_u16(struct tpm_buf *buf, const u16 value);
++void tpm_buf_append_u32(struct tpm_buf *buf, const u32 value);
++u8 tpm_buf_read_u8(struct tpm_buf *buf, off_t *offset);
++u16 tpm_buf_read_u16(struct tpm_buf *buf, off_t *offset);
++u32 tpm_buf_read_u32(struct tpm_buf *buf, off_t *offset);
++void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle);
++void tpm1_buf_append_extend(struct tpm_buf *buf, u32 pcr_idx, const u8 *hash);
++void tpm2_buf_append_pcr_extend(struct tpm_buf *buf, struct tpm_digest *digests,
++				struct tpm_bank_info *banks,
++				unsigned int nr_banks);
++
++#endif
+diff --git a/include/linux/tpm_common.h b/include/linux/tpm_common.h
+index b5c6b2c1e517..0577f8182f67 100644
+--- a/include/linux/tpm_common.h
++++ b/include/linux/tpm_common.h
+@@ -56,6 +56,16 @@ enum tpm_localities {
+ 	TPM_MAX_LOCALITY	= TPM_LOCALITY_4
+ };
+ 
++/*
++ * Structure to represent active PCR algorithm banks usable by the
++ * TPM.
++ */
++struct tpm_bank_info {
++	u16 alg_id;
++	u16 digest_size;
++	u16 crypto_id;
++};
++
+ /*
+  * 128 bytes is an arbitrary cap. This could be as large as TPM_BUFSIZE - 18
+  * bytes, but 128 is still a relatively large number of random bytes and
+-- 
+2.43.7
+

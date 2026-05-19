@@ -1,0 +1,73 @@
+From 309f73b37d827fc08efbab890ce4cfcae0e09d52 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 26 Aug 2020 14:01:06 -0400
+Subject: [PATCH v12 13/19] x86/reboot: Secure Launch SEXIT support on reboot
+ paths
+
+If the MLE kernel is being powered off, rebooted or halted,
+then SEXIT must be called. Note that the SEXIT GETSEC leaf
+can only be called after a machine_shutdown() has been done on
+these paths. The machine_shutdown() is not called on a few paths
+like when poweroff action does not have a poweroff callback (into
+ACPI code) or when an emergency reset is done. In these cases,
+just the TXT registers are finalized but SEXIT is skipped.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/kernel/reboot.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index 615922838c51..c02463d8d1e9 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -13,6 +13,7 @@
+ #include <linux/objtool.h>
+ #include <linux/pgtable.h>
+ #include <linux/kexec.h>
++#include <linux/slaunch.h>
+ #include <acpi/reboot.h>
+ #include <asm/io.h>
+ #include <asm/apic.h>
+@@ -778,6 +779,7 @@ static void native_machine_restart(char *__unused)
+ 
+ 	if (!reboot_force)
+ 		machine_shutdown();
++	slaunch_finalize(!reboot_force);
+ 	__machine_emergency_restart(0);
+ }
+ 
+@@ -788,6 +790,9 @@ static void native_machine_halt(void)
+ 
+ 	tboot_shutdown(TB_SHUTDOWN_HALT);
+ 
++	/* SEXIT done after machine_shutdown() to meet TXT requirements */
++	slaunch_finalize(1);
++
+ 	stop_this_cpu(NULL);
+ }
+ 
+@@ -796,8 +801,12 @@ static void native_machine_power_off(void)
+ 	if (kernel_can_power_off()) {
+ 		if (!reboot_force)
+ 			machine_shutdown();
++		slaunch_finalize(!reboot_force);
+ 		do_kernel_power_off();
++	} else {
++		slaunch_finalize(0);
+ 	}
++
+ 	/* A fallback in case there is no PM info available */
+ 	tboot_shutdown(TB_SHUTDOWN_HALT);
+ }
+@@ -825,6 +834,7 @@ void machine_shutdown(void)
+ 
+ void machine_emergency_restart(void)
+ {
++	slaunch_finalize(0);
+ 	__machine_emergency_restart(1);
+ }
+ 
+-- 
+2.39.3
+

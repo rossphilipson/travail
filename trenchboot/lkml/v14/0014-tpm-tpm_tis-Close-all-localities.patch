@@ -1,0 +1,66 @@
+From 33dad604b418016df1998ef532d7213060575a48 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Tue, 5 Nov 2024 12:21:50 -0800
+Subject: [PATCH v14 14/19] tpm, tpm_tis: Close all localities
+
+There are environments, for example, those that comply with the TCG D-RTM
+specification that requires the TPM to be left in locality 2. Prepare
+kernel for such environments by closing all the localities.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+---
+ drivers/char/tpm/tpm_tis_core.c | 11 ++++++++++-
+ include/linux/tpm.h             |  6 ++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index ed0d3d8449b3..d73b9ef3fd15 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -1111,7 +1111,7 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
+ 	u32 intmask;
+ 	u32 clkrun_val;
+ 	u8 rid;
+-	int rc, probe;
++	int rc, probe, i;
+ 	struct tpm_chip *chip;
+ 
+ 	chip = tpmm_chip_alloc(dev, &tpm_tis);
+@@ -1176,6 +1176,15 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
+ 		goto out_err;
+ 	}
+ 
++	/*
++	 * In order to comply with the TCG D-RTM specification, relinquish all
++	 * the localities.
++	 */
++	for (i = 0; i <= TPM_MAX_LOCALITY; i++) {
++		if (check_locality(chip, i))
++			tpm_tis_relinquish_locality(chip, i);
++	}
++
+ 	/* Take control of the TPM's interrupt hardware and shut it off */
+ 	rc = tpm_tis_read32(priv, TPM_INT_ENABLE(priv->locality), &intmask);
+ 	if (rc < 0)
+diff --git a/include/linux/tpm.h b/include/linux/tpm.h
+index 6c3125300c00..86fe8f6a2d52 100644
+--- a/include/linux/tpm.h
++++ b/include/linux/tpm.h
+@@ -147,6 +147,12 @@ struct tpm_chip_seqops {
+  */
+ #define TPM2_MAX_CONTEXT_SIZE 4096
+ 
++/*
++ * The maximum locality (0 - 4) for a TPM, as defined in section 3.2 of the
++ * Client Platform Profile Specification.
++ */
++#define TPM_MAX_LOCALITY		4
++
+ struct tpm_chip {
+ 	struct device dev;
+ 	struct device devs;
+-- 
+2.39.3
+

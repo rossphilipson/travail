@@ -1,0 +1,168 @@
+From 9e43f30446e0be47e6eae976d24ba4a68ee9985d Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Mon, 4 Mar 2024 12:13:24 -0800
+Subject: [PATCH v9 06/19] x86: Add early SHA-1 support for Secure Launch early
+ measurements
+
+For better or worse, Secure Launch needs SHA-1 and SHA-256. The
+choice of hashes used lie with the platform firmware, not with
+software, and is often outside of the users control.
+
+Even if we'd prefer to use SHA-256-only, if firmware elected to start us
+with the SHA-1 and SHA-256 backs active, we still need SHA-1 to parse
+the TPM event log thus far, and deliberately cap the SHA-1 PCRs in order
+to safely use SHA-256 for everything else.
+
+The SHA-1 code here has its origins in the code from the main kernel:
+
+commit c4d5b9ffa31f ("crypto: sha1 - implement base layer for SHA-1")
+
+A modified version of this code was introduced to the lib/crypto/sha1.c
+to bring it in line with the SHA-256 code and allow it to be pulled into the
+setup kernel in the same manner as SHA-256 is.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/compressed/Makefile     |  2 +
+ arch/x86/boot/compressed/early_sha1.c | 12 ++++
+ include/crypto/sha1.h                 |  1 +
+ lib/crypto/sha1.c                     | 81 +++++++++++++++++++++++++++
+ 4 files changed, 96 insertions(+)
+ create mode 100644 arch/x86/boot/compressed/early_sha1.c
+
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index e9522c6893be..3307ebef4e1b 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -118,6 +118,8 @@ vmlinux-objs-$(CONFIG_EFI) += $(obj)/efi.o
+ vmlinux-objs-$(CONFIG_EFI_MIXED) += $(obj)/efi_mixed.o
+ vmlinux-objs-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
+ 
++vmlinux-objs-$(CONFIG_SECURE_LAUNCH) += $(obj)/early_sha1.o
++
+ $(obj)/vmlinux: $(vmlinux-objs-y) FORCE
+ 	$(call if_changed,ld)
+ 
+diff --git a/arch/x86/boot/compressed/early_sha1.c b/arch/x86/boot/compressed/early_sha1.c
+new file mode 100644
+index 000000000000..8a9b904a73ab
+--- /dev/null
++++ b/arch/x86/boot/compressed/early_sha1.c
+@@ -0,0 +1,12 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2024 Apertus Solutions, LLC.
++ */
++
++#include <linux/init.h>
++#include <linux/linkage.h>
++#include <linux/string.h>
++#include <asm/boot.h>
++#include <asm/unaligned.h>
++
++#include "../../../../lib/crypto/sha1.c"
+diff --git a/include/crypto/sha1.h b/include/crypto/sha1.h
+index 044ecea60ac8..d715dd5332e1 100644
+--- a/include/crypto/sha1.h
++++ b/include/crypto/sha1.h
+@@ -42,5 +42,6 @@ extern int crypto_sha1_finup(struct shash_desc *desc, const u8 *data,
+ #define SHA1_WORKSPACE_WORDS	16
+ void sha1_init(__u32 *buf);
+ void sha1_transform(__u32 *digest, const char *data, __u32 *W);
++void sha1(const u8 *data, unsigned int len, u8 *out);
+ 
+ #endif /* _CRYPTO_SHA1_H */
+diff --git a/lib/crypto/sha1.c b/lib/crypto/sha1.c
+index 1aebe7be9401..10152125b338 100644
+--- a/lib/crypto/sha1.c
++++ b/lib/crypto/sha1.c
+@@ -137,4 +137,85 @@ void sha1_init(__u32 *buf)
+ }
+ EXPORT_SYMBOL(sha1_init);
+ 
++static void __sha1_transform(u32 *digest, const char *data)
++{
++       u32 ws[SHA1_WORKSPACE_WORDS];
++
++       sha1_transform(digest, data, ws);
++
++       memzero_explicit(ws, sizeof(ws));
++}
++
++static void sha1_update(struct sha1_state *sctx, const u8 *data, unsigned int len)
++{
++	unsigned int partial = sctx->count % SHA1_BLOCK_SIZE;
++
++	sctx->count += len;
++
++	if (likely((partial + len) >= SHA1_BLOCK_SIZE)) {
++		int blocks;
++
++		if (partial) {
++			int p = SHA1_BLOCK_SIZE - partial;
++
++			memcpy(sctx->buffer + partial, data, p);
++			data += p;
++			len -= p;
++
++			__sha1_transform(sctx->state, sctx->buffer);
++		}
++
++		blocks = len / SHA1_BLOCK_SIZE;
++		len %= SHA1_BLOCK_SIZE;
++
++		if (blocks) {
++			while (blocks--) {
++				__sha1_transform(sctx->state, data);
++				data += SHA1_BLOCK_SIZE;
++			}
++		}
++		partial = 0;
++	}
++
++	if (len)
++		memcpy(sctx->buffer + partial, data, len);
++}
++
++static void sha1_final(struct sha1_state *sctx, u8 *out)
++{
++	const int bit_offset = SHA1_BLOCK_SIZE - sizeof(__be64);
++	unsigned int partial = sctx->count % SHA1_BLOCK_SIZE;
++	__be64 *bits = (__be64 *)(sctx->buffer + bit_offset);
++	__be32 *digest = (__be32 *)out;
++	int i;
++
++	sctx->buffer[partial++] = 0x80;
++	if (partial > bit_offset) {
++		memset(sctx->buffer + partial, 0x0, SHA1_BLOCK_SIZE - partial);
++		partial = 0;
++
++		__sha1_transform(sctx->state, sctx->buffer);
++	}
++
++	memset(sctx->buffer + partial, 0x0, bit_offset - partial);
++	*bits = cpu_to_be64(sctx->count << 3);
++	__sha1_transform(sctx->state, sctx->buffer);
++
++	for (i = 0; i < SHA1_DIGEST_SIZE / sizeof(__be32); i++)
++		put_unaligned_be32(sctx->state[i], digest++);
++
++	*sctx = (struct sha1_state){};
++}
++
++void sha1(const u8 *data, unsigned int len, u8 *out)
++{
++	struct sha1_state sctx = {0};
++
++	sha1_init(sctx.state);
++	sctx.count = 0;
++	sha1_update(&sctx, data, len);
++	sha1_final(&sctx, out);
++}
++EXPORT_SYMBOL(sha1);
++
+ MODULE_LICENSE("GPL");
+-- 
+2.39.3
+

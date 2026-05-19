@@ -1,0 +1,120 @@
+From 1bf97504953a00960f1e79852d0843a7a0e36142 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 13 Apr 2021 11:34:59 -0400
+Subject: [PATCH v10 12/20] kexec: Secure Launch kexec SEXIT support
+
+Prior to running the next kernel via kexec, the Secure Launch code
+closes down private SMX resources and does an SEXIT. This allows the
+next kernel to start normally without any issues starting the APs etc.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/kernel/slaunch.c | 72 +++++++++++++++++++++++++++++++++++++++
+ kernel/kexec_core.c       |  4 +++
+ 2 files changed, 76 insertions(+)
+
+diff --git a/arch/x86/kernel/slaunch.c b/arch/x86/kernel/slaunch.c
+index 9fbe96d1ec71..d9be68325ae1 100644
+--- a/arch/x86/kernel/slaunch.c
++++ b/arch/x86/kernel/slaunch.c
+@@ -522,3 +522,75 @@ void __init slaunch_setup_txt(void)
+ 
+ 	pr_info("Intel TXT setup complete\n");
+ }
++
++static inline void smx_getsec_sexit(void)
++{
++	asm volatile ("getsec\n"
++		      : : "a" (SMX_X86_GETSEC_SEXIT));
++}
++
++/*
++ * Used during kexec and on reboot paths to finalize the TXT state
++ * and do an SEXIT exiting the DRTM and disabling SMX mode.
++ */
++void slaunch_finalize(int do_sexit)
++{
++	u64 one = TXT_REGVALUE_ONE, val;
++	void __iomem *config;
++
++	if (!slaunch_is_txt_launch())
++		return;
++
++	config = ioremap(TXT_PRIV_CONFIG_REGS_BASE, TXT_NR_CONFIG_PAGES *
++			 PAGE_SIZE);
++	if (!config) {
++		pr_emerg("Error SEXIT failed to ioremap TXT private reqs\n");
++		return;
++	}
++
++	/* Clear secrets bit for SEXIT */
++	memcpy_toio(config + TXT_CR_CMD_NO_SECRETS, &one, sizeof(one));
++	memcpy_fromio(&val, config + TXT_CR_E2STS, sizeof(val));
++
++	/* Unlock memory configurations */
++	memcpy_toio(config + TXT_CR_CMD_UNLOCK_MEM_CONFIG, &one, sizeof(one));
++	memcpy_fromio(&val, config + TXT_CR_E2STS, sizeof(val));
++
++	/* Close the TXT private register space */
++	memcpy_toio(config + TXT_CR_CMD_CLOSE_PRIVATE, &one, sizeof(one));
++	memcpy_fromio(&val, config + TXT_CR_E2STS, sizeof(val));
++
++	/*
++	 * Calls to iounmap are not being done because of the state of the
++	 * system this late in the kexec process. Local IRQs are disabled and
++	 * iounmap causes a TLB flush which in turn causes a warning. Leaving
++	 * thse mappings is not an issue since the next kernel is going to
++	 * completely re-setup memory management.
++	 */
++
++	/* Map public registers and do a final read fence */
++	config = ioremap(TXT_PUB_CONFIG_REGS_BASE, TXT_NR_CONFIG_PAGES *
++			 PAGE_SIZE);
++	if (!config) {
++		pr_emerg("Error SEXIT failed to ioremap TXT public reqs\n");
++		return;
++	}
++
++	memcpy_fromio(&val, config + TXT_CR_E2STS, sizeof(val));
++
++	pr_emerg("TXT clear secrets bit and unlock memory complete.\n");
++
++	if (!do_sexit)
++		return;
++
++	if (smp_processor_id() != 0)
++		panic("Error TXT SEXIT must be called on CPU 0\n");
++
++	/* In case SMX mode was disabled, enable it for SEXIT */
++	cr4_set_bits(X86_CR4_SMXE);
++
++	/* Do the SEXIT SMX operation */
++	smx_getsec_sexit();
++
++	pr_info("TXT SEXIT complete.\n");
++}
+diff --git a/kernel/kexec_core.c b/kernel/kexec_core.c
+index c0caa14880c3..53d5ae8326a3 100644
+--- a/kernel/kexec_core.c
++++ b/kernel/kexec_core.c
+@@ -40,6 +40,7 @@
+ #include <linux/hugetlb.h>
+ #include <linux/objtool.h>
+ #include <linux/kmsg_dump.h>
++#include <linux/slaunch.h>
+ 
+ #include <asm/page.h>
+ #include <asm/sections.h>
+@@ -1045,6 +1046,9 @@ int kernel_kexec(void)
+ 		cpu_hotplug_enable();
+ 		pr_notice("Starting new kernel\n");
+ 		machine_shutdown();
++
++		/* Finalize TXT registers and do SEXIT */
++		slaunch_finalize(1);
+ 	}
+ 
+ 	kmsg_dump(KMSG_DUMP_SHUTDOWN);
+-- 
+2.39.3
+

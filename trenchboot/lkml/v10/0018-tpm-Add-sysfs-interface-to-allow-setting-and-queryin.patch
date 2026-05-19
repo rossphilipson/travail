@@ -1,0 +1,72 @@
+From f5f73d884540c819a4a816efc3a0f24883c084f2 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 31 Jan 2024 15:54:05 -0800
+Subject: [PATCH v10 18/20] tpm: Add sysfs interface to allow setting and
+ querying the default locality
+
+Expose a sysfs interface to allow user mode to set and query the default
+locality set for the TPM chip.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/char/tpm/tpm-sysfs.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/drivers/char/tpm/tpm-sysfs.c b/drivers/char/tpm/tpm-sysfs.c
+index 94231f052ea7..185a2f57d4cb 100644
+--- a/drivers/char/tpm/tpm-sysfs.c
++++ b/drivers/char/tpm/tpm-sysfs.c
+@@ -324,6 +324,34 @@ static ssize_t null_name_show(struct device *dev, struct device_attribute *attr,
+ static DEVICE_ATTR_RO(null_name);
+ #endif
+ 
++static ssize_t default_locality_show(struct device *dev,
++				     struct device_attribute *attr, char *buf)
++{
++	struct tpm_chip *chip = to_tpm_chip(dev);
++
++	return sprintf(buf, "%d\n", chip->default_locality);
++}
++
++static ssize_t default_locality_store(struct device *dev, struct device_attribute *attr,
++				      const char *buf, size_t count)
++{
++	struct tpm_chip *chip = to_tpm_chip(dev);
++	unsigned int locality;
++
++	if (kstrtouint(buf, 0, &locality))
++		return -ERANGE;
++
++	if (locality >= TPM_MAX_LOCALITY)
++		return -ERANGE;
++
++	if (tpm_chip_set_default_locality(chip, (int)locality))
++		return count;
++	else
++		return 0;
++}
++
++static DEVICE_ATTR_RW(default_locality);
++
+ static struct attribute *tpm1_dev_attrs[] = {
+ 	&dev_attr_pubek.attr,
+ 	&dev_attr_pcrs.attr,
+@@ -336,6 +364,7 @@ static struct attribute *tpm1_dev_attrs[] = {
+ 	&dev_attr_durations.attr,
+ 	&dev_attr_timeouts.attr,
+ 	&dev_attr_tpm_version_major.attr,
++	&dev_attr_default_locality.attr,
+ 	NULL,
+ };
+ 
+@@ -344,6 +373,7 @@ static struct attribute *tpm2_dev_attrs[] = {
+ #ifdef CONFIG_TCG_TPM2_HMAC
+ 	&dev_attr_null_name.attr,
+ #endif
++	&dev_attr_default_locality.attr,
+ 	NULL
+ };
+ 
+-- 
+2.39.3
+

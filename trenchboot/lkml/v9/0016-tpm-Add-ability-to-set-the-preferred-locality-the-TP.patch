@@ -1,0 +1,129 @@
+From 9d234836870f97781bf36f1f7489563428c24a6a Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Wed, 31 Jan 2024 15:50:14 -0800
+Subject: [PATCH v9 16/19] tpm: Add ability to set the preferred locality the
+ TPM chip uses
+
+Curently the locality is hard coded to 0 but for DRTM support, access
+is needed to localities 1 through 4.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/char/tpm/tpm-chip.c      | 24 +++++++++++++++++++++++-
+ drivers/char/tpm/tpm-interface.c | 15 +++++++++++++++
+ drivers/char/tpm/tpm.h           |  1 +
+ include/linux/tpm.h              |  4 ++++
+ 4 files changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/tpm/tpm-chip.c b/drivers/char/tpm/tpm-chip.c
+index 854546000c92..73eac54d61fb 100644
+--- a/drivers/char/tpm/tpm-chip.c
++++ b/drivers/char/tpm/tpm-chip.c
+@@ -44,7 +44,7 @@ static int tpm_request_locality(struct tpm_chip *chip)
+ 	if (!chip->ops->request_locality)
+ 		return 0;
+ 
+-	rc = chip->ops->request_locality(chip, 0);
++	rc = chip->ops->request_locality(chip, chip->pref_locality);
+ 	if (rc < 0)
+ 		return rc;
+ 
+@@ -143,6 +143,27 @@ void tpm_chip_stop(struct tpm_chip *chip)
+ }
+ EXPORT_SYMBOL_GPL(tpm_chip_stop);
+ 
++/**
++ * tpm_chip_preferred_locality() - set the TPM chip preferred locality to open
++ * @chip:	a TPM chip to use
++ * @locality:   the preferred locality
++ *
++ * Return:
++ * * true      - Preferred locality set
++ * * false     - Invalid locality specified
++ */
++bool tpm_chip_preferred_locality(struct tpm_chip *chip, int locality)
++{
++	if (locality < 0 || locality >=TPM_MAX_LOCALITY)
++		return false;
++
++	mutex_lock(&chip->tpm_mutex);
++	chip->pref_locality = locality;
++	mutex_unlock(&chip->tpm_mutex);
++	return true;
++}
++EXPORT_SYMBOL_GPL(tpm_chip_preferred_locality);
++
+ /**
+  * tpm_try_get_ops() - Get a ref to the tpm_chip
+  * @chip: Chip to ref
+@@ -374,6 +395,7 @@ struct tpm_chip *tpm_chip_alloc(struct device *pdev,
+ 	}
+ 
+ 	chip->locality = -1;
++	chip->pref_locality = 0;
+ 	return chip;
+ 
+ out:
+diff --git a/drivers/char/tpm/tpm-interface.c b/drivers/char/tpm/tpm-interface.c
+index 5da134f12c9a..35f14ccecf0e 100644
+--- a/drivers/char/tpm/tpm-interface.c
++++ b/drivers/char/tpm/tpm-interface.c
+@@ -274,6 +274,21 @@ int tpm_is_tpm2(struct tpm_chip *chip)
+ }
+ EXPORT_SYMBOL_GPL(tpm_is_tpm2);
+ 
++/**
++ * tpm_preferred_locality() - set the TPM chip preferred locality to open
++ * @chip:	a TPM chip to use
++ * @locality:   the preferred locality
++ *
++ * Return:
++ * * true      - Preferred locality set
++ * * false     - Invalid locality specified
++ */
++bool tpm_preferred_locality(struct tpm_chip *chip, int locality)
++{
++	return tpm_chip_preferred_locality(chip, locality);
++}
++EXPORT_SYMBOL_GPL(tpm_preferred_locality);
++
+ /**
+  * tpm_pcr_read - read a PCR value from SHA1 bank
+  * @chip:	a &struct tpm_chip instance, %NULL for the default chip
+diff --git a/drivers/char/tpm/tpm.h b/drivers/char/tpm/tpm.h
+index 6b8b9956ba69..be465422d3fa 100644
+--- a/drivers/char/tpm/tpm.h
++++ b/drivers/char/tpm/tpm.h
+@@ -267,6 +267,7 @@ static inline void tpm_msleep(unsigned int delay_msec)
+ int tpm_chip_bootstrap(struct tpm_chip *chip);
+ int tpm_chip_start(struct tpm_chip *chip);
+ void tpm_chip_stop(struct tpm_chip *chip);
++bool tpm_chip_preferred_locality(struct tpm_chip *chip, int locality);
+ struct tpm_chip *tpm_find_get_ops(struct tpm_chip *chip);
+ 
+ struct tpm_chip *tpm_chip_alloc(struct device *dev,
+diff --git a/include/linux/tpm.h b/include/linux/tpm.h
+index 363f7078c3a9..935a3457d7c8 100644
+--- a/include/linux/tpm.h
++++ b/include/linux/tpm.h
+@@ -219,6 +219,9 @@ struct tpm_chip {
+ 	u8 null_ec_key_y[EC_PT_SZ];
+ 	struct tpm2_auth *auth;
+ #endif
++
++	/* preferred locality - default 0 */
++	int pref_locality;
+ };
+ 
+ #define TPM_HEADER_SIZE		10
+@@ -461,6 +464,7 @@ static inline u32 tpm2_rc_value(u32 rc)
+ #if defined(CONFIG_TCG_TPM) || defined(CONFIG_TCG_TPM_MODULE)
+ 
+ extern int tpm_is_tpm2(struct tpm_chip *chip);
++extern bool tpm_preferred_locality(struct tpm_chip *chip, int locality);
+ extern __must_check int tpm_try_get_ops(struct tpm_chip *chip);
+ extern void tpm_put_ops(struct tpm_chip *chip);
+ extern ssize_t tpm_transmit_cmd(struct tpm_chip *chip, struct tpm_buf *buf,
+-- 
+2.39.3
+

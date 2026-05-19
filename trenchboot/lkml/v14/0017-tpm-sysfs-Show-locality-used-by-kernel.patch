@@ -1,0 +1,51 @@
+From 018713a8afb7db985765554f9f44644be58d8dda Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 5 Nov 2024 12:26:29 -0800
+Subject: [PATCH v14 17/19] tpm, sysfs: Show locality used by kernel
+
+Expose the locality used by the kernel to sysfs.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+---
+ drivers/char/tpm/tpm-sysfs.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/char/tpm/tpm-sysfs.c b/drivers/char/tpm/tpm-sysfs.c
+index 94231f052ea7..2da5857e223b 100644
+--- a/drivers/char/tpm/tpm-sysfs.c
++++ b/drivers/char/tpm/tpm-sysfs.c
+@@ -309,6 +309,14 @@ static ssize_t tpm_version_major_show(struct device *dev,
+ }
+ static DEVICE_ATTR_RO(tpm_version_major);
+ 
++static ssize_t locality_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct tpm_chip *chip = to_tpm_chip(dev);
++
++	return sprintf(buf, "%u\n", chip->kernel_locality);
++}
++static DEVICE_ATTR_RO(locality);
++
+ #ifdef CONFIG_TCG_TPM2_HMAC
+ static ssize_t null_name_show(struct device *dev, struct device_attribute *attr,
+ 			      char *buf)
+@@ -336,6 +344,7 @@ static struct attribute *tpm1_dev_attrs[] = {
+ 	&dev_attr_durations.attr,
+ 	&dev_attr_timeouts.attr,
+ 	&dev_attr_tpm_version_major.attr,
++	&dev_attr_locality.attr,
+ 	NULL,
+ };
+ 
+@@ -344,6 +353,7 @@ static struct attribute *tpm2_dev_attrs[] = {
+ #ifdef CONFIG_TCG_TPM2_HMAC
+ 	&dev_attr_null_name.attr,
+ #endif
++	&dev_attr_locality.attr,
+ 	NULL
+ };
+ 
+-- 
+2.39.3
+

@@ -1,0 +1,36 @@
+From 3f11af7b5de6afbdb927d02eb6230651a1a40736 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Fri, 26 Apr 2024 10:16:38 -0700
+Subject: [PATCH v10 14/20] tpm: Protect against locality counter underflow
+
+Commit 933bfc5ad213 introduced the use of a locality counter to control when a
+locality request is allowed to be sent to the TPM. In the commit, the counter
+is indiscriminately decremented. Thus creating a situation for an integer
+underflow of the counter.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+Reported-by: Kanth Ghatraju <kanth.ghatraju@oracle.com>
+---
+ drivers/char/tpm/tpm_tis_core.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index fdef214b9f6b..a6967f312837 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -180,7 +180,10 @@ static int tpm_tis_relinquish_locality(struct tpm_chip *chip, int l)
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+ 
+ 	mutex_lock(&priv->locality_count_mutex);
+-	priv->locality_count--;
++	if (priv->locality_count > 0)
++		priv->locality_count--;
++	else
++		pr_info("Invalid: locality count dropped below zero\n");
+ 	if (priv->locality_count == 0)
+ 		__tpm_tis_relinquish_locality(priv, l);
+ 	mutex_unlock(&priv->locality_count_mutex);
+-- 
+2.39.3
+

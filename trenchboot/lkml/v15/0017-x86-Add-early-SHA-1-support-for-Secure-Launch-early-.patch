@@ -1,0 +1,59 @@
+From e0fd1f1e6efb30036a9d2ea615204c59b5b34dce Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Mon, 4 Mar 2024 12:13:24 -0800
+Subject: [PATCH v15 17/28] x86: Add early SHA-1 support for Secure Launch
+ early measurements
+
+Secure Launch is written to be compliant with the Intel TXT Measured Launch
+Developer's Guide. The MLE Guide dictates that the system can be configured to
+use both the SHA-1 and SHA-2 hashing algorithms.
+
+Regardless of the preference towards SHA-2, if the firmware elected to start
+with the SHA-1 and SHA-2 banks active and the dynamic launch was configured to
+include SHA-1, Secure Launch is obligated to record measurements for all
+algorithms requested in the launch configuration.
+
+The user environment or the integrity management does not desire to use SHA-1,
+it is free to just ignore the SHA-1 bank in any integrity operation with the
+TPM. If there is a larger concern about the SHA-1 bank being active, it is free
+to deliberately cap the SHA-1 PCRs, recording the event in the D-RTM log.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/compressed/Makefile | 4 ++++
+ arch/x86/boot/compressed/sha1.c   | 7 +++++++
+ 2 files changed, 11 insertions(+)
+ create mode 100644 arch/x86/boot/compressed/sha1.c
+
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index 74657589264d..69592146ced7 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -112,6 +112,10 @@ ifdef CONFIG_EFI_SBAT
+ $(obj)/sbat.o: $(CONFIG_EFI_SBAT_FILE)
+ endif
+ 
++slaunch-objs += $(obj)/sha1.o
++
++vmlinux-objs-$(CONFIG_SECURE_LAUNCH) += $(slaunch-objs)
++
+ $(obj)/vmlinux: $(vmlinux-objs-y) $(vmlinux-libs-y) FORCE
+ 	$(call if_changed,ld)
+ 
+diff --git a/arch/x86/boot/compressed/sha1.c b/arch/x86/boot/compressed/sha1.c
+new file mode 100644
+index 000000000000..dd1b4cf5caf5
+--- /dev/null
++++ b/arch/x86/boot/compressed/sha1.c
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2025 Apertus Solutions, LLC.
++ */
++
++#undef CONFIG_CRYPTO_LIB_SHA1_ARCH
++#include "../../../../lib/crypto/sha1.c"
+-- 
+2.43.7
+

@@ -1,0 +1,199 @@
+From 30a06e6278746b289d22c84cc4f079bbe0cce677 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 2 Oct 2018 14:41:49 -0400
+Subject: [PATCH v14 11/19] x86: Secure Launch SMP bringup support
+
+On Intel, the APs are left in a well documented state after TXT performs
+the late launch. Specifically they cannot have #INIT asserted on them so
+a standard startup via INIT/SIPI/SIPI cannot be performed. Instead the
+early SL stub code uses MONITOR and MWAIT to park the APs. The realmode/init.c
+code updates the jump address for the waiting APs with the location of the
+Secure Launch entry point in the RM piggy after it is loaded and fixed up.
+As the APs are woken up by writing the monitor, the APs jump to the Secure
+Launch entry point in the RM piggy which mimics what the real mode code would
+do then jumps to the standard RM piggy protected mode entry point.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/include/asm/realmode.h      |  3 ++
+ arch/x86/kernel/smpboot.c            | 43 ++++++++++++++++++++++++++--
+ arch/x86/realmode/init.c             |  3 ++
+ arch/x86/realmode/rm/header.S        |  3 ++
+ arch/x86/realmode/rm/trampoline_64.S | 32 +++++++++++++++++++++
+ 5 files changed, 82 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/include/asm/realmode.h b/arch/x86/include/asm/realmode.h
+index f607081a022a..84367bcec1a8 100644
+--- a/arch/x86/include/asm/realmode.h
++++ b/arch/x86/include/asm/realmode.h
+@@ -38,6 +38,9 @@ struct real_mode_header {
+ #ifdef CONFIG_X86_64
+ 	u32	machine_real_restart_seg;
+ #endif
++#ifdef CONFIG_SECURE_LAUNCH
++	u32	sl_trampoline_start32;
++#endif
+ };
+ 
+ /* This must match data at realmode/rm/trampoline_{32,64}.S */
+diff --git a/arch/x86/kernel/smpboot.c b/arch/x86/kernel/smpboot.c
+index d6cf1e23c2a3..219523884fdc 100644
+--- a/arch/x86/kernel/smpboot.c
++++ b/arch/x86/kernel/smpboot.c
+@@ -61,6 +61,7 @@
+ #include <linux/cpuhotplug.h>
+ #include <linux/mc146818rtc.h>
+ #include <linux/acpi.h>
++#include <linux/slaunch.h>
+ 
+ #include <asm/acpi.h>
+ #include <asm/cacheinfo.h>
+@@ -836,6 +837,41 @@ int common_cpu_up(unsigned int cpu, struct task_struct *idle)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SECURE_LAUNCH
++
++/*
++ * TXT AP startup is quite different than normal. The APs cannot have #INIT
++ * asserted on them or receive SIPIs. The early Secure Launch code has parked
++ * the APs using monitor/mwait. This will wake the APs by writing the monitor
++ * and have them jump to the protected mode code in the rmpiggy where the rest
++ * of the SMP boot of the AP will proceed normally.
++ */
++static void slaunch_wakeup_cpu_from_txt(int cpu, int apicid)
++{
++	struct sl_ap_stack_and_monitor *stack_monitor;
++	struct sl_ap_wake_info *ap_wake_info;
++
++	ap_wake_info = slaunch_get_ap_wake_info();
++
++	stack_monitor = (struct sl_ap_stack_and_monitor *)__va(ap_wake_info->ap_wake_block +
++							       ap_wake_info->ap_stacks_offset);
++
++	for (unsigned int i = TXT_MAX_CPUS - 1; i >= 0; i--) {
++		if (stack_monitor[i].apicid == apicid) {
++			stack_monitor[i].monitor = 1;
++			break;
++		}
++	}
++}
++
++#else
++
++static inline void slaunch_wakeup_cpu_from_txt(int cpu, int apicid)
++{
++}
++
++#endif  /* !CONFIG_SECURE_LAUNCH */
++
+ /*
+  * NOTE - on most systems this is a PHYSICAL apic ID, but on multiquad
+  * (ie clustered apic addressing mode), this is a LOGICAL apic ID.
+@@ -845,7 +881,7 @@ int common_cpu_up(unsigned int cpu, struct task_struct *idle)
+ static int do_boot_cpu(u32 apicid, int cpu, struct task_struct *idle)
+ {
+ 	unsigned long start_ip = real_mode_header->trampoline_start;
+-	int ret;
++	int ret = 0;
+ 
+ #ifdef CONFIG_X86_64
+ 	/* If 64-bit wakeup method exists, use the 64-bit mode trampoline IP */
+@@ -890,12 +926,15 @@ static int do_boot_cpu(u32 apicid, int cpu, struct task_struct *idle)
+ 
+ 	/*
+ 	 * Wake up a CPU in difference cases:
++	 * - Intel TXT DRTM launch uses its own method to wake the APs
+ 	 * - Use a method from the APIC driver if one defined, with wakeup
+ 	 *   straight to 64-bit mode preferred over wakeup to RM.
+ 	 * Otherwise,
+ 	 * - Use an INIT boot APIC message
+ 	 */
+-	if (apic->wakeup_secondary_cpu_64)
++	if (slaunch_is_txt_launch())
++		slaunch_wakeup_cpu_from_txt(cpu, apicid);
++	else if (apic->wakeup_secondary_cpu_64)
+ 		ret = apic->wakeup_secondary_cpu_64(apicid, start_ip);
+ 	else if (apic->wakeup_secondary_cpu)
+ 		ret = apic->wakeup_secondary_cpu(apicid, start_ip);
+diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
+index f9bc444a3064..d95776cb30d3 100644
+--- a/arch/x86/realmode/init.c
++++ b/arch/x86/realmode/init.c
+@@ -4,6 +4,7 @@
+ #include <linux/memblock.h>
+ #include <linux/cc_platform.h>
+ #include <linux/pgtable.h>
++#include <linux/slaunch.h>
+ 
+ #include <asm/set_memory.h>
+ #include <asm/realmode.h>
+@@ -210,6 +211,8 @@ void __init init_real_mode(void)
+ 
+ 	setup_real_mode();
+ 	set_real_mode_permissions();
++
++	slaunch_fixup_jump_vector();
+ }
+ 
+ static int __init do_init_real_mode(void)
+diff --git a/arch/x86/realmode/rm/header.S b/arch/x86/realmode/rm/header.S
+index 2eb62be6d256..3b5cbcbbfc90 100644
+--- a/arch/x86/realmode/rm/header.S
++++ b/arch/x86/realmode/rm/header.S
+@@ -37,6 +37,9 @@ SYM_DATA_START(real_mode_header)
+ #ifdef CONFIG_X86_64
+ 	.long	__KERNEL32_CS
+ #endif
++#ifdef CONFIG_SECURE_LAUNCH
++	.long	pa_sl_trampoline_start32
++#endif
+ SYM_DATA_END(real_mode_header)
+ 
+ 	/* End signature, used to verify integrity */
+diff --git a/arch/x86/realmode/rm/trampoline_64.S b/arch/x86/realmode/rm/trampoline_64.S
+index 14d9c7daf90f..b0ce6205d7ea 100644
+--- a/arch/x86/realmode/rm/trampoline_64.S
++++ b/arch/x86/realmode/rm/trampoline_64.S
+@@ -122,6 +122,38 @@ SYM_CODE_END(sev_es_trampoline_start)
+ 
+ 	.section ".text32","ax"
+ 	.code32
++#ifdef CONFIG_SECURE_LAUNCH
++	.balign 4
++SYM_CODE_START(sl_trampoline_start32)
++	/*
++	 * The early secure launch stub AP wakeup code has taken care of all
++	 * the vagaries of launching out of TXT. This bit just mimics what the
++	 * 16b entry code does and jumps off to the real startup_32.
++	 */
++	cli
++	wbinvd
++
++	/*
++	 * The %ebx provided is not terribly useful since it is the physical
++	 * address of tb_trampoline_start and not the base of the image.
++	 * Use pa_real_mode_base, which is fixed up, to get a run time
++	 * base register to use for offsets to location that do not have
++	 * pa_ symbols.
++	 */
++	movl    $pa_real_mode_base, %ebx
++
++	LOCK_AND_LOAD_REALMODE_ESP lock_pa=1
++
++	lgdt    tr_gdt(%ebx)
++	lidt    tr_idt(%ebx)
++
++	movw	$__KERNEL_DS, %dx	# Data segment descriptor
++
++	/* Jump to where the 16b code would have jumped */
++	ljmpl	$__KERNEL32_CS, $pa_startup_32
++SYM_CODE_END(sl_trampoline_start32)
++#endif
++
+ 	.balign 4
+ SYM_CODE_START(startup_32)
+ 	movl	%edx, %ss
+-- 
+2.39.3
+

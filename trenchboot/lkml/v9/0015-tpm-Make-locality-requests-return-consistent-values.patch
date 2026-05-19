@@ -1,0 +1,71 @@
+From 4d48240d8e35650dda4f8825af79e161df5eb82b Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Fri, 26 Apr 2024 10:24:17 -0700
+Subject: [PATCH v9 15/19] tpm: Make locality requests return consistent values
+
+The function tpm_tis_request_locality() is expected to return the locality
+value that was requested, or a negative error code upon failure. If it is called
+while locality_count of struct tis_data is non-zero, no actual locality request
+will be sent. Because the ret variable is initially set to 0, the
+locality_count will still get increased, and the function will return 0. For a
+caller, this would indicate that locality 0 was successfully requested and not
+the state changes just mentioned.
+
+Additionally, the function __tpm_tis_request_locality() provides inconsistent
+error codes. It will provide either a failed IO write or a -1 should it have
+timed out waiting for locality request to succeed.
+
+This commit changes __tpm_tis_request_locality() to return valid negative error
+codes to reflect the reason it fails. It then adjusts the return value check in
+tpm_tis_request_locality() to check for a non-negative return value before
+incrementing locality_cout. In addition, the initial value of the ret value is
+set to a negative error to ensure the check does not pass if
+__tpm_tis_request_locality() is not called.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/char/tpm/tpm_tis_core.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index 9fb53bb3e73f..685bdeadec51 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -208,7 +208,7 @@ static int __tpm_tis_request_locality(struct tpm_chip *chip, int l)
+ again:
+ 		timeout = stop - jiffies;
+ 		if ((long)timeout <= 0)
+-			return -1;
++			return -EBUSY;
+ 		rc = wait_event_interruptible_timeout(priv->int_queue,
+ 						      (check_locality
+ 						       (chip, l)),
+@@ -227,18 +227,21 @@ static int __tpm_tis_request_locality(struct tpm_chip *chip, int l)
+ 			tpm_msleep(TPM_TIMEOUT);
+ 		} while (time_before(jiffies, stop));
+ 	}
+-	return -1;
++	return -EBUSY;
+ }
+ 
+ static int tpm_tis_request_locality(struct tpm_chip *chip, int l)
+ {
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+-	int ret = 0;
++	int ret = -EBUSY;
++
++	if (l < 0 || l > TPM_MAX_LOCALITY)
++		return -EINVAL;
+ 
+ 	mutex_lock(&priv->locality_count_mutex);
+ 	if (priv->locality_count == 0)
+ 		ret = __tpm_tis_request_locality(chip, l);
+-	if (!ret)
++	if (ret >= 0)
+ 		priv->locality_count++;
+ 	mutex_unlock(&priv->locality_count_mutex);
+ 	return ret;
+-- 
+2.39.3
+

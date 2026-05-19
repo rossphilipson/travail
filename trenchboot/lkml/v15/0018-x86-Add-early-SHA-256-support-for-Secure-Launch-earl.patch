@@ -1,0 +1,46 @@
+From bf3d138cbddad35df6dee2e4cf4969f5acdebe97 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Smith" <dpsmith@apertussolutions.com>
+Date: Mon, 4 Mar 2024 12:20:43 -0800
+Subject: [PATCH v15 18/28] x86: Add early SHA-256 support for Secure Launch
+ early measurements
+
+The SHA-256 algorithm is necessary to measure configuration information into
+the TPM as early as possible before using the values. This implementation
+uses the established approach of #including the SHA-256 libraries directly in
+the code since the compressed kernel is not uncompressed at this point.
+
+Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ arch/x86/boot/compressed/Makefile | 1 +
+ arch/x86/boot/compressed/sha256.c | 6 ++++++
+ 2 files changed, 7 insertions(+)
+ create mode 100644 arch/x86/boot/compressed/sha256.c
+
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index 69592146ced7..0ea8a11ec271 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -113,6 +113,7 @@ $(obj)/sbat.o: $(CONFIG_EFI_SBAT_FILE)
+ endif
+ 
+ slaunch-objs += $(obj)/sha1.o
++slaunch-objs += $(obj)/sha256.o
+ 
+ vmlinux-objs-$(CONFIG_SECURE_LAUNCH) += $(slaunch-objs)
+ 
+diff --git a/arch/x86/boot/compressed/sha256.c b/arch/x86/boot/compressed/sha256.c
+new file mode 100644
+index 000000000000..7795926e7e1d
+--- /dev/null
++++ b/arch/x86/boot/compressed/sha256.c
+@@ -0,0 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2025 Apertus Solutions, LLC
++ */
++
++#include "../../../../lib/crypto/sha256.c"
+-- 
+2.43.7
+

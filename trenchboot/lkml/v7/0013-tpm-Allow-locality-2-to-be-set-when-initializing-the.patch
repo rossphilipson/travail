@@ -1,0 +1,51 @@
+From 121db9badde6b0dd651c274c243fbe7d6cd64f15 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@oracle.com>
+Date: Tue, 17 Dec 2019 11:05:56 -0500
+Subject: [PATCH v7 13/13] tpm: Allow locality 2 to be set when initializing
+ the TPM for Secure Launch
+
+The Secure Launch MLE environment uses PCRs that are only accessible from
+the DRTM locality 2. By default the TPM drivers always initialize the
+locality to 0. When a Secure Launch is in progress, initialize the
+locality to 2.
+
+Signed-off-by: Ross Philipson <ross.philipson@oracle.com>
+---
+ drivers/char/tpm/tpm-chip.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/tpm/tpm-chip.c b/drivers/char/tpm/tpm-chip.c
+index 42b1062e33cd..0217ceb96c42 100644
+--- a/drivers/char/tpm/tpm-chip.c
++++ b/drivers/char/tpm/tpm-chip.c
+@@ -23,6 +23,7 @@
+ #include <linux/major.h>
+ #include <linux/tpm_eventlog.h>
+ #include <linux/hw_random.h>
++#include <linux/slaunch.h>
+ #include "tpm.h"
+ 
+ DEFINE_IDR(dev_nums_idr);
+@@ -39,12 +40,18 @@ dev_t tpm_devt;
+ 
+ static int tpm_request_locality(struct tpm_chip *chip)
+ {
++	int locality;
+ 	int rc;
+ 
+ 	if (!chip->ops->request_locality)
+ 		return 0;
+ 
+-	rc = chip->ops->request_locality(chip, 0);
++	if (slaunch_get_flags() & SL_FLAG_ACTIVE)
++		locality = 2;
++	else
++		locality = 0;
++
++	rc = chip->ops->request_locality(chip, locality);
+ 	if (rc < 0)
+ 		return rc;
+ 
+-- 
+2.39.3
+
