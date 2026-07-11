@@ -1,0 +1,90 @@
+From 11cc42d76b392f51d83dddc1107d779acd15d6f1 Mon Sep 17 00:00:00 2001
+From: Jarkko Sakkinen <jarkko.sakkinen@opinsys.com>
+Date: Thu, 16 Apr 2026 13:06:14 -0700
+Subject: [PATCH v2 08/10] tpm-buf: Remove chip parameter from
+ tpm_buf_append_handle()
+
+Remove the TPM driver chip parameter from the function
+tpm_buf_append_handle(). The chip parameter is only for error logging
+which can be done with other facilities like WARN().
+
+Message-ID: <20260125192526.782202-11-jarkko@kernel.org>
+Signed-off-by: Jarkko Sakkinen <jarkko.sakkinen@opinsys.com>
+Signed-off-by: Ross Philipson <ross.philipson@gmail.com>
+---
+ drivers/char/tpm/tpm-buf.c       | 9 ++++++---
+ drivers/char/tpm/tpm2-cmd.c      | 2 +-
+ drivers/char/tpm/tpm2-sessions.c | 2 +-
+ include/linux/tpm.h              | 2 +-
+ 4 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/char/tpm/tpm-buf.c b/drivers/char/tpm/tpm-buf.c
+index 61833b4d81f0..99811809a72a 100644
+--- a/drivers/char/tpm/tpm-buf.c
++++ b/drivers/char/tpm/tpm-buf.c
+@@ -146,17 +146,20 @@ EXPORT_SYMBOL_GPL(tpm_buf_append_u32);
+ 
+ /**
+  * tpm_buf_append_handle() - Add a handle
+- * @chip:	&tpm_chip instance
+  * @buf:	&tpm_buf instance
+  * @handle:	a TPM object handle
+  *
+  * Add a handle to the buffer, and increase the count tracking the number of
+  * handles in the command buffer. Works only for command buffers.
+  */
+-void tpm_buf_append_handle(struct tpm_chip *chip, struct tpm_buf *buf, u32 handle)
++void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle)
+ {
++	if (buf->flags & TPM_BUF_INVALID)
++		return;
++
+ 	if (buf->flags & TPM_BUF_TPM2B) {
+-		dev_err(&chip->dev, "Invalid buffer type (TPM2B)\n");
++		WARN(1, "tpm-buf: invalid type: TPM2B\n");
++		buf->flags |= TPM_BUF_INVALID;
+ 		return;
+ 	}
+ 
+diff --git a/drivers/char/tpm/tpm2-cmd.c b/drivers/char/tpm/tpm2-cmd.c
+index 280f870e6517..c7952319384e 100644
+--- a/drivers/char/tpm/tpm2-cmd.c
++++ b/drivers/char/tpm/tpm2-cmd.c
+@@ -198,7 +198,7 @@ int tpm2_pcr_extend(struct tpm_chip *chip, u32 pcr_idx,
+ 		}
+ 		tpm_buf_append_hmac_session(chip, &buf, 0, NULL, 0);
+ 	} else {
+-		tpm_buf_append_handle(chip, &buf, pcr_idx);
++		tpm_buf_append_handle(&buf, pcr_idx);
+ 		tpm_buf_append_auth(chip, &buf, NULL, 0);
+ 	}
+ 
+diff --git a/drivers/char/tpm/tpm2-sessions.c b/drivers/char/tpm/tpm2-sessions.c
+index a1ae5e1829cb..0d89643e6880 100644
+--- a/drivers/char/tpm/tpm2-sessions.c
++++ b/drivers/char/tpm/tpm2-sessions.c
+@@ -260,7 +260,7 @@ int tpm_buf_append_name(struct tpm_chip *chip, struct tpm_buf *buf,
+ #endif
+ 
+ 	if (!tpm2_chip_auth(chip)) {
+-		tpm_buf_append_handle(chip, buf, handle);
++		tpm_buf_append_handle(buf, handle);
+ 		return 0;
+ 	}
+ 
+diff --git a/include/linux/tpm.h b/include/linux/tpm.h
+index 3c6a5bcc138a..b357f8971d03 100644
+--- a/include/linux/tpm.h
++++ b/include/linux/tpm.h
+@@ -235,7 +235,7 @@ void tpm_buf_append_u32(struct tpm_buf *buf, const u32 value);
+ u8 tpm_buf_read_u8(struct tpm_buf *buf, off_t *offset);
+ u16 tpm_buf_read_u16(struct tpm_buf *buf, off_t *offset);
+ u32 tpm_buf_read_u32(struct tpm_buf *buf, off_t *offset);
+-void tpm_buf_append_handle(struct tpm_chip *chip, struct tpm_buf *buf, u32 handle);
++void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle);
+ 
+ /*
+  * Check if TPM device is in the firmware upgrade mode.
+-- 
+2.55.0
+

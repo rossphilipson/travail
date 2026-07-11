@@ -1,0 +1,31 @@
+From e03f32361a20d0709541eea8c8ab1a8ec909ab53 Mon Sep 17 00:00:00 2001
+From: Alec Brown <alec.r.brown@oracle.com>
+Date: Wed, 5 Nov 2025 20:16:00 +0000
+Subject: [PATCH v2 06/10] tpm: Remove main TPM header from TPM event log
+ header
+
+Allow the TPM event log functionality to be used without including
+the main TPM driver definitions.
+
+Signed-off-by: Alec Brown <alec.r.brown@oracle.com>
+Signed-off-by: Ross Philipson <ross.philipson@gmail.com>
+---
+ include/linux/tpm_eventlog.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/tpm_eventlog.h b/include/linux/tpm_eventlog.h
+index aff8ea2fa98e..40fe92eb7deb 100644
+--- a/include/linux/tpm_eventlog.h
++++ b/include/linux/tpm_eventlog.h
+@@ -3,7 +3,7 @@
+ #ifndef __LINUX_TPM_EVENTLOG_H__
+ #define __LINUX_TPM_EVENTLOG_H__
+ 
+-#include <linux/tpm.h>
++#include <linux/tpm_command.h>
+ 
+ #define TCG_EVENT_NAME_LEN_MAX	255
+ #define MAX_TEXT_EVENT		1000	/* Max event string length */
+-- 
+2.55.0
+

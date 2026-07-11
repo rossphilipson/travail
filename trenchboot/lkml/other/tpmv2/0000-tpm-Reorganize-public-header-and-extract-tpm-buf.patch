@@ -1,0 +1,125 @@
+From 597fe5e4011b834f86b190ea6644308b21f301a6 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@gmail.com>
+Date: Fri, 10 Jul 2026 12:46:59 -0700
+Subject: [PATCH v2 00/10] tpm: Reorganize public headers and extract tpm-buf for standalone reuse
+
+This series reorganizes the TPM subsystem's public headers for better
+modularity and maintainability while extracting the `tpm_buf`
+abstraction into a new standalone header (`include/linux/tpm_buf.h`).
+The goal is to allow other kernel components to construct, parse, and
+manipulate TPM commands, responses, and TPM2B-sized buffers without
+pulling in the full set of TPM driver headers and implementation details
+from `<linux/tpm.h>`.
+
+Key elements of the series:
+- Split version-specific (TPM1/TPM2), common, and platform-specific
+  (PTP) definitions out of the main headers into dedicated files
+  (tpm_command.h updates and the new include/linux/tpm_ptp.h).
+- Clean up include dependencies (e.g., remove the main TPM header from
+  the TPM event log header).
+- Refine the tpm_buf implementation for improved memory safety and a
+  cleaner API suitable for standalone use.
+- Introduce include/linux/tpm_buf.h (with helpers for
+  init/reset/append/read operations) so the buffer logic can be reused
+  more broadly (e.g., by security subsystems, measurement architectures,
+  or early-boot components).
+
+This work originated in the TrenchBoot/Secure Launch development tree
+but provides general benefits to the upstream kernel by reducing header
+coupling and enabling safer, more reusable TPM buffer handling. It
+builds on prior refactoring efforts and incorporates improvements for
+robustness.
+
+Note on this version: This is a breakout of the TPM driver related
+changes from the Secure Launch v16 series. As it includes Sashiko review
+changes, it is being considered v2. Another noteworthy change is the
+replacement of patch #9, "tpm-buf: Implement managed allocations", with
+the recently posted variation titled "tpm-buf: Memory-safe allocations".
+Additional API cleanups were made to the tpm-buf code to better support
+standalone reuse.
+
+Version note: This series extracts the TPM driver-related changes from
+the Secure Launch v16 series as a standalone patchset. Because it
+incorporates the Sashiko review changes, it is now designated v2. A
+notable update is the replacement of patch #9 ("tpm-buf: Implement
+managed allocations") with the recently posted variant titled "tpm-buf:
+Memory-safe allocations." Additional API cleanups were also made to the
+tpm-buf code to improve its suitability for standalone reuse.
+
+Series based off: torvalds/master
+dc59e4fea9d83f03bad6bddf3fa2e52491777482
+
+Thanks,
+Ross Philipson and Daniel P. Smith
+
+Changelog:
+
+- Replaced "tpm-buf: Implement managed allocations" with "tpm-buf:
+  Memory-safe allocations": New implementation uses fixed-size
+  kzalloc(TPM_BUFSIZE) (or stack-backed) buffers with explicit capacity
+  tracking, strict __tpm_buf_size_invariant checks, improved TPM2B
+  handling, and validation during init/reset/append to prevent overflows,
+  size mismatches, and potential memory corruption issues associated with
+  the prior __get_free_page based approach.
+
+- Updated "tpm-buf: Merge TPM_BUF_BOUNDARY_ERROR and TPM_BUF_OVERFLOW":
+  Simplifies the error flag handling in the buffer abstraction by
+  combining related overflow/boundary conditions into a single, clearer
+  error state.
+
+- Updated "tpm-buf: Remove chip parameter from tpm_buf_append_handle()":
+  Makes the handle-append helper more generic and independent of struct
+  tpm_chip, improving its suitability for standalone reuse outside the
+  core TPM driver.
+
+- Updated "tpm-buf: Add TPM buffer support header for standalone reuse":
+  Refreshed to build on top of the new memory-safe implementation, the
+  merged error codes, and the chip-parameter removal for a cleaner, more
+  reusable public API and header.
+
+- Header reorganization patches ("tpm: Initial step to reorganize TPM
+  public headers", moves of TPM1/TPM2/common/platform definitions to
+  command/ptp headers, and removal of main TPM header from event log
+  header) are retained with the same overall structure and intent; they
+  benefit from the refined tpm-buf code and minor consistency adjustments.
+
+Alec Brown (1):
+  tpm: Remove main TPM header from TPM event log header
+
+Jarkko Sakkinen (3):
+  tpm-buf: Merge TPM_BUF_BOUNDARY_ERROR and TPM_BUF_OVERFLOW
+  tpm-buf: Remove chip parameter from tpm_buf_append_handle()
+  tpm-buf: Memory-safe allocations
+
+Ross Philipson (6):
+  tpm: Initial step to reorganize TPM public headers
+  tpm: Move TPM1 specific definitions to the command header
+  tpm: Move TPM2 specific definitions to the command header
+  tpm: Move TPM common base definitions to the command header
+  tpm: Move platform specific definitions to the new PTP header
+  tpm-buf: Add TPM buffer support header for standalone reuse
+
+ drivers/char/tpm/tpm-buf.c                | 145 +++---
+ drivers/char/tpm/tpm-sysfs.c              |  26 +-
+ drivers/char/tpm/tpm.h                    | 180 --------
+ drivers/char/tpm/tpm1-cmd.c               | 180 ++++----
+ drivers/char/tpm/tpm2-cmd.c               | 321 ++++++--------
+ drivers/char/tpm/tpm2-sessions.c          | 164 ++++---
+ drivers/char/tpm/tpm2-space.c             |  57 +--
+ drivers/char/tpm/tpm_tis_core.h           |  64 +--
+ drivers/char/tpm/tpm_vtpm_proxy.c         |  30 +-
+ include/keys/trusted_tpm.h                |   1 -
+ include/linux/tpm.h                       | 230 +---------
+ include/linux/tpm_buf.h                   |  60 +++
+ include/linux/tpm_command.h               | 518 +++++++++++++++++++++-
+ include/linux/tpm_eventlog.h              |   2 +-
+ include/linux/tpm_ptp.h                   | 133 ++++++
+ security/keys/trusted-keys/trusted_tpm1.c |  45 +-
+ security/keys/trusted-keys/trusted_tpm2.c | 166 +++----
+ 17 files changed, 1237 insertions(+), 1085 deletions(-)
+ create mode 100644 include/linux/tpm_buf.h
+ create mode 100644 include/linux/tpm_ptp.h
+
+--
+2.54.0
+

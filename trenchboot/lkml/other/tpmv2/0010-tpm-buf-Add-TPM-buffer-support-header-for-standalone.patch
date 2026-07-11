@@ -1,0 +1,157 @@
+From f2af35a7d2db8f8771d2dceaa9b7678d9a6cba24 Mon Sep 17 00:00:00 2001
+From: Ross Philipson <ross.philipson@gmail.com>
+Date: Mon, 20 Apr 2026 18:55:37 -0700
+Subject: [PATCH v2 10/10] tpm-buf: Add TPM buffer support header for
+ standalone reuse
+
+Extract all the functions and definitions for TPM buffer handling
+and separate them into their own header.
+
+Signed-off-by: Ross Philipson <ross.philipson@gmail.com>
+---
+ drivers/char/tpm/tpm-buf.c |  3 +-
+ include/linux/tpm.h        | 34 +--------------------
+ include/linux/tpm_buf.h    | 60 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 63 insertions(+), 34 deletions(-)
+ create mode 100644 include/linux/tpm_buf.h
+
+diff --git a/drivers/char/tpm/tpm-buf.c b/drivers/char/tpm/tpm-buf.c
+index 1e5c11c312a8..233e81d3f149 100644
+--- a/drivers/char/tpm/tpm-buf.c
++++ b/drivers/char/tpm/tpm-buf.c
+@@ -4,7 +4,8 @@
+  */
+ 
+ #include <linux/module.h>
+-#include <linux/tpm.h>
++#include <linux/tpm_command.h>
++#include <linux/tpm_buf.h>
+ 
+ static void __tpm_buf_size_invariant(struct tpm_buf *buf, u16 buf_size)
+ {
+diff --git a/include/linux/tpm.h b/include/linux/tpm.h
+index 598dd53a10d8..0db277af45c3 100644
+--- a/include/linux/tpm.h
++++ b/include/linux/tpm.h
+@@ -26,6 +26,7 @@
+ #include <crypto/aes.h>
+ 
+ #include <linux/tpm_command.h>
++#include <linux/tpm_buf.h>
+ 
+ struct tpm_chip;
+ struct trusted_key_payload;
+@@ -200,44 +201,11 @@ enum tpm_chip_flags {
+ 
+ #define to_tpm_chip(d) container_of(d, struct tpm_chip, dev)
+ 
+-enum tpm_buf_flags {
+-	/* TPM2B format: */
+-	TPM_BUF_TPM2B		= BIT(0),
+-	/* The buffer is in invalid and unusable state: */
+-	TPM_BUF_INVALID		= BIT(1),
+-};
+-
+-/*
+- * A buffer for constructing and parsing TPM commands, responses and sized
+- * (TPM2B) buffers.
+- */
+-struct tpm_buf {
+-	u8 flags;
+-	u16 length;
+-	u16 capacity;
+-	u8 handles;
+-	u8 data[];
+-};
+-
+ struct tpm2_hash {
+ 	unsigned int crypto_id;
+ 	unsigned int tpm_id;
+ };
+ 
+-void tpm_buf_init(struct tpm_buf *buf, u16 buf_size);
+-void tpm_buf_init_sized(struct tpm_buf *buf, u16 buf_size);
+-void tpm_buf_reset(struct tpm_buf *buf, u16 tag, u32 ordinal);
+-void tpm_buf_reset_sized(struct tpm_buf *buf);
+-u16 tpm_buf_length(struct tpm_buf *buf);
+-void tpm_buf_append(struct tpm_buf *buf, const u8 *new_data, u16 new_length);
+-void tpm_buf_append_u8(struct tpm_buf *buf, const u8 value);
+-void tpm_buf_append_u16(struct tpm_buf *buf, const u16 value);
+-void tpm_buf_append_u32(struct tpm_buf *buf, const u32 value);
+-u8 tpm_buf_read_u8(struct tpm_buf *buf, off_t *offset);
+-u16 tpm_buf_read_u16(struct tpm_buf *buf, off_t *offset);
+-u32 tpm_buf_read_u32(struct tpm_buf *buf, off_t *offset);
+-void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle);
+-
+ /*
+  * Check if TPM device is in the firmware upgrade mode.
+  */
+diff --git a/include/linux/tpm_buf.h b/include/linux/tpm_buf.h
+new file mode 100644
+index 000000000000..f8c105d8b8bf
+--- /dev/null
++++ b/include/linux/tpm_buf.h
+@@ -0,0 +1,60 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Following copyright information was take from the original file
++ * <include/linux/tpm.h> where the definitions were moved from:
++ *
++ * Copyright (C) 2004,2007,2008 IBM Corporation
++ *
++ * Authors:
++ * Leendert van Doorn <leendert@watson.ibm.com>
++ * Dave Safford <safford@watson.ibm.com>
++ * Reiner Sailer <sailer@watson.ibm.com>
++ * Kylene Hall <kjhall@us.ibm.com>
++ * Debora Velarde <dvelarde@us.ibm.com>
++ *
++ * Maintained by: <tpmdd_devel@lists.sourceforge.net>
++ *
++ * Device driver for TCG/TCPA TPM (trusted platform module).
++ * Specifications at www.trustedcomputinggroup.org
++ */
++
++#ifndef __LINUX_TPM_BUF_H__
++#define __LINUX_TPM_BUF_H__
++
++#include <linux/types.h>
++#include <linux/bits.h>
++
++enum tpm_buf_flags {
++	/* TPM2B format: */
++	TPM_BUF_TPM2B		= BIT(0),
++	/* The buffer is in invalid and unusable state: */
++	TPM_BUF_INVALID		= BIT(1),
++};
++
++/*
++ * A buffer for constructing and parsing TPM commands, responses and sized
++ * (TPM2B) buffers.
++ */
++struct tpm_buf {
++	u8 flags;
++	u8 handles;
++	u16 length;
++	u16 capacity;
++	u8 data[];
++};
++
++void tpm_buf_init(struct tpm_buf *buf, u16 buf_size);
++void tpm_buf_init_sized(struct tpm_buf *buf, u16 buf_size);
++void tpm_buf_reset(struct tpm_buf *buf, u16 tag, u32 ordinal);
++void tpm_buf_reset_sized(struct tpm_buf *buf);
++u16 tpm_buf_length(struct tpm_buf *buf);
++void tpm_buf_append(struct tpm_buf *buf, const u8 *new_data, u16 new_length);
++void tpm_buf_append_u8(struct tpm_buf *buf, const u8 value);
++void tpm_buf_append_u16(struct tpm_buf *buf, const u16 value);
++void tpm_buf_append_u32(struct tpm_buf *buf, const u32 value);
++u8 tpm_buf_read_u8(struct tpm_buf *buf, off_t *offset);
++u16 tpm_buf_read_u16(struct tpm_buf *buf, off_t *offset);
++u32 tpm_buf_read_u32(struct tpm_buf *buf, off_t *offset);
++void tpm_buf_append_handle(struct tpm_buf *buf, u32 handle);
++
++#endif
+-- 
+2.55.0
+
